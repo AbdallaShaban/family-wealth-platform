@@ -60,6 +60,7 @@ function Router() {
       <Route path={"/risk/rebalance"} component={RebalanceReviewPage} />
       <Route path={"/members"} component={MembersPage} />
       <Route path={"/reports"} component={ReportsPage} />
+      <Route path={"/family/reports"} component={ReportsPage} />
       <Route path={"/audit"} component={AuditPage} />
       <Route path={"/assessment"} component={AssessmentReport} />
       <Route path={"/admin/users"} component={PlatformAdministrationPage} />
