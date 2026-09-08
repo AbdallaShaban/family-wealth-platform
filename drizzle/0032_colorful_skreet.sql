@@ -1,0 +1,1 @@
+ALTER TABLE `financial_events` MODIFY COLUMN `eventType` enum('opening_balance','deposit','withdrawal','transfer','position_transfer','corporate_action','buy','sell','dividend','income','expense','fee','tax','adjustment','reversal','debt_origination','debt_payment') NOT NULL;

@@ -1,0 +1,2 @@
+ALTER TABLE `approval_policies` MODIFY COLUMN `actionType` enum('cash_event','transfer','trade','budget_adjustment','period_adjustment') NOT NULL;--> statement-breakpoint
+ALTER TABLE `approval_requests` MODIFY COLUMN `actionType` enum('cash_event','transfer','trade','budget_adjustment','period_adjustment') NOT NULL;

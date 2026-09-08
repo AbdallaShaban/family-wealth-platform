@@ -1,0 +1,2 @@
+ALTER TABLE `platform_admin_invitations` DROP INDEX `platform_admin_invite_email_status_unique`;--> statement-breakpoint
+CREATE INDEX `platform_admin_invite_email_status_idx` ON `platform_admin_invitations` (`email`,`status`);

@@ -1,0 +1,14 @@
+{
+  "name": "FAMILY — منصة إدارة الثروة",
+  "short_name": "FAMILY",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#064e3b",
+  "description": "منصة عربية خاصة لإدارة الثروة العائلية، مع سجل مالي وتقييمات وتحكم بالخصوصية.",
+  "icons": [
+    { "src": "/family-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
