@@ -1121,9 +1121,14 @@ export function calculateFireHorizon(inputs: FireHorizonInputs): FireHorizonResu
       const Ainf = C.negated().div(rm);
 
       if (A0.lte(Ainf)) {
-        // Sub-case 3C.1: Withdrawals deplete or overwhelm portfolio
+        // Sub-case 3C.1: Withdrawals overwhelm or balance portfolio returns
+        // - If A0 < Ainf: trajectory strictly decreases below A0 (eventual depletion).
+        // - If A0 == Ainf: stationary fixed equilibrium A(m) = Ainf for all m (returns exactly balance withdrawals).
+        // In both cases, since A0 < KFI (and thus KFI > Ainf), the target KFI is mathematically unreachable.
         status = "unreachable_positive_return_negative_contribution";
-        statusLabelAr = "غير قابل للتحقيق (السحب الشهري يتجاوز العائد الحقيقي للمحفظة)";
+        statusLabelAr = A0.eq(Ainf)
+          ? "غير قابل للتحقيق (نقطة توازن مستقرة: العائد الحقيقي يعادل السحب تمامًا دون بلوغ المستهدف)"
+          : "غير قابل للتحقيق (السحب الشهري يتجاوز العائد الحقيقي للمحفظة)";
         isReachable = false;
       } else {
         // Sub-case 3C.2: A0 > A_inf, returns outpace withdrawals, growing toward KFI

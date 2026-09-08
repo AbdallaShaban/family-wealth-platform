@@ -5,6 +5,7 @@ import type { FamilyContext } from "./familyAccess";
 import { getDb } from "./db";
 import { getDashboardSummary } from "./familyRead";
 import { VALUATION_STALE_AFTER_MS, type ExternalQuality } from "./valuationProvenance";
+import { invalidateReadModelCache } from "./readModelCache";
 
 export type OfficialReportStatus = "official" | "review_required" | "unavailable";
 
@@ -154,6 +155,7 @@ export async function captureOfficialValuationSnapshot(context: FamilyContext, a
     hasValuedData: summary.accountCount > 0 || summary.portfolio.length > 0,
   });
   const inserted = await db.insert(officialValuationSnapshots).values(candidate);
+  invalidateReadModelCache(`wealth-health:score:${context.workspace.id}`);
   return { id: Number(inserted[0].insertId), ...candidate };
 }
 

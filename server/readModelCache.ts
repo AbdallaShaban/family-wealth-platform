@@ -17,7 +17,12 @@ export function invalidateReadModelCache(prefix?: string) {
     cache.clear();
     return;
   }
-  cache.forEach((_entry, key) => { if (key.startsWith(prefix)) cache.delete(key); });
+  const normalizedPrefix = prefix.endsWith(":") ? prefix : `${prefix}:`;
+  cache.forEach((_entry, key) => {
+    if (key === prefix || key.startsWith(normalizedPrefix)) {
+      cache.delete(key);
+    }
+  });
 }
 
 export function readModelCacheSize() {

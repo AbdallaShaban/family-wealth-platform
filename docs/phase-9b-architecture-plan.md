@@ -389,9 +389,10 @@ graph TD
    - **Case 3C ($C < 0$, Monthly Deficit)**:
      Define the critical steady-state equilibrium capital:
      $$A_{\text{inf}} = \frac{-C}{r_m} = \frac{|C|}{r_m} > 0$$
-     - **Sub-case 3C.1 ($A_0 \le A_{\text{inf}}$)**:
-       Since $A_0 \le A_{\text{inf}}$, monthly withdrawals $|C|$ exceed or equal monthly portfolio return $A_0 \cdot r_m$. The recurrence is monotonically non-increasing and depletes toward zero. Target $K_{\text{FI}} > A_0$ cannot be reached.
-       $m^* = \text{null}$. Status: `unreachable_positive_return_negative_contribution`.
+      - **Sub-case 3C.1 ($A_0 \le A_{\text{inf}}$)**:
+        - If $A_0 < A_{\text{inf}}$: monthly withdrawals $|C|$ strictly exceed portfolio returns $A_0 \cdot r_m$, so the trajectory monotonically decreases below $A_0$ toward depletion.
+        - If $A_0 = A_{\text{inf}}$: portfolio returns exactly match monthly withdrawals ($A_0 \cdot r_m = -C$), yielding a **stationary fixed equilibrium** $A(m) = A_{\text{inf}}$ for all $m \ge 0$. This is a stationary equilibrium, NOT depletion toward zero. However, since $A_0 < K_{\text{FI}} \implies K_{\text{FI}} > A_{\text{inf}}$, the target $K_{\text{FI}}$ is never reached.
+        In both cases, target $K_{\text{FI}}$ is mathematically unreachable: $m^* = \text{null}$. Status: `unreachable_positive_return_negative_contribution`.
      - **Sub-case 3C.2 ($A_0 > A_{\text{inf}}$)**:
        Since $A_0 > A_{\text{inf}}$, current portfolio returns outpace withdrawals ($A_0 \cdot r_m > |C|$). The recurrence is strictly monotonic increasing toward $K_{\text{FI}}$ ($K_{\text{FI}} > A_0 > A_{\text{inf}}$).
        Analytical exact solution:

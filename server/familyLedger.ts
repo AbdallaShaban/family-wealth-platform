@@ -24,6 +24,7 @@ import type { FamilyContext } from "./familyAccess";
 import { assertBalanced, convertThroughBase, nextBuyPosition, nextSellPosition, parseNonNegativeAmount, parsePositiveAmount, type JournalDraftLine } from "./ledgerMath";
 import { getDb } from "./db";
 import { allocateFifo, consumeFifo, type FifoLot } from "./lots";
+import { invalidateReadModelCache } from "./readModelCache";
 
 type UserAccountType = "cash" | "bank" | "brokerage" | "wallet" | "credit" | "loan" | "asset";
 type CashEventType = "opening_balance" | "deposit" | "withdrawal" | "income" | "expense";
@@ -287,6 +288,7 @@ async function createPostedEvent(tx: any, args: {
     requestId,
     occurredAt: now,
   });
+  invalidateReadModelCache(`wealth-health:score:${args.context.workspace.id}`);
   return { id: eventId, status: "posted" as const, duplicate: false };
 }
 
@@ -350,6 +352,7 @@ export async function createFamilyAccount(args: {
       requestId: crypto.randomUUID(),
       occurredAt: now,
     });
+    invalidateReadModelCache(`wealth-health:score:${args.context.workspace.id}`);
     if (!openingBalance) return { accountId, openingEventId: null };
 
     if (!["cash", "bank", "brokerage", "wallet", "asset"].includes(args.accountType)) {
@@ -534,6 +537,7 @@ export async function reverseImportedCashBatch(args: {
       await item.afterReversed(tx, reversalEventId);
       results.push(reversalEventId);
     }
+    invalidateReadModelCache(`wealth-health:score:${args.context.workspace.id}`);
     return results;
   });
 }

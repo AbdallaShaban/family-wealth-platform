@@ -607,10 +607,10 @@ describe("Phase 9B: Wealth Health Math & Deterministic FIRE Engine", () => {
       expect(res.verifiedExact).toBe(true);
     });
 
-    it("State 3C.1: r_real > 0 and C < 0 with A0 <= A_inf is unreachable (depletion)", () => {
+    it("State 3C.1a: r_real > 0 and C < 0 with A0 < A_inf is unreachable (monotonically depletes below A0)", () => {
       // Nominal: 7%, Inflation: 3% -> rReal ~ 3.88%, rm ~ 0.318%
       // C = -5,000 -> A_inf = |-5000| / rm ~ 1,570,000
-      // A0 = 500,000 <= A_inf -> Portfolio returns (500k * 0.318% = 1,590) < 5,000 withdrawals
+      // A0 = 500,000 < A_inf -> Portfolio returns (500k * 0.318% = 1,590) < 5,000 withdrawals
       // Monotonically depleting!
       const res = calculateFireHorizon({
         investableAssets: 500_000,
@@ -623,6 +623,46 @@ describe("Phase 9B: Wealth Health Math & Deterministic FIRE Engine", () => {
       expect(res.status).toBe("unreachable_positive_return_negative_contribution");
       expect(res.isReachable).toBe(false);
       expect(res.horizonMonths).toBeNull();
+    });
+
+    it("State 3C.1b: r_real > 0 and C < 0 with exact equality A0 == A_inf is a stationary equilibrium boundary (not depletion to zero)", () => {
+      // Analytical derivation:
+      // When r_m > 0 and C < 0, A_inf = -C / r_m
+      // Recurrence: A(m) = A0*(1 + r_m)^m + C*((1 + r_m)^m - 1)/r_m
+      // With A0 = A_inf = -C / r_m:
+      // A(m) = (-C/r_m)*(1 + r_m)^m + (C/r_m)*(1 + r_m)^m - C/r_m = -C/r_m = A_inf
+      // Portfolio returns each month exactly cancel withdrawals (-C + C = 0).
+      // Trajectory remains identically A_inf for every m (fixed equilibrium, NOT depletion to zero).
+      // Since A0 < KFI => KFI > A_inf, target is mathematically unreachable.
+      const nominal = new Decimal("0.07");
+      const inflation = new Decimal("0.03");
+      const rReal = calculateFisherRealRate(nominal, inflation);
+      const rm = calculateMonthlyRealRate(rReal);
+      const C = new Decimal(-5000);
+      const Ainf = C.negated().div(rm); // Exact equilibrium boundary
+
+      // S = 100,000, SWR = 0.04 -> KFI = 2,500,000
+      // Since Ainf ~ 1,570,000 < KFI = 2,500,000, A0 < KFI holds strictly
+      const res = calculateFireHorizon({
+        investableAssets: Ainf,
+        annualSpending: 100_000,
+        swr: "0.04",
+        nominalReturn: "0.07",
+        inflation: "0.03",
+        monthlyContribution: -5_000,
+      });
+
+      expect(res.status).toBe("unreachable_positive_return_negative_contribution");
+      expect(res.isReachable).toBe(false);
+      expect(res.horizonMonths).toBeNull();
+      expect(res.statusLabelAr).toContain("نقطة توازن مستقرة");
+
+      // Explicit verification: at m = 1, 12, 60, 120, 600, A(m) == A_inf
+      // Confirms this is an equilibrium boundary, not a depletion-to-zero condition
+      for (const m of [1, 12, 60, 120, 600]) {
+        const AtM = computePortfolioAtMonth(Ainf, C, rm, m);
+        expect(AtM.minus(Ainf).abs().toNumber()).toBeLessThan(1e-5);
+      }
     });
 
     it("State 3C.2: r_real > 0 and C < 0 with A0 > A_inf is reachable (returns outpace withdrawals)", () => {
