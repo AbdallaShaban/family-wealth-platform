@@ -36,6 +36,7 @@ import { listValuationHistory } from "./valuationRead";
 import { captureOfficialValuationSnapshot, getLatestOfficialValuationSnapshot, listOfficialValuationSnapshots } from "./officialValuation";
 import { rebuildLotsFromEvents, type RebuildEvent } from "./lotRebuild";
 import { financialStatementsRouter } from "./financialStatementsRouter";
+import { wealthHealthRouter } from "./wealthHealthRouter";
 
 const currency = z.string().trim().regex(/^[A-Za-z]{3}$/, "أدخل رمز عملة ISO من ثلاثة أحرف.");
 const idempotencyKey = z.string().trim().min(16).max(160);
@@ -968,6 +969,7 @@ export const familyRouter = router({
   }),
 
   reports: financialStatementsRouter,
+  wealthHealth: wealthHealthRouter,
 
   zakat: router({
     list: protectedProcedure.query(async ({ ctx }) => { const family = await familyContext(ctx.user); const db = await getDb(); if (!db) throw notAvailable(); return db.select().from(zakatAssessments).where(and(eq(zakatAssessments.workspaceId, family.workspace.id), eq(zakatAssessments.profileId, family.profile.id))).orderBy(desc(zakatAssessments.assessedAt)); }),
