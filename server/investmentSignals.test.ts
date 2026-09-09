@@ -13,6 +13,6 @@ describe("investment signal reviews", () => {
   it("prioritizes stale data ahead of price-performance interpretation", () => {
     const signals = buildMarketSignals([{ instrumentId: 7, instrumentName: "ذهب", symbol: "GC=F", currency: "USD", averageCost: "100", marketPrice: "160", quoteAsOf: NOW - 49 * 60 * 60 * 1000, quoteStatus: "delayed" }], NOW);
     expect(signals).toHaveLength(1);
-    expect(signals[0]).toMatchObject({ kind: "stale_quote", percentFromCost: null, actionPath: "/research/prices" });
+    expect(signals[0]).toMatchObject({ kind: "stale_quote", percentFromCost: null, actionPath: "/investments" });
   });
 });

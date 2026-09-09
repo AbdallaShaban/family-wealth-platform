@@ -20,7 +20,7 @@ export type MarketSignal = {
   detail: string;
   percentFromCost: string | null;
   currency: string;
-  actionPath: "/research/prices" | "/trades";
+  actionPath: "/investments" | "/trades";
 };
 
 const STALE_AFTER_MS = 48 * 60 * 60 * 1000;
@@ -35,7 +35,7 @@ export function buildMarketSignals(inputs: MarketSignalInput[], now = Date.now()
     const label = item.symbol ? `${item.symbol} — ${item.instrumentName}` : item.instrumentName;
     const stale = !item.quoteAsOf || now - item.quoteAsOf > STALE_AFTER_MS || item.quoteStatus === "unavailable";
     if (stale) {
-      signals.push({ id: `stale-${item.instrumentId}`, instrumentId: item.instrumentId, kind: "stale_quote", impact: 75, title: "سعر يحتاج تحديثًا", detail: `راجع سعر ${label} ومصدره قبل الاعتماد على أي قراءة للأداء.`, percentFromCost: null, currency: item.currency, actionPath: "/research/prices" });
+      signals.push({ id: `stale-${item.instrumentId}`, instrumentId: item.instrumentId, kind: "stale_quote", impact: 75, title: "سعر يحتاج تحديثًا", detail: `راجع سعر ${label} ومصدره قبل الاعتماد على أي قراءة للأداء.`, percentFromCost: null, currency: item.currency, actionPath: "/investments" });
       continue;
     }
     if (!item.marketPrice) continue;

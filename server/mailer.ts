@@ -145,7 +145,7 @@ export async function sendMarketReviewEmail(input: { recipient: string; origin: 
   if (!isSmtpSendingEnabled(environment)) return disabledResult();
   const origin = safeOrigin(input.origin);
   if (!origin) return publicFailure("رابط المنصة المرسل للتنبيه غير صالح.");
-  const url = `${origin}/research/prices`;
+  const url = `${origin}/investments`;
   const text = `توجد إشارة أو أكثر تحتاج مراجعة في بيانات السوق داخل منصة FAMILY. افتح ${url} بعد تسجيل الدخول لمراجعة المصدر وحداثة البيانات. هذه الرسالة لا تتضمن أسعارًا أو أرصدة أو توصيات شخصية، ولا تنشئ أي صفقة أو قيد.`;
   const html = `<main dir="rtl" style="font-family:Arial,sans-serif;line-height:1.8;color:#172033"><h1>إشارة مراجعة سوقية في FAMILY</h1><p>توجد إشارة أو أكثر تحتاج مراجعة في بيانات السوق.</p><p><a href="${escapeHtml(url)}">مراجعة بيانات السوق</a></p><p>لا تتضمن هذه الرسالة أسعارًا أو أرصدة أو توصيات شخصية، ولا تنشئ أي صفقة أو قيد.</p></main>`;
   return sendWithSmtp(baseMessage(setup.config.user, input.recipient, "FAMILY — إشارة مراجعة سوقية", text, html, "market-review"), dependencies);

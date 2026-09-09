@@ -42,6 +42,10 @@ export function getPool() {
   return _pool;
 }
 
+export function setDbInstance(db: any) {
+  _db = db;
+}
+
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");

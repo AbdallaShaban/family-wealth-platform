@@ -11,7 +11,7 @@ import PriorityAlerts from "./components/PriorityAlerts";
 
 const familyPage = <T extends keyof typeof import("./pages/FamilyPages")>(name: T) => lazy(() => import("./pages/FamilyPages").then(module => ({ default: module[name] as React.ComponentType })));
 const FamilyHomeGate = lazy(() => import("./pages/FamilyHomeGate"));
-const AccountsPage = familyPage("AccountsPage"); const LedgerPage = familyPage("LedgerPage"); const CashFlowPage = familyPage("CashFlowPage"); const CashFlowRegisterPage = familyPage("CashFlowRegisterPage"); const RecurringRulesPage = familyPage("RecurringRulesPage"); const DebtsPage = familyPage("DebtsPage"); const EmergencyFundPage = familyPage("EmergencyFundPage"); const TransfersPage = familyPage("TransfersPage"); const InvestmentsPage = lazy(() => import("./pages/InvestmentsPageRedesign")); const TradingPage = lazy(() => import("./pages/TradingPageRedesign")); const ValuationPage = lazy(() => import("./pages/ValuationPageRedesign")); const GoalsPlanningPage = familyPage("GoalsPlanningPage"); const RiskAllocationPage = familyPage("RiskAllocationPage"); const ResearchPage = familyPage("ResearchPage"); const WatchlistPricingPage = familyPage("WatchlistPricingPage"); const FeeTaxRulesPage = familyPage("FeeTaxRulesPage"); const AssetsInsurancePage = familyPage("AssetsInsurancePage"); const RebalanceReviewPage = familyPage("RebalanceReviewPage"); const MembersPage = lazy(() => import("./pages/MembersPageRedesign")); const ReportsPage = familyPage("ReportsPage"); const AuditPage = familyPage("AuditPage");
+const AccountsPage = familyPage("AccountsPage"); const LedgerPage = familyPage("LedgerPage"); const CashFlowPage = familyPage("CashFlowPage"); const CashFlowRegisterPage = familyPage("CashFlowRegisterPage"); const RecurringRulesPage = familyPage("RecurringRulesPage"); const DebtsPage = familyPage("DebtsPage"); const EmergencyFundPage = familyPage("EmergencyFundPage"); const TransfersPage = familyPage("TransfersPage"); const InvestmentsPage = lazy(() => import("./pages/InvestmentsPageRedesign")); const TradingPage = lazy(() => import("./pages/TradingPageRedesign")); const ValuationPage = lazy(() => import("./pages/ValuationPageRedesign")); const GoalsPlanningPage = familyPage("GoalsPlanningPage"); const RiskAllocationPage = familyPage("RiskAllocationPage"); const FeeTaxRulesPage = familyPage("FeeTaxRulesPage"); const AssetsInsurancePage = familyPage("AssetsInsurancePage"); const RebalanceReviewPage = familyPage("RebalanceReviewPage"); const MembersPage = lazy(() => import("./pages/MembersPageRedesign")); const ReportsPage = familyPage("ReportsPage"); const AuditPage = familyPage("AuditPage");
 const BankImportInbox = lazy(() => import("./pages/BankImportInbox"));
 const GovernanceApprovals = lazy(() => import("./pages/ApprovalsPage"));
 const ScenarioPlanning = lazy(() => import("./pages/ScenariosPage"));
@@ -19,7 +19,6 @@ const OperationsCenter = lazy(() => import("./pages/OperationsCenter"));
 const VaultPage = lazy(() => import("./pages/VaultPage"));
 const FamilyExportPage = lazy(() => import("./pages/FamilyExportPage"));
 const SettlementPage = lazy(() => import("./pages/SettlementPage"));
-const AssessmentReport = lazy(() => import("./pages/Home"));
 const PlatformAdministrationPage = lazy(() => import("./pages/PlatformAdministrationPage"));
 const MarketDataQualityPage = lazy(() => import("./pages/MarketDataQualityPage"));
 const ReconciliationPage = lazy(() => import("./pages/ReconciliationPage"));
@@ -58,8 +57,6 @@ function Router() {
       <Route path={"/lot-accounting"} component={LotAccountingPage} />
       <Route path={"/goals"} component={GoalsPlanningPage} />
       <Route path={"/risk"} component={RiskAllocationPage} />
-      <Route path={"/research"} component={ResearchPage} />
-      <Route path={"/research/prices"} component={WatchlistPricingPage} />
       <Route path={"/fee-tax"} component={FeeTaxRulesPage} />
       <Route path={"/assets-insurance"} component={AssetsInsurancePage} />
       <Route path={"/risk/rebalance"} component={RebalanceReviewPage} />
@@ -77,7 +74,6 @@ function Router() {
       <Route path={"/auditor"} component={AuditorPortalPage} />
       <Route path={"/auditor-portal"} component={AuditorPortalPage} />
       <Route path={"/audit"} component={AuditPage} />
-      <Route path={"/assessment"} component={AssessmentReport} />
       <Route path={"/admin/users"} component={PlatformAdministrationPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

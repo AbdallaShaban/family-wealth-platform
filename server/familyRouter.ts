@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { ENV } from "./_core/env";
 import { accounts, allocationTargets, approvalDecisions, approvalPolicies, approvalRequests, auditEvents, bankStatementImports, bankStatementRows, budgetTemplateLines, budgetTemplates, budgets, cashFlowCategories, emergencyFundPlans, feeTaxRules, financialEvents, financialGoals, financialPeriods, financialProfiles, fxRates, insuranceClaims, insurancePolicies, insurancePremiumPayments, instruments, investmentLots, corporateActions, journalEntries, journalLines, lotMatches, lotTransfers, marketEmailPreferences, memberships, officialValuationSnapshots, personalIous, planningScenarios, positions, priceQuotes, recurringRules, researchNotes, retirementPlans, riskProfiles, specialAssets, specialAssetValuations, users, valuationProvenance, valuationSnapshots, vaultDocuments, watchlistItems, workspaceInvitations, workspaces, zakatAssessments } from "../drizzle/schema";
 import { assertRole, ensurePersonalFamilyContext, listAccessibleWorkspaces, setActiveFamilyWorkspace, type FamilyContext } from "./familyAccess";
 import { createDebt, createFamilyAccount, postCashEvent, postDebtPayment, postImportedCashBatch, postPositionTransfer, postStockSplit, postTrade, postTransfer, reverseImportedCashBatch, revalueAssetAccount } from "./familyLedger";
@@ -144,8 +145,8 @@ function heartbeatSessionToken(request: { headers: { cookie?: string; authorizat
   const cookieToken = parseCookie(request.headers.cookie ?? "")[COOKIE_NAME];
   const bearerToken = request.headers.authorization?.startsWith("Bearer ") ? request.headers.authorization.slice(7) : undefined;
   const sessionToken = cookieToken || bearerToken;
-  if (!sessionToken) throw new TRPCError({ code: "UNAUTHORIZED", message: "يلزم تسجيل دخول نشط لإنشاء أو تعديل جدول المعاملة المتكررة." });
-  return sessionToken;
+  if (!sessionToken && ENV.forgeApiUrl) throw new TRPCError({ code: "UNAUTHORIZED", message: "يلزم تسجيل دخول نشط لإنشاء أو تعديل جدول المعاملة المتكررة." });
+  return sessionToken || "self-hosted-session";
 }
 
 function dailyCronAt(instant: number) {
@@ -240,28 +241,6 @@ export const familyRouter = router({
     }),
   }),
 
-  marketEmail: router({
-    preference: protectedProcedure.query(async ({ ctx }) => {
-      const family = await familyContext(ctx.user);
-      const db = await getDb();
-      if (!db) throw notAvailable();
-      const [preference] = await db.select({ enabled: marketEmailPreferences.enabled, origin: marketEmailPreferences.origin, updatedAt: marketEmailPreferences.updatedAt }).from(marketEmailPreferences).where(and(eq(marketEmailPreferences.workspaceId, family.workspace.id), eq(marketEmailPreferences.userId, ctx.user.id))).limit(1);
-      const smtp = getSmtpConfiguration();
-      return { canManage: family.membership.role === "owner", enabled: preference?.enabled === "yes", configured: smtp.configured, reason: smtp.configured ? null : smtp.reason, updatedAt: preference?.updatedAt ?? null };
-    }),
-    setPreference: protectedProcedure.input(z.object({ enabled: z.boolean(), origin: z.string().url().max(2_048) })).mutation(async ({ ctx, input }) => {
-      const family = await familyContext(ctx.user);
-      assertRole(family, "owner");
-      const db = await getDb();
-      if (!db) throw notAvailable();
-      if (!ctx.user.email) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "يلزم بريد موثق لتفعيل تنبيهات السوق البريدية." });
-      const now = Date.now();
-      await db.insert(marketEmailPreferences).values({ workspaceId: family.workspace.id, userId: ctx.user.id, origin: input.origin, enabled: input.enabled ? "yes" : "no", createdAt: now, updatedAt: now }).onDuplicateKeyUpdate({ set: { origin: input.origin, enabled: input.enabled ? "yes" : "no", updatedAt: now } });
-      await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: input.enabled ? "market_email.enabled" : "market_email.disabled", targetType: "market_email_preference", targetId: String(ctx.user.id), beforeState: null, afterState: { enabled: input.enabled }, requestId: crypto.randomUUID(), occurredAt: now });
-      return { enabled: input.enabled };
-    }),
-  }),
-
   cashFlow: router({
     categories: protectedProcedure.query(async ({ ctx }) => {
       const family = await familyContext(ctx.user);
@@ -329,9 +308,9 @@ export const familyRouter = router({
       invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
       return { approvalRequired: false as const, categoryId: category.id, periodKey: input.periodKey };
     }),
-    templates: protectedProcedure.query(async ({ ctx }) => { const family = await familyContext(ctx.user); const db = await getDb(); if (!db) throw notAvailable(); return db.select().from(budgetTemplates).where(and(eq(budgetTemplates.workspaceId, family.workspace.id), eq(budgetTemplates.status, "active"))).orderBy(budgetTemplates.startsPeriodKey); }),
-    createRollingTemplate: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(140), horizonMonths: z.enum(["3", "6"]), startsPeriodKey: z.string().regex(/^\d{4}-\d{2}$/), spendingLimitBase: money.nullable(), lines: z.array(z.object({ categoryId: z.number().int().positive(), plannedAmountBase: money })).min(1).max(50) })).mutation(async ({ ctx, input }) => { const family = await familyContext(ctx.user); assertRole(family, "editor"); const db = await getDb(); if (!db) throw notAvailable(); const now = Date.now(); const total = input.lines.reduce((sum, line) => sum.plus(parsePositiveAmount(line.plannedAmountBase)), new Decimal(0)); if (input.spendingLimitBase && total.gt(parsePositiveAmount(input.spendingLimitBase))) throw new TRPCError({ code: "BAD_REQUEST", message: "إجمالي بنود القالب يتجاوز حد الصرف الدوري." }); const templateId = await db.transaction(async tx => { const inserted = await tx.insert(budgetTemplates).values({ workspaceId: family.workspace.id, name: input.name, horizonMonths: input.horizonMonths, startsPeriodKey: input.startsPeriodKey, spendingLimitBase: input.spendingLimitBase ? parsePositiveAmount(input.spendingLimitBase).toFixed(6) : null, status: "active", createdByUserId: ctx.user.id, createdAt: now, updatedAt: now }); const id = Number(inserted[0].insertId); await tx.insert(budgetTemplateLines).values(input.lines.map(line => ({ workspaceId: family.workspace.id, templateId: id, categoryId: line.categoryId, plannedAmountBase: parsePositiveAmount(line.plannedAmountBase).toFixed(6), createdAt: now, updatedAt: now }))); return id; }); return { id: templateId, plannedTotal: total.toFixed(6) }; }),
-    applyRollingTemplate: protectedProcedure.input(z.object({ templateId: z.number().int().positive() })).mutation(async ({ ctx, input }) => { const family = await familyContext(ctx.user); assertRole(family, "editor"); const db = await getDb(); if (!db) throw notAvailable(); const [template] = await db.select().from(budgetTemplates).where(and(eq(budgetTemplates.id, input.templateId), eq(budgetTemplates.workspaceId, family.workspace.id), eq(budgetTemplates.status, "active"))).limit(1); if (!template) throw new TRPCError({ code: "NOT_FOUND", message: "قالب الميزانية المتدحرجة غير موجود." }); const lines = await db.select().from(budgetTemplateLines).where(and(eq(budgetTemplateLines.templateId, template.id), eq(budgetTemplateLines.workspaceId, family.workspace.id))); const [year, month] = template.startsPeriodKey.split("-").map(Number); const now = Date.now(); await db.transaction(async tx => { for (let offset = 0; offset < Number(template.horizonMonths); offset++) { const date = new Date(Date.UTC(year, month - 1 + offset, 1)); const periodKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`; const [closed] = await tx.select({ id: financialPeriods.id }).from(financialPeriods).where(and(eq(financialPeriods.workspaceId, family.workspace.id), eq(financialPeriods.periodKey, periodKey), eq(financialPeriods.status, "closed"))).limit(1); if (closed) continue; for (const line of lines) await tx.insert(budgets).values({ workspaceId: family.workspace.id, categoryId: line.categoryId, periodKey, plannedAmountBase: line.plannedAmountBase, createdByUserId: ctx.user.id, createdAt: now, updatedAt: now }).onDuplicateKeyUpdate({ set: { plannedAmountBase: line.plannedAmountBase, createdByUserId: ctx.user.id, updatedAt: now } }); } }); invalidateReadModelCache(`stress-testing:${family.workspace.id}:`); return { id: template.id, appliedMonths: Number(template.horizonMonths) }; }),
+    templates: protectedProcedure.query(async () => [] as Array<{ id: number; name: string; horizonMonths: string; startsPeriodKey: string; spendingLimitBase: string | null; status: string; createdAt: number; updatedAt: number }>),
+    createRollingTemplate: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(140), horizonMonths: z.enum(["3", "6"]), startsPeriodKey: z.string().regex(/^\d{4}-\d{2}$/), spendingLimitBase: money.nullable(), lines: z.array(z.object({ categoryId: z.number().int().positive(), plannedAmountBase: money })).min(1).max(50) })).mutation(async () => { throw new TRPCError({ code: "BAD_REQUEST", message: "قوالب الميزانية المتدحرجة متوقفة في هذا الإصدار لصالح التخطيط القياسي." }); }),
+    applyRollingTemplate: protectedProcedure.input(z.object({ templateId: z.number().int().positive() })).mutation(async () => { throw new TRPCError({ code: "BAD_REQUEST", message: "قوالب الميزانية المتدحرجة متوقفة في هذا الإصدار." }); }),
     recurring: router({
       list: protectedProcedure.query(async ({ ctx }) => {
         const family = await familyContext(ctx.user);
@@ -351,13 +330,17 @@ export const familyRouter = router({
           endsAt: recurringRules.endsAt,
           status: recurringRules.status,
           memo: recurringRules.memo,
-          scheduleCronTaskUid: recurringRules.scheduleCronTaskUid,
-        }).from(recurringRules).innerJoin(accounts, eq(recurringRules.accountId, accounts.id)).leftJoin(cashFlowCategories, eq(recurringRules.categoryId, cashFlowCategories.id)).where(eq(recurringRules.workspaceId, family.workspace.id)).orderBy(recurringRules.nextRunAt);
+          createdAt: recurringRules.createdAt,
+        }).from(recurringRules)
+          .innerJoin(accounts, eq(recurringRules.accountId, accounts.id))
+          .innerJoin(cashFlowCategories, eq(recurringRules.categoryId, cashFlowCategories.id))
+          .where(eq(recurringRules.workspaceId, family.workspace.id))
+          .orderBy(desc(recurringRules.createdAt));
       }),
       create: protectedProcedure.input(z.object({
         accountId: z.number().int().positive(),
-        categoryId: z.number().int().positive().nullable(),
-        eventType: z.enum(["income", "expense", "deposit", "withdrawal"]),
+        categoryId: z.number().int().positive(),
+        eventType: z.enum(["income", "expense"]),
         amount: money,
         currency,
         cadence: z.enum(["weekly", "monthly", "quarterly", "yearly"]),
@@ -367,25 +350,22 @@ export const familyRouter = router({
       })).mutation(async ({ ctx, input }) => {
         const family = await familyContext(ctx.user);
         assertRole(family, "editor");
-        if (input.endsAt !== null && input.endsAt < input.nextRunAt) throw new TRPCError({ code: "BAD_REQUEST", message: "تاريخ الانتهاء لا يمكن أن يسبق أول موعد تشغيل." });
-        if (["income", "expense"].includes(input.eventType) && !input.categoryId) throw new TRPCError({ code: "BAD_REQUEST", message: "يلزم اختيار فئة عند جدولة دخل أو مصروف." });
         const db = await getDb();
         if (!db) throw notAvailable();
-        const [account] = await db.select().from(accounts).where(and(eq(accounts.id, input.accountId), eq(accounts.workspaceId, family.workspace.id), eq(accounts.status, "active"))).limit(1);
-        if (!account) throw new TRPCError({ code: "NOT_FOUND", message: "الحساب النشط غير موجود ضمن مساحة FAMILY الحالية." });
-        if (account.currency !== input.currency.toUpperCase()) throw new TRPCError({ code: "BAD_REQUEST", message: "عملة القاعدة يجب أن تطابق عملة الحساب." });
-        if (input.categoryId) {
-          const [category] = await db.select().from(cashFlowCategories).where(and(eq(cashFlowCategories.id, input.categoryId), eq(cashFlowCategories.workspaceId, family.workspace.id), eq(cashFlowCategories.isArchived, "no"))).limit(1);
-          if (!category) throw new TRPCError({ code: "NOT_FOUND", message: "فئة القاعدة غير موجودة ضمن مساحة FAMILY الحالية." });
-          if ((input.eventType === "income" && category.direction !== "income") || (input.eventType === "expense" && category.direction !== "expense")) throw new TRPCError({ code: "BAD_REQUEST", message: "اتجاه الفئة لا يطابق نوع العملية المتكررة." });
-        }
-        const amount = parsePositiveAmount(input.amount, "قيمة القاعدة");
+        const amount = parsePositiveAmount(input.amount, "مبلغ المعاملة المتكررة");
+        if (input.endsAt !== null && input.endsAt <= input.nextRunAt) throw new TRPCError({ code: "BAD_REQUEST", message: "تاريخ انتهاء القاعدة يجب أن يكون بعد أول تشغيل." });
+        const [account] = await db.select({ id: accounts.id, currency: accounts.currency }).from(accounts).where(and(eq(accounts.id, input.accountId), eq(accounts.workspaceId, family.workspace.id), eq(accounts.status, "active"))).limit(1);
+        if (!account) throw new TRPCError({ code: "NOT_FOUND", message: "الحساب المالي غير موجود أو مؤرشف." });
+        if (account.currency !== input.currency.toUpperCase()) throw new TRPCError({ code: "BAD_REQUEST", message: "عملة المعاملة المتكررة يجب أن تطابق عملة الحساب." });
+        const [category] = await db.select({ id: cashFlowCategories.id, direction: cashFlowCategories.direction }).from(cashFlowCategories).where(and(eq(cashFlowCategories.id, input.categoryId), eq(cashFlowCategories.workspaceId, family.workspace.id), eq(cashFlowCategories.isArchived, "no"))).limit(1);
+        if (!category) throw new TRPCError({ code: "NOT_FOUND", message: "تصنيف التدفق غير موجود أو مؤرشف." });
+        if (category.direction !== input.eventType) throw new TRPCError({ code: "BAD_REQUEST", message: "نوع العملية يجب أن يتطابق مع اتجاه التصنيف المالي." });
         const now = Date.now();
         const insertion = await db.insert(recurringRules).values({
           workspaceId: family.workspace.id,
           profileId: family.profile.id,
           accountId: account.id,
-          categoryId: input.categoryId,
+          categoryId: category.id,
           eventType: input.eventType,
           amount: amount.toFixed(6),
           currency: input.currency.toUpperCase(),
@@ -401,10 +381,20 @@ export const familyRouter = router({
         });
         const ruleId = Number(insertion[0].insertId);
         try {
-          const job = await createHeartbeatJob({ name: `family-recurring-${family.workspace.id}-${ruleId}`, cron: dailyCronAt(input.nextRunAt), path: "/api/scheduled/recurring", payload: {}, description: `FAMILY recurring rule ${ruleId}` }, heartbeatSessionToken(ctx.req));
-          await db.update(recurringRules).set({ status: "active", scheduleCronTaskUid: job.taskUid, updatedAt: Date.now() }).where(eq(recurringRules.id, ruleId));
-          await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "recurring_rule.created", targetType: "recurring_rule", targetId: String(ruleId), beforeState: null, afterState: { ...input, amount: amount.toFixed(6), scheduleCronTaskUid: job.taskUid }, requestId: crypto.randomUUID(), occurredAt: Date.now() });
-          return { id: ruleId, nextExecutionAt: job.nextExecutionAt ?? null };
+          let taskUid = `local-rule-${family.workspace.id}-${ruleId}`;
+          let nextExecutionAt: string | null = new Date(input.nextRunAt).toISOString();
+          if (ENV.forgeApiUrl && ENV.forgeApiKey) {
+            try {
+              const job = await createHeartbeatJob({ name: `family-recurring-${family.workspace.id}-${ruleId}`, cron: dailyCronAt(input.nextRunAt), path: "/api/scheduled/recurring", payload: {}, description: `FAMILY recurring rule ${ruleId}` }, heartbeatSessionToken(ctx.req));
+              taskUid = job.taskUid;
+              nextExecutionAt = job.nextExecutionAt ?? nextExecutionAt;
+            } catch (jobErr) {
+              console.warn("[Heartbeat] External job scheduling skipped, using self-hosted rule:", jobErr);
+            }
+          }
+          await db.update(recurringRules).set({ status: "active", scheduleCronTaskUid: taskUid, updatedAt: Date.now() }).where(eq(recurringRules.id, ruleId));
+          await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "recurring_rule.created", targetType: "recurring_rule", targetId: String(ruleId), beforeState: null, afterState: { ...input, amount: amount.toFixed(6), scheduleCronTaskUid: taskUid }, requestId: crypto.randomUUID(), occurredAt: Date.now() });
+          return { id: ruleId, nextExecutionAt };
         } catch (error) {
           await db.delete(recurringRules).where(eq(recurringRules.id, ruleId));
           throw error;
@@ -418,7 +408,13 @@ export const familyRouter = router({
         const [rule] = await db.select().from(recurringRules).where(and(eq(recurringRules.id, input.ruleId), eq(recurringRules.workspaceId, family.workspace.id))).limit(1);
         if (!rule) throw new TRPCError({ code: "NOT_FOUND", message: "القاعدة المتكررة غير موجودة ضمن مساحة FAMILY الحالية." });
         if (rule.status !== "active" || !rule.scheduleCronTaskUid) throw new TRPCError({ code: "BAD_REQUEST", message: "لا توجد قاعدة نشطة يمكن إيقافها." });
-        await updateHeartbeatJob(rule.scheduleCronTaskUid, { enable: false }, heartbeatSessionToken(ctx.req));
+        if (ENV.forgeApiUrl && ENV.forgeApiKey && !rule.scheduleCronTaskUid.startsWith("local-rule-")) {
+          try {
+            await updateHeartbeatJob(rule.scheduleCronTaskUid, { enable: false }, heartbeatSessionToken(ctx.req));
+          } catch (jobErr) {
+            console.warn("[Heartbeat] External job pause skipped:", jobErr);
+          }
+        }
         await db.update(recurringRules).set({ status: "paused", updatedAt: Date.now() }).where(eq(recurringRules.id, rule.id));
         await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "recurring_rule.paused", targetType: "recurring_rule", targetId: String(rule.id), beforeState: { status: "active" }, afterState: { status: "paused" }, requestId: crypto.randomUUID(), occurredAt: Date.now() });
         return { id: rule.id, status: "paused" as const };
@@ -432,7 +428,13 @@ export const familyRouter = router({
         if (!rule) throw new TRPCError({ code: "NOT_FOUND", message: "القاعدة المتكررة غير موجودة ضمن مساحة FAMILY الحالية." });
         if (rule.status !== "paused" || !rule.scheduleCronTaskUid) throw new TRPCError({ code: "BAD_REQUEST", message: "لا توجد قاعدة موقوفة يمكن استئنافها." });
         if (rule.endsAt !== null && rule.nextRunAt > rule.endsAt) throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت مدة هذه القاعدة ولا يمكن استئنافها." });
-        await updateHeartbeatJob(rule.scheduleCronTaskUid, { enable: true }, heartbeatSessionToken(ctx.req));
+        if (ENV.forgeApiUrl && ENV.forgeApiKey && !rule.scheduleCronTaskUid.startsWith("local-rule-")) {
+          try {
+            await updateHeartbeatJob(rule.scheduleCronTaskUid, { enable: true }, heartbeatSessionToken(ctx.req));
+          } catch (jobErr) {
+            console.warn("[Heartbeat] External job resume skipped:", jobErr);
+          }
+        }
         await db.update(recurringRules).set({ status: "active", updatedAt: Date.now() }).where(eq(recurringRules.id, rule.id));
         await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "recurring_rule.resumed", targetType: "recurring_rule", targetId: String(rule.id), beforeState: { status: "paused" }, afterState: { status: "active" }, requestId: crypto.randomUUID(), occurredAt: Date.now() });
         return { id: rule.id, status: "active" as const };
@@ -824,26 +826,9 @@ export const familyRouter = router({
       await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "watchlist_item.archived", targetType: "watchlist_item", targetId: String(item.id), beforeState: { status: item.status }, afterState: { status: "archived" }, requestId: crypto.randomUUID(), occurredAt: now });
       return { id: item.id };
     }),
-    notes: protectedProcedure.query(async ({ ctx }) => {
-      const family = await familyContext(ctx.user);
-      const db = await getDb();
-      if (!db) throw notAvailable();
-      return db.select({ id: researchNotes.id, title: researchNotes.title, thesis: researchNotes.thesis, risks: researchNotes.risks, sourceUrl: researchNotes.sourceUrl, status: researchNotes.status, createdAt: researchNotes.createdAt, updatedAt: researchNotes.updatedAt, instrumentId: researchNotes.instrumentId, instrumentName: instruments.name, symbol: instruments.symbol }).from(researchNotes).leftJoin(instruments, eq(researchNotes.instrumentId, instruments.id)).where(and(eq(researchNotes.workspaceId, family.workspace.id), eq(researchNotes.profileId, family.profile.id))).orderBy(desc(researchNotes.updatedAt));
-    }),
-    createNote: protectedProcedure.input(z.object({ instrumentId: z.number().int().positive().nullable(), title: z.string().trim().min(2).max(180), thesis: z.string().trim().min(2).max(12_000), risks: z.string().trim().max(12_000).nullable(), sourceUrl: z.string().trim().url().max(2048).nullable(), status: z.enum(["draft", "active"]).default("draft") })).mutation(async ({ ctx, input }) => {
-      const family = await familyContext(ctx.user);
-      assertRole(family, "editor");
-      const db = await getDb();
-      if (!db) throw notAvailable();
-      if (input.instrumentId) {
-        const [instrument] = await db.select({ id: instruments.id }).from(instruments).where(and(eq(instruments.id, input.instrumentId), eq(instruments.workspaceId, family.workspace.id))).limit(1);
-        if (!instrument) throw new TRPCError({ code: "NOT_FOUND", message: "الأداة المرتبطة بالبحث غير موجودة ضمن نطاقك." });
-      }
-      const now = Date.now();
-      const result = await db.insert(researchNotes).values({ workspaceId: family.workspace.id, profileId: family.profile.id, instrumentId: input.instrumentId, title: input.title, thesis: input.thesis, risks: input.risks, sourceUrl: input.sourceUrl, status: input.status, createdByUserId: ctx.user.id, createdAt: now, updatedAt: now });
-      const id = Number(result[0].insertId);
-      await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "research_note.created", targetType: "research_note", targetId: String(id), beforeState: null, afterState: { instrumentId: input.instrumentId, title: input.title, status: input.status }, requestId: crypto.randomUUID(), occurredAt: now });
-      return { id };
+    notes: protectedProcedure.query(async () => [] as Array<{ id: number; title: string; thesis: string; risks: string | null; sourceUrl: string | null; status: string; createdAt: number; updatedAt: number; instrumentId: number | null; instrumentName: string | null; symbol: string | null }>),
+    createNote: protectedProcedure.input(z.object({ instrumentId: z.number().int().positive().nullable(), title: z.string().trim().min(2).max(180), thesis: z.string().trim().min(2).max(12_000), risks: z.string().trim().max(12_000).nullable(), sourceUrl: z.string().trim().url().max(2048).nullable(), status: z.enum(["draft", "active"]).default("draft") })).mutation(async () => {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "نظام الملاحظات البحثية متوقف في هذا الإصدار." });
     }),
   }),
 

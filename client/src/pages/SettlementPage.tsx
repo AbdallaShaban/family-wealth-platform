@@ -22,7 +22,7 @@ interface PendingSettlement {
   description: string;
 }
 
-export default function SettlementPage() {
+export function SettlementMatchingView({ showHeader = true }: { showHeader?: boolean }) {
   const utils = trpc.useUtils();
   const events = trpc.family.ledger.recent.useQuery();
   const ious = trpc.family.ious.list.useQuery();
@@ -80,18 +80,19 @@ export default function SettlementPage() {
   };
 
   return (
-    <DashboardLayout>
-      <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
+    <div className="space-y-6" dir="rtl">
+      {showHeader && (
         <PageHeader
           title="تسويات مرتبطة بالدفتر"
           description="اختر حدثاً منشوراً أولاً. يتحقق النظام خادمياً من أنه ضمن مساحتك وأن نوعه وعملته يتوافقان مع السجل قبل أي تغيير للحالة."
           icon={Handshake}
           breadcrumbs={[
-            { label: "الالتزامات والحماية", href: "/family/debts" },
+            { label: "النقد والالتزامات", href: "/cash-flow" },
             { label: "التسويات وتصفية الالتزامات" },
           ]}
           badge="مطابقة مع الدفتر"
         />
+      )}
 
         <Card className="fintech-surface-card">
           <CardHeader>
@@ -203,6 +204,15 @@ export default function SettlementPage() {
           isLoading={busy}
           onConfirm={handleConfirmAction}
         />
+    </div>
+  );
+}
+
+export default function SettlementPage() {
+  return (
+    <DashboardLayout>
+      <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
+        <SettlementMatchingView showHeader={true} />
       </main>
     </DashboardLayout>
   );
