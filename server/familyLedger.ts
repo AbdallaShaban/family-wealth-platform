@@ -290,6 +290,7 @@ async function createPostedEvent(tx: any, args: {
   });
   invalidateReadModelCache(`wealth-health:score:${args.context.workspace.id}`);
   invalidateReadModelCache(`performance:${args.context.workspace.id}:`);
+  invalidateReadModelCache(`stress-testing:${args.context.workspace.id}:`);
   return { id: eventId, status: "posted" as const, duplicate: false };
 }
 
@@ -355,6 +356,7 @@ export async function createFamilyAccount(args: {
     });
     invalidateReadModelCache(`wealth-health:score:${args.context.workspace.id}`);
     invalidateReadModelCache(`performance:${args.context.workspace.id}:`);
+    invalidateReadModelCache(`stress-testing:${args.context.workspace.id}:`);
     if (!openingBalance) return { accountId, openingEventId: null };
 
     if (!["cash", "bank", "brokerage", "wallet", "asset"].includes(args.accountType)) {
@@ -541,6 +543,7 @@ export async function reverseImportedCashBatch(args: {
     }
     invalidateReadModelCache(`wealth-health:score:${args.context.workspace.id}`);
     invalidateReadModelCache(`performance:${args.context.workspace.id}:`);
+    invalidateReadModelCache(`stress-testing:${args.context.workspace.id}:`);
     return results;
   });
 }

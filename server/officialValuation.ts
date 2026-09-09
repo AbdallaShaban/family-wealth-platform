@@ -156,6 +156,7 @@ export async function captureOfficialValuationSnapshot(context: FamilyContext, a
   });
   const inserted = await db.insert(officialValuationSnapshots).values(candidate);
   invalidateReadModelCache(`wealth-health:score:${context.workspace.id}`);
+  invalidateReadModelCache(`stress-testing:${context.workspace.id}:`);
   return { id: Number(inserted[0].insertId), ...candidate };
 }
 

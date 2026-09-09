@@ -889,6 +889,7 @@ export const wealthHealthRouter = router({
 
       // Invalidate read cache
       invalidateReadModelCache(`wealth-health:score:${workspaceId}`);
+      invalidateReadModelCache(`stress-testing:${workspaceId}:`);
 
       return { success: true, message: "تم حفظ افتراضات التخطيط المالي بنجاح." };
     }),

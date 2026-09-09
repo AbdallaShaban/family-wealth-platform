@@ -73,4 +73,59 @@ describe("readModelCache", () => {
     expect(reloaded.load).toBe(3);
     expect(ws1Loads).toBe(3);
   });
+
+  it("isolates stress-testing read models across workspaces with delimiter-safe prefix invalidation", async () => {
+    let ws1ProfileLoads = 0;
+    let ws1MacroLoads = 0;
+    let ws1McLoads = 0;
+    let ws1RunwayLoads = 0;
+    let ws2ProfileLoads = 0;
+    let ws10ProfileLoads = 0;
+
+    const ws1Profile = async () => ({ profile: "ws1", count: ++ws1ProfileLoads });
+    const ws1Macro = async () => ({ shock: "gfc", count: ++ws1MacroLoads });
+    const ws1Mc = async () => ({ paths: 1000, count: ++ws1McLoads });
+    const ws1Runway = async () => ({ runway: 24, count: ++ws1RunwayLoads });
+    const ws2Profile = async () => ({ profile: "ws2", count: ++ws2ProfileLoads });
+    const ws10Profile = async () => ({ profile: "ws10", count: ++ws10ProfileLoads });
+
+    // Populate all 4 stress testing cache entries for Workspace 1
+    await getCachedReadModel("stress-testing:1:profile:1700000000", ws1Profile, 10_000);
+    await getCachedReadModel("stress-testing:1:macro:gfc_2008_inspired", ws1Macro, 30_000);
+    await getCachedReadModel("stress-testing:1:mc:10:1000:42:hash123", ws1Mc, 60_000);
+    await getCachedReadModel("stress-testing:1:runway:50:0.00", ws1Runway, 15_000);
+
+    // Populate Workspace 2 and Workspace 10 (delimiter safety test for prefix "1:")
+    await getCachedReadModel("stress-testing:2:profile:1700000000", ws2Profile, 10_000);
+    await getCachedReadModel("stress-testing:10:profile:1700000000", ws10Profile, 10_000);
+
+    expect(readModelCacheSize()).toBe(6);
+    expect(ws1ProfileLoads).toBe(1);
+    expect(ws1MacroLoads).toBe(1);
+    expect(ws1McLoads).toBe(1);
+    expect(ws1RunwayLoads).toBe(1);
+    expect(ws2ProfileLoads).toBe(1);
+    expect(ws10ProfileLoads).toBe(1);
+
+    // Read hits without re-evaluating loaders
+    expect(await getCachedReadModel("stress-testing:1:profile:1700000000", ws1Profile)).toEqual({ profile: "ws1", count: 1 });
+    expect(ws1ProfileLoads).toBe(1);
+
+    // Invalidate Workspace 1 stress testing cache using delimiter-safe prefix
+    invalidateReadModelCache("stress-testing:1:");
+
+    // Exactly 4 entries for Workspace 1 must be evicted; Workspace 2 and Workspace 10 must remain
+    expect(readModelCacheSize()).toBe(2);
+
+    // Workspace 2 and Workspace 10 remain intact in cache
+    expect(await getCachedReadModel("stress-testing:2:profile:1700000000", ws2Profile)).toEqual({ profile: "ws2", count: 1 });
+    expect(await getCachedReadModel("stress-testing:10:profile:1700000000", ws10Profile)).toEqual({ profile: "ws10", count: 1 });
+    expect(ws2ProfileLoads).toBe(1);
+    expect(ws10ProfileLoads).toBe(1);
+
+    // Workspace 1 reloads with fresh data
+    const freshProfile = await getCachedReadModel("stress-testing:1:profile:1700000000", ws1Profile);
+    expect(freshProfile).toEqual({ profile: "ws1", count: 2 });
+    expect(ws1ProfileLoads).toBe(2);
+  });
 });

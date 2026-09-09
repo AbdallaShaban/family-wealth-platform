@@ -3,6 +3,7 @@ import { accounts, fxRates, instruments, priceQuotes, valuationProvenance, valua
 import { getDb } from "./db";
 import { fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
 import { buildFxProvenance, buildInstrumentSnapshot, buildMarketProvenance } from "./valuationProvenance";
+import { invalidateReadModelCache } from "./readModelCache";
 
 export type MarketRefreshResult = {
   refreshedQuotes: number;
@@ -30,6 +31,9 @@ export async function refreshYahooMarketData() : Promise<MarketRefreshResult> {
   const spaces = await db.select({ id: workspaces.id, baseCurrency: workspaces.baseCurrency }).from(workspaces).limit(100);
 
   for (const workspace of spaces) {
+    let workspaceQuotesRefreshed = 0;
+    let workspaceFxRefreshed = 0;
+
     const activeInstruments = await db.select().from(instruments).where(and(eq(instruments.workspaceId, workspace.id), inArray(instruments.assetType, ["equity", "fund", "gold"]))).limit(100);
     for (const instrument of activeInstruments) {
       if (!instrument.symbol) { result.skipped += 1; continue; }
@@ -43,6 +47,7 @@ export async function refreshYahooMarketData() : Promise<MarketRefreshResult> {
         const provenanceInsert = await db.insert(valuationProvenance).values(buildMarketProvenance({ workspaceId: workspace.id, provider: "yahoo-finance2", source: quote.source, rawSymbol: instrument.symbol, fetchedAt: capturedAt, asOf: quote.asOf, status: quote.quoteStatus, metadata: { instrumentId: instrument.id, quoteId } }));
         await db.insert(valuationSnapshots).values(buildInstrumentSnapshot({ workspaceId: workspace.id, instrumentId: instrument.id, provenanceId: Number(provenanceInsert[0].insertId), quoteId, price: quote.price, currency: quote.currency, baseCurrency: workspace.baseCurrency, status: quote.quoteStatus, asOf: quote.asOf, capturedAt }));
         result.refreshedQuotes += 1;
+        workspaceQuotesRefreshed += 1;
       } catch (error) {
         result.failures.push({ workspaceId: workspace.id, item: instrument.symbol, reason: error instanceof Error ? error.message : "فشل مزود السوق." });
       }
@@ -59,8 +64,17 @@ export async function refreshYahooMarketData() : Promise<MarketRefreshResult> {
         const fxInsert = await db.insert(fxRates).values({ workspaceId: workspace.id, fromCurrency: currency, toCurrency: workspace.baseCurrency, rate: quote.price, source: quote.source, rateStatus: quote.quoteStatus, asOf: quote.asOf, createdAt: capturedAt });
         await db.insert(valuationProvenance).values(buildFxProvenance({ workspaceId: workspace.id, provider: "yahoo-finance2", source: quote.source, rawSymbol: quote.symbol, fromCurrency: currency, toCurrency: workspace.baseCurrency, fetchedAt: capturedAt, asOf: quote.asOf, status: quote.quoteStatus, fxRateId: Number(fxInsert[0].insertId) }));
         result.refreshedFx += 1;
+        workspaceFxRefreshed += 1;
       } catch (error) {
         result.failures.push({ workspaceId: workspace.id, item: `${currency}/${workspace.baseCurrency}`, reason: error instanceof Error ? error.message : "فشل مزود الصرف." });
+      }
+    }
+
+    if (workspaceQuotesRefreshed > 0 || workspaceFxRefreshed > 0) {
+      invalidateReadModelCache(`wealth-health:score:${workspace.id}`);
+      invalidateReadModelCache(`stress-testing:${workspace.id}:`);
+      if (workspaceFxRefreshed > 0) {
+        invalidateReadModelCache(`fx:${workspace.id}`);
       }
     }
   }
