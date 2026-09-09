@@ -6,7 +6,7 @@ import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePrivacyMode } from "@/contexts/PrivacyModeContext";
 import { trpc } from "@/lib/trpc";
-import { ArrowDownLeft, ArrowLeftRight, BookOpenCheck, BriefcaseBusiness, CalendarClock, CheckCircle2, ChevronLeft, ClipboardCheck, CreditCard, Download, EyeOff, FileChartColumn, FileLock2, FileSpreadsheet, GitCompareArrows, Globe2, HandCoins, Landmark, LayoutDashboard, LogOut, Menu, Moon, PanelRightClose, PanelRightOpen, PlusCircle, ReceiptText, ShieldCheck, Sparkles, Sun, Target, TrendingUp, Umbrella, UsersRound, WalletCards, type LucideIcon } from "lucide-react";
+import { ArrowDownLeft, ArrowLeftRight, BookOpenCheck, BriefcaseBusiness, Building2, CalendarClock, CheckCircle2, ChevronLeft, ClipboardCheck, CreditCard, Download, EyeOff, FileChartColumn, FileLock2, FileSpreadsheet, GitCompareArrows, Globe2, HandCoins, Landmark, LayoutDashboard, LogOut, Menu, Moon, PanelRightClose, PanelRightOpen, PlusCircle, ReceiptText, ShieldCheck, Sparkles, Sun, Target, TrendingUp, Umbrella, UsersRound, WalletCards, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { startLogin } from "@/const";
@@ -73,6 +73,7 @@ const navigationGroups: NavigationGroup[] = [
       { icon: Target, label: "الأهداف المالية", path: "/goals", minimumRole: "viewer" },
       { icon: TrendingUp, label: "المخاطر والتخصيص", path: "/risk", minimumRole: "viewer" },
       { icon: ArrowLeftRight, label: "مراجعة إعادة التوازن", path: "/risk/rebalance", minimumRole: "viewer" },
+      { icon: Building2, label: "توحيد الكيانات والدمج", path: "/consolidation", minimumRole: "viewer" },
       { icon: FileChartColumn, label: "التقرير المالي", path: "/reports", minimumRole: "viewer" },
       { icon: ShieldCheck, label: "الموافقات والضوابط", path: "/approvals", minimumRole: "editor" },
       { icon: FileLock2, label: "خزنة المستندات", path: "/vault", minimumRole: "editor" },

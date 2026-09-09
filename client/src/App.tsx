@@ -27,6 +27,8 @@ const LotAccountingPage = lazy(() => import("./pages/LotAccountingPage"));
 const WealthHealthPage = lazy(() => import("./pages/WealthHealthPage"));
 const PerformancePage = lazy(() => import("./pages/PerformancePage"));
 const StressTestingPage = lazy(() => import("./pages/StressTestingPage"));
+const ConsolidationPage = lazy(() => import("./pages/ConsolidationPage"));
+const AuditorPortalPage = lazy(() => import("./pages/AuditorPortalPage"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -70,6 +72,10 @@ function Router() {
       <Route path={"/family/performance"} component={PerformancePage} />
       <Route path={"/stress-testing"} component={StressTestingPage} />
       <Route path={"/family/stress-testing"} component={StressTestingPage} />
+      <Route path={"/consolidation"} component={ConsolidationPage} />
+      <Route path={"/family/consolidation"} component={ConsolidationPage} />
+      <Route path={"/auditor"} component={AuditorPortalPage} />
+      <Route path={"/auditor-portal"} component={AuditorPortalPage} />
       <Route path={"/audit"} component={AuditPage} />
       <Route path={"/assessment"} component={AssessmentReport} />
       <Route path={"/admin/users"} component={PlatformAdministrationPage} />

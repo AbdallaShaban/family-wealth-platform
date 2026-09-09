@@ -10,7 +10,7 @@ import { getCashFlowSummary, getDashboardMarketOverview, getDashboardSummary, ge
 import { getSmtpConfiguration } from "./mailer";
 import { getDb } from "./db";
 import { parseNonNegativeAmount, parsePositiveAmount } from "./ledgerMath";
-import { protectedProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { createHeartbeatJob, updateHeartbeatJob } from "./_core/heartbeat";
 import { parse as parseCookie } from "cookie";
 import { COOKIE_NAME } from "../shared/const";
@@ -30,6 +30,16 @@ import { buildMarketSignals } from "./investmentSignals";
 import { suggestTradeCharges } from "./chargeMath";
 import { suggestGoldRevaluation } from "./goldQuoteMath";
 import { createBackupEnvelope } from "./backupSnapshot";
+import { exportFullWorkspaceBackup, restoreFullWorkspaceBackup, validateWorkspaceBackup } from "./backupRestoreService";
+import { postCashDividend } from "./dividendPosting";
+import { archivePeriodClosureDossier, getPeriodClosureDossier } from "./periodArchivalService";
+import {
+  issueAuditorAccessToken,
+  revokeAuditorToken,
+  listAuditorTokens,
+  parseAndVerifyToken,
+  recordAuditorAccessEvent,
+} from "./auditorTokenService";
 import { buildReconciliationReport } from "./reconciliation";
 import { buildFxProvenance, buildInstrumentSnapshot, buildManualProvenance, buildMarketProvenance } from "./valuationProvenance";
 import { listValuationHistory } from "./valuationRead";
@@ -621,6 +631,20 @@ export const familyRouter = router({
       const family = await familyContext(ctx.user);
       assertRole(family, "advisor");
       return postStockSplit({ context: family, actorUserId: ctx.user.id, ...input });
+    }),
+    cashDividend: protectedProcedure.input(z.object({
+      instrumentId: z.number().int().positive(),
+      cashAccountId: z.number().int().positive(),
+      dividendPerShare: money,
+      exDate: occurredAt,
+      paymentDate: occurredAt,
+      taxAmount: money.optional().nullable(),
+      memo: z.string().trim().max(2_000).optional().nullable(),
+      idempotencyKey,
+    })).mutation(async ({ ctx, input }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "advisor");
+      return postCashDividend({ context: family, actorUserId: ctx.user.id, ...input });
     }),
   }),
 
@@ -1246,7 +1270,30 @@ export const familyRouter = router({
     decide: protectedProcedure.input(z.object({ requestId: z.number().int().positive(), decision: z.enum(["approved", "rejected"]), note: z.string().trim().max(1000).nullable(), reconfirmed: z.literal(true) })).mutation(async ({ ctx, input }) => { const family = await familyContext(ctx.user); const db = await getDb(); if (!db) throw notAvailable(); const [request] = await db.select().from(approvalRequests).where(and(eq(approvalRequests.id, input.requestId), eq(approvalRequests.workspaceId, family.workspace.id), eq(approvalRequests.status, "pending"))).limit(1); if (!request) throw new TRPCError({ code: "NOT_FOUND", message: "طلب الاعتماد المعلّق غير موجود." }); const now = Date.now(); if (request.expiresAt !== null && request.expiresAt <= now) { await db.update(approvalRequests).set({ status: "expired", updatedAt: now }).where(eq(approvalRequests.id, request.id)); throw new TRPCError({ code: "BAD_REQUEST", message: "انتهت صلاحية طلب الاعتماد ويجب إنشاء طلب جديد." }); } assertRole(family, request.requiredApproverRole); if (request.requestedByUserId === ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "فصل الواجبات يمنع منشئ الطلب من اعتماده." }); if (Date.now() - new Date(ctx.user.lastSignedIn).getTime() > 15 * 60 * 1000) throw new TRPCError({ code: "UNAUTHORIZED", message: "يلزم إعادة تسجيل الدخول قبل اعتماد عملية حساسة." }); await db.transaction(async tx => { await tx.insert(approvalDecisions).values({ workspaceId: family.workspace.id, requestId: request.id, decidedByUserId: ctx.user.id, decision: input.decision, note: input.note, reconfirmedAt: now, createdAt: now }); await tx.update(approvalRequests).set({ status: input.decision, updatedAt: now }).where(eq(approvalRequests.id, request.id)); await tx.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: `approval_request.${input.decision}`, targetType: "approval_request", targetId: String(request.id), beforeState: { status: "pending" }, afterState: { status: input.decision, reconfirmedAt: now }, requestId: crypto.randomUUID(), occurredAt: now }); }); return { id: request.id, status: input.decision }; }),
     periods: protectedProcedure.query(async ({ ctx }) => { const family = await familyContext(ctx.user); const db = await getDb(); if (!db) throw notAvailable(); return db.select().from(financialPeriods).where(eq(financialPeriods.workspaceId, family.workspace.id)).orderBy(financialPeriods.periodKey); }),
     requestPeriodClose: protectedProcedure.input(z.object({ periodKey: z.string().regex(/^\d{4}-\d{2}$/) })).mutation(async ({ ctx, input }) => { const family = await familyContext(ctx.user); assertRole(family, "editor"); const db = await getDb(); if (!db) throw notAvailable(); const now = Date.now(); const inserted = await db.insert(approvalRequests).values({ workspaceId: family.workspace.id, policyId: null, requestedByUserId: ctx.user.id, actionType: "period_adjustment", actionPayload: { periodKey: input.periodKey, operation: "close" }, amount: null, currency: null, status: "pending", requiredApproverRole: "advisor", expiresAt: now + 7 * 86400000, executedEventId: null, createdAt: now, updatedAt: now }); return { requestId: Number(inserted[0].insertId) }; }),
-    closeApprovedPeriod: protectedProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(async ({ ctx, input }) => { const family = await familyContext(ctx.user); assertRole(family, "advisor"); const db = await getDb(); if (!db) throw notAvailable(); const [request] = await db.select().from(approvalRequests).where(and(eq(approvalRequests.id, input.requestId), eq(approvalRequests.workspaceId, family.workspace.id), eq(approvalRequests.status, "approved"), eq(approvalRequests.actionType, "period_adjustment"))).limit(1); if (!request) throw new TRPCError({ code: "BAD_REQUEST", message: "يتطلب إغلاق الفترة طلب اعتماد موافقاً عليه." }); const payload = request.actionPayload as { periodKey?: string }; if (!payload.periodKey) throw new TRPCError({ code: "BAD_REQUEST", message: "بيانات طلب إغلاق الفترة غير صالحة." }); const now = Date.now(); await db.insert(financialPeriods).values({ workspaceId: family.workspace.id, periodKey: payload.periodKey, status: "closed", closedByUserId: ctx.user.id, closedAt: now, closeApprovalRequestId: request.id, createdAt: now, updatedAt: now }).onDuplicateKeyUpdate({ set: { status: "closed", closedByUserId: ctx.user.id, closedAt: now, closeApprovalRequestId: request.id, updatedAt: now } }); await db.update(approvalRequests).set({ status: "executed", updatedAt: now }).where(eq(approvalRequests.id, request.id)); return { periodKey: payload.periodKey, status: "closed" as const }; }),
+    closeApprovedPeriod: protectedProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "advisor");
+      const db = await getDb();
+      if (!db) throw notAvailable();
+      const [request] = await db.select().from(approvalRequests).where(and(eq(approvalRequests.id, input.requestId), eq(approvalRequests.workspaceId, family.workspace.id), eq(approvalRequests.status, "approved"), eq(approvalRequests.actionType, "period_adjustment"))).limit(1);
+      if (!request) throw new TRPCError({ code: "BAD_REQUEST", message: "يتطلب إغلاق الفترة طلب اعتماد موافقاً عليه." });
+      const payload = request.actionPayload as { periodKey?: string };
+      if (!payload.periodKey) throw new TRPCError({ code: "BAD_REQUEST", message: "بيانات طلب إغلاق الفترة غير صالحة." });
+      const now = Date.now();
+      await db.insert(financialPeriods).values({ workspaceId: family.workspace.id, periodKey: payload.periodKey, status: "closed", closedByUserId: ctx.user.id, closedAt: now, closeApprovalRequestId: request.id, createdAt: now, updatedAt: now }).onDuplicateKeyUpdate({ set: { status: "closed", closedByUserId: ctx.user.id, closedAt: now, closeApprovalRequestId: request.id, updatedAt: now } });
+      await db.update(approvalRequests).set({ status: "executed", updatedAt: now }).where(eq(approvalRequests.id, request.id));
+      const archival = await archivePeriodClosureDossier({
+        context: family,
+        actorUserId: ctx.user.id,
+        periodKey: payload.periodKey,
+        closeApprovalRequestId: request.id,
+      });
+      return { periodKey: payload.periodKey, status: "closed" as const, archival };
+    }),
+    periodDossier: protectedProcedure.input(z.object({ periodKey: z.string().regex(/^\d{4}-\d{2}$/) })).query(async ({ ctx, input }) => {
+      const family = await familyContext(ctx.user);
+      return getPeriodClosureDossier(family, input.periodKey);
+    }),
     executeApprovedBudgetAdjustment: protectedProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const family = await familyContext(ctx.user);
       assertRole(family, "editor");
@@ -1295,6 +1342,39 @@ export const familyRouter = router({
       const snapshot = await getDashboardSummary(family);
       return createBackupEnvelope(family.workspace.id, snapshot);
     }),
+    fullExport: protectedProcedure.mutation(async ({ ctx }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "advisor");
+      return exportFullWorkspaceBackup(family.workspace.id);
+    }),
+    validateBackup: protectedProcedure
+      .input(z.object({ envelope: z.unknown() }))
+      .mutation(async ({ input }) => {
+        return validateWorkspaceBackup(input.envelope);
+      }),
+    restore: protectedProcedure
+      .input(
+        z.object({
+          backup: z.any(),
+          mode: z.enum(["overwrite", "clone"]),
+          newWorkspaceName: z.string().trim().max(160).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "owner");
+        const result = await restoreFullWorkspaceBackup({
+          backup: input.backup,
+          targetWorkspaceId: family.workspace.id,
+          actorUserId: ctx.user.id,
+          mode: input.mode,
+          newWorkspaceName: input.newWorkspaceName,
+        });
+        invalidateReadModelCache(`wealth-health:score:${result.workspaceId}`);
+        invalidateReadModelCache(`stress-testing:${result.workspaceId}:`);
+        invalidateReadModelCache(`consolidation:`);
+        return result;
+      }),
   }),
 
   ledger: router({
@@ -1387,5 +1467,88 @@ export const familyRouter = router({
       if (!db) throw notAvailable();
       return db.select().from(auditEvents).where(eq(auditEvents.workspaceId, family.workspace.id)).orderBy(desc(auditEvents.occurredAt)).limit(50);
     }),
+  }),
+
+  auditor: router({
+    listTokens: protectedProcedure.query(async ({ ctx }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "advisor");
+      return listAuditorTokens(family.workspace.id);
+    }),
+    issueToken: protectedProcedure
+      .input(
+        z.object({
+          label: z.string().trim().min(2).max(120),
+          targetAuditor: z.string().trim().min(2).max(120),
+          purpose: z.string().trim().min(2).max(255),
+          allowedScopes: z.array(z.enum(["reports", "reconciliation", "zakat", "financial_statements", "lot_accounting"])).min(1),
+          durationHours: z.number().int().min(1).max(720).default(72),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "advisor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        return issueAuditorAccessToken({
+          db,
+          workspaceId: family.workspace.id,
+          actorUserId: ctx.user.id,
+          label: input.label,
+          targetAuditor: input.targetAuditor,
+          purpose: input.purpose,
+          allowedScopes: input.allowedScopes,
+          durationHours: input.durationHours,
+        });
+      }),
+    revokeToken: protectedProcedure
+      .input(z.object({ tokenId: z.string().trim().min(1), reason: z.string().trim().max(255).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "advisor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        return revokeAuditorToken({
+          db,
+          workspaceId: family.workspace.id,
+          actorUserId: ctx.user.id,
+          tokenId: input.tokenId,
+          reason: input.reason,
+        });
+      }),
+    validateToken: publicProcedure
+      .input(z.object({ token: z.string().trim().min(1) }))
+      .query(async ({ input }) => {
+        const parsed = await parseAndVerifyToken(input.token);
+        if (!parsed.valid || !parsed.payload) {
+          return { valid: false as const, error: parsed.error };
+        }
+        return {
+          valid: true as const,
+          tokenId: parsed.payload.tokenId,
+          workspaceId: parsed.payload.workspaceId,
+          label: parsed.payload.label,
+          targetAuditor: parsed.payload.targetAuditor,
+          purpose: parsed.payload.purpose,
+          allowedScopes: parsed.payload.allowedScopes,
+          expiresAt: parsed.payload.expiresAt,
+          issuedAt: parsed.payload.issuedAt,
+        };
+      }),
+    recordAccess: publicProcedure
+      .input(z.object({ token: z.string().trim().min(1), accessedRoute: z.string().trim() }))
+      .mutation(async ({ input }) => {
+        const parsed = await parseAndVerifyToken(input.token);
+        if (!parsed.valid || !parsed.payload) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: parsed.error || "رمز الوصول غير صالح." });
+        }
+        await recordAuditorAccessEvent({
+          workspaceId: parsed.payload.workspaceId,
+          tokenId: parsed.payload.tokenId,
+          targetAuditor: parsed.payload.targetAuditor,
+          accessedRoute: input.accessedRoute,
+        });
+        return { recorded: true };
+      }),
   }),
 });

@@ -10,6 +10,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { handleScheduledMarketRefresh } from "../marketRefreshHandler";
+import { startMarketAutomationDaemon } from "../marketScheduler";
 import { sql } from "drizzle-orm";
 import { getDb } from "../db";
 
@@ -95,6 +96,7 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    startMarketAutomationDaemon();
   });
 }
 
