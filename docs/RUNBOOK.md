@@ -110,10 +110,24 @@ STORAGE_LOCAL_DIR=/app/vault_storage
 # AWS_S3_BUCKET=family-vault-bucket
 
 # ============================================================================
+# مصادقة Google OAuth 2.0 / OpenID Connect (Phase 15 Production Identity)
+# ============================================================================
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET_HERE
+# في بيئة التطوير: http://localhost:3000/api/oauth/callback
+# في بيئة الإنتاج: https://family.yourdomain.com/api/oauth/callback
+GOOGLE_REDIRECT_URI=https://family.yourdomain.com/api/oauth/callback
+
+# ============================================================================
 # نفق Cloudflare Zero-Trust (اختياري عند تفعيل ملف tunnel)
 # ============================================================================
 CLOUDFLARE_TUNNEL_TOKEN=YOUR_CLOUDFLARE_TUNNEL_TOKEN_HERE
 ```
+
+#### ملاحظات هوية الإنتاج (Production Identity Notes):
+- تبدأ بيئة الإنتاج على Oracle Cloud بقاعدة بيانات MySQL نظيفة وجديدة تماماً (Fresh Production Identity)، وتُطبق المايجريشنز الرسمية (من 0000 إلى 0034).
+- لا تُنقل حسابات الاختبار أو بيانات التطوير إلى الإنتاج، ولا يتم دمج الحسابات بالبريد الإلكتروني فقط (No Email-Based Merging / Takeover).
+- أول مستخدم يسجل دخوله بحساب Google (`@gmail.com`) يكتسب تلقائياً صلاحية مالك المنصة (`platform_ownership`).
 
 ---
 
