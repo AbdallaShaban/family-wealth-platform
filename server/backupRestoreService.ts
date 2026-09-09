@@ -86,7 +86,6 @@ export const WORKSPACE_TABLE_DEFINITIONS = [
   // Level 1: Reference Level 0
   { name: "accounts", table: accounts },
   { name: "price_quotes", table: priceQuotes },
-  { name: "special_asset_valuations", table: specialAssetValuations },
   { name: "insurance_policies", table: insurancePolicies },
   { name: "debts", table: debts },
   { name: "emergency_fund_plans", table: emergencyFundPlans },
@@ -101,6 +100,7 @@ export const WORKSPACE_TABLE_DEFINITIONS = [
   { name: "valuation_snapshots", table: valuationSnapshots },
   { name: "official_valuation_snapshots", table: officialValuationSnapshots },
   { name: "financial_events", table: financialEvents },
+  { name: "special_asset_valuations", table: specialAssetValuations },
   { name: "debt_payments", table: debtPayments },
   { name: "insurance_premium_payments", table: insurancePremiumPayments },
   { name: "insurance_claims", table: insuranceClaims },
@@ -534,6 +534,18 @@ export async function restoreFullWorkspaceBackup(args: {
           }
           if (row.transferEventId && idMaps.financial_events.has(row.transferEventId as number)) {
             row.transferEventId = idMaps.financial_events.get(row.transferEventId as number)!;
+          }
+        } else if (name === "special_asset_valuations") {
+          if (row.assetId && idMaps.special_assets.has(row.assetId as number)) {
+            row.assetId = idMaps.special_assets.get(row.assetId as number)!;
+          }
+          if (row.financialEventId) {
+            row.financialEventId = idMaps.financial_events.get(row.financialEventId as number) ?? null;
+          } else {
+            row.financialEventId = null;
+          }
+          if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
+            row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
           }
         }
 

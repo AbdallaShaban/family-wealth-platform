@@ -192,4 +192,148 @@ describe("Disaster Recovery Integration — Secondary Foreign Key Remapping", ()
     expect(lotTransfers).toBeDefined();
     expect(lotTransfers[0].transferEventId).toBe(assignedFinancialEventId);
   });
+
+  it("remaps special_asset_valuations foreign keys (assetId, financialEventId, profileId) and preserves null financialEventId", async () => {
+    const rawPayload: Record<string, any[]> = {};
+    WORKSPACE_TABLE_NAMES.forEach((name) => {
+      rawPayload[name] = [];
+    });
+
+    rawPayload.financial_profiles = [{ id: 1, fullName: "Al-Family Principal" }];
+    rawPayload.special_assets = [{ id: 70, name: "Luxury Estate", assetType: "real_estate" }];
+    rawPayload.financial_events = [
+      {
+        id: 100,
+        status: "posted",
+        eventType: "expense",
+        currency: "SAR",
+        grossAmount: "100000",
+      },
+    ];
+
+    rawPayload.special_asset_valuations = [
+      {
+        id: 301,
+        assetId: 70,
+        financialEventId: 100,
+        profileId: 1,
+        valuationMethod: "appraisal",
+        value: "25000000.000000",
+        currency: "SAR",
+        asOf: 1700000000000,
+        quality: "fresh",
+        source: "Certified Appraiser",
+        createdByUserId: 1,
+        createdAt: 1700000000000,
+      },
+      {
+        id: 302,
+        assetId: 70,
+        financialEventId: null,
+        profileId: 1,
+        valuationMethod: "manual",
+        value: "26000000.000000",
+        currency: "SAR",
+        asOf: 1700100000000,
+        quality: "fresh",
+        source: "Owner Estimate",
+        createdByUserId: 1,
+        createdAt: 1700100000000,
+      },
+    ];
+
+    const payloadSha256 = computePayloadSha256(rawPayload);
+
+    const backupEnvelope: FullWorkspaceBackupEnvelope = {
+      format: "family-full-backup-v1",
+      version: "1.0",
+      workspaceId: 10,
+      workspaceMetadata: {
+        name: "Al-Family Holding",
+        baseCurrency: "SAR",
+        exportedAt: 1700000000000,
+        tableCount: 51,
+      },
+      manifest: {
+        tables: {
+          financial_profiles: 1,
+          special_assets: 1,
+          financial_events: 1,
+          special_asset_valuations: 2,
+        },
+        totalRows: 5,
+        payloadSha256,
+      },
+      payload: rawPayload,
+    };
+
+    const insertedRecords: Record<string, any[]> = {};
+    let nextId = 5000;
+    let assignedProfileId = 0;
+    let assignedSpecialAssetId = 0;
+    let assignedFinancialEventId = 0;
+
+    const mockTx = {
+      insert: vi.fn((tableDef: any) => ({
+        values: vi.fn(async (vals: any) => {
+          const tableName = tableDef[Symbol.for("drizzle:Name")] || tableDef._?.name || "unknown";
+          const assignedId = nextId++;
+
+          if (tableName === "financial_profiles") {
+            assignedProfileId = assignedId;
+          } else if (tableName === "special_assets") {
+            assignedSpecialAssetId = assignedId;
+          } else if (tableName === "financial_events") {
+            assignedFinancialEventId = assignedId;
+          }
+
+          insertedRecords[tableName] = insertedRecords[tableName] || [];
+          insertedRecords[tableName].push({ ...vals, id: assignedId });
+          return [{ insertId: assignedId }];
+        }),
+      })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => Promise.resolve([{ id: 99, name: "Al-Family Holding" }])),
+          })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn(() => Promise.resolve()),
+      })),
+    };
+
+    const mockDb = {
+      transaction: vi.fn(async (cb: any) => cb(mockTx)),
+    };
+
+    vi.spyOn(dbModule, "getDb").mockResolvedValue(mockDb as any);
+
+    const result = await restoreFullWorkspaceBackup({
+      backup: backupEnvelope,
+      actorUserId: 1,
+      mode: "clone",
+      newWorkspaceName: "Al-Family Holding (Clone)",
+    });
+
+    expect(result.workspaceId).toBeDefined();
+    expect(assignedProfileId).toBeGreaterThan(0);
+    expect(assignedSpecialAssetId).toBeGreaterThan(0);
+    expect(assignedFinancialEventId).toBeGreaterThan(0);
+
+    const valuations = insertedRecords["special_asset_valuations"];
+    expect(valuations).toBeDefined();
+    expect(valuations).toHaveLength(2);
+
+    // Row 1: All 3 IDs remapped to new restored workspace IDs
+    expect(valuations[0].assetId).toBe(assignedSpecialAssetId);
+    expect(valuations[0].profileId).toBe(assignedProfileId);
+    expect(valuations[0].financialEventId).toBe(assignedFinancialEventId);
+
+    // Row 2: assetId and profileId remapped, financialEventId remains null
+    expect(valuations[1].assetId).toBe(assignedSpecialAssetId);
+    expect(valuations[1].profileId).toBe(assignedProfileId);
+    expect(valuations[1].financialEventId).toBeNull();
+  });
 });

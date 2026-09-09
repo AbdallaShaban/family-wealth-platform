@@ -80,7 +80,7 @@ services:
   # 3. Optional Cloudflare Zero-Trust Ingress Tunnel
   # --------------------------------------------------------------------------
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2026.8.3
     container_name: family_tunnel
     restart: unless-stopped
     profiles:
