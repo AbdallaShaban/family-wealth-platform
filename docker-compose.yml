@@ -1,0 +1,114 @@
+# ============================================================================
+# FAMILY Wealth Intelligence — Production Compose Stack
+# Architecture: MySQL 8.4.4 LTS + Node 22 Multi-Arch App + Cloudflare Tunnel
+# Security Invariants: Private DB network, zero host port exposure for MySQL
+# ============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  # 1. Authoritative MySQL 8.4.4 Database Service
+  # --------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.4.4
+    container_name: family_mysql
+    restart: unless-stopped
+    command: >
+      --default-authentication-plugin=caching_sha2_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --sql-mode=STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION
+      --max-connections=100
+      --innodb-buffer-pool-size=256M
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-FamilyRootPassSecure2026!}
+      MYSQL_DATABASE: ${DB_NAME:-family_db}
+      MYSQL_USER: ${DB_USER:-family}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-FamilyAppPassSecure2026!}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - internal_network
+    # Port 3306 is intentionally NOT published to host to enforce network isolation
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --------------------------------------------------------------------------
+  # 2. Main Application Service (Node 22 LTS)
+  # --------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: family_app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: mysql://${DB_USER:-family}:${DB_PASSWORD:-FamilyAppPassSecure2026!}@mysql:3306/${DB_NAME:-family_db}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be provided and >= 32 chars}
+      AUDITOR_PORTAL_JWT_SECRET: ${AUDITOR_PORTAL_JWT_SECRET:-${JWT_SECRET}}
+      VAULT_ENCRYPTION_SECRET: ${VAULT_ENCRYPTION_SECRET:-${JWT_SECRET}}
+      DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-20}
+      DB_MAX_IDLE: ${DB_MAX_IDLE:-10}
+      DB_IDLE_TIMEOUT_MS: ${DB_IDLE_TIMEOUT_MS:-60000}
+      STORAGE_LOCAL_DIR: /app/vault_storage
+      VITE_ANALYTICS_ENDPOINT: ${VITE_ANALYTICS_ENDPOINT:-}
+      VITE_ANALYTICS_WEBSITE_ID: ${VITE_ANALYTICS_WEBSITE_ID:-}
+    volumes:
+      - vault_data:/app/vault_storage
+    networks:
+      - internal_network
+      - ingress_network
+    ports:
+      # Bound to localhost loopback only — public traffic routes via Cloudflare Tunnel or reverse proxy
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3000/readyz || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # --------------------------------------------------------------------------
+  # 3. Optional Cloudflare Zero-Trust Ingress Tunnel
+  # --------------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: family_tunnel
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    networks:
+      - ingress_network
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    command: tunnel --no-autoupdate run
+
+# ----------------------------------------------------------------------------
+# Isolated Docker Networks
+# ----------------------------------------------------------------------------
+networks:
+  # Strictly internal network — no external routing or port bindings
+  internal_network:
+    internal: true
+    driver: bridge
+
+  # Ingress network for application routing and tunnel gateway
+  ingress_network:
+    driver: bridge
+
+# ----------------------------------------------------------------------------
+# Persistent Storage Volumes
+# ----------------------------------------------------------------------------
+volumes:
+  mysql_data:
+    name: family_mysql_data
+  vault_data:
+    name: family_vault_data

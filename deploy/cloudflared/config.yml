@@ -1,0 +1,18 @@
+# ============================================================================
+# Cloudflare Zero-Trust Tunnel Configuration
+# Routes external domain traffic securely to the internal app container
+# ============================================================================
+
+tunnel: ${CLOUDFLARE_TUNNEL_ID}
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  # Route primary family office domain to internal app port 3000
+  - hostname: family.office.internal
+    service: http://app:3000
+    originRequest:
+      connectTimeout: 30s
+      noTLSVerify: false
+
+  # Fallback catch-all returns 404
+  - service: http_status:404
