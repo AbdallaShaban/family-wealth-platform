@@ -1,4 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
+import FinancialTooltip from "@/components/FinancialTooltip";
 import SensitiveValue from "@/components/SensitiveValue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeftRight, GitCompareArrows, Loader2, Split, ShieldCheck } from "lucide-react";
+import { ArrowLeftRight, GitCompareArrows, Loader2, Split, ShieldCheck, Layers } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -64,7 +66,26 @@ export default function LotAccountingPage() {
     split.mutate({ instrumentId: Number(splitInstrument), ratio: splitRatio, effectiveAt: asTimestamp(splitDate), memo: "Stock split موثق يدويًا", idempotencyKey: crypto.randomUUID() });
   };
   return <DashboardLayout><main className="mx-auto max-w-7xl space-y-6" dir="rtl">
-    <header className="flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[.15em] text-emerald-700">FAMILY / LOT ACCOUNTING</p><h1 className="mt-2 text-3xl font-bold">Lots وRealized P&L</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">طبقة استثمارية قابلة للتتبع تُبنى من أحداث الدفتر المنشورة. لا تغيّر إعادة البناء الدفتر، ولا تُنشئ صفقات أو تقييمات تلقائية.</p></div><div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-800"><ShieldCheck className="size-4" />FIFO · تكلفة تاريخية · عزل مساحة</div></header>
+    <PageHeader
+      title="محاسبة الحصص (FIFO) والأرباح المحققة"
+      description="طبقة استثمارية قابلة للتتبع تُبنى من أحداث الدفتر المنشورة. لا تغيّر إعادة البناء الدفتر، ولا تُنشئ صفقات أو تقييمات تلقائية."
+      icon={Layers}
+      breadcrumbs={[
+        { label: "الاستثمار والتداول", href: "/investments" },
+        { label: "محاسبة الحصص (FIFO)" },
+      ]}
+      badge="معيار FIFO مدقق"
+      actions={
+        <div className="flex items-center gap-2">
+          <FinancialTooltip term="FIFO">
+            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary cursor-help">
+              <ShieldCheck className="size-3.5" />
+              مبدأ FIFO المحاسبي
+            </span>
+          </FinancialTooltip>
+        </div>
+      }
+    />
     <section className="grid gap-4 sm:grid-cols-4"><Card className="fintech-surface-card"><CardHeader className="pb-2"><CardDescription>Lots المفتوحة</CardDescription><CardTitle className="text-3xl">{lots.isLoading ? "—" : openLots.length}</CardTitle></CardHeader><CardContent className="text-xs text-muted-foreground">حيازات لم تُغلق بالكامل.</CardContent></Card><Card className="fintech-surface-card"><CardHeader className="pb-2"><CardDescription>Lots الكلية</CardDescription><CardTitle className="text-3xl">{lots.isLoading ? "—" : lots.data?.length ?? 0}</CardTitle></CardHeader><CardContent className="text-xs text-muted-foreground">بما فيها المنقولة والمغلقة.</CardContent></Card><Card className="fintech-surface-card"><CardHeader className="pb-2"><CardDescription>Realized P&L</CardDescription><CardTitle className="text-2xl"><SensitiveValue>{formatMoney(realizedSummary.data?.realizedPnl ?? "0", bootstrap.data?.workspace.baseCurrency ?? "EGP", 2)}</SensitiveValue></CardTitle></CardHeader><CardContent className="text-xs text-muted-foreground">بعد الرسوم والضرائب الموزعة.</CardContent></Card><Card className="fintech-surface-card"><CardHeader className="pb-2"><CardDescription>سلامة إعادة البناء</CardDescription><CardTitle className="text-xl">{rebuild.isLoading ? "—" : rebuild.data?.status === "matched" ? "متطابق" : "يتطلب مراجعة"}</CardTitle></CardHeader><CardContent className="text-xs text-muted-foreground">مصدر المقارنة: أحداث منشورة فقط.</CardContent></Card></section>
     <Tabs defaultValue="lots" className="space-y-5"><TabsList className="investment-tabs-list"><TabsTrigger value="lots">سجل Lots</TabsTrigger><TabsTrigger value="pnl">Realized P&L</TabsTrigger><TabsTrigger value="operations">عمليات الحيازة</TabsTrigger><TabsTrigger value="rebuild">سلامة المصدر</TabsTrigger></TabsList>
       <TabsContent value="lots"><Card className="fintech-surface-card"><CardHeader><CardTitle>سجل التكلفة حسب Lot</CardTitle><CardDescription>كل Lot يحمل حدث الاكتساب، أساس التكلفة، والكمية المتبقية. القيم محمية بوضع الخصوصية.</CardDescription></CardHeader><CardContent>{lots.isLoading ? <p className="py-10 text-center text-sm text-muted-foreground">جارٍ تحميل Lots…</p> : lots.error ? <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{errorText(lots.error)}</p> : lots.data?.length ? <div className="overflow-x-auto"><table className="w-full min-w-[900px] text-right text-sm"><thead className="bg-slate-50 text-xs text-slate-600"><tr><th className="p-3">الحساب / الأداة</th><th className="p-3">حدث الاكتساب</th><th className="p-3">الأصل</th><th className="p-3">المتبقي</th><th className="p-3">تكلفة الوحدة</th><th className="p-3">الحالة</th></tr></thead><tbody className="divide-y">{lots.data.map(item => <tr key={item.id}><td className="p-3"><strong>{accountName.get(item.accountId) ?? `حساب #${item.accountId}`}</strong><p className="text-xs text-muted-foreground">{instrumentName.get(item.instrumentId) ?? `أداة #${item.instrumentId}`}</p></td><td className="p-3 font-mono text-xs">#{item.acquisitionEventId}<p className="mt-1 text-xs text-muted-foreground">{new Date(item.acquiredAt).toLocaleDateString("ar-EG")}</p></td><td className="p-3"><SensitiveValue>{item.originalQuantity}</SensitiveValue></td><td className="p-3 font-semibold"><SensitiveValue>{item.remainingQuantity}</SensitiveValue></td><td className="p-3"><SensitiveValue>{formatMoney(item.unitCost, item.costCurrency, 4)}</SensitiveValue></td><td className="p-3"><Badge variant={item.status === "open" ? "secondary" : "outline"}>{item.status === "open" ? "مفتوح" : "مغلق"}</Badge>{item.sourceLotId ? <p className="mt-1 text-[11px] text-muted-foreground">منقول من Lot #{item.sourceLotId}</p> : null}</td></tr>)}</tbody></table></div> : <p className="py-12 text-center text-sm text-muted-foreground">لا توجد Lots منشورة بعد.</p>}</CardContent></Card></TabsContent>

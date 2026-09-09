@@ -1,10 +1,11 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
-import { AlertTriangle, CheckCircle2, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, RefreshCw, ShieldCheck, Scale } from "lucide-react";
 
 const countLabels = [
   ["postedEntries", "القيود المنشورة"],
@@ -21,10 +22,22 @@ export default function ReconciliationPage() {
   const report = trpc.family.reconciliation.report.useQuery();
   const data = report.data;
   return <DashboardLayout><div dir="rtl" className="space-y-6">
-    <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-      <div><p className="text-sm font-semibold text-emerald-700">FAMILY / CONTROL LAYER</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">تسوية الدفتر</h1><p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">فحص قراءة فقط يعيد احتساب توازن القيود والأرصدة والحيازات من الأحداث المنشورة. لا ينشئ هذا التقرير قيودًا ولا يعدّل أي رصيد.</p></div>
-      <Button variant="outline" onClick={() => report.refetch()} disabled={report.isFetching}><RefreshCw className={`ml-2 size-4 ${report.isFetching ? "animate-spin" : ""}`} />تحديث الفحص</Button>
-    </header>
+    <PageHeader
+      title="تسوية وتوازن الدفتر"
+      description="فحص قراءة فقط يعيد احتساب توازن القيود والأرصدة والحيازات من الأحداث المنشورة. لا ينشئ هذا التقرير قيودًا ولا يعدّل أي رصيد."
+      icon={Scale}
+      breadcrumbs={[
+        { label: "الاستثمار والتداول", href: "/investments" },
+        { label: "تسوية الدفتر والمطابقة" },
+      ]}
+      badge="تدقيق توازن القيود"
+      actions={
+        <Button variant="outline" size="sm" onClick={() => report.refetch()} disabled={report.isFetching}>
+          <RefreshCw className={`ml-2 size-4 ${report.isFetching ? "animate-spin" : ""}`} />
+          تحديث الفحص
+        </Button>
+      }
+    />
     {report.isLoading ? <Skeleton className="h-64" /> : report.error ? <Card><CardContent className="flex items-center gap-3 p-6 text-rose-700"><AlertTriangle className="size-5" />تعذر تحميل تقرير التسوية حاليًا.</CardContent></Card> : data ? <>
       <Card className={data.status === "healthy" ? "border-emerald-200 bg-emerald-50/50" : "border-amber-200 bg-amber-50/50"}><CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3">{data.status === "healthy" ? <CheckCircle2 className="size-7 text-emerald-700" /> : <AlertTriangle className="size-7 text-amber-700" />}<div><p className="font-semibold text-slate-950">{data.status === "healthy" ? "الدفتر متوازن ضمن نطاق الفحص" : "توجد عناصر تحتاج مراجعة"}</p><p className="mt-1 text-xs text-slate-600">وقت إنشاء التقرير: {new Date(data.generatedAt).toLocaleString("ar-EG")}</p></div></div><Badge variant={data.status === "healthy" ? "secondary" : "outline"}>{data.status === "healthy" ? "سليم" : "مراجعة مطلوبة"}</Badge></CardContent></Card>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{countLabels.map(([key, label]) => <Card key={key}><CardContent className="p-5"><p className="text-xs font-semibold text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-slate-950">{data.counts[key]}</p></CardContent></Card>)}</section>

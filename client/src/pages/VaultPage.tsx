@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -63,11 +64,17 @@ export default function VaultPage() {
   };
 
   return <DashboardLayout><main className="mx-auto max-w-6xl space-y-6" dir="rtl">
-    <header className="rounded-[1.75rem] bg-gradient-to-l from-violet-700 to-slate-950 p-7 text-white">
-      <p className="text-sm text-violet-100">FAMILY / DOCUMENT VAULT</p>
-      <h1 className="mt-2 text-3xl font-bold">خزنة المستندات</h1>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">ترتبط الوثائق بمساحة العائلة فقط. يُشفّر مفتاح التخزين والاسم الوصفي، ويُسجل كل تنزيل بعد التحقق من الصلاحية.</p>
-    </header>
+    <PageHeader
+      title="خزنة المستندات"
+      description="ترتبط الوثائق بمساحة العائلة فقط. يُشفّر مفتاح التخزين والاسم الوصفي، ويُسجل كل تنزيل بعد التحقق من الصلاحية."
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/" },
+        { label: "الحوكمة والتحليل", href: "/vault" },
+        { label: "خزنة المستندات" },
+      ]}
+      badge={{ text: "مشفرة بـ AES", variant: "institutional" }}
+      icon={FileLock2}
+    />
 
     <section className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
       <Card className="fintech-surface-card">

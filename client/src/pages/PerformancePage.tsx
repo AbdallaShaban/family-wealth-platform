@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
+import FinancialTooltip from "@/components/FinancialTooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,20 +13,13 @@ import { formatMoney } from "@/lib/financialDisplay";
 import {
   TrendingUp,
   Scale,
-  ShieldCheck,
-  AlertTriangle,
-  CheckCircle2,
   RefreshCw,
   Info,
-  Calendar,
   Layers,
-  ArrowDownLeft,
-  ArrowUpRight,
   Activity,
-  BarChart3,
-  Percent,
   Compass,
-  FileSpreadsheet,
+  Calendar,
+  CheckCircle2,
 } from "lucide-react";
 
 type PeriodKey = "mtd" | "qtd" | "ytd" | "1y" | "3y" | "5y" | "inception";
@@ -80,25 +75,16 @@ export default function PerformancePage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 pb-12" dir="rtl">
-        {/* Header Section */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <TrendingUp className="size-5" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                  أداء المحفظة وعزو العوائد الاستثمارية
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  تحليل مؤسسي مسترشد بمنهجية GIPS للعائد الموزون بالوقت (TWR) والعائد الموزون بالمال (MWR / IRR)
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
+        <PageHeader
+          title="أداء المحفظة وعزو العوائد الاستثمارية"
+          description="تحليل مؤسسي مسترشد بمنهجية GIPS للعائد الموزون بالوقت (TWR) والعائد الموزون بالمال (MWR / IRR)"
+          icon={TrendingUp}
+          breadcrumbs={[
+            { label: "الحوكمة والتحليل", href: "/wealth-health" },
+            { label: "الأداء المالي (TWR/MWR)" },
+          ]}
+          badge="منهجية GIPS المحاسبية"
+          actions={
             <Button
               variant="outline"
               size="sm"
@@ -109,8 +95,8 @@ export default function PerformancePage() {
               <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
               <span>تحديث الأداء</span>
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Period & Benchmark Selector Bar */}
         <Card className="border-border/60 shadow-xs">
@@ -118,35 +104,35 @@ export default function PerformancePage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               {/* Period Tabs */}
               <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
-                <span className="text-xs font-semibold text-muted-foreground">نطاق التقييم:</span>
+                <span className="text-xs font-semibold text-muted-foreground ml-2">الفترة الزمنية:</span>
                 <Tabs value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
-                  <TabsList className="grid grid-cols-4 sm:flex sm:flex-wrap gap-1">
-                    <TabsTrigger value="mtd" className="text-xs">MTD (الشهر)</TabsTrigger>
-                    <TabsTrigger value="qtd" className="text-xs">QTD (الربع)</TabsTrigger>
-                    <TabsTrigger value="ytd" className="text-xs">YTD (العام)</TabsTrigger>
-                    <TabsTrigger value="1y" className="text-xs">سنة (1Y)</TabsTrigger>
-                    <TabsTrigger value="3y" className="text-xs">3 سنوات</TabsTrigger>
-                    <TabsTrigger value="5y" className="text-xs">5 سنوات</TabsTrigger>
-                    <TabsTrigger value="inception" className="text-xs">منذ التأسيس</TabsTrigger>
+                  <TabsList className="grid grid-cols-7 h-8 bg-muted/60">
+                    <TabsTrigger value="mtd" className="text-xs">MTD</TabsTrigger>
+                    <TabsTrigger value="qtd" className="text-xs">QTD</TabsTrigger>
+                    <TabsTrigger value="ytd" className="text-xs font-semibold">YTD</TabsTrigger>
+                    <TabsTrigger value="1y" className="text-xs">سنة</TabsTrigger>
+                    <TabsTrigger value="3y" className="text-xs">3 سنين</TabsTrigger>
+                    <TabsTrigger value="5y" className="text-xs">5 سنين</TabsTrigger>
+                    <TabsTrigger value="inception" className="text-xs">من التأسيس</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
 
               {/* Benchmark Selector */}
               <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <Compass className="size-4 text-muted-foreground" />
-                  <span className="text-xs font-semibold text-muted-foreground">المؤشر المرجعي:</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">المؤشر المقارن:</span>
                   <select
                     value={benchmark}
                     onChange={(e) => setBenchmark(e.target.value)}
-                    className="h-8 rounded-md border border-input bg-background px-2.5 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-ring"
+                    className="h-8 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
+                    aria-label="المؤشر المقارن"
                   >
-                    <option value="SP500">S&P 500 الأمريكي</option>
-                    <option value="MSCI_WORLD">MSCI World العالمي</option>
-                    <option value="TASI">تاسي السعودي TASI</option>
-                    <option value="GOLD_USD">الذهب العالمي (USD)</option>
-                    <option value="NONE">بدون مؤشر مرجعي</option>
+                    {benchmarksQuery.data?.map((b) => (
+                      <option key={b.symbol} value={b.symbol}>
+                        {b.name} ({b.symbol})
+                      </option>
+                    )) || <option value="SP500">S&P 500</option>}
                   </select>
                 </div>
               </div>
@@ -160,7 +146,11 @@ export default function PerformancePage() {
           <Card className="border-border/60">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs font-semibold">العائد الموزون بالوقت (TWR)</CardDescription>
+                <FinancialTooltip term="TWR">
+                  <CardDescription className="text-xs font-semibold cursor-help border-b border-dashed border-muted-foreground/50">
+                    العائد الموزون بالوقت (TWR)
+                  </CardDescription>
+                </FinancialTooltip>
                 <Badge variant="outline" className="text-[10px] font-mono">
                   {data?.twr.dataQuality === "exact_daily"
                     ? "يومي موثق"
@@ -197,7 +187,11 @@ export default function PerformancePage() {
           <Card className="border-border/60">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs font-semibold">العائد الموزون بالمال (MWR / IRR)</CardDescription>
+                <FinancialTooltip term="MWR">
+                  <CardDescription className="text-xs font-semibold cursor-help border-b border-dashed border-muted-foreground/50">
+                    العائد الموزون بالمال (MWR / IRR)
+                  </CardDescription>
+                </FinancialTooltip>
                 <Badge variant="outline" className="text-[10px] font-mono">
                   {data?.mwr.solverMethod === "newton"
                     ? "Newton-Raphson"

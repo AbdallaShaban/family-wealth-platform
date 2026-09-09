@@ -1,14 +1,78 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-const PrivacyModeContext = createContext<{ isPrivate: boolean; togglePrivacy: () => void } | null>(null);
+const STORAGE_KEY = "family_privacy_mode";
 
-export function PrivacyModeProvider({ children, initialPrivate = false }: { children: React.ReactNode; initialPrivate?: boolean }) {
-  const [isPrivate, setIsPrivate] = useState(initialPrivate);
-  return <PrivacyModeContext.Provider value={{ isPrivate, togglePrivacy: () => setIsPrivate(value => !value) }}>{children}</PrivacyModeContext.Provider>;
+interface PrivacyModeContextType {
+  isPrivate: boolean;
+  togglePrivacy: () => void;
+  setPrivacy: (value: boolean) => void;
 }
 
-export function usePrivacyMode() {
+const PrivacyModeContext = createContext<PrivacyModeContextType | null>(null);
+
+function getInitialPrivacyState(fallback: boolean): boolean {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved !== null) {
+      return saved === "true";
+    }
+  } catch {
+    // Storage access might be restricted; fallback gracefully
+  }
+  return fallback;
+}
+
+export function PrivacyModeProvider({
+  children,
+  initialPrivate = false,
+}: {
+  children: React.ReactNode;
+  initialPrivate?: boolean;
+}) {
+  const [isPrivate, setIsPrivateState] = useState<boolean>(() =>
+    getInitialPrivacyState(initialPrivate)
+  );
+
+  const setPrivacy = (value: boolean) => {
+    setIsPrivateState(value);
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_KEY, String(value));
+      }
+    } catch {
+      // Storage access might be restricted
+    }
+  };
+
+  const togglePrivacy = () => {
+    setPrivacy(!isPrivate);
+  };
+
+  // Sync class on documentElement or body for global CSS targeting
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      if (isPrivate) {
+        document.documentElement.classList.add("privacy-mode-active");
+      } else {
+        document.documentElement.classList.remove("privacy-mode-active");
+      }
+    }
+  }, [isPrivate]);
+
+  return (
+    <PrivacyModeContext.Provider
+      value={{ isPrivate, togglePrivacy, setPrivacy }}
+    >
+      {children}
+    </PrivacyModeContext.Provider>
+  );
+}
+
+export function usePrivacyMode(): PrivacyModeContextType {
   const context = useContext(PrivacyModeContext);
-  if (!context) throw new Error("يجب استخدام وضع الخصوصية داخل PrivacyModeProvider.");
+  if (!context) {
+    throw new Error("يجب استخدام وضع الخصوصية داخل PrivacyModeProvider.");
+  }
   return context;
 }

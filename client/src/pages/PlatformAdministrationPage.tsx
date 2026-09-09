@@ -1,5 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,13 +52,18 @@ export default function PlatformAdministrationPage() {
     onSuccess: () => { toast.success("تم إلغاء الدعوة وتسجيل الإجراء."); refreshAdministration(); },
     onError: error => toast.error(errorText(error)),
   });
+  const [pendingDemote, setPendingDemote] = useState<{ targetUserId: number; name: string | null } | null>(null);
   const demoteUser = trpc.platformAdmin.setUserRole.useMutation({
-    onSuccess: result => { toast.success(result.changed ? "تم خفض الصلاحية وتسجيل القرار." : "دور المستخدم محدد بالفعل."); refreshAdministration(); },
+    onSuccess: result => {
+      toast.success(result.changed ? "تم خفض الصلاحية وتسجيل القرار." : "دور المستخدم محدد بالفعل.");
+      setPendingDemote(null);
+      refreshAdministration();
+    },
     onError: error => toast.error(errorText(error)),
   });
 
   const requestDemotion = (targetUserId: number, name: string | null) => {
-    if (window.confirm(`هل تريد خفض صلاحية ${name || "هذا المستخدم"}؟ سيُسجل القرار في تدقيق المنصة.`)) demoteUser.mutate({ targetUserId, role: "user" });
+    setPendingDemote({ targetUserId, name });
   };
 
   if (!isPlatformAdmin) {
@@ -64,7 +71,17 @@ export default function PlatformAdministrationPage() {
   }
 
   return <DashboardLayout><main className="mx-auto max-w-7xl space-y-6" dir="rtl">
-    <header className="rounded-[1.75rem] bg-gradient-to-l from-slate-950 via-slate-900 to-emerald-900 p-7 text-white"><p className="text-xs font-semibold tracking-[.15em] text-emerald-200">FAMILY / PLATFORM ADMINISTRATION</p><h1 className="mt-2 text-3xl font-bold">إدارة مستخدمي المنصة</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">تدير هذه الشاشة أدوار التطبيق العامة فقط. لا تمنح أو تلغي وصولًا إلى سجلات مساحات FAMILY، ولا تعرض أي بيانات مالية.</p></header>
+    <PageHeader
+      title="إدارة مستخدمي المنصة"
+      description="تدير هذه الشاشة أدوار التطبيق العامة فقط. لا تمنح أو تلغي وصولًا إلى سجلات مساحات FAMILY، ولا تعرض أي بيانات مالية."
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/" },
+        { label: "الحوكمة والتحليل", href: "/admin/users" },
+        { label: "إدارة مستخدمي المنصة" },
+      ]}
+      badge={{ text: "إدارة النظام", variant: "destructive" }}
+      icon={ShieldCheck}
+    />
 
     <section className="grid gap-6 lg:grid-cols-[.9fr_1.1fr]"><Card className="fintech-surface-card"><CardHeader><CardTitle>المالك الرئيس</CardTitle><CardDescription>يُثبت من أول هوية Google/Gmail مؤهلة، ولا يمكن خفض صلاحية حسابه من هذه الشاشة.</CardDescription></CardHeader><CardContent>{ownership.isLoading ? <p className="text-sm text-muted-foreground">جارٍ تحميل سجل الملكية…</p> : ownership.error ? <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{errorText(ownership.error)}</p> : ownership.data ? <div className="space-y-2 rounded-xl bg-muted/45 p-4"><div className="flex items-center justify-between gap-3"><strong>{ownership.data.name || "مالك المنصة"}</strong><Badge>Super Admin</Badge></div><p className="text-sm text-muted-foreground" dir="ltr">{ownership.data.email}</p><p className="text-xs text-muted-foreground">ثُبت في {formatDateTime(ownership.data.claimedAt)}</p></div> : null}</CardContent></Card>
       <Card className="fintech-surface-card"><CardHeader><CardTitle>ضوابط الدور العام</CardTitle><CardDescription>الترقية تمر بدعوة Gmail وتحقق Google ومراجعة مدير عام ثانٍ، وتبقى مقيدة بسجل تدقيق مستقل.</CardDescription></CardHeader><CardContent className="space-y-3 text-sm text-muted-foreground"><p>يُحظر خفض صلاحية المالك الرئيس أو آخر مدير عام نشط أو المستخدم الذي ينفذ الإجراء على نفسه.</p><p>لا تؤدي الترقية أو الخفض هنا إلى تعديل قيود الدفتر أو العضويات أو الملكية المالية.</p></CardContent></Card></section>
@@ -74,5 +91,21 @@ export default function PlatformAdministrationPage() {
     <Card className="fintech-surface-card"><CardHeader><CardTitle className="flex items-center gap-2"><UsersRound className="size-5 text-primary" />الحسابات الموثقة</CardTitle><CardDescription>تظهر الحسابات التي يتوفر لها بريد موثق فقط، مرتبة بحسب آخر تسجيل دخول. لا يمكن الترقية من الجدول مباشرة.</CardDescription></CardHeader><CardContent>{users.isLoading ? <p className="py-8 text-center text-sm text-muted-foreground">جارٍ تحميل الحسابات…</p> : users.error ? <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{errorText(users.error)}</p> : <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-right text-sm"><thead className="bg-muted/70 text-xs text-muted-foreground"><tr><th className="p-3">المستخدم</th><th className="p-3">البريد</th><th className="p-3">الدور العام</th><th className="p-3">آخر دخول</th><th className="p-3">إجراء</th></tr></thead><tbody className="divide-y">{users.data?.map(account => { const isOwner = ownership.data?.id === account.id; const canDemote = !isOwner && account.id !== user?.id && account.role === "admin"; return <tr key={account.id}><td className="p-3 font-semibold">{account.name || "مستخدم FAMILY"}{isOwner && <span className="mr-2 text-xs text-emerald-700">(المالك الرئيس)</span>}</td><td className="p-3 text-muted-foreground" dir="ltr">{account.email}</td><td className="p-3"><Badge variant={account.role === "admin" ? "default" : "secondary"}>{account.role === "admin" ? "Super Admin" : "مستخدم"}</Badge></td><td className="p-3 text-muted-foreground">{formatDateTime(account.lastSignedIn)}</td><td className="p-3">{canDemote ? <Button size="sm" variant="outline" disabled={demoteUser.isPending} onClick={() => requestDemotion(account.id, account.name)}>خفض الصلاحية</Button> : <span className="text-xs text-muted-foreground">{isOwner ? "محمي" : account.role === "admin" ? "جلسة المستخدم الحالية" : "الترقية بالدعوة فقط"}</span>}</td></tr>; })}</tbody></table></div>}</CardContent></Card>
 
     <Card className="fintech-surface-card"><CardHeader><CardTitle className="flex items-center gap-2"><UserCog className="size-5 text-primary" />تدقيق إدارة المستخدمين</CardTitle><CardDescription>آخر 30 تغييرًا لدور عام أو دعوة، مستقلة عن سجل التدقيق المالي لمساحات FAMILY.</CardDescription></CardHeader><CardContent>{audit.isLoading ? <p className="text-sm text-muted-foreground">جارٍ تحميل السجل…</p> : audit.data?.length ? <div className="space-y-2">{audit.data.map(item => <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border bg-muted/25 px-4 py-3 text-sm"><span><strong>{item.actorName || item.actorEmail || "مدير عام"}</strong> {item.action.replace("platform_admin_invitation.", "دعوة مدير عام: ").replace("platform_owner.", "ملكية المنصة: ").replace("platform_user.", "مستخدم منصة: ")}</span><span className="text-xs text-muted-foreground">{formatDateTime(item.occurredAt)}</span></div>)}</div> : <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">لا توجد تغييرات مسجلة على أدوار المنصة حتى الآن.</p>}</CardContent></Card>
+
+    <ConfirmDialog
+      open={Boolean(pendingDemote)}
+      onOpenChange={(open) => { if (!open) setPendingDemote(null); }}
+      title="خفض صلاحية مدير عام"
+      description={`هل أنت متأكد من خفض صلاحية ${pendingDemote?.name || "هذا المستخدم"} إلى مستخدم عادي؟ سيُسجل القرار في تدقيق المنصة.`}
+      confirmLabel="تأكيد الخفض"
+      cancelLabel="تراجع"
+      variant="destructive"
+      isLoading={demoteUser.isPending}
+      onConfirm={() => {
+        if (pendingDemote) {
+          demoteUser.mutate({ targetUserId: pendingDemote.targetUserId, role: "user" });
+        }
+      }}
+    />
   </main></DashboardLayout>;
 }

@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
+import FinancialTooltip from "@/components/FinancialTooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,24 +120,16 @@ export default function WealthHealthPage() {
         {/* ==================================================================== */}
         {/* 1. HEADER & ACTIONS */}
         {/* ==================================================================== */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-6 border-b border-border/60">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20">
-                <HeartPulse className="size-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                  الصحة المالية ومحاكي الاستقلال المالي
-                </h1>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  مؤشر حتمي شامل متعدد الأبعاد (0–100) ومحاكي أفق الاستقلال المالي والتقاعد (FIRE)
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
+        <PageHeader
+          title="الصحة المالية ومحاكي الاستقلال المالي"
+          description="مؤشر حتمي شامل متعدد الأبعاد (0–100) ومحاكي أفق الاستقلال المالي والتقاعد (FIRE)"
+          icon={HeartPulse}
+          breadcrumbs={[
+            { label: "الحوكمة والتحليل" },
+            { label: "صحة الثروة ومؤشر FIRE" },
+          ]}
+          badge="مؤشر حتمي 0–100"
+          actions={
             <Button
               variant="outline"
               size="sm"
@@ -148,10 +142,10 @@ export default function WealthHealthPage() {
               className="gap-2"
             >
               <RefreshCw className={`size-4 ${scoreQuery.isRefetching ? "animate-spin" : ""}`} />
-              <span>تحديث الحسابات</span>
+              <span>تحديث الفحص</span>
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* ==================================================================== */}
         {/* 2. OVERALL SCORE HERO GAUGE & CONFIDENCE */}
@@ -168,9 +162,11 @@ export default function WealthHealthPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base font-medium text-muted-foreground">
-                    مؤشر الصحة المالية الشامل
-                  </CardTitle>
+                  <FinancialTooltip term="FIRE_SCORE">
+                    <CardTitle className="text-base font-medium text-muted-foreground cursor-help border-b border-dashed border-muted-foreground/50">
+                      مؤشر الصحة المالية الشامل
+                    </CardTitle>
+                  </FinancialTooltip>
                   <Badge variant="outline" className={`font-mono font-semibold ${getScoreBgClass(totalScoreNum)}`}>
                     {scoreData.ratingTier === "excellent" ? "مرونة استثنائية" : scoreData.ratingTier === "good" ? "نمو متوازن" : scoreData.ratingTier === "moderate" ? "تحت المراقبة" : "حرج"}
                   </Badge>

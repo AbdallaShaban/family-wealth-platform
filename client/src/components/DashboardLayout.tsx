@@ -19,10 +19,69 @@ type NavigationGroup = { id: string; label: string; icon: LucideIcon; items: Men
 const roleRank: Record<MinimumRole, number> = { viewer: 1, editor: 2, advisor: 3, owner: 4 };
 const homeItem: MenuItem = { icon: LayoutDashboard, label: "النظرة المالية", path: "/", minimumRole: "viewer" };
 const navigationGroups: NavigationGroup[] = [
-  { id: "accounts", label: "الحسابات والتدفق", icon: WalletCards, items: [{ icon: Landmark, label: "الحسابات", path: "/accounts", minimumRole: "viewer" }, { icon: ClipboardCheck, label: "تسوية الدفتر", path: "/reconciliation", minimumRole: "editor" }, { icon: FileSpreadsheet, label: "Inbox الاستيراد", path: "/imports", minimumRole: "editor" }, { icon: ReceiptText, label: "العمليات والدفتر", path: "/ledger", minimumRole: "editor" }, { icon: WalletCards, label: "التدفق والميزانية", path: "/cash-flow", minimumRole: "editor" }, { icon: ArrowDownLeft, label: "تسجيل تدفق", path: "/cash-flow/record", minimumRole: "editor" }, { icon: CalendarClock, label: "معاملات متكررة", path: "/cash-flow/recurring", minimumRole: "editor" }, { icon: ArrowLeftRight, label: "تحويل بين حسابات", path: "/transfers", minimumRole: "editor" }, { icon: CreditCard, label: "الديون والالتزامات", path: "/debts", minimumRole: "editor" }, { icon: HandCoins, label: "الالتزامات والحماية", path: "/operations", minimumRole: "editor" }, { icon: CheckCircle2, label: "تسويات الدفتر", path: "/settlements", minimumRole: "editor" }] },
-  { id: "investments", label: "الاستثمار والأصول", icon: TrendingUp, items: [{ icon: BriefcaseBusiness, label: "الاستثمارات", path: "/investments", minimumRole: "advisor" }, { icon: GitCompareArrows, label: "Lots وRealized P&L", path: "/lot-accounting", minimumRole: "viewer" }, { icon: TrendingUp, label: "التداول والحيازات", path: "/trades", minimumRole: "editor" }, { icon: Globe2, label: "التقييم والعملات", path: "/valuation", minimumRole: "advisor" }, { icon: BriefcaseBusiness, label: "الأصول والتأمين", path: "/assets-insurance", minimumRole: "viewer" }, { icon: Umbrella, label: "صندوق الطوارئ", path: "/emergency-fund", minimumRole: "viewer" }, { icon: ReceiptText, label: "الرسوم والضرائب", path: "/fee-tax", minimumRole: "viewer" }] },
-  { id: "planning", label: "التخطيط والرؤية", icon: Target, items: [{ icon: Target, label: "الأهداف", path: "/goals", minimumRole: "viewer" }, { icon: Sparkles, label: "السيناريوهات", path: "/scenarios", minimumRole: "editor" }, { icon: TrendingUp, label: "المخاطر والتخصيص", path: "/risk", minimumRole: "viewer" }, { icon: ArrowLeftRight, label: "مراجعة إعادة التوازن", path: "/risk/rebalance", minimumRole: "viewer" }, { icon: BriefcaseBusiness, label: "المراقبة والبحث", path: "/research", minimumRole: "viewer" }, { icon: Globe2, label: "بيانات المراقبة", path: "/research/prices", minimumRole: "viewer" }, { icon: FileChartColumn, label: "التقرير المالي", path: "/reports", minimumRole: "viewer" }] },
-  { id: "settings", label: "الحوكمة والإعدادات", icon: ShieldCheck, items: [{ icon: ShieldCheck, label: "الموافقات والضوابط", path: "/approvals", minimumRole: "editor" }, { icon: FileLock2, label: "خزنة المستندات", path: "/vault", minimumRole: "editor" }, { icon: Download, label: "تصدير البيانات", path: "/export", minimumRole: "advisor" }, { icon: UsersRound, label: "الأعضاء والمساحات", path: "/members", minimumRole: "advisor" }, { icon: BookOpenCheck, label: "سجل التدقيق", path: "/audit", minimumRole: "advisor" }] },
+  {
+    id: "operations_liquidity",
+    label: "العمليات والسيولة",
+    icon: WalletCards,
+    items: [
+      { icon: Landmark, label: "الحسابات", path: "/accounts", minimumRole: "viewer" },
+      { icon: ReceiptText, label: "العمليات والدفتر", path: "/ledger", minimumRole: "editor" },
+      { icon: WalletCards, label: "التدفق والميزانية", path: "/cash-flow", minimumRole: "editor" },
+      { icon: ArrowDownLeft, label: "تسجيل تدفق", path: "/cash-flow/record", minimumRole: "editor" },
+      { icon: CalendarClock, label: "معاملات متكررة", path: "/cash-flow/recurring", minimumRole: "editor" },
+      { icon: ArrowLeftRight, label: "تحويل بين حسابات", path: "/transfers", minimumRole: "editor" },
+      { icon: FileSpreadsheet, label: "Inbox الاستيراد", path: "/imports", minimumRole: "editor" },
+      { icon: ClipboardCheck, label: "تسوية الدفتر", path: "/reconciliation", minimumRole: "editor" },
+      { icon: CheckCircle2, label: "تسويات الدفتر", path: "/settlements", minimumRole: "editor" },
+    ],
+  },
+  {
+    id: "liabilities_protection",
+    label: "الالتزامات والحماية",
+    icon: HandCoins,
+    items: [
+      { icon: CreditCard, label: "الديون والالتزامات", path: "/debts", minimumRole: "editor" },
+      { icon: Umbrella, label: "صندوق الطوارئ", path: "/emergency-fund", minimumRole: "viewer" },
+      { icon: BriefcaseBusiness, label: "الأصول والتأمين", path: "/assets-insurance", minimumRole: "viewer" },
+      { icon: HandCoins, label: "الالتزامات والحماية", path: "/operations", minimumRole: "editor" },
+      { icon: ReceiptText, label: "الرسوم والضرائب", path: "/fee-tax", minimumRole: "viewer" },
+    ],
+  },
+  {
+    id: "investment_trading",
+    label: "الاستثمار والتداول",
+    icon: TrendingUp,
+    items: [
+      { icon: BriefcaseBusiness, label: "الاستثمارات", path: "/investments", minimumRole: "advisor" },
+      { icon: TrendingUp, label: "التداول والحيازات", path: "/trades", minimumRole: "editor" },
+      { icon: GitCompareArrows, label: "Lots وRealized P&L", path: "/lot-accounting", minimumRole: "viewer" },
+      { icon: Globe2, label: "التقييم والعملات", path: "/valuation", minimumRole: "advisor" },
+      { icon: TrendingUp, label: "أداء المحفظة وعزو العوائد", path: "/performance", minimumRole: "viewer" },
+      { icon: BriefcaseBusiness, label: "المراقبة والبحث", path: "/research", minimumRole: "viewer" },
+      { icon: Globe2, label: "بيانات المراقبة والأسعار", path: "/research/prices", minimumRole: "viewer" },
+      { icon: ShieldCheck, label: "جودة بيانات السوق", path: "/data-quality", minimumRole: "viewer" },
+    ],
+  },
+  {
+    id: "governance_analysis",
+    label: "الحوكمة والتحليل",
+    icon: ShieldCheck,
+    items: [
+      { icon: Sparkles, label: "الصحة المالية FIRE", path: "/wealth-health", minimumRole: "viewer" },
+      { icon: ShieldCheck, label: "اختبارات الضغط والتحمل", path: "/stress-testing", minimumRole: "viewer" },
+      { icon: Sparkles, label: "السيناريوهات", path: "/scenarios", minimumRole: "editor" },
+      { icon: Target, label: "الأهداف المالية", path: "/goals", minimumRole: "viewer" },
+      { icon: TrendingUp, label: "المخاطر والتخصيص", path: "/risk", minimumRole: "viewer" },
+      { icon: ArrowLeftRight, label: "مراجعة إعادة التوازن", path: "/risk/rebalance", minimumRole: "viewer" },
+      { icon: FileChartColumn, label: "التقرير المالي", path: "/reports", minimumRole: "viewer" },
+      { icon: ShieldCheck, label: "الموافقات والضوابط", path: "/approvals", minimumRole: "editor" },
+      { icon: FileLock2, label: "خزنة المستندات", path: "/vault", minimumRole: "editor" },
+      { icon: Download, label: "تصدير البيانات", path: "/export", minimumRole: "advisor" },
+      { icon: UsersRound, label: "الأعضاء والمساحات", path: "/members", minimumRole: "advisor" },
+      { icon: BookOpenCheck, label: "سجل التدقيق", path: "/audit", minimumRole: "advisor" },
+      { icon: UsersRound, label: "إدارة المنصة", path: "/admin/users", minimumRole: "advisor" },
+    ],
+  },
 ];
 
 function FintechBrand({ collapsed }: { collapsed: boolean }) {
@@ -67,9 +126,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { isPrivate } = usePrivacyMode();
   const role = (workspace.data?.membership.role ?? "viewer") as MinimumRole;
   const allItems = [homeItem, ...navigationGroups.flatMap(group => group.items)];
-  const routeItem = allItems.find(item => item.path === location);
+  const normalizedLocation = location.startsWith("/family/") ? location.replace("/family", "") : location;
+  const routeItem = allItems.find(item => item.path === location || item.path === normalizedLocation);
+  const currentGroup = navigationGroups.find(group => group.items.some(item => item.path === location || item.path === normalizedLocation));
   const canAccessCurrentRoute = !routeItem || roleRank[role] >= roleRank[routeItem.minimumRole];
-  const currentLabel = canAccessCurrentRoute ? (routeItem?.label ?? homeItem.label) : "وصول محدود";
+  const currentLabel = canAccessCurrentRoute ? (routeItem?.label ?? (location === "/" ? homeItem.label : "نظرة تفصيلية")) : "وصول محدود";
   const navigate = (path: string) => { setLocation(path); setMobileOpen(false); };
   const rememberSidebarScroll = (scrollTop: number) => {
     setSidebarScrollTop(scrollTop);
@@ -81,7 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl"><aside className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""}`}><header><FintechBrand collapsed={collapsed} /><button className="fintech-v2-collapse" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}>{collapsed ? <PanelRightOpen className="size-4" /> : <PanelRightClose className="size-4" />}</button></header><FintechNav collapsed={collapsed} role={role} location={location} onNavigate={navigate} savedScrollTop={sidebarScrollTop} onScrollPositionChange={rememberSidebarScroll} /><UserControls collapsed={collapsed} onLogout={logout} /></aside>
     <Sheet open={mobileOpen} onOpenChange={setMobileOpen}><SheetContent side="right" className="fintech-v2-mobile-sheet" dir="rtl"><div className="fintech-v2-mobile-body"><FintechBrand collapsed={false} /><FintechNav collapsed={false} role={role} location={location} onNavigate={navigate} savedScrollTop={sidebarScrollTop} onScrollPositionChange={rememberSidebarScroll} /><UserControls collapsed={false} onLogout={logout} /></div></SheetContent></Sheet>
-    <main className="fintech-v2-main"><header className="fintech-topbar"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileOpen(true)} className="fintech-mobile-menu" aria-label="فتح التنقل"><Menu className="size-5" /></button><div className="min-w-0"><p>FAMILY / {workspace.data?.workspace.name || "WEALTH"} · {workspace.data?.workspace.baseCurrency || "EGP"}</p><strong>{currentLabel}</strong></div></div><div className="flex items-center gap-2"><TopbarControls /></div></header><div className="fintech-content-shell" data-route={location}>{canAccessCurrentRoute ? <section className="fintech-route-frame">{children}</section> : <section className="fintech-access-card"><ShieldCheck className="size-9" /><h1>الوصول للقراءة فقط</h1><p>هذه الشاشة تتطلب صلاحية أعلى. يمكنك مراجعة الحسابات والتقرير المالي ضمن الصلاحيات الممنوحة لك.</p></section>}</div></main><MobileBottomNav role={role} location={location} onNavigate={navigate} onOpenMore={() => setMobileOpen(true)} onQuickCapture={() => setQuickConfirmOpen(true)} /><Dialog open={quickConfirmOpen} onOpenChange={setQuickConfirmOpen}><DialogContent dir="rtl" className="sm:max-w-md"><DialogHeader><DialogTitle>بدء إدخال مالي سريع</DialogTitle><DialogDescription>ستنتقل إلى نموذج مراجعة العملية. لن يُنشر أي قيد قبل إدخال الحساب والمبلغ وتأكيد النموذج.</DialogDescription></DialogHeader><DialogFooter className="gap-2 sm:justify-start"><Button variant="outline" onClick={() => setQuickConfirmOpen(false)}>إلغاء</Button><Button onClick={() => { setQuickConfirmOpen(false); navigate("/cash-flow/record"); }}>متابعة إلى النموذج</Button></DialogFooter></DialogContent></Dialog></div>;
+    <main className="fintech-v2-main"><header className="fintech-topbar"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileOpen(true)} className="fintech-mobile-menu" aria-label="فتح التنقل"><Menu className="size-5" /></button><div className="min-w-0"><p>FAMILY / {workspace.data?.workspace.name || "WEALTH"} · {workspace.data?.workspace.baseCurrency || "EGP"}{currentGroup ? ` · ${currentGroup.label}` : ""}</p><strong>{currentLabel}</strong></div></div><div className="flex items-center gap-2"><TopbarControls /></div></header><div className="fintech-content-shell" data-route={location}>{canAccessCurrentRoute ? <section className="fintech-route-frame">{children}</section> : <section className="fintech-access-card"><ShieldCheck className="size-9" /><h1>الوصول للقراءة فقط</h1><p>هذه الشاشة تتطلب صلاحية أعلى. يمكنك مراجعة الحسابات والتقرير المالي ضمن الصلاحيات الممنوحة لك.</p></section>}</div></main><MobileBottomNav role={role} location={location} onNavigate={navigate} onOpenMore={() => setMobileOpen(true)} onQuickCapture={() => setQuickConfirmOpen(true)} /><Dialog open={quickConfirmOpen} onOpenChange={setQuickConfirmOpen}><DialogContent dir="rtl" className="sm:max-w-md"><DialogHeader><DialogTitle>بدء إدخال مالي سريع</DialogTitle><DialogDescription>ستنتقل إلى نموذج مراجعة العملية. لن يُنشر أي قيد قبل إدخال الحساب والمبلغ وتأكيد النموذج.</DialogDescription></DialogHeader><DialogFooter className="gap-2 sm:justify-start"><Button variant="outline" onClick={() => setQuickConfirmOpen(false)}>إلغاء</Button><Button onClick={() => { setQuickConfirmOpen(false); navigate("/cash-flow/record"); }}>متابعة إلى النموذج</Button></DialogFooter></DialogContent></Dialog></div>;
 }
 
 function TopbarControls() {

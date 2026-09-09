@@ -14,6 +14,7 @@ import SensitiveValue from "@/components/SensitiveValue";
 import { formatMoney } from "@/lib/financialDisplay";
 
 const FintechCharts = lazy(() => import("./FintechCharts"));
+import OnboardingChecklist from "./OnboardingChecklist";
 
 const eventLabels: Record<string, string> = { opening_balance: "رصيد افتتاحي", deposit: "إيداع", withdrawal: "سحب", transfer: "تحويل", buy: "شراء", sell: "بيع", dividend: "توزيع نقدي", income: "دخل", expense: "مصروف", fee: "رسوم", tax: "ضريبة", adjustment: "تسوية", reversal: "عكس عملية" };
 
@@ -86,13 +87,27 @@ export default function FintechDashboard() {
   const liabilities = usingDemo ? demoDashboard.liabilities : (live?.liabilityBalanceBase ?? "0");
   const investments = usingDemo ? demoDashboard.investments : (live?.investmentValueBase ?? "0");
   const pnl = usingDemo ? demoDashboard.unrealizedPnl : (live?.unrealizedPnlBase ?? "0");
-  return <DashboardLayout><div className="fintech-page pb-10" dir="rtl">
+  const goals = trpc.family.goals.list.useQuery(undefined, { enabled: !isDemoMode });
+  const hasAccounts = usingDemo ? true : Boolean(live?.accounts && live.accounts.length > 0);
+  const hasTransactions = usingDemo ? true : Boolean(live?.recentEvents && live.recentEvents.length > 0);
+  const hasInvestments = usingDemo ? true : Boolean((live?.portfolio && live.portfolio.length > 0) || Number(live?.investmentValueBase ?? 0) > 0);
+  const hasGoals = usingDemo ? true : Boolean(goals.data && goals.data.length > 0);
+
+  return <DashboardLayout><div className="fintech-page pb-10 space-y-6" dir="rtl">
     <motion.section className="fintech-hero" initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.42, ease: [0.23, 1, 0.32, 1] }}>
       <div className="fintech-hero-orb fintech-hero-orb-one" /><div className="fintech-hero-orb fintech-hero-orb-two" />
       <div className="relative z-10"><div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-100"><span className="fintech-status-dot" />نظرة مالية موحدة <span className="opacity-70">•</span><span>{usingDemo ? "وضع العرض التجريبي" : "بياناتك المسجلة"}</span></div><h1>أهلاً {user?.name?.split(" ")[0] || "بك"}،<br /><span>هذا هو وضعك المالي اليوم.</span></h1><p>تعرض اللوحة ملخصاً تشغيلياً للأرصدة والحيازات والالتزامات، مع تمييز واضح بين البيانات المسجلة وعرض الواجهة التوضيحي.</p></div>
       <div className="fintech-hero-actions relative z-10"><Button onClick={() => setLocation("/accounts")} className="fintech-primary-action"><Plus className="size-4" />إضافة حساب</Button><Button variant="outline" onClick={toggleDemoMode} className="fintech-ghost-action"><Eye className="size-4" />{usingDemo ? "العودة لبياناتي" : "معاينة ببيانات تجريبية"}</Button></div>
       <div className="fintech-decision-stamp relative z-10"><ShieldCheck className="size-5" /><div><span>حالة البيانات</span><strong>{usingDemo ? "عرض توضيحي آمن" : "قيودك المالية"}</strong></div></div>
     </motion.section>
+
+    <OnboardingChecklist
+      hasAccounts={hasAccounts}
+      hasTransactions={hasTransactions}
+      hasInvestments={hasInvestments}
+      hasGoals={hasGoals}
+    />
+
     {!usingDemo && decisions.data?.length ? <section className="fintech-decision-center" aria-label="مركز القرارات"><div className="fintech-panel-heading"><div><p className="fintech-overline">مركز القرار</p><h2>أهم ثلاث إشارات فقط</h2></div><Button variant="ghost" onClick={() => setLocation("/approvals")} className="fintech-text-button">إدارة القرارات</Button></div><div className="grid gap-3 md:grid-cols-3">{decisions.data.slice(0, 3).map(item => <button onClick={() => setLocation(item.actionPath)} className="fintech-decision-item" key={item.id}><span>{item.priority}</span><div><strong>{item.title}</strong><p>{item.detail}</p></div>{item.amount && <b><SensitiveValue>{formatMoney(item.amount, item.currency || currency, 0)}</SensitiveValue></b>}</button>)}</div></section> : null}
 
     <section className="fintech-metrics-grid"><MetricCard icon={CircleDollarSign} label="صافي الثروة" value={netWorth} currency={currency} detail={usingDemo ? "لقطة توضيحية قابلة للاستبدال" : "مُقوّم بعملة الأساس"} delay={0.04} /><MetricCard icon={WalletCards} label="السيولة المتاحة" value={liquidBalance} currency={currency} detail="الحسابات النقدية والمصرفية" accent="violet" delay={0.09} /><MetricCard icon={BarChart3} label="قيمة الاستثمارات" value={investments} currency={currency} detail={<><span>ربح غير محقق </span><SensitiveValue>{formatMoney(pnl, currency, 0)}</SensitiveValue></>} accent="amber" delay={0.14} /><MetricCard icon={BadgeDollarSign} label="الالتزامات" value={liabilities} currency={currency} detail="قروض وبطاقات نشطة" accent="rose" delay={0.19} /></section>

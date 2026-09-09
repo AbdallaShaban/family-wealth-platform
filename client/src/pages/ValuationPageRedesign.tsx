@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,11 +57,22 @@ export default function ValuationPageRedesign() {
   };
 
   return <DashboardLayout><main className="mx-auto max-w-6xl space-y-6" dir="rtl">
-    <header className="border-b pb-6">
-      <p className="text-xs font-semibold uppercase tracking-[.15em] text-emerald-700">FAMILY / VALUATION CONTROL</p>
-      <h1 className="mt-2 text-3xl font-bold">التقييم والعملات</h1>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><p className="max-w-3xl text-sm leading-6 text-slate-500">تظل القيمة الإجمالية مشروطة بسعر سوق أو صرف مؤرخ ومصدر واضح. سعر Yahoo قد يكون متأخرًا، ولا تمثل هذه الصفحة تنفيذًا أو توصية.</p><Link href="/data-quality" className="inline-flex h-9 items-center rounded-lg border border-primary/25 bg-primary/5 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"><Gauge className="ml-2 size-4" />جودة بيانات السوق</Link></div>
-    </header>
+    <PageHeader
+      title="التقييم وسعر الصرف"
+      description="تظل القيمة الإجمالية مشروطة بسعر سوق أو صرف مؤرخ ومصدر واضح. سعر Yahoo قد يكون متأخرًا، ولا تمثل هذه الصفحة تنفيذًا أو توصية."
+      icon={Globe2}
+      breadcrumbs={[
+        { label: "الاستثمار والتداول", href: "/investments" },
+        { label: "التقييم وسعر الصرف" },
+      ]}
+      badge="مراقبة الأسعار"
+      actions={
+        <Link href="/data-quality" className="inline-flex h-9 items-center rounded-lg border border-primary/25 bg-primary/5 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
+          <Gauge className="ml-2 size-4" />
+          جودة بيانات السوق
+        </Link>
+      }
+    />
     <section className="grid gap-6 lg:grid-cols-[.85fr_1.15fr]">
       <Card className="fintech-surface-card"><CardHeader><CardTitle className="flex items-center gap-2"><Globe2 className="size-5 text-primary" />تحديث سعر الصرف</CardTitle><CardDescription>ابحث في Yahoo Finance عن زوج العملة مقابل عملة الأساس، أو سجّل بديلًا يدويًا موثقًا.</CardDescription></CardHeader><CardContent><form className="grid gap-4" onSubmit={submit}><div className="grid gap-3 sm:grid-cols-2"><div className="grid gap-2"><Label htmlFor="fx-from">من العملة</Label><Input id="fx-from" value={fromCurrency} onChange={event => setFromCurrency(event.target.value.toUpperCase())} minLength={3} maxLength={3} placeholder="USD" required /></div><div className="grid gap-2"><Label>إلى عملة الأساس</Label><Input value={dashboard.data?.workspace.baseCurrency || "—"} disabled /></div></div><Button type="button" variant="outline" disabled={!canAdvise || !fromCurrency || refreshYahoo.isPending} onClick={() => refreshYahoo.mutate({ fromCurrency })}>{refreshYahoo.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}تحديث من Yahoo Finance</Button><div className="grid gap-2"><Label htmlFor="fx-rate">سعر يدوي بديل</Label><Input id="fx-rate" inputMode="decimal" value={rate} onChange={event => setRate(event.target.value)} required /></div><Button type="submit" disabled={!canAdvise || record.isPending}>{record.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}{canAdvise ? "حفظ السعر اليدوي" : "تتطلب صلاحية مستشار"}</Button></form></CardContent></Card>
       <Card className="fintech-surface-card"><CardHeader><CardTitle>فجوات التقييم</CardTitle><CardDescription>إشارات حالة تستند فقط إلى الحسابات والحيازات المسجلة في مساحة FAMILY.</CardDescription></CardHeader><CardContent>{dashboard.isLoading ? <p className="py-12 text-center text-sm text-muted-foreground">جارٍ فحص تغطية الأسعار…</p> : dashboard.error ? <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{errorText(dashboard.error)}</p> : gaps.length ? <div className="space-y-3">{gaps.map(gap => <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950" key={gap}><CircleAlert className="mt-0.5 size-4 shrink-0" /><p>يلزم إدخال سعر موثق أو سعر صرف حديث للبيان: <strong>{gap}</strong>.</p></div>)}</div> : <div className="fintech-empty-state"><Globe2 className="fintech-empty-state-icon" /><h3>لا توجد فجوات تقييم حاليًا</h3><p>تتوفر الأسعار اللازمة للبيانات المسجلة. راجع المصدر والتاريخ قبل اتخاذ قرار مالي.</p></div>}</CardContent></Card>

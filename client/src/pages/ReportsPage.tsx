@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,54 +92,50 @@ export function ReportsPage() {
   return (
     <DashboardLayout>
       <div dir="rtl" className="mx-auto max-w-7xl space-y-6 pb-12">
-        {/* Header Section */}
-        <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-[.15em] text-emerald-600 dark:text-emerald-400">
-                FAMILY / Financial Statements & Reporting Engine
-              </span>
-              <Badge variant="outline" className="text-xs font-mono">Phase 9A</Badge>
+        <PageHeader
+          title="التقارير المالية والمطابقة المحاسبية التحليلية"
+          description="قوائم مالية متوافقة مع القيد المزدوج، وجسر تحليلي لصافي الثروة الاقتصادي، ومطابقة تدفقات نقدية مدققة."
+          breadcrumbs={[
+            { label: "الرئيسية", href: "/" },
+            { label: "الحوكمة والتحليل", href: "/reports" },
+            { label: "التقارير المالية" },
+          ]}
+          badge={{ text: "محاسبة مدققة", variant: "institutional" }}
+          icon={FileChartColumn}
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExport("csv")}
+                disabled={exportMutation.isPending || reportsQuery.isLoading}
+                className="gap-1.5"
+              >
+                <Download className="size-4 text-emerald-600" />
+                تصدير CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleExport("json")}
+                disabled={exportMutation.isPending || reportsQuery.isLoading}
+                className="gap-1.5"
+              >
+                <Download className="size-4 text-blue-600" />
+                تصدير JSON
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.print()}
+                className="gap-1.5"
+              >
+                <Printer className="size-4 text-slate-600" />
+                طباعة / PDF
+              </Button>
             </div>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-              التقارير المالية والمطابقة المحاسبية التحليلية
-            </h1>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              قوائم مالية متوافقة مع القيد المزدوج، وجسر تحليلي لصافي الثروة الاقتصادي، ومطابقة تدفقات نقدية مدققة.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("csv")}
-              disabled={exportMutation.isPending || reportsQuery.isLoading}
-              className="gap-1.5"
-            >
-              <Download className="size-4 text-emerald-600" />
-              تصدير CSV
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport("json")}
-              disabled={exportMutation.isPending || reportsQuery.isLoading}
-              className="gap-1.5"
-            >
-              <Download className="size-4 text-blue-600" />
-              تصدير JSON
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.print()}
-              className="gap-1.5"
-            >
-              <Printer className="size-4 text-slate-600" />
-              طباعة / PDF
-            </Button>
-          </div>
-        </header>
+          }
+        />
 
         {/* Date Contract & Period Control Bar */}
         <Card className="border-slate-200 bg-slate-50/50 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">

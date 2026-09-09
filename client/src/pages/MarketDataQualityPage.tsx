@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleAlert, CircleCheckBig, DatabaseZap, Gauge, Globe2, ShieldCheck } from "lucide-react";
@@ -16,7 +17,17 @@ export default function MarketDataQualityPage() {
   const quality = trpc.family.marketDataQuality.useQuery();
   const data = quality.data;
   return <DashboardLayout><main className="mx-auto max-w-7xl space-y-6" dir="rtl">
-    <header className="rounded-[1.75rem] bg-gradient-to-l from-slate-950 via-slate-900 to-cyan-900 p-7 text-white"><p className="text-xs font-semibold tracking-[.15em] text-cyan-200">FAMILY / MARKET DATA QUALITY</p><h1 className="mt-2 text-3xl font-bold">جودة بيانات السوق</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">لوحة تشغيلية للمتابعة فقط: تعرض تغطية السعر والمصدر وتاريخ اللقطة وحالة التقادم، ولا تعرض قيمًا مالية ولا تحدّث أسعارًا ولا تنشئ أي صفقة أو قيد.</p></header>
+    <PageHeader
+      title="جودة بيانات السوق"
+      description="لوحة تشغيلية للمتابعة فقط: تعرض تغطية السعر والمصدر وتاريخ اللقطة وحالة التقادم، ولا تعرض قيمًا مالية ولا تحدّث أسعارًا ولا تنشئ أي صفقة أو قيد."
+      breadcrumbs={[
+        { label: "الرئيسية", href: "/" },
+        { label: "الاستثمار والتداول", href: "/data-quality" },
+        { label: "جودة بيانات السوق" },
+      ]}
+      badge={{ text: "مراقبة فقط", variant: "institutional" }}
+      icon={DatabaseZap}
+    />
 
     {quality.isLoading ? <Card className="fintech-surface-card"><CardContent className="py-14 text-center text-sm text-muted-foreground">جارٍ تحليل تغطية السعر والصرف…</CardContent></Card> : quality.error ? <Card className="border-destructive/30 bg-destructive/10"><CardContent className="py-5 text-sm text-destructive">تعذر تحميل لوحة الجودة: {quality.error.message}</CardContent></Card> : data ? <>
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><QualityMetric label="أدوات سوقية مراقبة" value={data.instruments.monitored} /><QualityMetric label="أدوات ذات لقطة صالحة" value={data.instruments.covered} /><QualityMetric label="أسعار أدوات متقادمة" value={data.instruments.stale} tone="alert" /><QualityMetric label="أسعار أدوات مفقودة" value={data.instruments.missing} tone="alert" /></section>

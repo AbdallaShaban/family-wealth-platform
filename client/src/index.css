@@ -37,7 +37,7 @@
   --background: #f5f7fb;
   --foreground: #16233f;
   --muted: #edf1f7;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569; /* WCAG AA compliant: contrast ratio > 5.5:1 against white */
   --border: #dce3ee;
   --ring: #16a38a;
   --card: #ffffff;
@@ -64,14 +64,39 @@
   --chart-5: #5bb5e7;
 }
 
-.dark { --background: #091426; --foreground: #edf4ff; --muted: #14233d; --muted-foreground: #9badc4; --border: #243552; --ring: #55d1ba; --card: #111f37; --card-foreground: #edf4ff; --popover: #13213b; --popover-foreground: #edf4ff; --primary: #2fc8a7; --primary-foreground: #06231f; --secondary: #123a38; --secondary-foreground: #a6f1df; --accent: #1a2a46; --accent-foreground: #edf4ff; --destructive: #f27f8b; --sidebar: #071120; --sidebar-foreground: #edf4ff; --sidebar-border: rgba(226,232,240,.10); --sidebar-accent: rgba(124, 211, 194, .12); --sidebar-accent-foreground: #ffffff; --sidebar-ring: #69ddc7; }
+.dark { --background: #091426; --foreground: #edf4ff; --muted: #14233d; --muted-foreground: #cbd5e1; /* WCAG AA compliant: > 7.5:1 against #091426 */ --border: #243552; --ring: #55d1ba; --card: #111f37; --card-foreground: #edf4ff; --popover: #13213b; --popover-foreground: #edf4ff; --primary: #2fc8a7; --primary-foreground: #06231f; --secondary: #123a38; --secondary-foreground: #a6f1df; --accent: #1a2a46; --accent-foreground: #edf4ff; --destructive: #f27f8b; --sidebar: #071120; --sidebar-foreground: #edf4ff; --sidebar-border: rgba(226,232,240,.10); --sidebar-accent: rgba(124, 211, 194, .12); --sidebar-accent-foreground: #ffffff; --sidebar-ring: #69ddc7; }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; background: var(--background); }
 body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-body); }
 .dark { color-scheme: dark; }
 button { font-family: inherit; cursor: pointer; }
-.privacy-mode [data-sensitive-value] { display: inline-block; min-width: 4.5em; border-radius: .35em; color: transparent !important; background: linear-gradient(90deg, var(--muted), color-mix(in srgb, var(--muted) 68%, var(--foreground))); filter: none; user-select: none; }
+.privacy-mode [data-sensitive-value],
+.privacy-mode-active [data-sensitive-value] { display: inline-block; min-width: 4.5em; border-radius: .35em; color: transparent !important; background: linear-gradient(90deg, var(--muted), color-mix(in srgb, var(--muted) 68%, var(--foreground))); filter: none; user-select: none; }
+
+/* Tabular numeric presentation for financial tables & metrics */
+.tabular-nums,
+[data-tabular-nums],
+table td,
+table th,
+.fintech-metric strong,
+.font-mono {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Prevent premature HTML validation styling: only apply invalid styles after user interaction (blur) */
+input:user-invalid,
+select:user-invalid,
+textarea:user-invalid {
+  border-color: #d85b6b !important;
+  box-shadow: 0 0 0 1px #d85b6b !important;
+}
+
+/* Responsive single-form container constraint */
+.fintech-single-form-container {
+  max-width: 56rem;
+  margin-inline: auto;
+}
 
 /* FAMILY Fintech application shell */
 .fintech-app-inset { min-width: 0; background: radial-gradient(circle at 72% -8%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 32rem), var(--background); }
