@@ -81,6 +81,26 @@ export default function AuditorPortalPage() {
   const allowedScopes = payload ? payload.allowedScopes : [];
   const expiresAt = payload ? payload.expiresAt : 0;
 
+  const statementsQuery = trpc.family.auditor.getAuditorFinancialStatements.useQuery(
+    { token: activeToken },
+    { enabled: Boolean(activeToken && payload && (allowedScopes.includes("financial_statements") || allowedScopes.includes("reports"))) }
+  );
+
+  const reconQuery = trpc.family.auditor.getAuditorReconciliation.useQuery(
+    { token: activeToken },
+    { enabled: Boolean(activeToken && payload && allowedScopes.includes("reconciliation")) }
+  );
+
+  const zakatQuery = trpc.family.auditor.getAuditorZakat.useQuery(
+    { token: activeToken },
+    { enabled: Boolean(activeToken && payload && allowedScopes.includes("zakat")) }
+  );
+
+  const lotsQuery = trpc.family.auditor.getAuditorLotAccounting.useQuery(
+    { token: activeToken },
+    { enabled: Boolean(activeToken && payload && allowedScopes.includes("lot_accounting")) }
+  );
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8" dir="rtl">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -257,26 +277,46 @@ export default function AuditorPortalPage() {
                 <TabsContent value="financial_statements" className="space-y-4">
                   <Card className="bg-slate-900 border-slate-800">
                     <CardHeader>
-                      <CardTitle className="text-white text-base">حزمة القوائم المالية المعتمدة</CardTitle>
+                      <CardTitle className="text-white text-base">حزمة القوائم المالية المعتمدة (قراءة وتدقيق فقط)</CardTitle>
                       <CardDescription className="text-slate-400">
-                        استعراض وتصدير المركز المالي، الدخل الشامل، التدفقات النقدية وشهادات المطابقة.
+                        البيانات المستخرجة مباشرة من الأستاذ المالي وفق ضوابط التدقيق المؤسسي.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="p-4 bg-slate-950 rounded-lg border border-slate-800 text-sm space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-300 font-medium">الوصول الكامل إلى شاشة التقارير الرسمية:</span>
-                          <Link
-                            href="/reports"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 rounded-lg border border-emerald-500/30 text-xs font-semibold"
-                          >
-                            فتح مركز التقارير المالية
-                          </Link>
+                      {statementsQuery.isLoading ? (
+                        <p className="text-slate-400 text-sm">جارٍ تحميل القوائم المالية...</p>
+                      ) : statementsQuery.error ? (
+                        <div className="p-3 bg-red-950/40 border border-red-800/50 rounded-lg text-red-300 text-sm">
+                          {statementsQuery.error.message}
                         </div>
-                        <p className="text-xs text-slate-500">
-                          ملاحظة تدقيقية: يتم تسجيل كافة عمليات التوليد والتحميل تلقائيًا في سجل التدقيق المالي مع بصمة المعرف {payload.tokenId}.
-                        </p>
-                      </div>
+                      ) : statementsQuery.data ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
+                              <p className="text-xs text-slate-500">إجمالي الأصول (Book Assets)</p>
+                              <p className="text-lg font-bold text-emerald-400 mt-1">
+                                {statementsQuery.data.statements.bookBalanceSheet.assets.totalBookAssets} {statementsQuery.data.workspace.baseCurrency}
+                              </p>
+                            </div>
+                            <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
+                              <p className="text-xs text-slate-500">إجمالي الالتزامات (Liabilities)</p>
+                              <p className="text-lg font-bold text-amber-400 mt-1">
+                                {statementsQuery.data.statements.bookBalanceSheet.liabilities.totalBookLiabilities} {statementsQuery.data.workspace.baseCurrency}
+                              </p>
+                            </div>
+                            <div className="bg-slate-950 p-4 rounded-lg border border-slate-800">
+                              <p className="text-xs text-slate-500">صافي حقوق الملكية (Net Book Equity)</p>
+                              <p className="text-lg font-bold text-sky-400 mt-1">
+                                {statementsQuery.data.statements.bookBalanceSheet.equity.totalBookEquity} {statementsQuery.data.workspace.baseCurrency}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-xs text-slate-400 flex items-center justify-between">
+                            <span>حالة توازن المركز المالي: {statementsQuery.data.statements.bookBalanceSheet.equationCheck.assetsEqualsLiabilitiesPlusEquity ? "متوازن ومطابق ✓" : "غير متوازن ⚠"}</span>
+                            <span>تاريخ القوائم: {statementsQuery.data.statements.metadata.asOf}</span>
+                          </div>
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -287,23 +327,54 @@ export default function AuditorPortalPage() {
                 <TabsContent value="zakat" className="space-y-4">
                   <Card className="bg-slate-900 border-slate-800">
                     <CardHeader>
-                      <CardTitle className="text-white text-base">تقييمات الزكاة والالتزام الضريبي</CardTitle>
+                      <CardTitle className="text-white text-base">تقييمات الزكاة والالتزام الشرعي (قراءة فقط)</CardTitle>
                       <CardDescription className="text-slate-400">
-                        مراجعة الوعاء الزكوي، النصاب، الحول المكتمل ومطابقة السندات الشرعية والنظامية.
+                        سجل التقييمات الزكوية المعتمدة لمساحة العمل #{payload.workspaceId}.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="p-4 bg-slate-950 rounded-lg border border-slate-800 text-sm space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-300 font-medium">الوصول إلى سجل تقييمات الزكاة:</span>
-                          <Link
-                            href="/reports"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 rounded-lg border border-emerald-500/30 text-xs font-semibold"
-                          >
-                            استعراض التقييمات الزكوية
-                          </Link>
+                      {zakatQuery.isLoading ? (
+                        <p className="text-slate-400 text-sm">جارٍ تحميل تقييمات الزكاة...</p>
+                      ) : zakatQuery.error ? (
+                        <div className="p-3 bg-red-950/40 border border-red-800/50 rounded-lg text-red-300 text-sm">
+                          {zakatQuery.error.message}
                         </div>
-                      </div>
+                      ) : zakatQuery.data ? (
+                        zakatQuery.data.assessments.length === 0 ? (
+                          <p className="text-slate-500 text-sm">لا توجد تقييمات زكاة مسجلة حتى الآن.</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-right border-collapse">
+                              <thead>
+                                <tr className="border-b border-slate-800 text-slate-400">
+                                  <th className="p-2">تاريخ التقييم</th>
+                                  <th className="p-2">الوعاء الزكوي الخاضع</th>
+                                  <th className="p-2">حد النصاب</th>
+                                  <th className="p-2">الزكاة المستحقة</th>
+                                  <th className="p-2">الحالة</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {zakatQuery.data.assessments.map((item) => (
+                                  <tr key={item.id} className="border-b border-slate-800/50">
+                                    <td className="p-2 text-white font-mono" dir="ltr">
+                                      {new Date(item.assessedAt).toLocaleDateString("ar-SA")}
+                                    </td>
+                                    <td className="p-2 text-slate-300">{item.eligibleBase} {item.currency}</td>
+                                    <td className="p-2 text-slate-400">{item.nisabBase} {item.currency}</td>
+                                    <td className="p-2 text-emerald-400 font-semibold">{item.zakatDueBase} {item.currency}</td>
+                                    <td className="p-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {item.status}
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )
+                      ) : null}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -314,23 +385,57 @@ export default function AuditorPortalPage() {
                 <TabsContent value="reconciliation" className="space-y-4">
                   <Card className="bg-slate-900 border-slate-800">
                     <CardHeader>
-                      <CardTitle className="text-white text-base">تسوية ومطابقة الحسابات المصرفية والاستثمارية</CardTitle>
+                      <CardTitle className="text-white text-base">تسوية ومطابقة الحسابات (قراءة فقط)</CardTitle>
                       <CardDescription className="text-slate-400">
-                        التحقق من توازن الأستاذ المالي (Double-Entry Ledger Invariance) ومطابقة الحسابات الحقيقية.
+                        التحقق من توازن الأستاذ المالي (Double-Entry Invariants) والأحداث المنشورة.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="p-4 bg-slate-950 rounded-lg border border-slate-800 text-sm space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-300 font-medium">سجل المطابقة والتسوية:</span>
-                          <Link
-                            href="/reconciliation"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 rounded-lg border border-emerald-500/30 text-xs font-semibold"
-                          >
-                            فتح سجل المطابقة
-                          </Link>
+                      {reconQuery.isLoading ? (
+                        <p className="text-slate-400 text-sm">جارٍ تحميل تقرير المطابقة...</p>
+                      ) : reconQuery.error ? (
+                        <div className="p-3 bg-red-950/40 border border-red-800/50 rounded-lg text-red-300 text-sm">
+                          {reconQuery.error.message}
                         </div>
-                      </div>
+                      ) : reconQuery.data ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 bg-slate-950 rounded-lg border border-slate-800">
+                            <div className="flex items-center gap-2">
+                              {reconQuery.data.report.status === "healthy" ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                              ) : (
+                                <AlertCircle className="w-5 h-5 text-amber-400" />
+                              )}
+                              <span className="font-semibold text-white">
+                                حالة الدفتر: {reconQuery.data.report.status === "healthy" ? "متوازن وسليم" : "يتطلب تدقيق"}
+                              </span>
+                            </div>
+                            <span className="text-xs text-slate-400" dir="ltr">
+                              {new Date(reconQuery.data.report.generatedAt).toLocaleString("ar-SA")}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                              <p className="text-xs text-slate-500">إجمالي المدين</p>
+                              <p className="text-base font-bold text-slate-200 mt-1">
+                                {reconQuery.data.report.trialBalance.totalDebitBase} {reconQuery.data.workspace.baseCurrency}
+                              </p>
+                            </div>
+                            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                              <p className="text-xs text-slate-500">إجمالي الدائن</p>
+                              <p className="text-base font-bold text-slate-200 mt-1">
+                                {reconQuery.data.report.trialBalance.totalCreditBase} {reconQuery.data.workspace.baseCurrency}
+                              </p>
+                            </div>
+                            <div className="bg-slate-950 p-3 rounded-lg border border-slate-800">
+                              <p className="text-xs text-slate-500">الفرق (Difference)</p>
+                              <p className={`text-base font-bold mt-1 ${reconQuery.data.report.trialBalance.differenceBase === "0.000000" ? "text-emerald-400" : "text-amber-400"}`}>
+                                {reconQuery.data.report.trialBalance.differenceBase} {reconQuery.data.workspace.baseCurrency}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -343,21 +448,57 @@ export default function AuditorPortalPage() {
                     <CardHeader>
                       <CardTitle className="text-white text-base">سجل اللوتات وتكلفة الأساس (FIFO Cost Basis)</CardTitle>
                       <CardDescription className="text-slate-400">
-                        التدقيق في لوتات الشراء والبيع، الأرباح المحققة وغير المحققة وتوزيعات الأرباح النقدية.
+                        لوتات الاستثمار المفتوحة والمغلقة وأسعار التكلفة الفعلية.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="p-4 bg-slate-950 rounded-lg border border-slate-800 text-sm space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-300 font-medium">سجل محاسبة اللوتات:</span>
-                          <Link
-                            href="/lot-accounting"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600/30 rounded-lg border border-emerald-500/30 text-xs font-semibold"
-                          >
-                            استعراض تفاصيل اللوتات
-                          </Link>
+                      {lotsQuery.isLoading ? (
+                        <p className="text-slate-400 text-sm">جارٍ تحميل سجل اللوتات...</p>
+                      ) : lotsQuery.error ? (
+                        <div className="p-3 bg-red-950/40 border border-red-800/50 rounded-lg text-red-300 text-sm">
+                          {lotsQuery.error.message}
                         </div>
-                      </div>
+                      ) : lotsQuery.data ? (
+                        lotsQuery.data.lots.length === 0 ? (
+                          <p className="text-slate-500 text-sm">لا توجد لوتات استثمارية مسجلة.</p>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-right border-collapse">
+                              <thead>
+                                <tr className="border-b border-slate-800 text-slate-400">
+                                  <th className="p-2">الأداة</th>
+                                  <th className="p-2">تاريخ الفتح</th>
+                                  <th className="p-2">الكمية الأصلية</th>
+                                  <th className="p-2">الكمية المتبقية</th>
+                                  <th className="p-2">تكلفة الوحدة</th>
+                                  <th className="p-2">الحالة</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {lotsQuery.data.lots.slice(0, 20).map((lot) => {
+                                  const inst = lotsQuery.data?.instruments.find((i) => i.id === lot.instrumentId);
+                                  return (
+                                    <tr key={lot.id} className="border-b border-slate-800/50">
+                                      <td className="p-2 text-white font-semibold">{inst?.symbol || `#${lot.instrumentId}`}</td>
+                                      <td className="p-2 text-slate-400" dir="ltr">
+                                        {new Date(lot.acquiredAt).toLocaleDateString("ar-SA")}
+                                      </td>
+                                      <td className="p-2 text-slate-300">{lot.originalQuantity}</td>
+                                      <td className="p-2 text-emerald-400 font-semibold">{lot.remainingQuantity}</td>
+                                      <td className="p-2 text-slate-300">{lot.unitCost}</td>
+                                      <td className="p-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          {lot.status}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )
+                      ) : null}
                     </CardContent>
                   </Card>
                 </TabsContent>

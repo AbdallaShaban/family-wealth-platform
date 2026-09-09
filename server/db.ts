@@ -1,21 +1,45 @@
 import { and, eq, gt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 import { InsertUser, platformAdminInvitations, platformAuditEvents, platformOwnership, users } from "../drizzle/schema";
 import { claimInitialPlatformOwner, isEligibleInitialPlatformOwner, verifyPlatformAdminInvitationAfterGoogleLogin } from "./platformOwnership";
 
+export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
+  const connectionLimit = env.DB_CONNECTION_LIMIT ? parseInt(env.DB_CONNECTION_LIMIT, 10) : 10;
+  const maxIdle = env.DB_MAX_IDLE ? parseInt(env.DB_MAX_IDLE, 10) : 10;
+  const idleTimeout = env.DB_IDLE_TIMEOUT_MS ? parseInt(env.DB_IDLE_TIMEOUT_MS, 10) : 60000;
+
+  return {
+    uri: env.DATABASE_URL,
+    connectionLimit: Number.isFinite(connectionLimit) && connectionLimit > 0 ? connectionLimit : 10,
+    maxIdle: Number.isFinite(maxIdle) && maxIdle > 0 ? maxIdle : 10,
+    idleTimeout: Number.isFinite(idleTimeout) && idleTimeout > 0 ? idleTimeout : 60000,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+  };
+}
+
+let _pool: mysql.Pool | null = null;
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+// Lazily create the drizzle instance with explicit mysql2 connection pool
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const config = getMysqlPoolConfig();
+      _pool = mysql.createPool(config);
+      _db = drizzle(_pool as any);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
+      _pool = null;
     }
   }
   return _db;
+}
+
+export function getPool() {
+  return _pool;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {

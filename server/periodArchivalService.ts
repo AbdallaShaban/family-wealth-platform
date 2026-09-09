@@ -6,8 +6,11 @@ import { getDb } from "./db";
 import type { FamilyContext } from "./familyAccess";
 import {
   accounts,
+  approvalRequests,
   auditEvents,
+  corporateActions,
   financialEvents,
+  financialPeriods,
   fxRates,
   journalEntries,
   journalLines,
@@ -17,9 +20,9 @@ import {
   vaultDocuments,
 } from "../drizzle/schema";
 import { generateFinancialStatementsPackage } from "./financialStatementsRouter";
-import { buildReconciliationReport, type ReconciliationEntry, type ReconciliationEvent, type ReconciliationFxRate, type ReconciliationLine, type ReconciliationPosition } from "./reconciliation";
+import { buildReconciliationReport, type ReconciliationCorporateAction, type ReconciliationEntry, type ReconciliationEvent, type ReconciliationFxRate, type ReconciliationLine, type ReconciliationPosition } from "./reconciliation";
 import { encryptVaultValue, decryptVaultValue } from "./vaultCrypto";
-import { storageGetSignedUrl, storagePut } from "./storage";
+import { storageDelete, storageGetSignedUrl, storagePut } from "./storage";
 import { invalidateReadModelCache } from "./readModelCache";
 
 export type FrozenAuditDossier = {
@@ -134,19 +137,21 @@ export async function archivePeriodClosureDossier(args: ArchivePeriodArgs) {
 
   // 3. Build Reconciliation Certificate at period close timestamp
   const endTimestamp = new Date(range.asOf + "T23:59:59.999Z").getTime();
-  const [entryRows, lineRows, eventRows, positionRows, fxRateRows] = await Promise.all([
+  const [entryRows, lineRows, eventRows, positionRows, fxRateRows, corporateActionRows] = await Promise.all([
     db.select({ id: journalEntries.id, eventId: journalEntries.eventId, status: journalEntries.status, reversalOfEntryId: journalEntries.reversalOfEntryId }).from(journalEntries).where(and(eq(journalEntries.workspaceId, workspaceId), lte(journalEntries.postedAt, endTimestamp))),
     db.select({ id: journalLines.id, entryId: journalLines.entryId, accountId: journalLines.accountId, direction: journalLines.direction, amount: journalLines.amount, baseAmount: journalLines.baseAmount, currency: journalLines.currency }).from(journalLines).where(eq(journalLines.workspaceId, workspaceId)),
-    db.select({ id: financialEvents.id, status: financialEvents.status, primaryAccountId: financialEvents.primaryAccountId, instrumentId: financialEvents.instrumentId, eventType: financialEvents.eventType, currency: financialEvents.currency, quantity: financialEvents.quantity, unitPrice: financialEvents.unitPrice, grossAmount: financialEvents.grossAmount, feeAmount: financialEvents.feeAmount, taxAmount: financialEvents.taxAmount, idempotencyKey: financialEvents.idempotencyKey }).from(financialEvents).where(and(eq(financialEvents.workspaceId, workspaceId), lte(financialEvents.occurredAt, endTimestamp))),
+    db.select({ id: financialEvents.id, status: financialEvents.status, primaryAccountId: financialEvents.primaryAccountId, instrumentId: financialEvents.instrumentId, eventType: financialEvents.eventType, currency: financialEvents.currency, quantity: financialEvents.quantity, unitPrice: financialEvents.unitPrice, grossAmount: financialEvents.grossAmount, feeAmount: financialEvents.feeAmount, taxAmount: financialEvents.taxAmount, idempotencyKey: financialEvents.idempotencyKey, occurredAt: financialEvents.occurredAt }).from(financialEvents).where(and(eq(financialEvents.workspaceId, workspaceId), lte(financialEvents.occurredAt, endTimestamp))),
     db.select({ accountId: positions.accountId, instrumentId: positions.instrumentId, quantity: positions.quantity, averageCost: positions.averageCost }).from(positions).where(eq(positions.workspaceId, workspaceId)),
     db.select({ fromCurrency: fxRates.fromCurrency, toCurrency: fxRates.toCurrency, rate: fxRates.rate, asOf: fxRates.asOf, rateStatus: fxRates.rateStatus }).from(fxRates).where(eq(fxRates.workspaceId, workspaceId)).orderBy(desc(fxRates.asOf)),
+    db.select({ instrumentId: corporateActions.instrumentId, actionType: corporateActions.actionType, ratio: corporateActions.ratio, effectiveAt: corporateActions.effectiveAt }).from(corporateActions).where(and(eq(corporateActions.workspaceId, workspaceId), lte(corporateActions.effectiveAt, endTimestamp))),
   ]);
 
   const reconEntries: ReconciliationEntry[] = entryRows.map(r => ({ id: r.id, eventId: r.eventId, status: r.status, reversalOfEntryId: r.reversalOfEntryId }));
   const reconLines: ReconciliationLine[] = lineRows.map(r => ({ id: r.id, entryId: r.entryId, accountId: r.accountId, direction: r.direction as "debit" | "credit", amount: r.amount, baseAmount: r.baseAmount, currency: r.currency }));
-  const reconEvents: ReconciliationEvent[] = eventRows.map(r => ({ id: r.id, status: r.status, primaryAccountId: r.primaryAccountId, instrumentId: r.instrumentId, eventType: r.eventType, currency: r.currency, quantity: r.quantity, unitPrice: r.unitPrice, grossAmount: r.grossAmount, feeAmount: r.feeAmount, taxAmount: r.taxAmount, idempotencyKey: r.idempotencyKey }));
+  const reconEvents: ReconciliationEvent[] = eventRows.map(r => ({ id: r.id, status: r.status, primaryAccountId: r.primaryAccountId, instrumentId: r.instrumentId, eventType: r.eventType, currency: r.currency, quantity: r.quantity, unitPrice: r.unitPrice, grossAmount: r.grossAmount, feeAmount: r.feeAmount, taxAmount: r.taxAmount, idempotencyKey: r.idempotencyKey, occurredAt: r.occurredAt }));
   const reconPositions: ReconciliationPosition[] = positionRows.map(r => ({ accountId: r.accountId, instrumentId: r.instrumentId, quantity: r.quantity, averageCost: r.averageCost }));
   const reconFxRates: ReconciliationFxRate[] = fxRateRows.map(r => ({ fromCurrency: r.fromCurrency, toCurrency: r.toCurrency, rate: r.rate, asOf: r.asOf, rateStatus: r.rateStatus }));
+  const reconCorporateActions: ReconciliationCorporateAction[] = corporateActionRows.map(r => ({ instrumentId: r.instrumentId, actionType: r.actionType, ratio: r.ratio, effectiveAt: r.effectiveAt }));
 
   const reconciliationReport = buildReconciliationReport({
     baseCurrency: args.context.workspace.baseCurrency,
@@ -155,6 +160,7 @@ export async function archivePeriodClosureDossier(args: ArchivePeriodArgs) {
     events: reconEvents,
     positions: reconPositions,
     fxRates: reconFxRates,
+    corporateActions: reconCorporateActions,
     generatedAt: endTimestamp,
   });
 
@@ -216,49 +222,120 @@ export async function archivePeriodClosureDossier(args: ArchivePeriodArgs) {
   const finalJson = JSON.stringify(finalDossier, null, 2);
   const bytes = Buffer.from(finalJson, "utf8");
 
-  // 7. Store in Vault with AES-256-GCM Encryption
-  const storagePath = `vault/${workspaceId}/periods/${periodKey}-${sha256.slice(0, 16)}.json`;
-  const storedObject = await storagePut(storagePath, bytes, "application/json");
+  // 7. Staging-First: Upload to staging key outside MySQL transaction
+  const stagingStoragePath = `vault/${workspaceId}/periods/staging-${periodKey}-${sha256.slice(0, 16)}.json`;
+  let storedObject: { key: string; url: string };
+  try {
+    storedObject = await storagePut(stagingStoragePath, bytes, "application/json");
+    if (!storedObject || !storedObject.key) {
+      throw new Error("Object storage returned invalid or empty key");
+    }
+  } catch (storageErr) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: `فشل رفع ملف الأرشيف إلى التخزين السحابي: ${(storageErr as Error).message}`,
+    });
+  }
 
-  const originalName = `audit_dossier_${periodKey}.json`;
-  const encryptedStorageKey = encryptVaultValue(storedObject.key);
-  const encryptedOriginalName = encryptVaultValue(originalName);
+  // 8. Execute Atomic Short MySQL Transaction
+  let documentId: number;
+  try {
+    documentId = await db.transaction(async tx => {
+      // 8a. Close financial period
+      await tx
+        .insert(financialPeriods)
+        .values({
+          workspaceId,
+          periodKey,
+          status: "closed",
+          closedByUserId: args.actorUserId,
+          closedAt: now,
+          closeApprovalRequestId: args.closeApprovalRequestId ?? null,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onDuplicateKeyUpdate({
+          set: {
+            status: "closed",
+            closedByUserId: args.actorUserId,
+            closedAt: now,
+            closeApprovalRequestId: args.closeApprovalRequestId ?? null,
+            updatedAt: now,
+          },
+        });
 
-  const inserted = await db.insert(vaultDocuments).values({
-    workspaceId,
-    profileId,
-    encryptedStorageKey,
-    encryptedOriginalName,
-    mimeType: "application/json",
-    byteSize: bytes.length,
-    sha256,
-    linkedEntityType: "financial_period",
-    linkedEntityId: periodKey,
-    createdByUserId: args.actorUserId,
-    createdAt: now,
-    updatedAt: now,
-  });
+      // 8b. Execute approval request if specified
+      if (args.closeApprovalRequestId) {
+        await tx
+          .update(approvalRequests)
+          .set({ status: "executed", updatedAt: now })
+          .where(
+            and(
+              eq(approvalRequests.id, args.closeApprovalRequestId),
+              eq(approvalRequests.workspaceId, workspaceId)
+            )
+          );
+      }
 
-  const documentId = Number(inserted[0].insertId);
+      // 8c. Insert vault document metadata
+      const originalName = `audit_dossier_${periodKey}.json`;
+      const encryptedStorageKey = encryptVaultValue(storedObject.key);
+      const encryptedOriginalName = encryptVaultValue(originalName);
 
-  // 8. Audit Event
-  await db.insert(auditEvents).values({
-    workspaceId,
-    actorUserId: args.actorUserId,
-    action: "period_closure.dossier_archived",
-    targetType: "vault_document",
-    targetId: String(documentId),
-    beforeState: null,
-    afterState: {
-      periodKey,
-      sha256,
-      byteSize: bytes.length,
-      documentId,
-      closeApprovalRequestId: args.closeApprovalRequestId,
-    },
-    requestId: crypto.randomUUID(),
-    occurredAt: now,
-  });
+      const inserted = await tx.insert(vaultDocuments).values({
+        workspaceId,
+        profileId,
+        encryptedStorageKey,
+        encryptedOriginalName,
+        mimeType: "application/json",
+        byteSize: bytes.length,
+        sha256,
+        linkedEntityType: "financial_period",
+        linkedEntityId: periodKey,
+        createdByUserId: args.actorUserId,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const docId = Number(inserted[0].insertId);
+
+      // 8d. Record required audit event
+      await tx.insert(auditEvents).values({
+        workspaceId,
+        actorUserId: args.actorUserId,
+        action: "period_closure.dossier_archived",
+        targetType: "vault_document",
+        targetId: String(docId),
+        beforeState: null,
+        afterState: {
+          periodKey,
+          sha256,
+          byteSize: bytes.length,
+          documentId: docId,
+          closeApprovalRequestId: args.closeApprovalRequestId ?? null,
+        },
+        requestId: crypto.randomUUID(),
+        occurredAt: now,
+      });
+
+      return docId;
+    });
+  } catch (dbErr) {
+    // 9. Compensating cleanup: delete staged storage object on DB failure
+    console.error(`[PeriodArchival] DB transaction failed for ${periodKey}. Executing compensating deletion of ${storedObject.key}...`, dbErr);
+    try {
+      const deleted = await storageDelete(storedObject.key);
+      if (!deleted) {
+        console.error(`[PeriodArchival] CRITICAL: Compensating cleanup failed to delete key ${storedObject.key}`);
+      }
+    } catch (cleanupErr) {
+      console.error(`[PeriodArchival] CRITICAL: Compensating cleanup threw error for key ${storedObject.key}:`, cleanupErr);
+    }
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: `فشل تثبيت إغلاق الفترة في قاعدة البيانات: ${(dbErr as Error).message}`,
+    });
+  }
 
   invalidateReadModelCache(`vault:${workspaceId}:`);
 

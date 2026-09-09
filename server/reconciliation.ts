@@ -35,6 +35,14 @@ export type ReconciliationEvent = {
   feeAmount?: string | null;
   taxAmount?: string | null;
   idempotencyKey?: string | null;
+  occurredAt?: number | null;
+};
+
+export type ReconciliationCorporateAction = {
+  instrumentId: number;
+  actionType: string;
+  ratio: string;
+  effectiveAt: number;
 };
 
 export type ReconciliationFxRate = { fromCurrency: string; toCurrency: string; rate: string; asOf?: number | null; rateStatus?: string | null };
@@ -140,6 +148,7 @@ export function buildReconciliationReport(input: {
   baseCurrency?: string;
   fxRates?: ReconciliationFxRate[];
   expectedCashFlowByCategory?: Array<{ categoryId: number | null; actualAmountBase: string }>;
+  corporateActions?: ReconciliationCorporateAction[];
   entries: ReconciliationEntry[];
   lines: ReconciliationLine[];
   events: ReconciliationEvent[];
@@ -223,22 +232,50 @@ export function buildReconciliationReport(input: {
   for (const event of postedEvents) if (event.idempotencyKey) idempotencyCounts.set(event.idempotencyKey, (idempotencyCounts.get(event.idempotencyKey) ?? 0) + 1);
   const duplicateIdempotencyKeys = Array.from(idempotencyCounts.entries()).filter(([, count]) => count > 1).map(([key]) => key);
 
-  const rebuilt = new Map<string, { accountId: number; instrumentId: number; quantity: Decimal; cost: Decimal; realized: Decimal }>();
+  type TimelineItem =
+    | { kind: "trade"; timestamp: number; order: number; event: ReconciliationEvent }
+    | { kind: "split"; timestamp: number; order: number; action: ReconciliationCorporateAction };
+
+  const timeline: TimelineItem[] = [];
+  let seq = 0;
   for (const event of postedEvents) {
     if (!TRADE_TYPES.has(event.eventType) || event.instrumentId == null || event.primaryAccountId == null || !event.quantity) continue;
-    const quantity = decimal(event.quantity);
-    const key = `${event.primaryAccountId}:${event.instrumentId}`;
-    const current = rebuilt.get(key) ?? { accountId: event.primaryAccountId, instrumentId: event.instrumentId, quantity: new Decimal(0), cost: new Decimal(0), realized: new Decimal(0) };
-    if (event.eventType === "buy") {
-      current.quantity = current.quantity.plus(quantity);
-      current.cost = current.cost.plus(tradeCost(event));
-    } else {
-      const average = current.quantity.isZero() ? new Decimal(0) : current.cost.div(current.quantity);
-      current.realized = current.realized.plus(tradeGross(event).minus(average.mul(quantity)).minus(decimal(event.feeAmount)).minus(decimal(event.taxAmount)));
-      current.quantity = current.quantity.minus(quantity);
-      current.cost = current.cost.minus(average.mul(quantity));
+    timeline.push({ kind: "trade", timestamp: event.occurredAt ?? event.id, order: seq++, event });
+  }
+  for (const action of input.corporateActions ?? []) {
+    if (action.actionType === "stock_split" && Number(action.ratio) > 0) {
+      timeline.push({ kind: "split", timestamp: action.effectiveAt, order: seq++, action });
     }
-    rebuilt.set(key, current);
+  }
+  timeline.sort((a, b) => (a.timestamp !== b.timestamp ? a.timestamp - b.timestamp : a.order - b.order));
+
+  const rebuilt = new Map<string, { accountId: number; instrumentId: number; quantity: Decimal; cost: Decimal; realized: Decimal }>();
+  for (const item of timeline) {
+    if (item.kind === "trade") {
+      const event = item.event;
+      const quantity = decimal(event.quantity);
+      const key = `${event.primaryAccountId}:${event.instrumentId}`;
+      const current = rebuilt.get(key) ?? { accountId: event.primaryAccountId!, instrumentId: event.instrumentId!, quantity: new Decimal(0), cost: new Decimal(0), realized: new Decimal(0) };
+      if (event.eventType === "buy") {
+        current.quantity = current.quantity.plus(quantity);
+        current.cost = current.cost.plus(tradeCost(event));
+      } else {
+        const average = current.quantity.isZero() ? new Decimal(0) : current.cost.div(current.quantity);
+        current.realized = current.realized.plus(tradeGross(event).minus(average.mul(quantity)).minus(decimal(event.feeAmount)).minus(decimal(event.taxAmount)));
+        current.quantity = current.quantity.minus(quantity);
+        current.cost = current.cost.minus(average.mul(quantity));
+      }
+      rebuilt.set(key, current);
+    } else {
+      const ratio = new Decimal(item.action.ratio);
+      for (const [key, current] of Array.from(rebuilt.entries())) {
+        if (current.instrumentId === item.action.instrumentId) {
+          current.quantity = current.quantity.mul(ratio);
+          // cost basis remains invariant, average cost automatically divided by ratio
+          rebuilt.set(key, current);
+        }
+      }
+    }
   }
 
   const persisted = new Map(input.positions.map(position => [`${position.accountId}:${position.instrumentId}`, position]));

@@ -29,12 +29,45 @@ export type AuditorTokenPayload = {
   expiresAt: number;
 };
 
-function getSecretKey(): string {
-  const secret = process.env.JWT_SECRET;
+export const WEAK_OR_DEFAULT_JWT_SECRETS = [
+  "family_auditor_secret_hmac_fallback_key_2026_institutional",
+  "secret",
+  "changeme",
+  "default",
+  "password",
+  "12345678",
+  "jwt_secret",
+  "admin",
+  "development",
+  "test",
+];
+
+export function validateProductionJwtSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const isProduction = env.NODE_ENV === "production";
+  const secret = env.JWT_SECRET?.trim();
+
+  if (isProduction) {
+    if (!secret) {
+      throw new Error("[FATAL] Production startup rejected: JWT_SECRET environment variable is missing.");
+    }
+    if (secret.length < 32) {
+      throw new Error(`[FATAL] Production startup rejected: JWT_SECRET length (${secret.length}) is below the minimum required length of 32 characters.`);
+    }
+    if (WEAK_OR_DEFAULT_JWT_SECRETS.some(w => secret.toLowerCase().includes(w))) {
+      throw new Error("[FATAL] Production startup rejected: JWT_SECRET matches a known weak, default, or placeholder secret.");
+    }
+    return secret;
+  }
+
+  // Development/test fallback
   if (!secret || secret.length < 16) {
     return "family_auditor_secret_hmac_fallback_key_2026_institutional";
   }
   return secret;
+}
+
+export function getSecretKey(): string {
+  return validateProductionJwtSecret(process.env);
 }
 
 export function signAuditorToken(payload: AuditorTokenPayload): string {

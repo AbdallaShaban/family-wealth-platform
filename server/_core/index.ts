@@ -13,6 +13,7 @@ import { handleScheduledMarketRefresh } from "../marketRefreshHandler";
 import { startMarketAutomationDaemon } from "../marketScheduler";
 import { sql } from "drizzle-orm";
 import { getDb } from "../db";
+import { validateProductionJwtSecret } from "../auditorTokenService";
 
 const operationalMetrics = { startedAt: Date.now(), requests: 0, responses5xx: 0, totalResponseMs: 0, lastRequestAt: null as number | null };
 
@@ -36,6 +37,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  validateProductionJwtSecret();
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

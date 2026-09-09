@@ -466,21 +466,50 @@ export async function restoreFullWorkspaceBackup(args: {
           if (row.debtId && idMaps.debts.has(row.debtId as number)) {
             row.debtId = idMaps.debts.get(row.debtId as number)!;
           }
+          if (row.financialEventId && idMaps.financial_events.has(row.financialEventId as number)) {
+            row.financialEventId = idMaps.financial_events.get(row.financialEventId as number)!;
+          }
         } else if (name === "insurance_policies") {
           if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
             row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
           }
-        } else if (name === "insurance_claims" || name === "insurance_premium_payments") {
+          if (row.cashFlowCategoryId && idMaps.cash_flow_categories.has(row.cashFlowCategoryId as number)) {
+            row.cashFlowCategoryId = idMaps.cash_flow_categories.get(row.cashFlowCategoryId as number)!;
+          }
+        } else if (name === "insurance_claims") {
           if (row.policyId && idMaps.insurance_policies.has(row.policyId as number)) {
             row.policyId = idMaps.insurance_policies.get(row.policyId as number)!;
           }
-        } else if (name === "personal_ious" || name === "zakat_assessments") {
+          if (row.receivedEventId) {
+            row.receivedEventId = idMaps.financial_events.get(row.receivedEventId as number) ?? null;
+          }
+        } else if (name === "insurance_premium_payments") {
+          if (row.policyId && idMaps.insurance_policies.has(row.policyId as number)) {
+            row.policyId = idMaps.insurance_policies.get(row.policyId as number)!;
+          }
+          if (row.financialEventId && idMaps.financial_events.has(row.financialEventId as number)) {
+            row.financialEventId = idMaps.financial_events.get(row.financialEventId as number)!;
+          }
+        } else if (name === "personal_ious") {
           if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
             row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
+          }
+          if (row.settlementEventId) {
+            row.settlementEventId = idMaps.financial_events.get(row.settlementEventId as number) ?? null;
+          }
+        } else if (name === "zakat_assessments") {
+          if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
+            row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
+          }
+          if (row.paymentEventId) {
+            row.paymentEventId = idMaps.financial_events.get(row.paymentEventId as number) ?? null;
           }
         } else if (name === "approval_requests") {
           if (row.policyId && idMaps.approval_policies.has(row.policyId as number)) {
             row.policyId = idMaps.approval_policies.get(row.policyId as number)!;
+          }
+          if (row.executedEventId) {
+            row.executedEventId = idMaps.financial_events.get(row.executedEventId as number) ?? null;
           }
         } else if (name === "approval_decisions") {
           if (row.requestId && idMaps.approval_requests.has(row.requestId as number)) {
@@ -489,6 +518,22 @@ export async function restoreFullWorkspaceBackup(args: {
         } else if (name === "bank_statement_rows") {
           if (row.importId && idMaps.bank_statement_imports.has(row.importId as number)) {
             row.importId = idMaps.bank_statement_imports.get(row.importId as number)!;
+          }
+          if (row.matchedEventId) {
+            row.matchedEventId = idMaps.financial_events.get(row.matchedEventId as number) ?? null;
+          }
+          if (row.postedEventId) {
+            row.postedEventId = idMaps.financial_events.get(row.postedEventId as number) ?? null;
+          }
+        } else if (name === "lot_transfers") {
+          if (row.sourceLotId && idMaps.investment_lots.has(row.sourceLotId as number)) {
+            row.sourceLotId = idMaps.investment_lots.get(row.sourceLotId as number)!;
+          }
+          if (row.targetLotId && idMaps.investment_lots.has(row.targetLotId as number)) {
+            row.targetLotId = idMaps.investment_lots.get(row.targetLotId as number)!;
+          }
+          if (row.transferEventId && idMaps.financial_events.has(row.transferEventId as number)) {
+            row.transferEventId = idMaps.financial_events.get(row.transferEventId as number)!;
           }
         }
 

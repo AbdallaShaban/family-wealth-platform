@@ -3,8 +3,8 @@ import { TRPCError } from "@trpc/server";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
-import { accounts, allocationTargets, approvalDecisions, approvalPolicies, approvalRequests, auditEvents, bankStatementImports, bankStatementRows, budgetTemplateLines, budgetTemplates, budgets, cashFlowCategories, emergencyFundPlans, feeTaxRules, financialEvents, financialGoals, financialPeriods, fxRates, insuranceClaims, insurancePolicies, insurancePremiumPayments, instruments, investmentLots, corporateActions, journalEntries, journalLines, lotMatches, lotTransfers, marketEmailPreferences, memberships, officialValuationSnapshots, personalIous, planningScenarios, positions, priceQuotes, recurringRules, researchNotes, retirementPlans, riskProfiles, specialAssets, specialAssetValuations, users, valuationProvenance, valuationSnapshots, vaultDocuments, watchlistItems, workspaceInvitations, zakatAssessments } from "../drizzle/schema";
-import { assertRole, ensurePersonalFamilyContext, listAccessibleWorkspaces, setActiveFamilyWorkspace } from "./familyAccess";
+import { accounts, allocationTargets, approvalDecisions, approvalPolicies, approvalRequests, auditEvents, bankStatementImports, bankStatementRows, budgetTemplateLines, budgetTemplates, budgets, cashFlowCategories, emergencyFundPlans, feeTaxRules, financialEvents, financialGoals, financialPeriods, financialProfiles, fxRates, insuranceClaims, insurancePolicies, insurancePremiumPayments, instruments, investmentLots, corporateActions, journalEntries, journalLines, lotMatches, lotTransfers, marketEmailPreferences, memberships, officialValuationSnapshots, personalIous, planningScenarios, positions, priceQuotes, recurringRules, researchNotes, retirementPlans, riskProfiles, specialAssets, specialAssetValuations, users, valuationProvenance, valuationSnapshots, vaultDocuments, watchlistItems, workspaceInvitations, workspaces, zakatAssessments } from "../drizzle/schema";
+import { assertRole, ensurePersonalFamilyContext, listAccessibleWorkspaces, setActiveFamilyWorkspace, type FamilyContext } from "./familyAccess";
 import { createDebt, createFamilyAccount, postCashEvent, postDebtPayment, postImportedCashBatch, postPositionTransfer, postStockSplit, postTrade, postTransfer, reverseImportedCashBatch, revalueAssetAccount } from "./familyLedger";
 import { getCashFlowSummary, getDashboardMarketOverview, getDashboardSummary, getEmergencyFundSummary, getMarketDataQuality, getRiskAllocationSummary, listAccountSnapshots, listDebtSummaries, listPortfolioPositions, listRecentEvents } from "./familyRead";
 import { getSmtpConfiguration } from "./mailer";
@@ -45,7 +45,7 @@ import { buildFxProvenance, buildInstrumentSnapshot, buildManualProvenance, buil
 import { listValuationHistory } from "./valuationRead";
 import { captureOfficialValuationSnapshot, getLatestOfficialValuationSnapshot, listOfficialValuationSnapshots } from "./officialValuation";
 import { rebuildLotsFromEvents, type RebuildEvent } from "./lotRebuild";
-import { financialStatementsRouter } from "./financialStatementsRouter";
+import { financialStatementsRouter, generateFinancialStatementsPackage } from "./financialStatementsRouter";
 import { wealthHealthRouter } from "./wealthHealthRouter";
 import { invalidateReadModelCache } from "./readModelCache";
 
@@ -227,15 +227,16 @@ export const familyRouter = router({
       const family = await familyContext(ctx.user);
       const db = await getDb();
       if (!db) throw notAvailable();
-      const [entries, lines, events, persistedPositions, rates, currentCashFlow] = await Promise.all([
+      const [entries, lines, events, persistedPositions, rates, currentCashFlow, actions] = await Promise.all([
         db.select({ id: journalEntries.id, eventId: journalEntries.eventId, status: journalEntries.status, reversalOfEntryId: journalEntries.reversalOfEntryId }).from(journalEntries).where(eq(journalEntries.workspaceId, family.workspace.id)),
         db.select({ id: journalLines.id, entryId: journalLines.entryId, accountId: journalLines.accountId, direction: journalLines.direction, amount: journalLines.amount, baseAmount: journalLines.baseAmount, currency: journalLines.currency }).from(journalLines).where(eq(journalLines.workspaceId, family.workspace.id)),
-        db.select({ id: financialEvents.id, status: financialEvents.status, primaryAccountId: financialEvents.primaryAccountId, instrumentId: financialEvents.instrumentId, eventType: financialEvents.eventType, categoryId: financialEvents.categoryId, currency: financialEvents.currency, quantity: financialEvents.quantity, unitPrice: financialEvents.unitPrice, grossAmount: financialEvents.grossAmount, feeAmount: financialEvents.feeAmount, taxAmount: financialEvents.taxAmount, idempotencyKey: financialEvents.idempotencyKey }).from(financialEvents).where(eq(financialEvents.workspaceId, family.workspace.id)),
+        db.select({ id: financialEvents.id, status: financialEvents.status, primaryAccountId: financialEvents.primaryAccountId, instrumentId: financialEvents.instrumentId, eventType: financialEvents.eventType, categoryId: financialEvents.categoryId, currency: financialEvents.currency, quantity: financialEvents.quantity, unitPrice: financialEvents.unitPrice, grossAmount: financialEvents.grossAmount, feeAmount: financialEvents.feeAmount, taxAmount: financialEvents.taxAmount, idempotencyKey: financialEvents.idempotencyKey, occurredAt: financialEvents.occurredAt }).from(financialEvents).where(eq(financialEvents.workspaceId, family.workspace.id)),
         db.select({ accountId: positions.accountId, instrumentId: positions.instrumentId, quantity: positions.quantity, averageCost: positions.averageCost }).from(positions).where(eq(positions.workspaceId, family.workspace.id)),
         db.select({ fromCurrency: fxRates.fromCurrency, toCurrency: fxRates.toCurrency, rate: fxRates.rate, asOf: fxRates.asOf, rateStatus: fxRates.rateStatus }).from(fxRates).where(eq(fxRates.workspaceId, family.workspace.id)),
         db.select({ categoryId: cashFlowCategories.id, actualAmountBase: sql<string>`COALESCE(SUM(${journalLines.baseAmount}), 0)` }).from(financialEvents).innerJoin(cashFlowCategories, eq(financialEvents.categoryId, cashFlowCategories.id)).innerJoin(journalEntries, eq(journalEntries.eventId, financialEvents.id)).innerJoin(journalLines, and(eq(journalLines.entryId, journalEntries.id), eq(journalLines.accountId, financialEvents.primaryAccountId!))).where(and(eq(financialEvents.workspaceId, family.workspace.id), eq(financialEvents.status, "posted"), sql`${financialEvents.eventType} IN ('income', 'expense', 'debt_payment')`)).groupBy(cashFlowCategories.id),
+        db.select({ instrumentId: corporateActions.instrumentId, actionType: corporateActions.actionType, ratio: corporateActions.ratio, effectiveAt: corporateActions.effectiveAt }).from(corporateActions).where(eq(corporateActions.workspaceId, family.workspace.id)),
       ]);
-      return buildReconciliationReport({ baseCurrency: family.workspace.baseCurrency, fxRates: rates, expectedCashFlowByCategory: currentCashFlow, entries, lines, events, positions: persistedPositions });
+      return buildReconciliationReport({ baseCurrency: family.workspace.baseCurrency, fxRates: rates, expectedCashFlowByCategory: currentCashFlow, entries, lines, events, positions: persistedPositions, corporateActions: actions });
     }),
   }),
 
@@ -1279,9 +1280,6 @@ export const familyRouter = router({
       if (!request) throw new TRPCError({ code: "BAD_REQUEST", message: "يتطلب إغلاق الفترة طلب اعتماد موافقاً عليه." });
       const payload = request.actionPayload as { periodKey?: string };
       if (!payload.periodKey) throw new TRPCError({ code: "BAD_REQUEST", message: "بيانات طلب إغلاق الفترة غير صالحة." });
-      const now = Date.now();
-      await db.insert(financialPeriods).values({ workspaceId: family.workspace.id, periodKey: payload.periodKey, status: "closed", closedByUserId: ctx.user.id, closedAt: now, closeApprovalRequestId: request.id, createdAt: now, updatedAt: now }).onDuplicateKeyUpdate({ set: { status: "closed", closedByUserId: ctx.user.id, closedAt: now, closeApprovalRequestId: request.id, updatedAt: now } });
-      await db.update(approvalRequests).set({ status: "executed", updatedAt: now }).where(eq(approvalRequests.id, request.id));
       const archival = await archivePeriodClosureDossier({
         context: family,
         actorUserId: ctx.user.id,
@@ -1549,6 +1547,192 @@ export const familyRouter = router({
           accessedRoute: input.accessedRoute,
         });
         return { recorded: true };
+      }),
+    getAuditorFinancialStatements: publicProcedure
+      .input(
+        z.object({
+          token: z.string().trim().min(1),
+          asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+          periodKey: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        const parsed = await parseAndVerifyToken(input.token);
+        if (!parsed.valid || !parsed.payload) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: parsed.error || "رمز وصول المدقق غير صالح أو منتهي الصلاحية." });
+        }
+        const payload = parsed.payload;
+        if (!payload.allowedScopes.includes("financial_statements") && !payload.allowedScopes.includes("reports")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "رمز الوصول لا يملك صلاحية النطاق المطلوب (financial_statements)." });
+        }
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, payload.workspaceId)).limit(1);
+        if (!ws) throw new TRPCError({ code: "NOT_FOUND", message: "مساحة العمل غير موجودة." });
+        const [profile] = await db.select().from(financialProfiles).where(eq(financialProfiles.workspaceId, ws.id)).limit(1);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "الملف المالي لمساحة العمل غير موجود." });
+
+        const mockContext: FamilyContext = {
+          workspace: ws,
+          profile,
+          membership: { id: 0, workspaceId: ws.id, userId: payload.issuedByUserId ?? 0, role: "viewer", status: "active", createdAt: 0, updatedAt: 0 },
+        };
+
+        const statements = await generateFinancialStatementsPackage(mockContext, {
+          asOf: input.asOf,
+          periodKey: input.periodKey,
+        });
+
+        await recordAuditorAccessEvent({
+          workspaceId: payload.workspaceId,
+          tokenId: payload.tokenId,
+          targetAuditor: payload.targetAuditor,
+          accessedRoute: `/auditor-portal/financial-statements?asOf=${input.asOf ?? ""}&periodKey=${input.periodKey ?? ""}`,
+        });
+
+        return {
+          workspace: { id: ws.id, name: ws.name, baseCurrency: ws.baseCurrency },
+          statements,
+        };
+      }),
+    getAuditorReconciliation: publicProcedure
+      .input(z.object({ token: z.string().trim().min(1) }))
+      .query(async ({ input }) => {
+        const parsed = await parseAndVerifyToken(input.token);
+        if (!parsed.valid || !parsed.payload) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: parsed.error || "رمز وصول المدقق غير صالح أو منتهي الصلاحية." });
+        }
+        const payload = parsed.payload;
+        if (!payload.allowedScopes.includes("reconciliation")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "رمز الوصول لا يملك صلاحية النطاق المطلوب (reconciliation)." });
+        }
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, payload.workspaceId)).limit(1);
+        if (!ws) throw new TRPCError({ code: "NOT_FOUND", message: "مساحة العمل غير موجودة." });
+
+        const [entries, lines, events, persistedPositions, rates, currentCashFlow, actions] = await Promise.all([
+          db.select({ id: journalEntries.id, eventId: journalEntries.eventId, status: journalEntries.status, reversalOfEntryId: journalEntries.reversalOfEntryId }).from(journalEntries).where(eq(journalEntries.workspaceId, payload.workspaceId)),
+          db.select({ id: journalLines.id, entryId: journalLines.entryId, accountId: journalLines.accountId, direction: journalLines.direction, amount: journalLines.amount, baseAmount: journalLines.baseAmount, currency: journalLines.currency }).from(journalLines).where(eq(journalLines.workspaceId, payload.workspaceId)),
+          db.select({ id: financialEvents.id, status: financialEvents.status, primaryAccountId: financialEvents.primaryAccountId, instrumentId: financialEvents.instrumentId, eventType: financialEvents.eventType, categoryId: financialEvents.categoryId, currency: financialEvents.currency, quantity: financialEvents.quantity, unitPrice: financialEvents.unitPrice, grossAmount: financialEvents.grossAmount, feeAmount: financialEvents.feeAmount, taxAmount: financialEvents.taxAmount, idempotencyKey: financialEvents.idempotencyKey, occurredAt: financialEvents.occurredAt }).from(financialEvents).where(eq(financialEvents.workspaceId, payload.workspaceId)),
+          db.select({ accountId: positions.accountId, instrumentId: positions.instrumentId, quantity: positions.quantity, averageCost: positions.averageCost }).from(positions).where(eq(positions.workspaceId, payload.workspaceId)),
+          db.select({ fromCurrency: fxRates.fromCurrency, toCurrency: fxRates.toCurrency, rate: fxRates.rate, asOf: fxRates.asOf, rateStatus: fxRates.rateStatus }).from(fxRates).where(eq(fxRates.workspaceId, payload.workspaceId)),
+          db.select({ categoryId: cashFlowCategories.id, actualAmountBase: sql<string>`COALESCE(SUM(${journalLines.baseAmount}), 0)` }).from(financialEvents).innerJoin(cashFlowCategories, eq(financialEvents.categoryId, cashFlowCategories.id)).innerJoin(journalEntries, eq(journalEntries.eventId, financialEvents.id)).innerJoin(journalLines, and(eq(journalLines.entryId, journalEntries.id), eq(journalLines.accountId, financialEvents.primaryAccountId!))).where(and(eq(financialEvents.workspaceId, payload.workspaceId), eq(financialEvents.status, "posted"), sql`${financialEvents.eventType} IN ('income', 'expense', 'debt_payment')`)).groupBy(cashFlowCategories.id),
+          db.select({ instrumentId: corporateActions.instrumentId, actionType: corporateActions.actionType, ratio: corporateActions.ratio, effectiveAt: corporateActions.effectiveAt }).from(corporateActions).where(eq(corporateActions.workspaceId, payload.workspaceId)),
+        ]);
+
+        const report = buildReconciliationReport({
+          baseCurrency: ws.baseCurrency,
+          fxRates: rates,
+          expectedCashFlowByCategory: currentCashFlow,
+          entries,
+          lines,
+          events,
+          positions: persistedPositions,
+          corporateActions: actions,
+        });
+
+        await recordAuditorAccessEvent({
+          workspaceId: payload.workspaceId,
+          tokenId: payload.tokenId,
+          targetAuditor: payload.targetAuditor,
+          accessedRoute: "/auditor-portal/reconciliation",
+        });
+
+        return {
+          workspace: { id: ws.id, name: ws.name, baseCurrency: ws.baseCurrency },
+          report,
+        };
+      }),
+    getAuditorZakat: publicProcedure
+      .input(
+        z.object({
+          token: z.string().trim().min(1),
+          status: z.enum(["calculated", "paid", "archived"]).optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        const parsed = await parseAndVerifyToken(input.token);
+        if (!parsed.valid || !parsed.payload) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: parsed.error || "رمز وصول المدقق غير صالح أو منتهي الصلاحية." });
+        }
+        const payload = parsed.payload;
+        if (!payload.allowedScopes.includes("zakat")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "رمز الوصول لا يملك صلاحية النطاق المطلوب (zakat)." });
+        }
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, payload.workspaceId)).limit(1);
+        if (!ws) throw new TRPCError({ code: "NOT_FOUND", message: "مساحة العمل غير موجودة." });
+
+        const conditions = [eq(zakatAssessments.workspaceId, payload.workspaceId)];
+        if (input.status) {
+          conditions.push(eq(zakatAssessments.status, input.status));
+        }
+
+        const assessments = await db
+          .select()
+          .from(zakatAssessments)
+          .where(and(...conditions))
+          .orderBy(desc(zakatAssessments.createdAt));
+
+        await recordAuditorAccessEvent({
+          workspaceId: payload.workspaceId,
+          tokenId: payload.tokenId,
+          targetAuditor: payload.targetAuditor,
+          accessedRoute: `/auditor-portal/zakat?status=${input.status ?? ""}`,
+        });
+
+        return {
+          workspace: { id: ws.id, name: ws.name, baseCurrency: ws.baseCurrency },
+          assessments,
+        };
+      }),
+    getAuditorLotAccounting: publicProcedure
+      .input(
+        z.object({
+          token: z.string().trim().min(1),
+          instrumentId: z.number().int().positive().optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        const parsed = await parseAndVerifyToken(input.token);
+        if (!parsed.valid || !parsed.payload) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: parsed.error || "رمز وصول المدقق غير صالح أو منتهي الصلاحية." });
+        }
+        const payload = parsed.payload;
+        if (!payload.allowedScopes.includes("lot_accounting")) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "رمز الوصول لا يملك صلاحية النطاق المطلوب (lot_accounting)." });
+        }
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, payload.workspaceId)).limit(1);
+        if (!ws) throw new TRPCError({ code: "NOT_FOUND", message: "مساحة العمل غير موجودة." });
+
+        const lotConditions = [eq(investmentLots.workspaceId, payload.workspaceId)];
+        if (input.instrumentId) {
+          lotConditions.push(eq(investmentLots.instrumentId, input.instrumentId));
+        }
+
+        const [lots, matches, insts] = await Promise.all([
+          db.select().from(investmentLots).where(and(...lotConditions)).orderBy(desc(investmentLots.acquiredAt)),
+          db.select().from(lotMatches).where(eq(lotMatches.workspaceId, payload.workspaceId)).orderBy(desc(lotMatches.matchedAt)),
+          db.select({ id: instruments.id, symbol: instruments.symbol, name: instruments.name, assetType: instruments.assetType }).from(instruments).where(eq(instruments.workspaceId, payload.workspaceId)),
+        ]);
+
+        await recordAuditorAccessEvent({
+          workspaceId: payload.workspaceId,
+          tokenId: payload.tokenId,
+          targetAuditor: payload.targetAuditor,
+          accessedRoute: `/auditor-portal/lot-accounting?instrumentId=${input.instrumentId ?? ""}`,
+        });
+
+        return {
+          workspace: { id: ws.id, name: ws.name, baseCurrency: ws.baseCurrency },
+          lots,
+          matches,
+          instruments: insts,
+        };
       }),
   }),
 });

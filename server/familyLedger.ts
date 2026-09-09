@@ -984,9 +984,24 @@ export async function postStockSplit(args: {
     for (const lot of rows) {
       await tx.update(investmentLots).set({ originalQuantity: new Decimal(lot.originalQuantity).mul(ratio).toFixed(8), remainingQuantity: new Decimal(lot.remainingQuantity).mul(ratio).toFixed(8), unitCost: new Decimal(lot.unitCost).div(ratio).toFixed(8), updatedAt: now }).where(and(eq(investmentLots.id, lot.id), eq(investmentLots.workspaceId, args.context.workspace.id)));
     }
+    const positionRows = await tx.select().from(positions).where(and(eq(positions.workspaceId, args.context.workspace.id), eq(positions.instrumentId, instrument.id)));
+    for (const pos of positionRows) {
+      const currentQty = new Decimal(pos.quantity);
+      const currentAvgCost = new Decimal(pos.averageCost);
+      const newQty = currentQty.mul(ratio);
+      const newAvgCost = currentQty.isZero() ? new Decimal(0) : currentAvgCost.div(ratio);
+      await tx.update(positions).set({
+        quantity: newQty.toFixed(8),
+        averageCost: newQty.isZero() ? "0" : newAvgCost.toFixed(8),
+        updatedAt: now,
+      }).where(eq(positions.id, pos.id));
+    }
     const actionResult = await tx.insert(corporateActions).values({ workspaceId: args.context.workspace.id, instrumentId: instrument.id, financialEventId: event.id, actionType: "stock_split", ratio: ratio.toFixed(8), effectiveAt: args.effectiveAt, source: "manual", memo: args.memo ?? null, createdByUserId: args.actorUserId, createdAt: now });
-    await tx.insert(auditEvents).values({ workspaceId: args.context.workspace.id, actorUserId: args.actorUserId, action: "corporate_action.stock_split", targetType: "corporate_action", targetId: String(actionResult[0].insertId), beforeState: null, afterState: { instrumentId: instrument.id, ratio: ratio.toFixed(8), effectiveAt: args.effectiveAt, affectedLots: rows.length, financialEventId: event.id }, requestId: crypto.randomUUID(), occurredAt: now });
-    return { ...event, corporateActionId: Number(actionResult[0].insertId), affectedLots: rows.length, ratio: ratio.toFixed(8) };
+    await tx.insert(auditEvents).values({ workspaceId: args.context.workspace.id, actorUserId: args.actorUserId, action: "corporate_action.stock_split", targetType: "corporate_action", targetId: String(actionResult[0].insertId), beforeState: null, afterState: { instrumentId: instrument.id, ratio: ratio.toFixed(8), effectiveAt: args.effectiveAt, affectedLots: rows.length, affectedPositions: positionRows.length, financialEventId: event.id }, requestId: crypto.randomUUID(), occurredAt: now });
+    invalidateReadModelCache(`wealth-health:${args.context.workspace.id}:`);
+    invalidateReadModelCache(`stress-testing:${args.context.workspace.id}:`);
+    invalidateReadModelCache(`consolidation:`);
+    return { ...event, corporateActionId: Number(actionResult[0].insertId), affectedLots: rows.length, affectedPositions: positionRows.length, ratio: ratio.toFixed(8) };
   });
 }
 
