@@ -52,7 +52,13 @@ import { invalidateReadModelCache } from "./readModelCache";
 
 const currency = z.string().trim().regex(/^[A-Za-z]{3}$/, "أدخل رمز عملة ISO من ثلاثة أحرف.");
 const idempotencyKey = z.string().trim().min(16).max(160);
-const occurredAt = z.number().int().positive().max(Date.now() + 5 * 60 * 1000, "لا يمكن تسجيل عملية في المستقبل.");
+const occurredAt = z
+  .number()
+  .int()
+  .positive()
+  .refine(val => val <= Date.now() + 5 * 60 * 1000, {
+    message: "لا يمكن تسجيل عملية في المستقبل.",
+  });
 const money = z.string().trim().min(1).max(64);
 const approvalActionType = z.enum(approvalActionTypes);
 const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;

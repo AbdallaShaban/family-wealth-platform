@@ -48,12 +48,26 @@ function notAvailable() {
 }
 
 export const wealthHealthScoreInputSchema = z.object({
-  asOf: z.number().int().positive().max(Date.now() + 300_000).optional(),
+  asOf: z
+    .number()
+    .int()
+    .positive()
+    .refine(val => val <= Date.now() + 300_000, {
+      message: "تاريخ التقييم لا يمكن أن يكون في المستقبل.",
+    })
+    .optional(),
 }).optional();
 
 export const fireStatusInputSchema = z
   .object({
-    asOf: z.number().int().positive().max(Date.now() + 300_000).optional(),
+    asOf: z
+      .number()
+      .int()
+      .positive()
+      .refine(val => val <= Date.now() + 300_000, {
+        message: "تاريخ التقييم لا يمكن أن يكون في المستقبل.",
+      })
+      .optional(),
     spendingMode: z.enum(["actual_ttm", "essential_ttm", "custom"]).default("actual_ttm"),
     customSpending: z.string().trim().optional(),
     customSwr: z.string().trim().optional(),
