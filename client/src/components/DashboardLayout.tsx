@@ -142,15 +142,21 @@ function getActiveGatewayId(path: string): string {
 function FintechBrand({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="fintech-v2-brand flex items-center gap-2.5 min-w-0">
-      <div className="fintech-brand-mark size-9 rounded-xl flex items-center justify-center shrink-0 border border-emerald-400/30 bg-emerald-500/15 text-emerald-300 shadow-lg shadow-emerald-950/30">
+      <div
+        style={{
+          backgroundColor: "rgba(16, 185, 129, 0.10)",
+          borderColor: "rgba(16, 185, 129, 0.22)",
+        }}
+        className="fintech-brand-mark size-9 rounded-xl flex items-center justify-center shrink-0 border text-[#34D399]"
+      >
         <ShieldCheck className="size-5" />
       </div>
       {!collapsed && (
         <div className="min-w-0 flex flex-col">
-          <strong className="text-white font-extrabold text-[15px] tracking-wider leading-tight">
+          <strong className="text-[#F8FAFC] font-extrabold text-[15px] tracking-wider leading-tight">
             FAMILY
           </strong>
-          <span className="text-emerald-400/80 font-bold text-[8.5px] tracking-widest leading-tight mt-0.5 font-mono">
+          <span className="text-[#6EE7B7] font-bold text-[8.5px] tracking-widest leading-tight mt-0.5 font-mono">
             WEALTH INTELLIGENCE
           </span>
         </div>
@@ -268,10 +274,10 @@ function FintechNav({
                     <TooltipContent
                       side="left"
                       sideOffset={12}
-                      className="bg-slate-900 border border-slate-700/80 text-white shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
+                      className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
                     >
-                      <p className="font-semibold text-xs text-white">{item.label}</p>
-                      <p className="text-[10px] text-emerald-400 font-medium mt-0.5">{group.label}</p>
+                      <p className="font-semibold text-xs text-[#F8FAFC]">{item.label}</p>
+                      <p className="text-[10px] text-[#34D399] font-medium mt-0.5">{group.label}</p>
                     </TooltipContent>
                   </Tooltip>
                 );
@@ -307,10 +313,16 @@ function FintechNav({
             <AccordionItem value={group.id} key={group.id} className="border-0">
               <AccordionTrigger className={`fintech-v2-group-trigger ${hasActiveItem ? "has-active" : ""}`}>
                 <span className="flex items-center gap-2.5 min-w-0">
-                  <span className={`p-1.5 rounded-lg shrink-0 ${hasActiveItem ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/5 text-slate-400"}`}>
+                  <span
+                    style={{
+                      backgroundColor: hasActiveItem ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.07)",
+                      borderColor: hasActiveItem ? "rgba(16, 185, 129, 0.24)" : "transparent",
+                    }}
+                    className={`p-1.5 rounded-lg shrink-0 border transition-colors ${hasActiveItem ? "text-[#6EE7B7]" : "text-[#6EE7B7]/90"}`}
+                  >
                     <GroupIcon className="size-4" />
                   </span>
-                  <span className="truncate text-xs font-bold text-slate-200">{group.label}</span>
+                  <span className="truncate text-xs font-bold text-[#CBD5E1]">{group.label}</span>
                 </span>
               </AccordionTrigger>
               <AccordionContent className="fintech-v2-group-content pt-1 pb-1.5 pr-3 mr-3.5 border-r border-dashed border-white/10 space-y-1">
@@ -368,10 +380,10 @@ function UserControls({
                 {initial}
               </div>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-slate-900 border border-slate-700 text-white text-xs px-3 py-1.5 shadow-xl">
+            <TooltipContent side="left" className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] text-xs px-3 py-1.5 shadow-xl">
               <p className="font-bold">{user?.name || "مستخدم FAMILY"}</p>
-              <p className="text-[10px] text-emerald-400">{roleLabel}</p>
-              <p className="text-[10px] text-slate-400">{user?.email || "جلسة آمنة"}</p>
+              <p className="text-[10px] text-[#34D399]">{roleLabel}</p>
+              <p className="text-[10px] text-[#94A3B8]">{user?.email || "جلسة آمنة"}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -385,7 +397,7 @@ function UserControls({
                 {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-slate-900 border border-slate-700 text-white text-xs px-2.5 py-1">
+            <TooltipContent side="left" className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] text-xs px-2.5 py-1">
               تبديل الوضع اللوني
             </TooltipContent>
           </Tooltip>
@@ -400,7 +412,7 @@ function UserControls({
                 <LogOut className="size-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-slate-900 border border-slate-700 text-white text-xs px-2.5 py-1">
+            <TooltipContent side="left" className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] text-xs px-2.5 py-1">
               تسجيل الخروج
             </TooltipContent>
           </Tooltip>
@@ -415,16 +427,16 @@ function UserControls({
         <button
           className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border text-[11px] font-medium transition-colors ${
             isDemoMode
-              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
-              : "border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+              ? "border-emerald-500/30 bg-emerald-500/12 text-[#34D399]"
+              : "border-[rgba(148,163,184,0.12)] bg-white/[0.025] text-[#94A3B8] hover:bg-white/[0.06] hover:text-[#F8FAFC]"
           }`}
           onClick={toggleDemoMode}
         >
-          <Sparkles className="size-3.5 text-emerald-400" />
+          <Sparkles className="size-3.5 text-[#34D399]" />
           <span>{isDemoMode ? "العرض التجريبي مفعل" : "معاينة تجريبية"}</span>
         </button>
         <button
-          className="flex items-center justify-center size-8 rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition-colors shrink-0"
+          className="flex items-center justify-center size-8 rounded-lg border border-[rgba(148,163,184,0.12)] bg-white/[0.025] text-[#94A3B8] hover:bg-white/[0.06] hover:text-[#F8FAFC] transition-colors shrink-0"
           onClick={toggleTheme}
           aria-label="تبديل الوضع اللوني"
           title="تبديل الوضع اللوني"
@@ -433,21 +445,33 @@ function UserControls({
         </button>
       </div>
 
-      <div className="fintech-v2-user-card flex items-center gap-2.5 p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-colors">
-        <span className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs shrink-0">
+      <div
+        style={{
+          backgroundColor: "rgba(255, 255, 255, 0.025)",
+          borderColor: "rgba(148, 163, 184, 0.10)",
+        }}
+        className="fintech-v2-user-card flex items-center gap-2.5 p-2 rounded-xl border hover:bg-white/[0.05] transition-colors"
+      >
+        <span
+          style={{
+            backgroundColor: "rgba(16, 185, 129, 0.12)",
+            color: "#6EE7B7",
+          }}
+          className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs shrink-0"
+        >
           {initial}
         </span>
         <div className="min-w-0 flex-1">
-          <strong className="block truncate text-xs text-white font-semibold">
+          <strong className="block truncate text-xs text-[#F8FAFC] font-semibold">
             {user?.name || "مستخدم FAMILY"}
           </strong>
-          <span className="block truncate text-[10px] text-emerald-400 font-medium">
+          <span className="block truncate text-[10px] text-[#94A3B8] font-medium">
             {roleLabel}
           </span>
         </div>
         <button
           onClick={onLogout}
-          className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors shrink-0"
+          className="size-8 rounded-lg flex items-center justify-center text-[#94A3B8] hover:text-rose-400 hover:bg-rose-950/40 transition-colors shrink-0"
           title="تسجيل الخروج"
           aria-label="تسجيل الخروج"
         >

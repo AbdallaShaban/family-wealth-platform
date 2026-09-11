@@ -444,7 +444,7 @@ export default function StressTestingPage() {
               <span>اختبارات الضغط الكلي</span>
             </TabsTrigger>
             <TabsTrigger value="monte_carlo" className="gap-2 py-2 text-xs md:text-sm">
-              <Activity className="size-4 text-indigo-500" />
+              <Activity className="size-4 text-cyan-500" />
               <span>محاكاة مونت كارلو</span>
             </TabsTrigger>
             <TabsTrigger value="var" className="gap-2 py-2 text-xs md:text-sm">
@@ -674,7 +674,7 @@ export default function StressTestingPage() {
             <Card className="border-border/60">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <Sliders className="size-4 text-indigo-500" />
+                  <Sliders className="size-4 text-cyan-500" />
                   <span>معايير محاكاة مونت كارلو الاحتمالية (GBM Multi-Asset Stochastic Engine)</span>
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -687,7 +687,7 @@ export default function StressTestingPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <Label className="font-semibold">الأفق الزمني للمحاكاة:</Label>
-                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         {mcHorizonYears} سنة ({mcHorizonYears * 12} شهر)
                       </span>
                     </div>
@@ -761,7 +761,7 @@ export default function StressTestingPage() {
                   <Button
                     onClick={() => void utils.stressTesting.runMonteCarlo.invalidate()}
                     disabled={isMcLoading}
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     <Play className={`size-3.5 ${isMcLoading ? "animate-spin" : ""}`} />
                     <span>{isMcLoading ? "جارٍ محاكاة المسارات..." : "إعادة تشغيل المحاكاة"}</span>
@@ -780,7 +780,7 @@ export default function StressTestingPage() {
                       <CardDescription className="text-xs font-medium">القيمة الوسيطة للثروة (P50 Median)</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold font-mono tracking-tight text-indigo-600 dark:text-indigo-400">
+                      <div className="text-2xl font-bold font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
                         <SensitiveValue>
                           {formatMoney(mcData.medianTerminalWealthBase, baseCurrency)}
                         </SensitiveValue>
@@ -847,7 +847,7 @@ export default function StressTestingPage() {
                             <th className="p-3">السنة</th>
                             <th className="p-3 text-rose-600 dark:text-rose-400">P10 (أسوأ 10%)</th>
                             <th className="p-3 text-amber-600 dark:text-amber-400">P25 (متحفظ)</th>
-                            <th className="p-3 text-indigo-600 dark:text-indigo-400 font-bold">P50 (الوسيط)</th>
+                            <th className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">P50 (الوسيط)</th>
                             <th className="p-3 text-blue-600 dark:text-blue-400">P75 (متفائل)</th>
                             <th className="p-3 text-emerald-600 dark:text-emerald-400">P90 (أفضل 10%)</th>
                           </tr>
@@ -868,7 +868,7 @@ export default function StressTestingPage() {
                                     {formatMoney(pt.p25, baseCurrency)}
                                   </SensitiveValue>
                                 </td>
-                                <td className="p-3 text-indigo-600 dark:text-indigo-400 font-bold">
+                                <td className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">
                                   <SensitiveValue>
                                     {formatMoney(pt.p50, baseCurrency)}
                                   </SensitiveValue>

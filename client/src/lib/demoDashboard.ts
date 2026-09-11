@@ -18,9 +18,9 @@ export const demoDashboard = {
     { id: "property", name: "الأصول الخاصة", value: 1260000, currency: "EGP", kind: "أصل خاص" },
   ],
   allocation: [
-    { name: "استثمارات", value: 1789600, color: "#11a889" },
-    { name: "أصول خاصة", value: 1260000, color: "#6a7df5" },
-    { name: "سيولة", value: 634800, color: "#e7a84e" },
+    { name: "استثمارات", value: 1789600, color: "#10B981" },
+    { name: "أصول خاصة", value: 1260000, color: "#38BDF8" },
+    { name: "سيولة", value: 634800, color: "#F59E0B" },
   ],
   cashFlow: [
     { month: "يناير", income: 128000, expense: 68500 },

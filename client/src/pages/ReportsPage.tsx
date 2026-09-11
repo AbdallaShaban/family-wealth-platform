@@ -322,8 +322,8 @@ export function ReportsPage() {
 
             {/* Prior Period Comparison Banner (if requested) */}
             {data.snapshotComparison && (
-              <Card className="border-indigo-100 bg-indigo-50/40 p-4 text-xs dark:border-indigo-900/50 dark:bg-indigo-950/20">
-                <div className="flex items-center justify-between font-semibold text-indigo-900 dark:text-indigo-200">
+              <Card className="border-emerald-500/20 bg-emerald-500/5 p-4 text-xs dark:border-emerald-500/20 dark:bg-emerald-950/20">
+                <div className="flex items-center justify-between font-semibold text-emerald-900 dark:text-emerald-300">
                   <span>مقارنة تحليلية مع الفترة السابقة</span>
                   <span>{new Date(data.snapshotComparison.priorPeriod.startDate).toLocaleDateString("ar-EG")} إلى {new Date(data.snapshotComparison.priorPeriod.endDate).toLocaleDateString("ar-EG")}</span>
                 </div>
