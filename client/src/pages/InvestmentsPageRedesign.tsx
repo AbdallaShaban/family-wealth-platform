@@ -72,7 +72,7 @@ export default function InvestmentsPageRedesign() {
   const [currency, setCurrency] = useState("EGP");
   const [assetType, setAssetType] = useState<AssetType>("equity");
 
-  // Trade Execution State
+  // Trade Record State
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [tradeAccountId, setTradeAccountId] = useState("");
   const [tradeInstrumentId, setTradeInstrumentId] = useState("");
@@ -248,7 +248,7 @@ export default function InvestmentsPageRedesign() {
           <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-auto p-1 gap-1">
             <TabsTrigger value="holdings" className="py-2.5">الحيازات</TabsTrigger>
             <TabsTrigger value="instruments" className="py-2.5">الأدوات</TabsTrigger>
-            <TabsTrigger value="trades" className="py-2.5">الصفقات والتداول</TabsTrigger>
+            <TabsTrigger value="trades" className="py-2.5">تسجيل الصفقات</TabsTrigger>
             <TabsTrigger value="performance" className="py-2.5">ملخص الأداء</TabsTrigger>
             <TabsTrigger value="realized" className="py-2.5">الأرباح المحققة</TabsTrigger>
             <TabsTrigger value="lots" className="py-2.5">حزم FIFO</TabsTrigger>
@@ -437,8 +437,10 @@ export default function InvestmentsPageRedesign() {
             <section className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
               <Card className="fintech-surface-card">
                 <CardHeader>
-                  <CardTitle>مراجعة ونشر صفقة شراء أو بيع</CardTitle>
-                  <CardDescription>الرسوم والضرائب تُسجل مع القيد المتوازن. لا يتم تعديل أي رصيد خارج دفتر الأستاذ.</CardDescription>
+                  <CardTitle>مراجعة وتسجيل صفقة شراء أو بيع</CardTitle>
+                  <CardDescription>
+                    الرسوم والضرائب تُسجل مع القيد المتوازن. لا يتم تعديل أي رصيد خارج دفتر الأستاذ. الأرباح المحققة تُحسب وفق منهجية FIFO ومقيدة بدفتر الأستاذ المزدوج.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {accounts.isLoading || instruments.isLoading ? (
@@ -510,7 +512,7 @@ export default function InvestmentsPageRedesign() {
 
                       <Button type="submit" disabled={trade.isPending || !canAdvise}>
                         {trade.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
-                        {canAdvise ? "مراجعة ونشر الصفقة" : "تتطلب صلاحية مستشار"}
+                        {canAdvise ? "تسجيل ونشر الصفقة" : "تتطلب صلاحية مستشار"}
                       </Button>
                     </form>
                   ) : (
@@ -759,9 +761,9 @@ export default function InvestmentsPageRedesign() {
         <ConfirmDialog
           open={confirmTradeOpen}
           onOpenChange={setConfirmTradeOpen}
-          title={`تأكيد نشر صفقة ${side === "buy" ? "شراء" : "بيع"}`}
-          description={`أنت على وشك نشر صفقة ${side === "buy" ? "شراء" : "بيع"} لـ ${quantity} وحدة من أداة "${selectedInstrument?.name}" عبر حساب "${selectedAccount?.name}". سيتم قيد العملية في دفتر الأستاذ وتحديث متوسط التكلفة والحيازات وحزم FIFO.`}
-          confirmText={`تأكيد نشر صفقة الـ ${side === "buy" ? "شراء" : "بيع"}`}
+          title={`تأكيد تسجيل صفقة ${side === "buy" ? "شراء" : "بيع"}`}
+          description={`أنت على وشك تسجيل صفقة ${side === "buy" ? "شراء" : "بيع"} لـ ${quantity} وحدة من أداة "${selectedInstrument?.name}" عبر حساب "${selectedAccount?.name}". سيتم قيد العملية في دفتر الأستاذ وتحديث متوسط التكلفة والحيازات وحزم FIFO.`}
+          confirmText={`تأكيد تسجيل صفقة الـ ${side === "buy" ? "شراء" : "بيع"}`}
           cancelText="إلغاء والعودة"
           isLoading={trade.isPending}
           onConfirm={executeConfirmedTrade}

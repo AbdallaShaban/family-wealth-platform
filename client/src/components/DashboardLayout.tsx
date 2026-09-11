@@ -46,7 +46,7 @@ const navigationGroups: NavigationGroup[] = [
       { icon: WalletCards, label: "التدفق المالي والميزانية", path: "/cash-flow", minimumRole: "editor" },
       { icon: CreditCard, label: "الديون والالتزامات", path: "/debts", minimumRole: "editor" },
       { icon: ClipboardCheck, label: "تسوية ومطابقة العمليات", path: "/reconciliation", minimumRole: "editor" },
-      { icon: FileSpreadsheet, label: "Inbox الاستيراد والملفات", path: "/imports", minimumRole: "editor" },
+      { icon: FileSpreadsheet, label: "صندوق كشوف الحساب والملفات", path: "/imports", minimumRole: "editor" },
     ],
   },
   {
@@ -83,17 +83,34 @@ function FintechBrand({ collapsed }: { collapsed: boolean }) {
   return <div className="fintech-v2-brand"><div className="fintech-brand-mark"><ShieldCheck className="size-5" /></div>{!collapsed && <div><strong>FAMILY</strong><span>WEALTH INTELLIGENCE</span></div>}</div>;
 }
 
-function FintechNav({ collapsed, role, location, onNavigate, savedScrollTop, onScrollPositionChange }: { collapsed: boolean; role: MinimumRole; location: string; onNavigate: (path: string) => void; savedScrollTop: number; onScrollPositionChange: (scrollTop: number) => void }) {
+function FintechNav({ collapsed, role, location, onNavigate }: { collapsed: boolean; role: MinimumRole; location: string; onNavigate: (path: string) => void }) {
   const navRef = useRef<HTMLElement>(null);
   const visibleGroups = navigationGroups.map(group => ({ ...group, items: group.items.filter(item => roleRank[role] >= roleRank[item.minimumRole]) })).filter(group => group.items.length > 0);
   const allItems = [homeItem, ...visibleGroups.flatMap(group => group.items)];
+
   useEffect(() => {
     const navigation = navRef.current;
-    if (navigation) navigation.scrollTop = savedScrollTop;
-  }, [collapsed, savedScrollTop]);
-  const rememberScroll = () => onScrollPositionChange(navRef.current?.scrollTop ?? 0);
-  if (collapsed) return <nav ref={navRef} onScroll={rememberScroll} className="fintech-v2-icon-nav" aria-label="التنقل الرئيسي">{allItems.map(item => { const Icon = item.icon; return <button key={item.path} className={location === item.path ? "is-active" : ""} title={item.label} aria-label={item.label} onClick={() => onNavigate(item.path)}><Icon className="size-[18px]" /></button>; })}</nav>;
-  return <nav ref={navRef} onScroll={rememberScroll} className="fintech-v2-nav" aria-label="التنقل الرئيسي"><button className={`fintech-v2-home ${location === "/" ? "is-active" : ""}`} onClick={() => onNavigate("/")}><LayoutDashboard className="size-4" /><span>{homeItem.label}</span><ChevronLeft className="size-4" /></button><Accordion type="multiple" defaultValue={visibleGroups.map(group => group.id)}>{visibleGroups.map(group => { const GroupIcon = group.icon; return <AccordionItem value={group.id} key={group.id}><AccordionTrigger className="fintech-v2-group-trigger"><span><GroupIcon className="size-4" />{group.label}</span></AccordionTrigger><AccordionContent className="fintech-v2-group-content">{group.items.map(item => { const Icon = item.icon; return <button key={item.path} className={location === item.path ? "is-active" : ""} onClick={() => onNavigate(item.path)}><Icon className="size-4" /><span>{item.label}</span></button>; })}</AccordionContent></AccordionItem>; })}</Accordion></nav>;
+    if (!navigation) return;
+    try {
+      const saved = Number(sessionStorage.getItem("family-sidebar-scroll-top")) || 0;
+      if (saved > 0) {
+        navigation.scrollTop = saved;
+      }
+    } catch {
+      // Safe fallback
+    }
+  }, [collapsed]);
+
+  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
+    try {
+      sessionStorage.setItem("family-sidebar-scroll-top", String(e.currentTarget.scrollTop));
+    } catch {
+      // Safe fallback
+    }
+  };
+
+  if (collapsed) return <nav ref={navRef} onScroll={handleScroll} className="fintech-v2-icon-nav" aria-label="التنقل الرئيسي">{allItems.map(item => { const Icon = item.icon; return <button key={item.path} className={location === item.path ? "is-active" : ""} title={item.label} aria-label={item.label} onClick={() => onNavigate(item.path)}><Icon className="size-[18px]" /></button>; })}</nav>;
+  return <nav ref={navRef} onScroll={handleScroll} className="fintech-v2-nav" aria-label="التنقل الرئيسي"><button className={`fintech-v2-home ${location === "/" ? "is-active" : ""}`} onClick={() => onNavigate("/")}><LayoutDashboard className="size-4" /><span>{homeItem.label}</span><ChevronLeft className="size-4" /></button><Accordion type="multiple" defaultValue={visibleGroups.map(group => group.id)}>{visibleGroups.map(group => { const GroupIcon = group.icon; return <AccordionItem value={group.id} key={group.id}><AccordionTrigger className="fintech-v2-group-trigger"><span><GroupIcon className="size-4" />{group.label}</span></AccordionTrigger><AccordionContent className="fintech-v2-group-content">{group.items.map(item => { const Icon = item.icon; return <button key={item.path} className={location === item.path ? "is-active" : ""} onClick={() => onNavigate(item.path)}><Icon className="size-4" /><span>{item.label}</span></button>; })}</AccordionContent></AccordionItem>; })}</Accordion></nav>;
 }
 
 function UserControls({ collapsed, onLogout }: { collapsed: boolean; onLogout: () => void }) {
@@ -117,7 +134,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [quickConfirmOpen, setQuickConfirmOpen] = useState(false);
-  const [sidebarScrollTop, setSidebarScrollTop] = useState(() => Number(sessionStorage.getItem("family-sidebar-scroll-top")) || 0);
   const { isPrivate } = usePrivacyMode();
   const role = (workspace.data?.membership.role ?? "viewer") as MinimumRole;
   const allItems = [homeItem, ...navigationGroups.flatMap(group => group.items)];
@@ -127,16 +143,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const canAccessCurrentRoute = !routeItem || roleRank[role] >= roleRank[routeItem.minimumRole];
   const currentLabel = canAccessCurrentRoute ? (routeItem?.label ?? (location === "/" ? homeItem.label : "نظرة تفصيلية")) : "وصول محدود";
   const navigate = (path: string) => { setLocation(path); setMobileOpen(false); };
-  const rememberSidebarScroll = (scrollTop: number) => {
-    setSidebarScrollTop(scrollTop);
-    sessionStorage.setItem("family-sidebar-scroll-top", String(scrollTop));
-  };
 
   if (loading) return <div className="fintech-loading-shell"><div className="fintech-loading-rail" /><div className="fintech-loading-content"><i /><div>{Array.from({ length: 4 }).map((_, index) => <b key={index} />)}</div><i /></div></div>;
   if (!user) return <main className="fintech-login-gate" dir="rtl"><section><div className="fintech-brand-mark"><ShieldCheck className="size-6" /></div><p>FAMILY / PRIVATE WEALTH</p><h1>مساحتك المالية تستحق طبقة حماية واضحة.</h1><span>سجّل الدخول للوصول إلى بياناتك وإجراءاتك داخل نطاق FAMILY الخاص بك.</span><Button onClick={() => startLogin()} className="fintech-login-button">متابعة آمنة</Button></section></main>;
 
-  return <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl"><aside className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""}`}><header><FintechBrand collapsed={collapsed} /><button className="fintech-v2-collapse" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}>{collapsed ? <PanelRightOpen className="size-4" /> : <PanelRightClose className="size-4" />}</button></header><FintechNav collapsed={collapsed} role={role} location={location} onNavigate={navigate} savedScrollTop={sidebarScrollTop} onScrollPositionChange={rememberSidebarScroll} /><UserControls collapsed={collapsed} onLogout={logout} /></aside>
-    <Sheet open={mobileOpen} onOpenChange={setMobileOpen}><SheetContent side="right" className="fintech-v2-mobile-sheet" dir="rtl"><div className="fintech-v2-mobile-body"><FintechBrand collapsed={false} /><FintechNav collapsed={false} role={role} location={location} onNavigate={navigate} savedScrollTop={sidebarScrollTop} onScrollPositionChange={rememberSidebarScroll} /><UserControls collapsed={false} onLogout={logout} /></div></SheetContent></Sheet>
+  return <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl"><aside className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""}`}><header><FintechBrand collapsed={collapsed} /><button className="fintech-v2-collapse" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}>{collapsed ? <PanelRightOpen className="size-4" /> : <PanelRightClose className="size-4" />}</button></header><FintechNav collapsed={collapsed} role={role} location={location} onNavigate={navigate} /><UserControls collapsed={collapsed} onLogout={logout} /></aside>
+    <Sheet open={mobileOpen} onOpenChange={setMobileOpen}><SheetContent side="right" className="fintech-v2-mobile-sheet" dir="rtl"><div className="fintech-v2-mobile-body"><FintechBrand collapsed={false} /><FintechNav collapsed={false} role={role} location={location} onNavigate={navigate} /><UserControls collapsed={false} onLogout={logout} /></div></SheetContent></Sheet>
     <main className="fintech-v2-main"><header className="fintech-topbar"><div className="flex min-w-0 items-center gap-3"><button onClick={() => setMobileOpen(true)} className="fintech-mobile-menu" aria-label="فتح التنقل"><Menu className="size-5" /></button><div className="min-w-0"><p>FAMILY / {workspace.data?.workspace.name || "WEALTH"} · {workspace.data?.workspace.baseCurrency || "EGP"}{currentGroup ? ` · ${currentGroup.label}` : ""}</p><strong>{currentLabel}</strong></div></div><div className="flex items-center gap-2"><TopbarControls /></div></header><div className="fintech-content-shell" data-route={location}>{canAccessCurrentRoute ? <section className="fintech-route-frame">{children}</section> : <section className="fintech-access-card"><ShieldCheck className="size-9" /><h1>الوصول للقراءة فقط</h1><p>هذه الشاشة تتطلب صلاحية أعلى. يمكنك مراجعة الحسابات والتقرير المالي ضمن الصلاحيات الممنوحة لك.</p></section>}</div></main><MobileBottomNav role={role} location={location} onNavigate={navigate} onOpenMore={() => setMobileOpen(true)} onQuickCapture={() => setQuickConfirmOpen(true)} /><Dialog open={quickConfirmOpen} onOpenChange={setQuickConfirmOpen}><DialogContent dir="rtl" className="sm:max-w-md"><DialogHeader><DialogTitle>بدء إدخال مالي سريع</DialogTitle><DialogDescription>ستنتقل إلى نموذج مراجعة العملية. لن يُنشر أي قيد قبل إدخال الحساب والمبلغ وتأكيد النموذج.</DialogDescription></DialogHeader><DialogFooter className="gap-2 sm:justify-start"><Button variant="outline" onClick={() => setQuickConfirmOpen(false)}>إلغاء</Button><Button onClick={() => { setQuickConfirmOpen(false); navigate("/cash-flow/record"); }}>متابعة إلى النموذج</Button></DialogFooter></DialogContent></Dialog></div>;
 }
 

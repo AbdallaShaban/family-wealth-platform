@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney } from "@/lib/financialDisplay";
 import { trpc } from "@/lib/trpc";
-import { AlertCircle, Building2, Globe, Layers, PieChart, RefreshCw, ShieldAlert, Wallet } from "lucide-react";
+import { AlertCircle, Building2, Clock, Globe, Layers, PieChart, RefreshCw, ShieldAlert, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -75,6 +75,13 @@ export default function ConsolidationPage() {
           badge="طبقة تحليلية غير دفترية (Read-Only)"
           actions={
             <div className="flex items-center gap-3">
+              {data?.generatedAt && (
+                <Badge variant="outline" className="gap-1.5 text-xs font-mono text-muted-foreground bg-background/60">
+                  <Clock className="size-3.5 text-muted-foreground" />
+                  <span>توقيت التوحيد:</span>
+                  <span dir="ltr">{new Date(data.generatedAt).toLocaleString("ar-SA")}</span>
+                </Badge>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -263,19 +270,26 @@ export default function ConsolidationPage() {
                             </td>
                             <td className="p-3 font-mono text-xs">{ws.baseCurrency}</td>
                             <td className="p-3">
-                              <span className="font-mono text-xs font-semibold">{ws.fxRateToPresentation}</span>
-                              <Badge
-                                variant={ws.fxRateStatus === "authoritative" || ws.fxRateStatus === "identity" ? "secondary" : "destructive"}
-                                className="mr-2 text-[10px]"
-                              >
-                                {ws.fxRateStatus === "identity"
-                                  ? "مطابقة"
-                                  : ws.fxRateStatus === "authoritative"
-                                  ? "موثق"
-                                  : ws.fxRateStatus === "stale"
-                                  ? "قديم >48h"
-                                  : "غير متوفر"}
-                              </Badge>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs font-semibold" dir="ltr">{ws.fxRateToPresentation}</span>
+                                <Badge
+                                  variant={ws.fxRateStatus === "authoritative" || ws.fxRateStatus === "identity" ? "secondary" : "destructive"}
+                                  className="text-[10px]"
+                                >
+                                  {ws.fxRateStatus === "identity"
+                                    ? "مطابقة"
+                                    : ws.fxRateStatus === "authoritative"
+                                    ? "موثق"
+                                    : ws.fxRateStatus === "stale"
+                                    ? "قديم >48h"
+                                    : "غير متوفر"}
+                                </Badge>
+                              </div>
+                              {ws.fxRateAsOf && ws.fxRateStatus !== "identity" && (
+                                <span className="block text-[10px] text-muted-foreground font-mono mt-0.5" dir="ltr">
+                                  {new Date(ws.fxRateAsOf).toLocaleDateString("ar-SA")}
+                                </span>
+                              )}
                             </td>
                             <td className="p-3 font-mono text-xs">
                               <SensitiveValue>{formatMoney(ws.grossBookNetWorthLocal, ws.baseCurrency, 2)}</SensitiveValue>

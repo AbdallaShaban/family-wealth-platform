@@ -107,8 +107,8 @@ export function OnboardingChecklist({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={completedCount === 4 ? "secondary" : "outline"} className="font-mono text-xs">
-              {completedCount} / {steps.length}
+            <Badge variant={completedCount === 4 ? "secondary" : "outline"} className="text-xs">
+              مكتمل {completedCount} من {steps.length} خطوات
             </Badge>
             <Button
               variant="ghost"

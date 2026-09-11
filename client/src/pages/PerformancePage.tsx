@@ -77,7 +77,7 @@ export default function PerformancePage() {
       <div className="space-y-6 pb-12" dir="rtl">
         <PageHeader
           title="أداء المحفظة وعزو العوائد الاستثمارية"
-          description="تحليل مؤسسي مسترشد بمنهجية GIPS للعائد الموزون بالوقت (TWR) والعائد الموزون بالمال (MWR / IRR)"
+          description="تحليل مؤسسي مسترشد بمنهجية GIPS للعائد المرجح زمنياً (TWR) والعائد المرجح بالتدفقات النقدية (MWR / IRR)"
           icon={TrendingUp}
           breadcrumbs={[
             { label: "الحوكمة والتحليل", href: "/wealth-health" },
@@ -148,7 +148,7 @@ export default function PerformancePage() {
               <div className="flex items-center justify-between">
                 <FinancialTooltip term="TWR">
                   <CardDescription className="text-xs font-semibold cursor-help border-b border-dashed border-muted-foreground/50">
-                    العائد الموزون بالوقت (TWR)
+                    العائد المرجح زمنياً (TWR)
                   </CardDescription>
                 </FinancialTooltip>
                 <Badge variant="outline" className="text-[10px] font-mono">
@@ -189,7 +189,7 @@ export default function PerformancePage() {
               <div className="flex items-center justify-between">
                 <FinancialTooltip term="MWR">
                   <CardDescription className="text-xs font-semibold cursor-help border-b border-dashed border-muted-foreground/50">
-                    العائد الموزون بالمال (MWR / IRR)
+                    العائد المرجح بالتدفقات النقدية (MWR / IRR)
                   </CardDescription>
                 </FinancialTooltip>
                 <Badge variant="outline" className="text-[10px] font-mono">
@@ -486,7 +486,7 @@ export default function PerformancePage() {
                 <div>
                   <CardTitle className="text-base font-bold flex items-center gap-2">
                     <Calendar className="size-4 text-primary" />
-                    <span>تفاصيل الفترات الجزئية الموزونة بالوقت (GIPS Sub-Periods)</span>
+                    <span>تفاصيل الفترات الجزئية المرجحة زمنياً (GIPS Sub-Periods)</span>
                   </CardTitle>
                   <CardDescription className="text-xs mt-0.5">
                     تقسيم الفترات المحاسبية تلقائيًا عند تواريخ التدفقات الرأسمالية الخارجية لتحقيق الحياد المالي التام

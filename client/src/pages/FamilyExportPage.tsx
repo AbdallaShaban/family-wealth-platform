@@ -150,7 +150,7 @@ export default function FamilyExportPage() {
               <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2 text-xl">
                   <Archive className="size-5 text-primary" />
-                  النسخة الاحتياطية المؤسسية الشاملة (Full-State Disaster Recovery)
+                  النسخ الاحتياطي الشامل للنظام (Disaster Recovery)
                 </CardTitle>
                 <CardDescription>
                   تصدير علائقي كامل لجميع بيانات مساحة العمل (51 جدولاً تشمل دفتر القيود، الـ Lots، الحسابات، التقييمات، والتسويات) مع بيان سلامة رقمي مشفر (SHA-256 Manifest).

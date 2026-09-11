@@ -13,13 +13,13 @@ export const FINANCIAL_DEFINITIONS: Record<
   { title: string; definition: string; tag?: string }
 > = {
   TWR: {
-    title: "العائد الموزون بالوقت (TWR)",
+    title: "العائد المرجح زمنياً (TWR)",
     definition:
       "يقيس الأداء الاستثماري المحض لمدير المحفظة أو الأصول باستبعاد أثر توقيت وحجم التدفقات النقدية الداخلة والخارجة، وهو معيار GIPS المعتمد دوليًا.",
     tag: "GIPS Standard",
   },
   MWR: {
-    title: "العائد الموزون بالمال (MWR / IRR)",
+    title: "العائد المرجح بالتدفقات النقدية (MWR / IRR)",
     definition:
       "يعكس العائد الفعلي للمستثمر شاملاً أثر توقيت وحجم الإيداعات والسحوبات النقدية الفعلية ومعدل العائد الداخلي على رأس المال المستثمر.",
     tag: "Investor Yield",

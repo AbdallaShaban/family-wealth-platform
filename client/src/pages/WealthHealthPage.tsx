@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
@@ -96,6 +97,20 @@ export default function WealthHealthPage() {
   const scoreData = scoreQuery.data;
   const fireData = fireQuery.data;
   const baseCurrency = scoreData?.baseCurrency || fireData?.baseCurrency || "EGP";
+
+  const weakestDimensionKey = React.useMemo(() => {
+    if (!scoreData?.dimensions) return null;
+    const dims = [
+      { key: "liquidity", score: parseFloat(scoreData.dimensions.liquidity.score) },
+      { key: "debtSustainability", score: parseFloat(scoreData.dimensions.debtSustainability.score) },
+      { key: "savingsVelocity", score: parseFloat(scoreData.dimensions.savingsVelocity.score) },
+      { key: "diversification", score: parseFloat(scoreData.dimensions.diversification.score) },
+      { key: "resilienceProtection", score: parseFloat(scoreData.dimensions.resilienceProtection.score) },
+      { key: "fiProgress", score: parseFloat(scoreData.dimensions.fiProgress.score) },
+    ];
+    dims.sort((a, b) => a.score - b.score);
+    return dims[0]?.key || null;
+  }, [scoreData?.dimensions]);
 
   // Score color helper
   const getScoreColorClass = (val: number) => {
@@ -265,7 +280,7 @@ export default function WealthHealthPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Dim 1: Liquidity */}
-              <Card className="border border-border/70 shadow-sm hover:border-primary/40 transition-colors">
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "liquidity" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -274,9 +289,16 @@ export default function WealthHealthPage() {
                       </span>
                       <CardTitle className="text-sm font-semibold">السيولة والمرونة في الطوارئ</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      وزن 20%
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {weakestDimensionKey === "liquidity" && (
+                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                          أولوية تحسين
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
+                        وزن 20%
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -307,7 +329,7 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 2: Debt Sustainability */}
-              <Card className="border border-border/70 shadow-sm hover:border-primary/40 transition-colors">
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "debtSustainability" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -316,9 +338,16 @@ export default function WealthHealthPage() {
                       </span>
                       <CardTitle className="text-sm font-semibold">استدامة الديون والملاءة</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      وزن 20%
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {weakestDimensionKey === "debtSustainability" && (
+                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                          أولوية تحسين
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
+                        وزن 20%
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -349,7 +378,7 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 3: Savings Velocity */}
-              <Card className="border border-border/70 shadow-sm hover:border-primary/40 transition-colors">
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "savingsVelocity" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -358,9 +387,16 @@ export default function WealthHealthPage() {
                       </span>
                       <CardTitle className="text-sm font-semibold">سرعة الادخار وتراكم الثروة</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      وزن 20%
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {weakestDimensionKey === "savingsVelocity" && (
+                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                          أولوية تحسين
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
+                        وزن 20%
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -391,7 +427,7 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 4: Portfolio Diversification */}
-              <Card className="border border-border/70 shadow-sm hover:border-primary/40 transition-colors">
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "diversification" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -400,9 +436,16 @@ export default function WealthHealthPage() {
                       </span>
                       <CardTitle className="text-sm font-semibold">تنوع المحفظة ومخاطر التركيز</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      وزن 15%
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {weakestDimensionKey === "diversification" && (
+                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                          أولوية تحسين
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
+                        وزن 15%
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -433,7 +476,7 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 5: Resilience & Protection */}
-              <Card className="border border-border/70 shadow-sm hover:border-primary/40 transition-colors">
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "resilienceProtection" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -442,9 +485,16 @@ export default function WealthHealthPage() {
                       </span>
                       <CardTitle className="text-sm font-semibold">جودة التقييمات والحماية</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      وزن 10%
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {weakestDimensionKey === "resilienceProtection" && (
+                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                          أولوية تحسين
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
+                        وزن 10%
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -481,7 +531,7 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 6: FI Progress */}
-              <Card className="border border-border/70 shadow-sm hover:border-primary/40 transition-colors">
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "fiProgress" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -490,9 +540,16 @@ export default function WealthHealthPage() {
                       </span>
                       <CardTitle className="text-sm font-semibold">نسبة التقدم نحو الاستقلال المالي</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-xs font-mono font-bold">
-                      وزن 15%
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {weakestDimensionKey === "fiProgress" && (
+                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                          أولوية تحسين
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-xs font-mono font-bold">
+                        وزن 15%
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -562,10 +619,10 @@ export default function WealthHealthPage() {
                       الإنفاق الفعلي لآخر 12 شهرًا
                     </TabsTrigger>
                     <TabsTrigger value="essential_ttm" className="text-xs">
-                      الإنفاق الأساسي فقط (Lean FIRE)
+                      التقاعد البسيط (Lean FIRE)
                     </TabsTrigger>
                     <TabsTrigger value="custom" className="text-xs">
-                      إنفاق مخصص (Custom Budget)
+                      التقاعد الوفير / مخصص (Fat FIRE)
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -586,65 +643,100 @@ export default function WealthHealthPage() {
                     className="font-mono text-sm"
                   />
                   <p className="text-[11px] text-muted-foreground">
-                    سيتم حساب مستهدف رأس المال المطلوب (Corpus) بناءً على هذا الرقم ومعدل السحب الآمن.
+                    سيتم حساب مستهدف رأس المال المطلوب (Corpus) بناءً على هذا الرقم ومعدل السحب الآمن لمطابقة نمط التقاعد الوفير (Fat FIRE) أو ميزانية تقاعد مستهدفة.
                   </p>
                 </div>
               )}
 
-              {/* Assumptions Parameters Row */}
+              {/* Assumptions Parameters Row with Dual Slider + Input */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-border/50">
-                <div className="space-y-1.5">
-                  <Label htmlFor="param-return" className="text-xs font-medium text-muted-foreground">
-                    العائد الاسمي السنوي (%):
-                  </Label>
-                  <Input
-                    id="param-return"
-                    type="number"
-                    step="0.1"
-                    value={customNominalReturn}
-                    onChange={(e) => setCustomNominalReturn(e.target.value)}
-                    className="font-mono text-sm"
+                <div className="space-y-2 rounded-xl border bg-card/60 p-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="param-return" className="text-xs font-semibold text-muted-foreground">
+                      العائد الاسمي السنوي (%):
+                    </Label>
+                    <Input
+                      id="param-return"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="30"
+                      value={customNominalReturn}
+                      onChange={(e) => setCustomNominalReturn(e.target.value)}
+                      className="h-7 w-20 font-mono text-xs text-left"
+                    />
+                  </div>
+                  <Slider
+                    min={0}
+                    max={25}
+                    step={0.1}
+                    value={[parseFloat(customNominalReturn) || 0]}
+                    onValueChange={([val]) => setCustomNominalReturn(val.toFixed(1))}
+                    className="py-1"
                   />
                   <p className="text-[11px] text-muted-foreground">الافتراضي: 7.0% سنويًا</p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="param-inflation" className="text-xs font-medium text-muted-foreground">
-                    التضخم السنوي المتوقع (%):
-                  </Label>
-                  <Input
-                    id="param-inflation"
-                    type="number"
-                    step="0.1"
-                    value={customInflation}
-                    onChange={(e) => setCustomInflation(e.target.value)}
-                    className="font-mono text-sm"
+                <div className="space-y-2 rounded-xl border bg-card/60 p-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="param-inflation" className="text-xs font-semibold text-muted-foreground">
+                      التضخم السنوي المتوقع (%):
+                    </Label>
+                    <Input
+                      id="param-inflation"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="25"
+                      value={customInflation}
+                      onChange={(e) => setCustomInflation(e.target.value)}
+                      className="h-7 w-20 font-mono text-xs text-left"
+                    />
+                  </div>
+                  <Slider
+                    min={0}
+                    max={20}
+                    step={0.1}
+                    value={[parseFloat(customInflation) || 0]}
+                    onValueChange={([val]) => setCustomInflation(val.toFixed(1))}
+                    className="py-1"
                   />
                   <p className="text-[11px] text-muted-foreground">الافتراضي: 3.0% سنويًا</p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="param-swr" className="text-xs font-medium text-muted-foreground">
-                    معدل السحب الآمن SWR (%):
-                  </Label>
-                  <Input
-                    id="param-swr"
-                    type="number"
-                    step="0.1"
-                    value={customSwr}
-                    onChange={(e) => setCustomSwr(e.target.value)}
-                    className="font-mono text-sm"
+                <div className="space-y-2 rounded-xl border bg-card/60 p-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="param-swr" className="text-xs font-semibold text-muted-foreground">
+                      معدل السحب الآمن SWR (%):
+                    </Label>
+                    <Input
+                      id="param-swr"
+                      type="number"
+                      step="0.1"
+                      min="1"
+                      max="10"
+                      value={customSwr}
+                      onChange={(e) => setCustomSwr(e.target.value)}
+                      className="h-7 w-20 font-mono text-xs text-left"
+                    />
+                  </div>
+                  <Slider
+                    min={1}
+                    max={10}
+                    step={0.1}
+                    value={[parseFloat(customSwr) || 4]}
+                    onValueChange={([val]) => setCustomSwr(val.toFixed(1))}
+                    className="py-1"
                   />
                   <p className="text-[11px] text-muted-foreground">الافتراضي: 4.0% (قاعدة الـ 25 ضعفًا)</p>
                 </div>
 
-                <div className="space-y-1.5 flex flex-col justify-end">
-                  <div className="p-2.5 rounded-lg bg-primary/5 border border-primary/20 text-center">
-                    <p className="text-[11px] text-muted-foreground">العائد الحقيقي (Fisher):</p>
-                    <p className="text-base font-bold font-mono text-primary mt-0.5">
-                      {fireData?.assumptions.realReturnPercent ?? "—"}%
-                    </p>
-                  </div>
+                <div className="space-y-2 rounded-xl border bg-primary/5 border-primary/20 p-3 flex flex-col justify-between text-center">
+                  <p className="text-[11px] text-muted-foreground font-semibold">العائد الحقيقي (معادلة Fisher):</p>
+                  <p className="text-2xl font-bold font-mono text-primary">
+                    {fireData?.assumptions.realReturnPercent ?? "—"}%
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">r = (1+i)/(1+π) − 1</p>
                 </div>
               </div>
             </CardContent>

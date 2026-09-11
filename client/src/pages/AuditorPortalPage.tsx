@@ -20,6 +20,10 @@ import {
   Building2,
   Receipt,
   Scale,
+  Eye,
+  EyeOff,
+  ClipboardPaste,
+  LogOut,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -35,6 +39,7 @@ const SCOPE_LABELS: Record<string, string> = {
 export default function AuditorPortalPage() {
   const [tokenInput, setTokenInput] = useState("");
   const [activeToken, setActiveToken] = useState<string>("");
+  const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -104,6 +109,17 @@ export default function AuditorPortalPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8" dir="rtl">
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Dedicated Auditor Top Banner */}
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-4 text-sm text-emerald-300 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+            <span>واجهة وصول مخصصة للمراجعين المستقلين — تدقيق خارجي فقط</span>
+          </div>
+          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shrink-0">
+            تدقيق مستقل (External Audit Only)
+          </Badge>
+        </div>
+
         {/* Institutional Top Bar */}
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
           <div className="flex items-center gap-3">
@@ -150,15 +166,47 @@ export default function AuditorPortalPage() {
                   <Label htmlFor="token" className="text-slate-300">
                     رمز الوصول (Access Token)
                   </Label>
-                  <Input
-                    id="token"
-                    type="text"
-                    dir="ltr"
-                    placeholder="faud.ey..."
-                    value={tokenInput}
-                    onChange={(e) => setTokenInput(e.target.value)}
-                    className="bg-slate-950 border-slate-700 text-white font-mono text-sm"
-                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="token"
+                      type={showToken ? "text" : "password"}
+                      dir="ltr"
+                      placeholder="faud.ey..."
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      className="bg-slate-950 border-slate-700 text-white font-mono text-sm flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowToken(!showToken)}
+                      className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 h-10 px-3 shrink-0"
+                      title={showToken ? "إخفاء الرمز" : "إظهار الرمز"}
+                    >
+                      {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const text = await navigator.clipboard.readText();
+                          if (text) {
+                            setTokenInput(text.trim());
+                            toast.success("تم لصق الرمز من الحافظة");
+                          }
+                        } catch {
+                          toast.error("تعذر الوصول إلى الحافظة");
+                        }
+                      }}
+                      className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 h-10 px-3 shrink-0"
+                      title="لصق من الحافظة"
+                    >
+                      <ClipboardPaste className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 {validateQuery.data && !validateQuery.data.valid && (
@@ -195,13 +243,28 @@ export default function AuditorPortalPage() {
                       الغرض من التدقيق: {payload.purpose}
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" className="border-slate-700 text-slate-300">
                       معرف المساحة: #{payload.workspaceId}
                     </Badge>
                     <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
                       الجهة: {payload.targetAuditor}
                     </Badge>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setActiveToken("");
+                        setTokenInput("");
+                        window.history.replaceState({}, "", window.location.pathname);
+                        toast.info("تم إنهاء جلسة التدقيق");
+                      }}
+                      className="border-red-800/50 text-red-300 hover:text-red-100 hover:bg-red-950/50 h-8 gap-1.5 text-xs"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      إنهاء الجلسة
+                    </Button>
                   </div>
                 </div>
               </CardHeader>

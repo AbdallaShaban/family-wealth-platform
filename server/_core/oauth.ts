@@ -138,8 +138,50 @@ export function registerOAuthRoutes(app: Express) {
    * GET /api/oauth/login
    * Initiates the Google OAuth 2.0 / OpenID Connect authorization code flow.
    */
-  app.get("/api/oauth/login", (req: Request, res: Response) => {
+  app.get("/api/oauth/login", async (req: Request, res: Response) => {
     if (!ENV.googleClientId || !ENV.googleClientSecret) {
+      // STRICT SECURITY GUARD:
+      // Local development convenience ONLY.
+      // NEVER allowed in production or any environment where NODE_ENV is not strictly "development".
+      const isExplicitLocalDev =
+        process.env.NODE_ENV === "development" && !ENV.isProduction;
+
+      if (isExplicitLocalDev) {
+        console.warn(
+          "[OAuth] Development mode active & Google credentials not set: authenticating seeded local owner."
+        );
+
+        let devUser = await db.getUserByOpenId("auth0|owner_rashid");
+        if (!devUser) {
+          const database = await db.getDb();
+          if (database) {
+            const { users } = await import("../../drizzle/schema");
+            const [firstUser] = await database.select().from(users).limit(1);
+            devUser = firstUser;
+          }
+        }
+
+        if (devUser) {
+          await db.upsertUser({
+            openId: devUser.openId,
+            lastSignedIn: new Date(),
+          });
+
+          const sessionToken = await sdk.createSessionToken(devUser.openId, {
+            name: devUser.name ?? "Tariq Al-Rashid",
+            expiresInMs: ONE_YEAR_MS,
+          });
+
+          const sessionCookieOpts = getSessionCookieOptions(req);
+          res.cookie(COOKIE_NAME, sessionToken, {
+            ...sessionCookieOpts,
+            maxAge: ONE_YEAR_MS,
+          });
+
+          return res.redirect(302, "/");
+        }
+      }
+
       console.error("[OAuth] Cannot initiate login: Google credentials are not configured.");
       res.status(503).json({
         error: "service_unavailable",

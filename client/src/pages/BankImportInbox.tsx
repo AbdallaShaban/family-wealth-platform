@@ -44,20 +44,20 @@ export default function BankImportInbox() {
   const activeImportId = selectedImportId ?? imports.data?.[0]?.id ?? null;
   const detail = trpc.family.imports.rows.useQuery({ importId: activeImportId ?? 0 }, { enabled: Boolean(activeImportId) });
   const currentAccount = accounts.data?.find(account => String(account.id) === accountId);
-  const upload = trpc.family.imports.uploadCsv.useMutation({ onSuccess: result => { toast.success(`تمت إضافة ${result.rowCount} صفاً إلى Inbox للمراجعة.`); setSelectedImportId(result.importId); setSelectedRowIds([]); setPreview(null); void utils.family.imports.list.invalidate(); void utils.family.imports.rows.invalidate(); }, onError: error => toast.error(textError(error)) });
+  const upload = trpc.family.imports.uploadCsv.useMutation({ onSuccess: result => { toast.success(`تمت إضافة ${result.rowCount} صفاً إلى صندوق كشوف الحساب للمراجعة.`); setSelectedImportId(result.importId); setSelectedRowIds([]); setPreview(null); void utils.family.imports.list.invalidate(); void utils.family.imports.rows.invalidate(); }, onError: error => toast.error(textError(error)) });
   const review = trpc.family.imports.reviewRow.useMutation({ onSuccess: () => void utils.family.imports.rows.invalidate(), onError: error => toast.error(textError(error)) });
   const post = trpc.family.imports.postReviewed.useMutation({ onSuccess: result => { toast.success(`تم ترحيل ${result.postedEventIds.length} صفاً إلى الدفتر المتوازن.`); setSelectedRowIds([]); setConfirmPostOpen(false); void utils.family.imports.rows.invalidate(); void utils.family.imports.list.invalidate(); void utils.family.dashboard.invalidate(); void utils.family.ledger.recent.invalidate(); }, onError: error => { setConfirmPostOpen(false); toast.error(textError(error)); } });
   const eligibleRows = useMemo(() => detail.data?.rows.filter(row => row.matchStatus === "new" && (row.classification === "income" || row.classification === "expense") && Boolean(row.categoryId)) ?? [], [detail.data]);
 
   const chooseFile = async (file: File | null) => {
     if (!file) return;
-    if (file.size > 1_000_000) { toast.error("الحد الأقصى للملف في Inbox هو 1 ميغابايت."); return; }
+    if (file.size > 1_000_000) { toast.error("الحد الأقصى للملف في صندوق كشوف الحساب هو 1 ميغابايت."); return; }
     if (!file.name.toLowerCase().endsWith(".csv") && file.type !== "text/csv") { toast.error("اختر ملف CSV فقط."); return; }
     try { const content = await file.text(); const parsed = parseCsvPreview(content, 5); setPreview({ ...parsed, content, filename: file.name }); setMapping(defaultMapping(parsed.headers)); } catch (error) { toast.error(textError(error)); }
   };
 
   const submitUpload = () => {
-    if (!preview || !accountId || !currentAccount) { toast.error("اختر حساباً وملفاً قبل إضافته إلى Inbox."); return; }
+    if (!preview || !accountId || !currentAccount) { toast.error("اختر حساباً وملفاً قبل إضافته إلى صندوق كشوف الحساب."); return; }
     if (!mapping.dateColumn || !mapping.descriptionColumn || (!mapping.amountColumn && !mapping.debitColumn && !mapping.creditColumn)) { toast.error("حدّد أعمدة التاريخ والوصف والمبلغ أو الخصم والإيداع."); return; }
     upload.mutate({ accountId: Number(accountId), filename: preview.filename, currency: currentAccount.currency, content: preview.content, mapping });
   };
@@ -72,12 +72,12 @@ export default function BankImportInbox() {
     <DashboardLayout>
       <main className="mx-auto max-w-7xl space-y-6" dir="rtl">
         <PageHeader
-          title="Inbox كشوف الحساب"
+          title="صندوق كشوف الحساب"
           description="ارفع CSV، صنّف الحقول، ثم راجع الصفوف. لا ينتقل أي صف إلى الدفتر إلا بترحيل صريح بعد المطابقة."
           icon={FileSpreadsheet}
           breadcrumbs={[
             { label: "العمليات والسيولة", href: "/family/accounts" },
-            { label: "كشوف الحسابات (Inbox)" },
+            { label: "صندوق كشوف الحسابات" },
           ]}
           badge="الترحيل قابل للتدقيق"
         />
@@ -188,7 +188,7 @@ export default function BankImportInbox() {
 
               <Button className="gap-2" onClick={submitUpload} disabled={!preview || upload.isPending}>
                 {upload.isPending ? <Loader2 className="size-4 animate-spin" /> : <UploadCloud className="size-4" />}
-                إضافة إلى Inbox للمراجعة
+                إضافة إلى صندوق كشوف الحساب للمراجعة
               </Button>
             </CardContent>
           </Card>

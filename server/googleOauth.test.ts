@@ -344,4 +344,59 @@ describe("Phase 15 — Google OAuth 2.0 / OIDC Security & Verification Suite", (
       expect(session).toBeNull();
     });
   });
+
+  describe("5. Environment Guard for Development OAuth Bypass", () => {
+    it("strictly refuses bypass and returns 503 in production when Google credentials are missing", async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalIsProd = ENV.isProduction;
+      const origClientId = ENV.googleClientId;
+      const origClientSecret = ENV.googleClientSecret;
+
+      try {
+        process.env.NODE_ENV = "production";
+        ENV.isProduction = true;
+        ENV.googleClientId = "";
+        ENV.googleClientSecret = "";
+
+        const express = (await import("express")).default;
+        const app = express();
+        const { registerOAuthRoutes } = await import("./_core/oauth");
+        registerOAuthRoutes(app);
+
+        const routes = (app._router as any).stack;
+        const loginLayer = routes.find((l: any) => l.route?.path === "/api/oauth/login");
+        expect(loginLayer).toBeDefined();
+
+        let statusCode = 0;
+        let responseJson: any = null;
+        let redirected = false;
+        const mockReq = { headers: {}, socket: { encrypted: false } } as any;
+        const mockRes = {
+          status: (code: number) => {
+            statusCode = code;
+            return mockRes;
+          },
+          json: (data: any) => {
+            responseJson = data;
+            return mockRes;
+          },
+          redirect: () => {
+            redirected = true;
+          },
+          cookie: () => {},
+        } as any;
+
+        await loginLayer.route.stack[0].handle(mockReq, mockRes);
+        expect(statusCode).toBe(503);
+        expect(redirected).toBe(false);
+        expect(responseJson?.error).toBe("service_unavailable");
+        expect(responseJson?.message).toBe("بوابة تسجيل الدخول عبر Google غير مهيأة على الخادم حاليًا.");
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        ENV.isProduction = originalIsProd;
+        ENV.googleClientId = origClientId;
+        ENV.googleClientSecret = origClientSecret;
+      }
+    });
+  });
 });

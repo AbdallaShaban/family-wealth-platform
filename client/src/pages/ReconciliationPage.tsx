@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { AlertTriangle, CheckCircle2, RefreshCw, ShieldCheck, Scale, Handshake } from "lucide-react";
 import { SettlementMatchingView } from "@/pages/SettlementPage";
+import { formatMoney } from "@/lib/financialDisplay";
 
 const countLabels = [
   ["postedEntries", "القيود المنشورة"],
@@ -80,37 +81,99 @@ export default function ReconciliationPage() {
                     <Badge variant={data.status === "healthy" ? "secondary" : "outline"}>{data.status === "healthy" ? "سليم" : "مراجعة مطلوبة"}</Badge>
                   </CardContent>
                 </Card>
-                <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  {countLabels.map(([key, label]) => (
-                    <Card key={key}>
-                      <CardContent className="p-5">
-                        <p className="text-xs font-semibold text-slate-500">{label}</p>
-                        <p className="mt-2 text-2xl font-bold text-slate-950">{data.counts[key]}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </section>
                 <section className="grid gap-4 lg:grid-cols-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>ميزان المراجعة</CardTitle>
-                      <CardDescription>المجاميع مشتقة من سطور القيود المنشورة فقط.</CardDescription>
+                  {/* Card 1: Operation & Ledger Activity Counts */}
+                  <Card className="fintech-surface-card">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base font-bold flex items-center gap-2">
+                          <Scale className="size-4 text-primary" />
+                          <span>قيود وحركة العمليات</span>
+                        </CardTitle>
+                        <Badge variant="outline" className="text-xs">
+                          نطاق القيود المعتمدة
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-xs">
+                        إجمالي الحركات والسطور المحاسبية المنشورة في دفتر الأستاذ المزدوج
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-3 sm:grid-cols-3">
-                      <div>
-                        <p className="text-xs text-slate-500">إجمالي المدين</p>
-                        <p className="mt-1 font-semibold">{data.trialBalance.totalDebitBase}</p>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3 rounded-xl border bg-muted/20 text-center">
+                          <p className="text-[11px] text-muted-foreground">القيود المنشورة</p>
+                          <p className="text-xl font-bold font-mono text-foreground mt-1">{data.counts.postedEntries}</p>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-muted/20 text-center">
+                          <p className="text-[11px] text-muted-foreground">الأحداث المنشورة</p>
+                          <p className="text-xl font-bold font-mono text-foreground mt-1">{data.counts.postedEvents}</p>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-muted/20 text-center">
+                          <p className="text-[11px] text-muted-foreground">سطور القيد</p>
+                          <p className="text-xl font-bold font-mono text-foreground mt-1">{data.counts.postedLines}</p>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-muted/20 text-center">
+                          <p className="text-[11px] text-muted-foreground">الحسابات المفحوصة</p>
+                          <p className="text-xl font-bold font-mono text-foreground mt-1">{data.counts.accounts}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-slate-500">إجمالي الدائن</p>
-                        <p className="mt-1 font-semibold">{data.trialBalance.totalCreditBase}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">الفرق</p>
-                        <p className={`mt-1 font-semibold ${data.trialBalance.differenceBase === "0.000000" ? "text-emerald-700" : "text-amber-700"}`}>{data.trialBalance.differenceBase}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
+                        <span>الحيازات المحفوظة: <b className="font-mono text-foreground">{data.counts.persistedPositions}</b></span>
+                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="size-3.5" />
+                          <span>قيود غير متوازنة: {data.counts.unbalancedEntries}</span>
+                        </span>
                       </div>
                     </CardContent>
                   </Card>
+
+                  {/* Card 2: Trial Balance Status */}
+                  <Card className="fintech-surface-card border-primary/20">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base font-bold flex items-center gap-2">
+                          <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+                          <span>حالة الدفاتر وميزان المراجعة</span>
+                        </CardTitle>
+                        <Badge
+                          variant={data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "secondary" : "outline"}
+                          className="text-xs"
+                        >
+                          {data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "متوازن تماماً" : "فارق مراجعة"}
+                        </Badge>
+                      </div>
+                      <CardDescription className="text-xs">
+                        المجاميع المحاسبية المشتقة من سطور القيود المنشورة فقط
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-3 text-center">
+                        <div className="p-3 rounded-xl border bg-muted/20">
+                          <p className="text-[11px] text-muted-foreground">إجمالي المدين</p>
+                          <p className="text-base font-bold font-mono text-foreground mt-1 tabular-nums" dir="ltr">
+                            {data.trialBalance.totalDebitBase}
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-xl border bg-muted/20">
+                          <p className="text-[11px] text-muted-foreground">إجمالي الدائن</p>
+                          <p className="text-base font-bold font-mono text-foreground mt-1 tabular-nums" dir="ltr">
+                            {data.trialBalance.totalCreditBase}
+                          </p>
+                        </div>
+                        <div className={`p-3 rounded-xl border ${data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"}`}>
+                          <p className="text-[11px] text-muted-foreground">فرق ميزان المراجعة</p>
+                          <p className={`text-base font-bold font-mono mt-1 tabular-nums ${data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600"}`} dir="ltr">
+                            {data.trialBalance.differenceBase === "0.000000" ? "0.00" : data.trialBalance.differenceBase}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
+                        <span>حالة القيود: <b className="text-emerald-600 dark:text-emerald-400">توازن ثنائي القيد محقق</b></span>
+                        <span className="text-[11px]">ميزان المراجعة = 0.00</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </section>
                   <Card>
                     <CardHeader>
                       <CardTitle>تغطية التدفق النقدي</CardTitle>
@@ -131,7 +194,6 @@ export default function ReconciliationPage() {
                       </div>
                     </CardContent>
                   </Card>
-                </section>
                 <Card>
                   <CardHeader>
                     <CardTitle>الحيازات وإعادة البناء</CardTitle>

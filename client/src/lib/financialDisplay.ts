@@ -10,7 +10,7 @@ export function formatMoney(value: number | string | null | undefined, currency?
   const safeAmount = Number.isFinite(amount) ? amount : 0;
   const safeCurrency = normalizeCurrency(currency);
   try {
-    return new Intl.NumberFormat("ar-EG", {
+    return new Intl.NumberFormat("ar-EG-u-nu-latn", {
       style: "currency",
       currency: safeCurrency,
       maximumFractionDigits,

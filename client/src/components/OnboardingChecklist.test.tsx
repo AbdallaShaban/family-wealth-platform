@@ -19,7 +19,7 @@ describe("OnboardingChecklist", () => {
       />
     );
     expect(markup).toContain("خارطة الجاهزية المالية والمؤسسية");
-    expect(markup).toContain("0 / 4");
+    expect(markup).toContain("مكتمل 0 من 4 خطوات");
     expect(markup).toContain("إضافة حساب");
   });
 
@@ -32,7 +32,7 @@ describe("OnboardingChecklist", () => {
         hasGoals={false}
       />
     );
-    expect(markup).toContain("2 / 4");
+    expect(markup).toContain("مكتمل 2 من 4 خطوات");
     expect(markup).toContain("مكتمل");
   });
 });

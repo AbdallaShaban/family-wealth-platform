@@ -334,14 +334,17 @@ export default function StressTestingPage() {
           }
         />
 
-        {/* Global Epistemic Warning Banner */}
+        {/* Global Epistemic Warning Banner & Disclosure Badge */}
         <Card className="border-amber-500/30 bg-amber-500/5">
           <CardContent className="p-3.5 flex items-start gap-3">
             <Info className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-muted-foreground leading-relaxed space-y-1">
-              <div className="font-semibold text-foreground flex items-center gap-2">
+            <div className="text-xs text-muted-foreground leading-relaxed space-y-1.5">
+              <div className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
                 <span>الفصل المعرفي والمنهجي الصارم (Epistemic Governance):</span>
                 {getConfidenceBadge("medium")}
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[11px]">
+                  نماذج اختبارات الإجهاد هي نماذج قياسية افتراضية (Hypothetical Parametric Simulations) ولا تشكل تعديلاً على دفاتر الأستاذ.
+                </Badge>
               </div>
               <p>
                 البيانات المحاسبية وقيم الأصول هي <span className="font-medium text-foreground">حقائق واقعية (Facts)</span>. أما صدمات الأزمات فهي <span className="font-medium text-foreground">سيناريوهات ماكرو بارامترية (Parametric Assumptions)</span> وليست إعادة تشغيل تاريخية للمحفظة. محاكاة مونت كارلو محددة رياضياً بنواة حتمية (Deterministic Seed) لضمان تكرار النتائج بدقة مطلقة دون تغيير أي قيد محاسبي.
