@@ -28,12 +28,15 @@ const PerformancePage = lazy(() => import("./pages/PerformancePage"));
 const StressTestingPage = lazy(() => import("./pages/StressTestingPage"));
 const ConsolidationPage = lazy(() => import("./pages/ConsolidationPage"));
 const AuditorPortalPage = lazy(() => import("./pages/AuditorPortalPage"));
+const TransactionsHubPage = lazy(() => import("./pages/TransactionsHubPage"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Suspense fallback={<div className="fintech-route-loading" role="status" aria-label="جارٍ تحميل الشاشة"><i /><i /><i /></div>}><Switch>
       <Route path={"/"} component={FamilyHomeGate} />
+      <Route path={"/transactions"} component={TransactionsHubPage} />
+      <Route path={"/family/transactions"} component={TransactionsHubPage} />
       <Route path={"/accounts"} component={AccountsPage} />
       <Route path={"/ledger"} component={LedgerPage} />
       <Route path={"/cash-flow"} component={CashFlowPage} />

@@ -11,19 +11,18 @@ describe("financial display", () => {
 
   it("formats finite values with the requested currency and precision", () => {
     const value = formatMoney("1234.5", "usd", 2);
-    expect(value).toContain("1,234.50");
-    expect(value).toContain("US$");
+    expect(value).toBe("USD 1,234.50");
   });
 
-  it("keeps the Egyptian pound symbol paired with a finite Arabic number", () => {
+  it("keeps the standard English ISO code with formatted numbers without Arabic abbreviations", () => {
     const value = formatMoney("0", "EGP", 2);
-    expect(value).toContain("0.00");
-    expect(value).toContain("ج.م");
+    expect(value).toBe("EGP 0.00");
+    expect(value).not.toContain("ج.م");
     expect(value).not.toContain("NaN");
   });
 
   it("does not throw for malformed numeric input", () => {
-    expect(formatMoney("not-a-number", "EGP", 0)).toContain("0");
+    expect(formatMoney("not-a-number", "EGP", 0)).toBe("EGP 0");
   });
 
   it("keeps a stable privacy placeholder for sensitive values", () => {

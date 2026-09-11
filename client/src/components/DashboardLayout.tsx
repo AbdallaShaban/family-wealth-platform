@@ -83,6 +83,7 @@ const navigationGroups: NavigationGroup[] = [
     label: "النقد والالتزامات",
     icon: WalletCards,
     items: [
+      { icon: ArrowLeftRight, label: "المعاملات المالية", path: "/transactions", minimumRole: "editor" },
       { icon: WalletCards, label: "التدفق النقدي", path: "/cash-flow", minimumRole: "editor" },
       { icon: CreditCard, label: "الديون والالتزامات", path: "/debts", minimumRole: "editor" },
       { icon: ClipboardCheck, label: "المطابقة والتسوية", path: "/reconciliation", minimumRole: "editor" },

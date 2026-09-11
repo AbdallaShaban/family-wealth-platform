@@ -10,13 +10,13 @@ export function formatMoney(value: number | string | null | undefined, currency?
   const safeAmount = Number.isFinite(amount) ? amount : 0;
   const safeCurrency = normalizeCurrency(currency);
   try {
-    return new Intl.NumberFormat("ar-EG-u-nu-latn", {
-      style: "currency",
-      currency: safeCurrency,
+    const formattedNumber = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: maximumFractionDigits,
       maximumFractionDigits,
     }).format(safeAmount);
+    return `${safeCurrency} ${formattedNumber}`;
   } catch {
-    return `${safeAmount.toFixed(maximumFractionDigits)} ${safeCurrency}`;
+    return `${safeCurrency} ${safeAmount.toFixed(maximumFractionDigits)}`;
   }
 }
 
