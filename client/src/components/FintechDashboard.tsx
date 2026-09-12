@@ -94,11 +94,11 @@ function MetricCard({
       <div className="fintech-metric-icon">
         <Icon className="size-5" />
       </div>
-      <p className="!text-slate-700 dark:!text-slate-200 !font-semibold !text-sm !m-0 !mt-3.5 !mb-1.5">{label}</p>
-      <strong>
+      <p className="text-slate-800 dark:text-slate-100 font-semibold text-sm m-0 mt-3.5 mb-1.5">{label}</p>
+      <strong className="text-slate-900 dark:text-white font-bold font-mono text-2xl sm:text-3xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
         <AnimatedMoney value={value} currency={currency} />
       </strong>
-      <small className="!text-slate-600 dark:!text-slate-400 !font-medium !text-xs block !mt-2.5 leading-relaxed">
+      <small className="text-slate-600 dark:text-slate-300 text-xs font-medium block mt-2.5 leading-relaxed">
         {detail}
       </small>
     </motion.article>
@@ -630,55 +630,51 @@ export default function FintechDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col justify-between h-full space-y-3 py-1">
+                  <div className="flex flex-col justify-center h-full py-1">
                     {/* Reassuring Institutional Health Summary Banner */}
-                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 p-4">
+                    <div className="rounded-xl border border-slate-200 dark:border-border bg-slate-50/50 dark:bg-muted/20 p-4">
                       <div className="flex items-center gap-2.5 mb-3">
-                        <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
                           <ShieldCheck className="size-4" />
                         </div>
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
                             مساحتك المالية خالية من أي ديون
                           </h4>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                             لا توجد قروض أو أقساط أو مستحقات بطاقات ائتمانية مسجلة حالياً.
                           </p>
                         </div>
                       </div>
 
                       {/* Clean Metric Row */}
-                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-emerald-500/15 text-center">
-                        <div className="p-2.5 rounded-lg bg-white dark:bg-card border border-emerald-500/15 shadow-2xs">
-                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block">
+                      <div className="grid grid-cols-3 gap-2.5 pt-3 border-t border-slate-200/80 dark:border-border text-center">
+                        <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border shadow-xs">
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium block">
                             إجمالي الالتزامات
                           </span>
-                          <strong className="text-xs font-bold font-mono text-slate-900 dark:text-slate-100 mt-1 block">
+                          <strong className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 block">
                             0 {currency}
                           </strong>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-white dark:bg-card border border-emerald-500/15 shadow-2xs">
-                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block">
+                        <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border shadow-xs">
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium block">
                             نسبة العبء المالي
                           </span>
-                          <strong className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1 block">
+                          <strong className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 block">
                             0%
                           </strong>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-white dark:bg-card border border-emerald-500/15 shadow-2xs">
-                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block">
+                        <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border shadow-xs">
+                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium block">
                             الموقف المالي
                           </span>
-                          <strong className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1 block truncate">
+                          <strong className="text-sm font-bold text-slate-900 dark:text-white mt-1 block truncate">
                             استقرار كامل وآمن
                           </strong>
                         </div>
                       </div>
                     </div>
-
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center leading-relaxed font-medium px-2">
-                      تتدفق جميع الإيرادات النقدية مباشرة لتنمية الأصول وبناء الاحتياطي دون استنزاف في فوائد أو أقساط ديون.
-                    </p>
                   </div>
                 )}
               </motion.article>
@@ -695,13 +691,21 @@ export default function FintechDashboard() {
               </div>
               <div className="fintech-account-scroller">
                 {accounts.map(account => (
-                  <button onClick={() => setLocation("/accounts")} key={account.id} className="hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium text-[10px]">{account.kind}</span>
-                    <strong className="!text-slate-800 dark:!text-slate-100 !font-semibold !text-xs truncate block">{account.name}</strong>
-                    <b className="!font-mono !font-bold !text-slate-900 dark:!text-slate-50 !text-sm block" dir="ltr">
-                      <SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue>
-                    </b>
-                    <ArrowUpRight className="size-4 text-slate-400" />
+                  <button
+                    onClick={() => setLocation("/accounts")}
+                    key={account.id}
+                    className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-3 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm transition-all text-right group flex flex-col justify-between gap-1.5"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="text-slate-500 dark:text-slate-400 text-xs">{account.kind}</span>
+                      <ArrowUpRight className="size-3.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors shrink-0" />
+                    </div>
+                    <strong className="text-slate-900 dark:text-slate-100 font-bold text-xs sm:text-sm truncate block">{account.name}</strong>
+                    <div className="text-left w-full mt-1" dir="ltr">
+                      <span className="text-slate-900 dark:text-emerald-400 font-bold font-mono text-sm tabular-nums">
+                        <SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue>
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
