@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import SensitiveValue from "@/components/SensitiveValue";
 import { formatMoney } from "@/lib/financialDisplay";
 import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ArrowLeftRight, Plus } from "lucide-react";
+import { ArrowLeftRight, BarChart3, Plus } from "lucide-react";
 
 type AllocationItem = { name: string; value: number; color: string };
 type CashFlowItem = { month: string; income: number; expense: number };
@@ -82,8 +82,8 @@ export default function FintechCharts({ allocation, cashFlow, currency, usingDem
             </ResponsiveContainer>
           ) : (
             <div className="flex h-full min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-border/50 mb-3">
-                <ArrowLeftRight className="size-5" />
+              <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                <BarChart3 className="size-5" />
               </div>
               <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                 لا توجد تدفقات دخل أو مصروفات مسجلة لهذه الفترة

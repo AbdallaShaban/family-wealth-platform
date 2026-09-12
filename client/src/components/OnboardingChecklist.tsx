@@ -82,9 +82,39 @@ export function OnboardingChecklist({
     }
   };
 
-  // If all 4 steps are complete and user collapsed it, hide cleanly
-  if (completedCount === 4 && collapsed) {
-    return null;
+  if (collapsed) {
+    return (
+      <div
+        className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-gradient-to-l from-emerald-50/50 via-background to-background dark:from-emerald-950/20 px-4 py-2.5 shadow-xs transition-all"
+        dir="rtl"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+            <Sparkles className="size-3.5" />
+          </div>
+          <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+            <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+              خارطة الجاهزية المالية والمؤسسية
+            </strong>
+            <span className="text-slate-300 dark:text-slate-600 text-xs hidden sm:inline">•</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+              {completedCount === 4
+                ? "اكتملت جميع الخطوات التأسيسية (100%)"
+                : `مكتمل ${completedCount} من ${steps.length} خطوات (${progressPercent}%)`}
+            </span>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleCollapse}
+          className="text-xs font-semibold gap-1.5 h-7 px-2.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 shrink-0"
+        >
+          <span>عرض الخارطة</span>
+          <ChevronDown className="size-3.5" />
+        </Button>
+      </div>
+    );
   }
 
   return (
@@ -114,10 +144,11 @@ export function OnboardingChecklist({
               variant="ghost"
               size="sm"
               onClick={toggleCollapse}
-              className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              aria-label={collapsed ? "توسيع خارطة البدء" : "طي خارطة البدء"}
+              className="text-xs font-semibold gap-1.5 h-8 px-2.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              aria-label="طي الخارطة"
             >
-              {collapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
+              <span>طي الخارطة</span>
+              <ChevronUp className="size-3.5" />
             </Button>
           </div>
         </div>

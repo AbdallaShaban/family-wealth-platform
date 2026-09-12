@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDownLeft, ArrowUpRight, BadgeDollarSign, BarChart3, CircleDollarSign, Eye, Landmark, Plus, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
+import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, BadgeDollarSign, BarChart3, CircleDollarSign, Eye, Landmark, Plus, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { demoDashboard, getDashboardPreviewMode } from "@/lib/demoDashboard";
@@ -184,19 +184,22 @@ export default function FintechDashboard() {
   const events = usingDemo
     ? demoDashboard.events.map(event => {
         const isExpense = event.tone === "expense";
+        const isTransfer = event.type.includes("تحويل");
         return {
           id: event.id,
           title: event.type,
-          badge: isExpense ? "سحب / مصروف" : event.tone === "growth" ? "تقييم أصل" : "إيداع سيولة",
+          badge: isExpense ? "سحب / مصروف" : isTransfer ? "تحويل" : event.tone === "growth" ? "تقييم أصل" : "إيداع سيولة",
           amount: event.amount,
           currency: event.currency,
           date: event.date,
           tone: event.tone,
           isOutflow: isExpense,
+          isTransfer,
         };
       })
     : (live?.recentEvents ?? []).map(event => {
-        const isOutflow = ["expense", "withdrawal", "fee", "tax", "debt_payment", "buy"].includes(event.eventType);
+        const isTransfer = event.eventType === "transfer";
+        const isOutflow = !isTransfer && ["expense", "withdrawal", "fee", "tax", "debt_payment", "buy"].includes(event.eventType);
         const label = eventLabels[event.eventType] ?? event.eventType;
         const defaultTitle =
           event.eventType === "deposit"
@@ -207,6 +210,8 @@ export default function FintechDashboard() {
             ? "سحب سيولة نقدية"
             : event.eventType === "expense"
             ? "مصروف مصنف"
+            : event.eventType === "transfer"
+            ? "تحويل داخلي"
             : label;
         return {
           id: String(event.id),
@@ -217,8 +222,9 @@ export default function FintechDashboard() {
           date: new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(
             new Date(event.occurredAt)
           ),
-          tone: isOutflow ? ("expense" as const) : ("income" as const),
+          tone: isTransfer ? ("transfer" as const) : isOutflow ? ("expense" as const) : ("income" as const),
           isOutflow,
+          isTransfer,
         };
       });
   const debtItems = usingDemo
@@ -260,7 +266,7 @@ export default function FintechDashboard() {
               <span className="text-slate-200">{usingDemo ? "وضع العرض التجريبي" : "بياناتك المسجلة"}</span>
             </div>
             <h1 className="!m-0 !mt-1.5 !text-lg sm:!text-xl lg:!text-2xl !font-bold !leading-snug text-white">
-              أهلاً {user?.name?.split(" ")[0] || "بك"}،{" "}
+              {user?.name?.trim() ? `مرحباً ${user.name.trim().split(/\s+/)[0]}، ` : "مرحباً بك، "}
               <span className="text-emerald-400">هذا هو وضعك المالي اليوم.</span>
             </h1>
             <p className="!m-0 !mt-1 !text-xs md:!text-[12.5px] !leading-relaxed text-slate-300/90 max-w-xl">
@@ -513,6 +519,7 @@ export default function FintechDashboard() {
                 {events.length ? (
                   <div>
                     {events.map((event) => {
+                      const isTransfer = event.isTransfer;
                       const isOutflow = event.isOutflow;
                       return (
                         <div
@@ -521,13 +528,19 @@ export default function FintechDashboard() {
                         >
                           {/* Right Side (Transaction Details in RTL) */}
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
-                              {isOutflow ? (
-                                <ArrowUpRight className="size-4 text-slate-600 dark:text-slate-400" />
-                              ) : (
-                                <ArrowDownLeft className="size-4 text-slate-600 dark:text-slate-400" />
-                              )}
-                            </div>
+                            {isTransfer ? (
+                              <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
+                                <ArrowLeftRight className="size-4" />
+                              </div>
+                            ) : isOutflow ? (
+                              <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 text-rose-700 dark:text-rose-300 flex items-center justify-center shrink-0">
+                                <ArrowUpRight className="size-4" />
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                <ArrowDownLeft className="size-4" />
+                              </div>
+                            )}
                             <div className="min-w-0">
                               <strong className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate block">
                                 {event.title}
@@ -542,12 +555,14 @@ export default function FintechDashboard() {
                           <div className="shrink-0 text-left" dir="ltr">
                             <span
                               className={
-                                isOutflow
+                                isTransfer
+                                  ? "text-sky-800 dark:text-sky-400 font-bold font-mono text-sm sm:text-base tabular-nums"
+                                  : isOutflow
                                   ? "text-rose-800 dark:text-rose-400 font-bold font-mono text-sm sm:text-base tabular-nums"
                                   : "text-emerald-800 dark:text-emerald-400 font-bold font-mono text-sm sm:text-base tabular-nums"
                               }
                             >
-                              {`${isOutflow ? "-" : "+"} `}
+                              {isTransfer ? "" : `${isOutflow ? "-" : "+"} `}
                               <SensitiveValue>
                                 {formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}
                               </SensitiveValue>
