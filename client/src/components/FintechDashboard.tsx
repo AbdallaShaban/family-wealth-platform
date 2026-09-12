@@ -246,39 +246,53 @@ export default function FintechDashboard() {
     <DashboardLayout>
       <div className="fintech-page pb-10 space-y-6" dir="rtl">
         <motion.section
-          className="fintech-hero"
+          className="fintech-hero !min-h-0 !p-4 sm:!p-5 lg:!py-5 lg:!px-8 !gap-4 flex flex-col md:flex-row md:items-center md:justify-between !shadow-lg rounded-2xl md:rounded-[1.75rem]"
           initial={reduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.42, ease: [0.23, 1, 0.32, 1] }}
         >
           <div className="fintech-hero-orb fintech-hero-orb-one" />
           <div className="fintech-hero-orb fintech-hero-orb-two" />
-          <div className="relative z-10">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-100">
+          <div className="relative z-10 flex flex-col justify-center">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
               <span className="fintech-status-dot" />
-              نظرة مالية موحدة <span className="opacity-70">•</span>
-              <span>{usingDemo ? "وضع العرض التجريبي" : "بياناتك المسجلة"}</span>
+              <span>نظرة مالية موحدة</span>
+              <span className="opacity-40">•</span>
+              <span className="text-slate-200">{usingDemo ? "وضع العرض التجريبي" : "بياناتك المسجلة"}</span>
             </div>
-            <h1>
-              أهلاً {user?.name?.split(" ")[0] || "بك"}،<br />
-              <span>هذا هو وضعك المالي اليوم.</span>
+            <h1 className="!m-0 !mt-1.5 !text-lg sm:!text-xl lg:!text-2xl !font-bold !leading-snug text-white">
+              أهلاً {user?.name?.split(" ")[0] || "بك"}،{" "}
+              <span className="text-emerald-400">هذا هو وضعك المالي اليوم.</span>
             </h1>
-            <p>تعرض اللوحة ملخصاً تشغيلياً للأرصدة والحيازات والالتزامات، مع تمييز واضح بين البيانات المسجلة وعرض الواجهة التوضيحي.</p>
+            <p className="!m-0 !mt-1 !text-xs md:!text-[12.5px] !leading-relaxed text-slate-300/90 max-w-xl">
+              ملخص تشغيلي متوازن للأرصدة النقدية والحيازات والالتزامات المالية في مساحتك.
+            </p>
           </div>
-          <div className="fintech-hero-actions relative z-10">
-            <Button onClick={() => setLocation("/accounts")} className="fintech-primary-action">
-              <Plus className="size-4" />إضافة حساب
-            </Button>
-            <Button variant="outline" onClick={toggleDemoMode} className="fintech-ghost-action">
-              <Eye className="size-4" />{usingDemo ? "العودة لبياناتي" : "معاينة ببيانات تجريبية"}
-            </Button>
-          </div>
-          <div className="fintech-decision-stamp relative z-10">
-            <ShieldCheck className="size-5" />
-            <div>
-              <span>حالة البيانات</span>
-              <strong>{usingDemo ? "عرض توضيحي آمن" : "قيودك المالية"}</strong>
+          <div className="relative z-10 flex flex-wrap items-center gap-2.5 sm:self-center shrink-0">
+            <div className="fintech-decision-stamp !static !m-0 !p-1.5 !px-3 !min-w-0 flex items-center gap-2 rounded-xl bg-slate-900/60 border border-emerald-500/25">
+              <ShieldCheck className="size-4 text-emerald-400 shrink-0" />
+              <div className="leading-tight text-right">
+                <span className="text-[10px] text-slate-300 block">حالة البيانات</span>
+                <strong className="text-xs text-white">{usingDemo ? "عرض توضيحي آمن" : "قيودك المالية"}</strong>
+              </div>
             </div>
+            <Button
+              onClick={() => setLocation("/accounts")}
+              size="sm"
+              className="fintech-primary-action h-9 text-xs font-semibold px-3.5 gap-1.5"
+            >
+              <Plus className="size-3.5" />
+              إضافة حساب
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleDemoMode}
+              className="fintech-ghost-action h-9 text-xs font-semibold px-3.5 gap-1.5"
+            >
+              <Eye className="size-3.5" />
+              {usingDemo ? "العودة لبياناتي" : "معاينة ببيانات تجريبية"}
+            </Button>
           </div>
         </motion.section>
 
@@ -577,9 +591,16 @@ export default function FintechDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="fintech-chart-empty">
-                    <BadgeDollarSign className="size-7 text-slate-500" />
-                    <p className="text-slate-600 dark:text-slate-300 font-medium text-xs mt-2">لا توجد التزامات نشطة داخل مساحة FAMILY الحالية.</p>
+                  <div className="flex h-full min-h-[170px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center my-2">
+                    <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 mb-3">
+                      <ShieldCheck className="size-5" />
+                    </div>
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      لا توجد التزامات مالية مستحقة حالياً
+                    </p>
+                    <p className="mt-1 max-w-xs text-[11px] leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
+                      مساحتك المالية خالية من القروض أو البطاقات الائتمانية غير المسددة.
+                    </p>
                   </div>
                 )}
               </motion.article>
