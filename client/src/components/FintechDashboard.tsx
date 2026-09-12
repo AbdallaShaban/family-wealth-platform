@@ -493,7 +493,7 @@ export default function FintechDashboard() {
             </Suspense>
             <section className="fintech-content-grid fintech-lower-grid">
               <motion.article
-                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-5"
+                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-4 sm:p-5 flex flex-col justify-between h-full"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.26 }}
@@ -510,70 +510,73 @@ export default function FintechDashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setLocation("/ledger")}
-                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 h-8"
+                    onClick={() => setLocation("/transactions")}
+                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 h-8 gap-1"
                   >
-                    عرض الدفتر
+                    <span>عرض كافة المعاملات</span>
+                    <span aria-hidden="true">←</span>
                   </Button>
                 </div>
                 {events.length ? (
-                  <div>
-                    {events.map((event) => {
-                      const isTransfer = event.isTransfer;
-                      const isOutflow = event.isOutflow;
-                      return (
-                        <div
-                          key={event.id}
-                          className="group border-b border-slate-100 dark:border-border/60 py-3 px-3 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-muted/40 transition-colors rounded-lg last:border-b-0"
-                        >
-                          {/* Right Side (Transaction Details in RTL) */}
-                          <div className="flex items-center gap-3 min-w-0">
-                            {isTransfer ? (
-                              <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
-                                <ArrowLeftRight className="size-4" />
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      {events.slice(0, 5).map((event) => {
+                        const isTransfer = event.isTransfer;
+                        const isOutflow = event.isOutflow;
+                        return (
+                          <div
+                            key={event.id}
+                            className="group border-b border-slate-100 dark:border-border/60 py-2.5 px-3 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-muted/40 transition-colors rounded-lg last:border-b-0"
+                          >
+                            {/* Right Side (Transaction Details in RTL) */}
+                            <div className="flex items-center gap-3 min-w-0">
+                              {isTransfer ? (
+                                <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
+                                  <ArrowLeftRight className="size-4" />
+                                </div>
+                              ) : isOutflow ? (
+                                <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 text-rose-700 dark:text-rose-300 flex items-center justify-center shrink-0">
+                                  <ArrowUpRight className="size-4" />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                  <ArrowDownLeft className="size-4" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <strong className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate block">
+                                  {event.title}
+                                </strong>
+                                <span className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 block font-normal">
+                                  {event.date}
+                                </span>
                               </div>
-                            ) : isOutflow ? (
-                              <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 text-rose-700 dark:text-rose-300 flex items-center justify-center shrink-0">
-                                <ArrowUpRight className="size-4" />
-                              </div>
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                                <ArrowDownLeft className="size-4" />
-                              </div>
-                            )}
-                            <div className="min-w-0">
-                              <strong className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate block">
-                                {event.title}
-                              </strong>
-                              <span className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 block font-normal">
-                                {event.date}
+                            </div>
+
+                            {/* Subtle track line connecting details and amount on desktop for comfortable visual tracking */}
+                            <div className="hidden sm:block flex-1 mx-4 border-b border-dashed border-slate-200/60 dark:border-border/40 group-hover:border-slate-300/80 transition-colors" />
+
+                            {/* Left Side (Amount in RTL) */}
+                            <div className="shrink-0 text-left" dir="ltr">
+                              <span
+                                className={
+                                  isTransfer
+                                    ? "text-slate-800 dark:text-slate-200 font-bold font-mono text-base tabular-nums"
+                                    : isOutflow
+                                    ? "text-rose-900 dark:text-rose-300 font-bold font-mono text-base tabular-nums"
+                                    : "text-emerald-900 dark:text-emerald-300 font-bold font-mono text-base tabular-nums"
+                                }
+                              >
+                                {isTransfer ? "↔ " : isOutflow ? "- " : "+ "}
+                                <SensitiveValue>
+                                  {formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}
+                                </SensitiveValue>
                               </span>
                             </div>
                           </div>
-
-                          {/* Subtle track line connecting details and amount on desktop for comfortable visual tracking */}
-                          <div className="hidden sm:block flex-1 mx-4 border-b border-dashed border-slate-200/60 dark:border-border/40 group-hover:border-slate-300/80 transition-colors" />
-
-                          {/* Left Side (Amount in RTL) */}
-                          <div className="shrink-0 text-left" dir="ltr">
-                            <span
-                              className={
-                                isTransfer
-                                  ? "text-slate-800 dark:text-slate-200 font-bold font-mono text-base tabular-nums"
-                                  : isOutflow
-                                  ? "text-rose-900 dark:text-rose-300 font-bold font-mono text-base tabular-nums"
-                                  : "text-emerald-900 dark:text-emerald-300 font-bold font-mono text-base tabular-nums"
-                              }
-                            >
-                              {isTransfer ? "↔ " : isOutflow ? "- " : "+ "}
-                              <SensitiveValue>
-                                {formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}
-                              </SensitiveValue>
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="flex h-full min-h-[170px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center my-2">
@@ -587,7 +590,7 @@ export default function FintechDashboard() {
                 )}
               </motion.article>
               <motion.article
-                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-5"
+                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-4 sm:p-5 flex flex-col justify-between h-full"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.31 }}
@@ -611,69 +614,85 @@ export default function FintechDashboard() {
                   </Button>
                 </div>
                 {debtItems.length ? (
-                  <div>
-                    {debtItems.map(debt => (
-                      <div className="border-b border-slate-100 dark:border-border/60 py-3 px-2 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-muted/30 transition-colors rounded-lg last:border-b-0" key={debt.id}>
-                        <div>
-                          <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 block">{debt.name}</strong>
-                          <small className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mt-0.5">
-                            دفعة دنيا <SensitiveValue>{formatMoney(debt.payment, debt.currency, 0)}</SensitiveValue> شهرياً
-                          </small>
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      {debtItems.slice(0, 5).map((debt) => (
+                        <div
+                          className="border-b border-slate-100 dark:border-border/60 py-2.5 px-3 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-muted/30 transition-colors rounded-lg last:border-b-0"
+                          key={debt.id}
+                        >
+                          <div>
+                            <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 block">
+                              {debt.name}
+                            </strong>
+                            <small className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mt-0.5">
+                              دفعة دنيا <SensitiveValue>{formatMoney(debt.payment, debt.currency, 0)}</SensitiveValue> شهرياً
+                            </small>
+                          </div>
+                          <div className="text-left" dir="ltr">
+                            <b className="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm">
+                              <SensitiveValue>{formatMoney(debt.outstanding, debt.currency, 0)}</SensitiveValue>
+                            </b>
+                            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mt-0.5" dir="rtl">
+                              {debt.rate}% سنوياً
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-left" dir="ltr">
-                          <b className="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm">
-                            <SensitiveValue>{formatMoney(debt.outstanding, debt.currency, 0)}</SensitiveValue>
-                          </b>
-                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mt-0.5" dir="rtl">{debt.rate}% سنوياً</span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col justify-center h-full py-1">
-                    {/* Reassuring Institutional Health Summary Banner */}
-                    <div className="rounded-xl border border-slate-200 dark:border-border bg-slate-50/50 dark:bg-muted/20 p-4">
-                      <div className="flex items-center gap-2.5 mb-3">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                          <ShieldCheck className="size-4" />
-                        </div>
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
-                            مساحتك المالية خالية من أي ديون
-                          </h4>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                            لا توجد قروض أو أقساط أو مستحقات بطاقات ائتمانية مسجلة حالياً.
-                          </p>
-                        </div>
+                  <div className="flex flex-col justify-between flex-1 py-1 space-y-3">
+                    {/* Sleek Status Badge */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-800/50">
+                      <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
+                        <ShieldCheck className="size-4" />
                       </div>
+                      <div className="min-w-0">
+                        <strong className="text-slate-800 dark:text-slate-100 font-semibold text-sm block truncate">
+                          سجل التزامات آمن وخالٍ من الديون
+                        </strong>
+                        <span className="text-slate-500 dark:text-slate-400 text-xs block mt-0.5">
+                          لا توجد قروض، بطاقات أو التزامات تمويلية مستحقة السداد.
+                        </span>
+                      </div>
+                    </div>
 
-                      {/* Clean Metric Row */}
-                      <div className="grid grid-cols-3 gap-2.5 pt-3 border-t border-slate-200/80 dark:border-border text-center">
-                        <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border shadow-xs">
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium block">
-                            إجمالي الالتزامات
-                          </span>
-                          <strong className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 block">
-                            0 {currency}
-                          </strong>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border shadow-xs">
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium block">
-                            نسبة العبء المالي
-                          </span>
-                          <strong className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 block">
-                            0%
-                          </strong>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200 dark:border-border shadow-xs">
-                          <span className="text-xs text-slate-600 dark:text-slate-400 font-medium block">
-                            الموقف المالي
-                          </span>
-                          <strong className="text-sm font-bold text-slate-900 dark:text-white mt-1 block truncate">
-                            استقرار كامل وآمن
-                          </strong>
-                        </div>
+                    {/* Subtle 3-Pillar Compact Metric Grid */}
+                    <div className="grid grid-cols-3 gap-2.5 text-center">
+                      <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-card/80 border border-slate-200/80 dark:border-border shadow-xs">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                          إجمالي الالتزامات
+                        </span>
+                        <strong className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 block">
+                          0 {currency}
+                        </strong>
                       </div>
+                      <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-card/80 border border-slate-200/80 dark:border-border shadow-xs">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                          عبء خدمة الدين
+                        </span>
+                        <strong className="text-sm font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1 block">
+                          0.0%
+                        </strong>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-card/80 border border-slate-200/80 dark:border-border shadow-xs">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                          التصنيف الائتماني الداخلي
+                        </span>
+                        <strong className="text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-1 block truncate">
+                          ممتاز (AAA)
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Operational Solvency Bottom Indicator */}
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/50 dark:bg-muted/30 border border-slate-100 dark:border-border/60 text-xs text-slate-600 dark:text-slate-400">
+                      <span className="font-medium">الملاءة المالية التشغيلية:</span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                        <span className="inline-block size-2 rounded-full bg-emerald-500" />
+                        تغطية سيولة تامة 100%
+                      </span>
                     </div>
                   </div>
                 )}
