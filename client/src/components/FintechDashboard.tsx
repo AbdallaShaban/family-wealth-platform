@@ -515,36 +515,38 @@ export default function FintechDashboard() {
                           {isOutflow ? <ArrowDownRight className="size-4" /> : <ArrowUpRight className="size-4" />}
                         </div>
                         <div className="min-w-0">
-                          <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate block">
-                            {event.title}
-                          </strong>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                              {event.title}
+                            </strong>
+                            <Badge
+                              variant="outline"
+                              className={`text-[10.5px] font-semibold px-2 py-0.5 border shrink-0 ${
+                                isOutflow
+                                  ? "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+                                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
+                              }`}
+                            >
+                              {event.badge}
+                            </Badge>
+                          </div>
                           <small className="text-[11px] font-medium text-slate-600 dark:text-slate-300 block mt-0.5">
                             {event.date}
                           </small>
                         </div>
-                        <div className="flex items-center gap-2.5 shrink-0">
-                          <Badge
-                            variant="outline"
-                            className={`text-[11px] font-semibold px-2 py-0.5 border ${
+                        <div className="shrink-0 text-left" dir="ltr">
+                          <span
+                            className={
                               isOutflow
-                                ? "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
-                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
-                            }`}
+                                ? "text-rose-800 dark:text-rose-300 font-bold font-mono text-sm sm:text-base tabular-nums"
+                                : "text-emerald-800 dark:text-emerald-300 font-bold font-mono text-sm sm:text-base tabular-nums"
+                            }
                           >
-                            {event.badge}
-                          </Badge>
-                          <b
-                            className={`font-mono text-xs font-bold tabular-nums ${
-                              isOutflow
-                                ? "text-amber-700 dark:text-amber-400"
-                                : "text-emerald-700 dark:text-emerald-400"
-                            }`}
-                            dir="ltr"
-                          >
+                            {`${isOutflow ? "-" : "+"} `}
                             <SensitiveValue>
-                              {`${isOutflow ? "-" : "+"} ${formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}`}
+                              {formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}
                             </SensitiveValue>
-                          </b>
+                          </span>
                         </div>
                         <i style={{ animationDelay: `${index * 80}ms` }} />
                       </div>
