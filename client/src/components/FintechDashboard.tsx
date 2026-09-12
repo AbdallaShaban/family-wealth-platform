@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDownRight, ArrowUpRight, BadgeDollarSign, BarChart3, CircleDollarSign, Eye, Landmark, Plus, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, BadgeDollarSign, BarChart3, CircleDollarSign, Eye, Landmark, Plus, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { demoDashboard, getDashboardPreviewMode } from "@/lib/demoDashboard";
@@ -8,7 +8,6 @@ import { useDemoMode } from "@/contexts/DemoModeContext";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SensitiveValue from "@/components/SensitiveValue";
@@ -488,106 +487,126 @@ export default function FintechDashboard() {
             </Suspense>
             <section className="fintech-content-grid fintech-lower-grid">
               <motion.article
-                className="fintech-panel"
+                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-5"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.26 }}
               >
-                <div className="fintech-panel-heading">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-2">
                   <div>
-                    <p className="fintech-overline">النشاط الأخير</p>
-                    <h2>آخر ما تحرك في المساحة</h2>
+                    <p className="text-[11px] font-bold tracking-wider text-emerald-700 dark:text-emerald-400 uppercase font-mono">
+                      النشاط الأخير
+                    </p>
+                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                      آخر ما تحرك في المساحة
+                    </h2>
                   </div>
                   <Button
                     variant="ghost"
+                    size="sm"
                     onClick={() => setLocation("/ledger")}
-                    className="fintech-text-button"
+                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 h-8"
                   >
                     عرض الدفتر
                   </Button>
                 </div>
-                <div className="fintech-event-list">
-                  {events.map((event, index) => {
-                    const isOutflow = event.isOutflow;
-                    return (
-                      <div className="fintech-event" key={event.id}>
-                        <div className={`fintech-event-icon fintech-event-${event.tone}`}>
-                          {isOutflow ? <ArrowDownRight className="size-4" /> : <ArrowUpRight className="size-4" />}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                              {event.title}
-                            </strong>
-                            <Badge
-                              variant="outline"
-                              className={`text-[10.5px] font-semibold px-2 py-0.5 border shrink-0 ${
-                                isOutflow
-                                  ? "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
-                                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
-                              }`}
-                            >
-                              {event.badge}
-                            </Badge>
+                {events.length ? (
+                  <div>
+                    {events.map((event) => {
+                      const isOutflow = event.isOutflow;
+                      return (
+                        <div
+                          key={event.id}
+                          className="border-b border-slate-100 dark:border-border/60 py-3 px-2 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-muted/30 transition-colors rounded-lg last:border-b-0"
+                        >
+                          {/* Right Side (Transaction Details in RTL) */}
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center shrink-0">
+                              {isOutflow ? (
+                                <ArrowUpRight className="size-4 text-slate-600 dark:text-slate-400" />
+                              ) : (
+                                <ArrowDownLeft className="size-4 text-slate-600 dark:text-slate-400" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <strong className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate block">
+                                {event.title}
+                              </strong>
+                              <span className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 block font-normal">
+                                {event.date}
+                              </span>
+                            </div>
                           </div>
-                          <small className="text-[11px] font-medium text-slate-600 dark:text-slate-300 block mt-0.5">
-                            {event.date}
-                          </small>
+
+                          {/* Left Side (Amount in RTL) */}
+                          <div className="shrink-0 text-left" dir="ltr">
+                            <span
+                              className={
+                                isOutflow
+                                  ? "text-rose-800 dark:text-rose-400 font-bold font-mono text-sm sm:text-base tabular-nums"
+                                  : "text-emerald-800 dark:text-emerald-400 font-bold font-mono text-sm sm:text-base tabular-nums"
+                              }
+                            >
+                              {`${isOutflow ? "-" : "+"} `}
+                              <SensitiveValue>
+                                {formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}
+                              </SensitiveValue>
+                            </span>
+                          </div>
                         </div>
-                        <div className="shrink-0 text-left" dir="ltr">
-                          <span
-                            className={
-                              isOutflow
-                                ? "text-rose-800 dark:text-rose-300 font-bold font-mono text-sm sm:text-base tabular-nums"
-                                : "text-emerald-800 dark:text-emerald-300 font-bold font-mono text-sm sm:text-base tabular-nums"
-                            }
-                          >
-                            {`${isOutflow ? "-" : "+"} `}
-                            <SensitiveValue>
-                              {formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}
-                            </SensitiveValue>
-                          </span>
-                        </div>
-                        <i style={{ animationDelay: `${index * 80}ms` }} />
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex h-full min-h-[170px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center my-2">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      لا توجد حركات مسجلة حديثاً
+                    </p>
+                    <p className="mt-1 max-w-xs text-[11px] leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
+                      ستظهر هنا أحدث عمليات الإيداع والصرف المسجلة في حساباتك.
+                    </p>
+                  </div>
+                )}
               </motion.article>
               <motion.article
-                className="fintech-panel"
+                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-5"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.31 }}
               >
-                <div className="fintech-panel-heading">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-2">
                   <div>
-                    <p className="fintech-overline">الالتزامات</p>
-                    <h2>نظرة على السداد</h2>
+                    <p className="text-[11px] font-bold tracking-wider text-emerald-700 dark:text-emerald-400 uppercase font-mono">
+                      الالتزامات
+                    </p>
+                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                      نظرة على السداد
+                    </h2>
                   </div>
                   <Button
                     variant="ghost"
+                    size="sm"
                     onClick={() => setLocation("/debts")}
-                    className="fintech-text-button"
+                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 h-8"
                   >
                     إدارة الديون
                   </Button>
                 </div>
                 {debtItems.length ? (
-                  <div className="fintech-debt-list">
+                  <div>
                     {debtItems.map(debt => (
-                      <div className="fintech-debt" key={debt.id}>
+                      <div className="border-b border-slate-100 dark:border-border/60 py-3 px-2 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-muted/30 transition-colors rounded-lg last:border-b-0" key={debt.id}>
                         <div>
-                          <strong className="text-xs font-bold text-slate-900 dark:text-slate-100">{debt.name}</strong>
-                          <small className="text-[11px] font-medium text-slate-600 dark:text-slate-300 block mt-0.5">
+                          <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 block">{debt.name}</strong>
+                          <small className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mt-0.5">
                             دفعة دنيا <SensitiveValue>{formatMoney(debt.payment, debt.currency, 0)}</SensitiveValue> شهرياً
                           </small>
                         </div>
-                        <div>
-                          <b className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                        <div className="text-left" dir="ltr">
+                          <b className="font-mono font-bold text-slate-900 dark:text-slate-100 text-sm">
                             <SensitiveValue>{formatMoney(debt.outstanding, debt.currency, 0)}</SensitiveValue>
                           </b>
-                          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mt-0.5">{debt.rate}% سنوياً</span>
+                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mt-0.5" dir="rtl">{debt.rate}% سنوياً</span>
                         </div>
                       </div>
                     ))}
