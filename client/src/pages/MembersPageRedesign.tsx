@@ -349,12 +349,12 @@ export default function MembersPageRedesign() {
             <CardContent className="space-y-6">
               {/* Newly Issued Token Display Banner */}
               {newlyIssuedToken && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/60 rounded-xl space-y-3">
-                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-semibold text-sm">
-                    <CheckCircle2 className="w-5 h-5" />
+                <div className="p-4 bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2 text-[#0B1628] dark:text-slate-100 font-semibold text-sm">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>تم إصدار الرمز بنجاح: {newlyIssuedToken.label}</span>
                   </div>
-                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                  <p className="text-xs text-[#64748B] dark:text-slate-300">
                     انسخ هذا الرمز أو رابط البوابة المباشر وشاركه عبر قناة آمنة. لن يُعرض الرمز الخام مرة أخرى.
                   </p>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">

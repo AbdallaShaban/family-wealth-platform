@@ -39,7 +39,7 @@ export default function NotFound() {
           >
             <Button
               onClick={handleGoHome}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="bg-[#0B1628] hover:bg-[#12243B] text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg font-medium"
             >
               <Home className="w-4 h-4 mr-2" />
               Go Home

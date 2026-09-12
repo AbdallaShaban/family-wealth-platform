@@ -115,16 +115,16 @@ export default function WealthHealthPage() {
   // Score color helper
   const getScoreColorClass = (val: number) => {
     if (val >= 85) return "text-emerald-500 dark:text-emerald-400";
-    if (val >= 70) return "text-blue-500 dark:text-blue-400";
+    if (val >= 70) return "text-sky-500 dark:text-sky-400";
     if (val >= 50) return "text-amber-500 dark:text-amber-400";
-    return "text-rose-500 dark:text-rose-400";
+    return "text-amber-600 dark:text-amber-400";
   };
 
   const getScoreBgClass = (val: number) => {
-    if (val >= 85) return "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400";
-    if (val >= 70) return "bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400";
-    if (val >= 50) return "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400";
-    return "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400";
+    if (val >= 85) return "bg-emerald-500/10 border-emerald-500/20 text-[#0B1628] dark:text-slate-100 font-medium";
+    if (val >= 70) return "bg-sky-500/10 border-sky-500/20 text-[#0B1628] dark:text-slate-100 font-medium";
+    if (val >= 50) return "bg-amber-500/10 border-amber-500/20 text-[#0B1628] dark:text-slate-100 font-medium";
+    return "bg-amber-500/15 border-amber-500/30 text-[#0B1628] dark:text-slate-100 font-medium";
   };
 
   const totalScoreNum = scoreData ? parseFloat(scoreData.totalScore) : 0;
@@ -218,10 +218,10 @@ export default function WealthHealthPage() {
                   <Badge
                     className={
                       scoreData.confidence.level === "high"
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                        ? "bg-emerald-500/10 text-[#0B1628] dark:text-slate-100 border-emerald-500/30 font-medium"
                         : scoreData.confidence.level === "medium"
-                        ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                        ? "bg-sky-500/10 text-[#0B1628] dark:text-slate-100 border-sky-500/30 font-medium"
+                        : "bg-amber-500/10 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium"
                     }
                   >
                     {scoreData.confidence.level === "high" ? "ثقة عالية" : scoreData.confidence.level === "medium" ? "ثقة متوسطة" : "ثقة منخفضة (بيانات أولية)"}
@@ -248,7 +248,7 @@ export default function WealthHealthPage() {
                 </div>
 
                 {scoreData.confidence.warningsAr.length > 0 && (
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-[#0B1628] dark:text-slate-100 font-medium flex items-start gap-2">
                     <AlertTriangle className="size-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                     <div className="space-y-1">
                       {scoreData.confidence.warningsAr.map((w, i) => (
@@ -280,18 +280,18 @@ export default function WealthHealthPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Dim 1: Liquidity */}
-              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "liquidity" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "liquidity" ? "ring-2 ring-amber-500/30 border-amber-500/40 bg-amber-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-[#0B1628] dark:text-slate-100 font-bold text-xs">
                         1
                       </span>
                       <CardTitle className="text-sm font-semibold">السيولة والمرونة في الطوارئ</CardTitle>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {weakestDimensionKey === "liquidity" && (
-                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/15 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
                           أولوية تحسين
                         </Badge>
                       )}
@@ -329,18 +329,18 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 2: Debt Sustainability */}
-              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "debtSustainability" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "debtSustainability" ? "ring-2 ring-amber-500/30 border-amber-500/40 bg-amber-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold text-xs">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-500/10 text-[#0B1628] dark:text-slate-100 font-bold text-xs">
                         2
                       </span>
                       <CardTitle className="text-sm font-semibold">استدامة الديون والملاءة</CardTitle>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {weakestDimensionKey === "debtSustainability" && (
-                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/15 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
                           أولوية تحسين
                         </Badge>
                       )}
@@ -378,18 +378,18 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 3: Savings Velocity */}
-              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "savingsVelocity" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "savingsVelocity" ? "ring-2 ring-amber-500/30 border-amber-500/40 bg-amber-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-[#0B1628] dark:text-slate-100 font-bold text-xs">
                         3
                       </span>
                       <CardTitle className="text-sm font-semibold">سرعة الادخار وتراكم الثروة</CardTitle>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {weakestDimensionKey === "savingsVelocity" && (
-                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/15 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
                           أولوية تحسين
                         </Badge>
                       )}
@@ -427,18 +427,18 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 4: Portfolio Diversification */}
-              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "diversification" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "diversification" ? "ring-2 ring-amber-500/30 border-amber-500/40 bg-amber-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-[#0B1628] dark:text-slate-100 font-bold text-xs">
                         4
                       </span>
                       <CardTitle className="text-sm font-semibold">تنوع المحفظة ومخاطر التركيز</CardTitle>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {weakestDimensionKey === "diversification" && (
-                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/15 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
                           أولوية تحسين
                         </Badge>
                       )}
@@ -476,18 +476,18 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 5: Resilience & Protection */}
-              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "resilienceProtection" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "resilienceProtection" ? "ring-2 ring-amber-500/30 border-amber-500/40 bg-amber-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 font-bold text-xs">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/10 text-[#0B1628] dark:text-slate-100 font-bold text-xs">
                         5
                       </span>
                       <CardTitle className="text-sm font-semibold">جودة التقييمات والحماية</CardTitle>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {weakestDimensionKey === "resilienceProtection" && (
-                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/15 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
                           أولوية تحسين
                         </Badge>
                       )}
@@ -531,18 +531,18 @@ export default function WealthHealthPage() {
               </Card>
 
               {/* Dim 6: FI Progress */}
-              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "fiProgress" ? "ring-2 ring-rose-500/30 border-rose-500/40 bg-rose-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
+              <Card className={`border shadow-sm transition-all ${weakestDimensionKey === "fiProgress" ? "ring-2 ring-amber-500/30 border-amber-500/40 bg-amber-500/[0.02]" : "border-border/70 hover:border-primary/40"}`}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-bold text-xs">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 text-[#0B1628] dark:text-slate-100 font-bold text-xs">
                         6
                       </span>
                       <CardTitle className="text-sm font-semibold">نسبة التقدم نحو الاستقلال المالي</CardTitle>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {weakestDimensionKey === "fiProgress" && (
-                        <Badge variant="destructive" className="text-[10px] bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30">
+                        <Badge variant="outline" className="text-[10px] bg-amber-500/15 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
                           أولوية تحسين
                         </Badge>
                       )}
@@ -758,8 +758,8 @@ export default function WealthHealthPage() {
                     <Badge
                       className={
                         fireData.primaryHorizon.isReachable
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                          : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                          ? "bg-emerald-500/10 text-[#0B1628] dark:text-slate-100 border-emerald-500/30 font-medium"
+                          : "bg-amber-500/10 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium"
                       }
                     >
                       {fireData.primaryHorizon.statusLabelAr}

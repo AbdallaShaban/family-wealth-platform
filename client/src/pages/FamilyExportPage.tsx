@@ -247,12 +247,12 @@ export default function FamilyExportPage() {
                     جارٍ فحص البصمة الرقمية وسلامة الجداول الـ 51...
                   </div>
                 ) : validationResult?.valid ? (
-                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
+                  <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3 text-xs text-[#0B1628] dark:text-slate-100 font-medium flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
+                      <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       <span>فحص السلامة اجتاز بنجاح: البصمة الرقمية مطابقة لـ {validationResult.totalRows} سجلاً.</span>
                     </div>
-                    <Badge variant="outline" className="bg-emerald-500/20 border-emerald-500/30">
+                    <Badge variant="outline" className="bg-emerald-500/20 border-emerald-500/30 text-[#0B1628] dark:text-slate-100 font-medium">
                       SHA-256 سليم
                     </Badge>
                   </div>

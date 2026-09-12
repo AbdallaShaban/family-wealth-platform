@@ -45,7 +45,14 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <header className={cn("space-y-3 pb-6 border-b border-border/80", className)} dir="rtl">
+    <header
+      className={cn(
+        "relative overflow-hidden rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4",
+        "after:absolute after:top-0 after:right-0 after:h-full after:w-1 after:bg-emerald-500",
+        className
+      )}
+      dir="rtl"
+    >
       {/* Breadcrumbs */}
       <Breadcrumb>
         <BreadcrumbList className="text-xs text-muted-foreground">
@@ -113,7 +120,7 @@ export function PageHeader({
                   return (
                     <Badge
                       variant={variant}
-                      className={isInst ? "border-emerald-700/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 dark:bg-emerald-950/40" : undefined}
+                      className={isInst ? "border-emerald-700/30 bg-emerald-500/10 text-[#0B1628] font-medium dark:text-slate-100 dark:bg-emerald-950/40" : undefined}
                     >
                       {badge.text}
                     </Badge>

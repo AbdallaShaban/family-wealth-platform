@@ -62,8 +62,8 @@ export default function ReconciliationPage() {
               <Skeleton className="h-64" />
             ) : report.error ? (
               <Card>
-                <CardContent className="flex items-center gap-3 p-6 text-rose-700">
-                  <AlertTriangle className="size-5" />
+                <CardContent className="flex items-center gap-3 p-6 text-amber-800 dark:text-amber-300">
+                  <AlertTriangle className="size-5 text-amber-600" />
                   تعذر تحميل تقرير التسوية حاليًا.
                 </CardContent>
               </Card>
@@ -78,7 +78,16 @@ export default function ReconciliationPage() {
                         <p className="mt-1 text-xs text-slate-600">وقت إنشاء التقرير: {new Date(data.generatedAt).toLocaleString("ar-EG")}</p>
                       </div>
                     </div>
-                    <Badge variant={data.status === "healthy" ? "secondary" : "outline"}>{data.status === "healthy" ? "سليم" : "مراجعة مطلوبة"}</Badge>
+                    <Badge
+                      variant="outline"
+                      className={
+                        data.status === "healthy"
+                          ? "border-emerald-500/30 bg-emerald-500/10 text-[#0B1628] dark:text-slate-100 font-medium"
+                          : "border-amber-500/30 bg-amber-500/10 text-[#0B1628] dark:text-slate-100 font-medium"
+                      }
+                    >
+                      {data.status === "healthy" ? "سليم" : "مراجعة مطلوبة"}
+                    </Badge>
                   </CardContent>
                 </Card>
                 <section className="grid gap-4 lg:grid-cols-2">
@@ -160,9 +169,9 @@ export default function ReconciliationPage() {
                             {data.trialBalance.totalCreditBase}
                           </p>
                         </div>
-                        <div className={`p-3 rounded-xl border ${data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"}`}>
+                        <div className={`p-3 rounded-xl border ${data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "bg-emerald-500/10 border-emerald-500/30" : "bg-amber-500/10 border-amber-500/30"}`}>
                           <p className="text-[11px] text-muted-foreground">فرق ميزان المراجعة</p>
-                          <p className={`text-base font-bold font-mono mt-1 tabular-nums ${data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600"}`} dir="ltr">
+                          <p className={`text-base font-bold font-mono mt-1 tabular-nums ${data.trialBalance.differenceBase === "0.000000" || parseFloat(data.trialBalance.differenceBase) === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-[#0B1628] dark:text-slate-100"}`} dir="ltr">
                             {data.trialBalance.differenceBase === "0.000000" ? "0.00" : data.trialBalance.differenceBase}
                           </p>
                         </div>

@@ -121,7 +121,7 @@ export function ReportsPage() {
                 disabled={exportMutation.isPending || reportsQuery.isLoading}
                 className="gap-1.5"
               >
-                <Download className="size-4 text-blue-600" />
+                <Download className="size-4 text-sky-600 dark:text-sky-400" />
                 تصدير JSON
               </Button>
               <Button
@@ -310,7 +310,7 @@ export function ReportsPage() {
               <Card className="border-slate-200 dark:border-slate-800">
                 <CardHeader className="pb-2">
                   <CardDescription>صافي التدفق النقدي (Net Cash Flow)</CardDescription>
-                  <CardTitle className={`text-2xl font-bold ${Number(data.cashFlowStatement.netCashFlow) >= 0 ? "text-blue-600" : "text-amber-600"}`}>
+                  <CardTitle className={`text-2xl font-bold ${Number(data.cashFlowStatement.netCashFlow) >= 0 ? "text-sky-600 dark:text-sky-400" : "text-amber-600 dark:text-amber-400"}`}>
                     {money(data.cashFlowStatement.netCashFlow)}
                   </CardTitle>
                 </CardHeader>
@@ -395,12 +395,12 @@ export function ReportsPage() {
               {/* ========================================================== */}
               <TabsContent value="balance_sheet" className="space-y-6">
                 {/* Equation Verification Banner */}
-                <div className={`flex items-center justify-between rounded-xl border p-4 text-sm ${data.bookBalanceSheet.equationCheck.assetsEqualsLiabilitiesPlusEquity ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" : "border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200"}`}>
+                <div className={`flex items-center justify-between rounded-xl border p-4 text-sm ${data.bookBalanceSheet.equationCheck.assetsEqualsLiabilitiesPlusEquity ? "border-emerald-500/30 bg-emerald-500/10 text-[#0B1628] dark:text-slate-100 font-medium" : "border-amber-500/30 bg-amber-500/10 text-[#0B1628] dark:text-slate-100 font-medium"}`}>
                   <div className="flex items-center gap-2.5">
                     {data.bookBalanceSheet.equationCheck.assetsEqualsLiabilitiesPlusEquity ? (
                       <CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />
                     ) : (
-                      <AlertTriangle className="size-5 text-red-600 dark:text-red-400" />
+                      <AlertTriangle className="size-5 text-amber-600 dark:text-amber-400" />
                     )}
                     <div>
                       <span className="font-bold">معادلة الميزانية الدفترية (Invariant A): </span>
@@ -440,19 +440,19 @@ export function ReportsPage() {
                       </div>
 
                       {/* Investment Clearing Settlement Residual */}
-                      <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
-                        <div className="flex items-center justify-between font-semibold text-amber-950 dark:text-amber-200">
+                      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                        <div className="flex items-center justify-between font-semibold text-[#0B1628] dark:text-slate-100">
                           <span>رصيد مقاصة الاستثمار والتسوية</span>
-                          <span>{money(data.bookBalanceSheet.assets.investmentClearing.totalBase)}</span>
+                          <span className="font-mono">{money(data.bookBalanceSheet.assets.investmentClearing.totalBase)}</span>
                         </div>
-                        <p className="mt-1 text-[11px] text-amber-800 dark:text-amber-300">
+                        <p className="mt-1 text-[11px] text-[#64748B] dark:text-slate-400">
                           {data.bookBalanceSheet.assets.investmentClearing.description}
                         </p>
-                        <div className="mt-2 divide-y divide-amber-200/50 text-xs text-amber-900 dark:text-amber-300">
+                        <div className="mt-2 divide-y divide-border/40 text-xs text-[#0B1628] dark:text-slate-200 font-medium">
                           {data.bookBalanceSheet.assets.investmentClearing.accounts.map((acc) => (
                             <div key={acc.id} className="flex items-center justify-between py-1">
                               <span>{acc.name}</span>
-                              <span>{money(acc.balanceBase)}</span>
+                              <span className="font-mono">{money(acc.balanceBase)}</span>
                             </div>
                           ))}
                         </div>
@@ -619,7 +619,7 @@ export function ReportsPage() {
                         <span>(-) المسحوبات والتوزيعات للملاك</span>
                         <span>-{money(data.equityChangesStatement.capitalWithdrawals)}</span>
                       </div>
-                      <div className="flex items-center justify-between p-4 text-blue-700 dark:text-blue-400">
+                      <div className="flex items-center justify-between p-4 text-sky-700 dark:text-sky-400">
                         <span>(+/-) صافي الدخل التشغيلي المحقق للفترة</span>
                         <span>{money(data.equityChangesStatement.netOperatingIncome)}</span>
                       </div>
@@ -629,9 +629,9 @@ export function ReportsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
+                    <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 text-xs text-[#0B1628] dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-slate-100 font-medium">
                       <span className="flex items-center gap-1.5 font-semibold">
-                        <CheckCircle2 className="size-4 text-emerald-600" />
+                        <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
                         حالة المطابقة المحاسبية لحقوق الملكية:
                       </span>
                       <span>{data.equityChangesStatement.reconciliationCheck.reconciled ? "مطابقة تماماً بدون أي فروقات" : `يوجد فارق: ${money(data.equityChangesStatement.reconciliationCheck.discrepancy)}`}</span>
@@ -645,13 +645,13 @@ export function ReportsPage() {
               {/* ========================================================== */}
               <TabsContent value="cash_flows" className="space-y-6">
                 {/* Cash Flow Reconciliation Banner */}
-                <div className="flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/50 p-4 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-200">
+                <div className="flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50/50 p-4 text-sm text-[#0B1628] dark:border-sky-900 dark:bg-sky-950/20 dark:text-slate-100">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="size-5 text-blue-600 dark:text-blue-400" />
+                    <CheckCircle2 className="size-5 text-sky-600 dark:text-sky-400" />
                     <span className="font-bold">مطابقة التدفقات النقدية (Invariant C):</span>
                     <span>بداية الفترة ({money(data.cashFlowStatement.beginningCash)}) + التدفقات = نهاية الفترة ({money(data.cashFlowStatement.endingCash)})</span>
                   </div>
-                  <Badge variant="outline" className="border-blue-300 text-blue-700 dark:border-blue-800 dark:text-blue-300">
+                  <Badge variant="outline" className="border-sky-300 text-[#0B1628] dark:border-sky-800 dark:text-slate-100 font-medium">
                     مطابقة مؤكدة
                   </Badge>
                 </div>
@@ -804,9 +804,9 @@ export function ReportsPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/50 p-3 text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-300">
+                    <div className="flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-[#0B1628] dark:text-slate-100 font-medium">
                       <span className="flex items-center gap-1.5 font-semibold">
-                        <CheckCircle2 className="size-4 text-emerald-600" />
+                        <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
                         صحة المطابقة الرياضية للجسر التحليلي:
                       </span>
                       <span>{data.economicNetWorthBridge.bridgeCheck.reconciled ? "مطابقة رياضية بنسبة 100% بدون أي ازدواجية حسابية" : `فارق: ${money(data.economicNetWorthBridge.bridgeCheck.discrepancy)}`}</span>

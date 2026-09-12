@@ -3,7 +3,6 @@ import PageHeader from "@/components/PageHeader";
 import SensitiveValue from "@/components/SensitiveValue";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -21,9 +20,11 @@ import { formatMoney } from "@/lib/financialDisplay";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowDownLeft,
+  ArrowLeft,
   ArrowLeftRight,
   ArrowUpRight,
   BriefcaseBusiness,
+  Building2,
   CheckCircle2,
   Clock,
   Coins,
@@ -33,6 +34,7 @@ import {
   Loader2,
   PlusCircle,
   RefreshCw,
+  RotateCcw,
   Search,
   ShieldCheck,
   TrendingDown,
@@ -51,31 +53,34 @@ type OperationType =
   | "fund_redemption"
   | "debt_payment";
 
+type SemanticTone = "emerald" | "amber" | "sky" | "slate";
+
 interface OperationConfig {
   id: OperationType;
   title: string;
   shortDesc: string;
   icon: React.ElementType;
   badge: string;
-  badgeColor: string;
+  tone: SemanticTone;
 }
 
-const OPERATIONS: OperationConfig[] = [
+// 1. Primary operations tier: Capital allocation & liquidity inflows
+const PRIMARY_OPERATIONS: OperationConfig[] = [
   {
     id: "deposit",
     title: "إيداع / إضافة سيولة",
     shortDesc: "إضافة سيولة نقدية أو بنكية إلى أحد الحسابات مع قيد محاسبي متوازن.",
     icon: ArrowDownLeft,
     badge: "سيولة واردة",
-    badgeColor: "bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:border-emerald-800 dark:text-emerald-400",
+    tone: "emerald",
   },
   {
-    id: "withdrawal",
-    title: "سحب / مصروف",
-    shortDesc: "صرف أو سحب نقدي مع تحديد الحساب والفئة المالية والمذكرة.",
-    icon: ArrowUpRight,
-    badge: "سيولة صادرة",
-    badgeColor: "bg-red-500/10 text-red-700 border-red-200 dark:border-red-800 dark:text-red-400",
+    id: "buy",
+    title: "شراء / استثمار",
+    shortDesc: "تنفيذ شراء أسهم أو صناديق أو ذهب مع خصم القيمة وتحديث الحيازة.",
+    icon: TrendingUp,
+    badge: "استثمار رأسمالي",
+    tone: "emerald",
   },
   {
     id: "transfer",
@@ -83,31 +88,35 @@ const OPERATIONS: OperationConfig[] = [
     shortDesc: "نقل آمن للقيمة بين حسابين للمستخدم مع قفل مانع للتعارض والرصيد السلبي.",
     icon: ArrowLeftRight,
     badge: "تحويل داخلي",
-    badgeColor: "bg-blue-500/10 text-blue-700 border-blue-200 dark:border-blue-800 dark:text-blue-400",
+    tone: "sky",
   },
-  {
-    id: "buy",
-    title: "شراء أصل / استثمار",
-    shortDesc: "تنفيذ شراء أسهم أو صناديق أو ذهب مع خصم القيمة وتحديث الحيازة.",
-    icon: TrendingUp,
-    badge: "استثمار جديد",
-    badgeColor: "bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:border-emerald-800 dark:text-emerald-400",
-  },
+];
+
+// 2. Secondary operations tier: Liquidations, outflows & debt obligations
+const SECONDARY_OPERATIONS: OperationConfig[] = [
   {
     id: "sell",
     title: "بيع أصل / استثمار",
     shortDesc: "بيع حيازة استثمارية مسجلة وإيداع العائد في حساب التسوية.",
     icon: TrendingDown,
     badge: "تسييل أصل",
-    badgeColor: "bg-amber-500/10 text-amber-700 border-amber-200 dark:border-amber-800 dark:text-amber-400",
+    tone: "amber",
+  },
+  {
+    id: "withdrawal",
+    title: "سحب / مصروف",
+    shortDesc: "صرف أو سحب نقدي مع تحديد الحساب والفئة المالية والمذكرة التوثيقية.",
+    icon: ArrowUpRight,
+    badge: "سيولة صادرة",
+    tone: "amber",
   },
   {
     id: "fund_redemption",
     title: "استرداد استثمار / صندوق",
-    shortDesc: "استرداد وثائق صندوق استثماري أو استرداد أصل عبر مسار البيع النظامي المعتمد.",
+    shortDesc: "استرداد وثائق صندوق استثماري أو تسييل أصل عبر مسار البيع المعتمد.",
     icon: Coins,
     badge: "استرداد وثائق",
-    badgeColor: "bg-indigo-500/10 text-indigo-700 border-indigo-200 dark:border-indigo-800 dark:text-indigo-400",
+    tone: "amber",
   },
   {
     id: "debt_payment",
@@ -115,26 +124,148 @@ const OPERATIONS: OperationConfig[] = [
     shortDesc: "ترحيل سداد التزام (أصل، فائدة، رسوم) بقيد متوازن يقلل رصيد الدين.",
     icon: CreditCard,
     badge: "سداد التزام",
-    badgeColor: "bg-purple-500/10 text-purple-700 border-purple-200 dark:border-purple-800 dark:text-purple-400",
+    tone: "slate",
   },
 ];
 
-const eventLabel: Record<string, { label: string; icon: React.ElementType; color: string; sign: string }> = {
-  deposit: { label: "إيداع سيولة", icon: ArrowDownLeft, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40", sign: "+" },
-  opening_balance: { label: "رصيد افتتاحي", icon: PlusCircle, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40", sign: "+" },
-  income: { label: "دخل مصنف", icon: ArrowDownLeft, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40", sign: "+" },
-  withdrawal: { label: "سحب سيولة", icon: ArrowUpRight, color: "text-red-600 bg-red-50 dark:bg-red-950/40", sign: "-" },
-  expense: { label: "مصروف مصنف", icon: ArrowUpRight, color: "text-red-600 bg-red-50 dark:bg-red-950/40", sign: "-" },
-  transfer: { label: "تحويل داخلي", icon: ArrowLeftRight, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40", sign: "⇄" },
-  buy: { label: "شراء استثمار", icon: TrendingUp, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40", sign: "-" },
-  sell: { label: "بيع / استرداد", icon: TrendingDown, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/40", sign: "+" },
-  debt_payment: { label: "سداد دين", icon: CreditCard, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/40", sign: "-" },
+const ALL_OPERATIONS: OperationConfig[] = [...PRIMARY_OPERATIONS, ...SECONDARY_OPERATIONS];
+
+// Tone styling dictionary conforming strictly to institutional palette
+const TONE_STYLES: Record<
+  SemanticTone,
+  {
+    iconBox: string;
+    badge: string;
+    cardBorderHover: string;
+    accentLine: string;
+    actionText: string;
+    arrowColor: string;
+  }
+> = {
+  emerald: {
+    iconBox:
+      "bg-[#ECFDF5] dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 group-hover:bg-emerald-100/60 dark:group-hover:bg-emerald-900/60",
+    badge:
+      "bg-[#ECFDF5] dark:bg-emerald-950/50 text-[#0B1628] dark:text-slate-100 border border-emerald-500/30 font-semibold",
+    cardBorderHover:
+      "hover:border-emerald-500/50 dark:hover:border-emerald-500/40 hover:shadow-emerald-950/10",
+    accentLine: "bg-[#10B981]",
+    actionText:
+      "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-emerald-700 dark:group-hover:text-emerald-400",
+    arrowColor: "text-emerald-600 dark:text-emerald-400",
+  },
+  sky: {
+    iconBox:
+      "bg-[#F0F9FF] dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-500/25 group-hover:bg-sky-100/60 dark:group-hover:bg-sky-900/60",
+    badge:
+      "bg-[#F0F9FF] dark:bg-sky-950/50 text-[#0B1628] dark:text-slate-100 border border-sky-500/30 font-semibold",
+    cardBorderHover:
+      "hover:border-sky-500/50 dark:hover:border-sky-500/40 hover:shadow-sky-950/10",
+    accentLine: "bg-[#38BDF8]",
+    actionText:
+      "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-sky-700 dark:group-hover:text-sky-400",
+    arrowColor: "text-sky-600 dark:text-sky-400",
+  },
+  amber: {
+    iconBox:
+      "bg-[#FFFBEB] dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-500/25 group-hover:bg-amber-100/60 dark:group-hover:bg-amber-900/60",
+    badge:
+      "bg-[#FFFBEB] dark:bg-amber-950/50 text-[#0B1628] dark:text-slate-100 border border-amber-500/30 font-semibold",
+    cardBorderHover:
+      "hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:shadow-amber-950/10",
+    accentLine: "bg-[#F59E0B]",
+    actionText:
+      "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-amber-700 dark:group-hover:text-amber-400",
+    arrowColor: "text-amber-600 dark:text-amber-400",
+  },
+  slate: {
+    iconBox:
+      "bg-[#F1F5F9] dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 group-hover:bg-slate-200/60 dark:group-hover:bg-slate-700/60",
+    badge:
+      "bg-[#F1F5F9] dark:bg-slate-800/50 text-[#0B1628] dark:text-slate-100 border border-slate-300 dark:border-slate-700 font-semibold",
+    cardBorderHover:
+      "hover:border-slate-400 dark:hover:border-slate-500",
+    accentLine: "bg-[#64748B]",
+    actionText:
+      "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-slate-900 dark:group-hover:text-slate-200",
+    arrowColor: "text-slate-600 dark:text-slate-300",
+  },
+};
+
+// Event labels for ledger feed
+const eventLabel: Record<
+  string,
+  { label: string; icon: React.ElementType; color: string; sign: string; amountColor: string }
+> = {
+  deposit: {
+    label: "إيداع سيولة",
+    icon: ArrowDownLeft,
+    color: "text-emerald-600 dark:text-emerald-400 bg-[#ECFDF5] dark:bg-emerald-950/40 border border-emerald-500/25",
+    sign: "+",
+    amountColor: "text-emerald-700 dark:text-emerald-400",
+  },
+  opening_balance: {
+    label: "رصيد افتتاحي",
+    icon: PlusCircle,
+    color: "text-sky-600 dark:text-sky-400 bg-[#F0F9FF] dark:bg-sky-950/40 border border-sky-500/25",
+    sign: "+",
+    amountColor: "text-sky-700 dark:text-sky-400",
+  },
+  income: {
+    label: "دخل مصنف",
+    icon: ArrowDownLeft,
+    color: "text-emerald-600 dark:text-emerald-400 bg-[#ECFDF5] dark:bg-emerald-950/40 border border-emerald-500/25",
+    sign: "+",
+    amountColor: "text-emerald-700 dark:text-emerald-400",
+  },
+  withdrawal: {
+    label: "سحب سيولة",
+    icon: ArrowUpRight,
+    color: "text-amber-600 dark:text-amber-400 bg-[#FFFBEB] dark:bg-amber-950/40 border border-amber-500/25",
+    sign: "-",
+    amountColor: "text-[#0B1628] dark:text-slate-100",
+  },
+  expense: {
+    label: "مصروف مصنف",
+    icon: ArrowUpRight,
+    color: "text-amber-600 dark:text-amber-400 bg-[#FFFBEB] dark:bg-amber-950/40 border border-amber-500/25",
+    sign: "-",
+    amountColor: "text-[#0B1628] dark:text-slate-100",
+  },
+  transfer: {
+    label: "تحويل داخلي",
+    icon: ArrowLeftRight,
+    color: "text-sky-600 dark:text-sky-400 bg-[#F0F9FF] dark:bg-sky-950/40 border border-sky-500/25",
+    sign: "⇄",
+    amountColor: "text-[#0B1628] dark:text-slate-100",
+  },
+  buy: {
+    label: "شراء استثمار",
+    icon: TrendingUp,
+    color: "text-emerald-600 dark:text-emerald-400 bg-[#ECFDF5] dark:bg-emerald-950/40 border border-emerald-500/25",
+    sign: "-",
+    amountColor: "text-[#0B1628] dark:text-slate-100",
+  },
+  sell: {
+    label: "بيع / تسييل",
+    icon: TrendingDown,
+    color: "text-amber-600 dark:text-amber-400 bg-[#FFFBEB] dark:bg-amber-950/40 border border-amber-500/25",
+    sign: "+",
+    amountColor: "text-[#0B1628] dark:text-slate-100",
+  },
+  debt_payment: {
+    label: "سداد دين",
+    icon: CreditCard,
+    color: "text-slate-700 dark:text-slate-300 bg-[#F1F5F9] dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700",
+    sign: "-",
+    amountColor: "text-[#0B1628] dark:text-slate-100",
+  },
 };
 
 export default function TransactionsHubPage() {
   const utils = trpc.useUtils();
 
-  // Queries
+  // Existing queries (zero modifications to backend or contracts)
   const accounts = trpc.family.accounts.list.useQuery();
   const recentEvents = trpc.family.ledger.recent.useQuery();
   const instruments = trpc.family.instruments.list.useQuery();
@@ -159,9 +290,10 @@ export default function TransactionsHubPage() {
   const [debtId, setDebtId] = useState<string>("");
   const [interestAmount, setInterestAmount] = useState<string>("0");
 
-  // Filter state for recent transactions
+  // Filter state for recent transactions feed
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [accountFilter, setAccountFilter] = useState<string>("all");
 
   // Invalidate all related financial read queries
   const invalidateAll = () => {
@@ -173,7 +305,7 @@ export default function TransactionsHubPage() {
     void utils.family.debts.list.invalidate();
   };
 
-  // Reset form
+  // Reset form state
   const resetForm = () => {
     setActiveModal(null);
     setReviewStep(false);
@@ -231,27 +363,33 @@ export default function TransactionsHubPage() {
   const isPending =
     postCash.isPending || postTransfer.isPending || postTrade.isPending || postDebtPayment.isPending;
 
-  // Selected entities
+  // Selected entities for dialogs
   const selectedAccount = (accounts.data ?? []).find(a => String(a.id) === primaryAccountId);
   const selectedTargetAccount = (accounts.data ?? []).find(a => String(a.id) === targetAccountId);
   const selectedInstrument = (instruments.data ?? []).find(i => String(i.id) === instrumentId);
   const selectedDebt = (debts.data ?? []).find(d => String(d.id) === debtId);
 
-  // Filter accounts suitable for cash/transfers
+  // Eligible cash/settlement accounts
   const cashAccounts = (accounts.data ?? []).filter(
     a => ["cash", "bank", "brokerage", "wallet"].includes(a.accountType) && a.status === "active"
   );
+
+  // Map of account ID to name for fast table lookup
+  const accountMap = useMemo(() => {
+    const map = new Map<number, { name: string; currency: string }>();
+    (accounts.data ?? []).forEach(a => map.set(a.id, { name: a.name, currency: a.currency }));
+    return map;
+  }, [accounts.data]);
 
   // Eligible fund/investment instruments
   const fundInstruments = (instruments.data ?? []).filter(i =>
     ["fund", "equity", "gold", "bond"].includes(i.assetType)
   );
 
-  // Execute operation
+  // Execute operation handler
   const handleExecute = (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewStep) {
-      // Validate inputs before advancing to review
       if (activeModal === "deposit" || activeModal === "withdrawal") {
         if (!primaryAccountId || !amount || Number(amount) <= 0) {
           return toast.error("يرجى اختيار الحساب وإدخال مبلغ صالح.");
@@ -361,6 +499,9 @@ export default function TransactionsHubPage() {
         return true;
       });
     }
+    if (accountFilter !== "all") {
+      list = list.filter(e => String(e.primaryAccountId) === accountFilter);
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -372,20 +513,32 @@ export default function TransactionsHubPage() {
       );
     }
     return list;
-  }, [recentEvents.data, typeFilter, searchQuery]);
+  }, [recentEvents.data, typeFilter, accountFilter, searchQuery]);
+
+  // Operational metrics computed purely from existing loaded data
+  const hasActiveFilters = searchQuery !== "" || typeFilter !== "all" || accountFilter !== "all";
 
   return (
     <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
+      <div dir="rtl" className="mx-auto max-w-7xl space-y-7">
+        {/* Executive Header / Hero */}
         <PageHeader
           title="المعاملات المالية"
-          description="مركز إدخال العمليات المالية اليومية وإدارة تدفقات السيولة والاستثمارات والالتزامات بقيد محاسبي متوازن وسجل تدقيق فوري."
+          description="إدارة وتنفيذ ومراجعة جميع العمليات المالية والاستثمارية"
           breadcrumbs={[
             { label: "الرئيسية", href: "/" },
             { label: "النقد والالتزامات", href: "/transactions" },
             { label: "المعاملات المالية" },
           ]}
-          badge={{ text: "مركز العمليات اليومية", variant: "institutional" }}
+          badge={
+            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-[#0B1628] dark:text-slate-100">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+              </span>
+              <span>مركز العمليات المعتمد</span>
+            </div>
+          }
           icon={ArrowLeftRight}
           actions={
             <Button
@@ -393,194 +546,420 @@ export default function TransactionsHubPage() {
               size="sm"
               onClick={invalidateAll}
               disabled={recentEvents.isFetching}
-              className="gap-2"
+              className="h-9 gap-2 border-border/80 text-xs hover:border-emerald-500/40 hover:bg-emerald-500/5 hover:text-emerald-600 dark:hover:text-emerald-400"
             >
-              <RefreshCw className={`size-4 ${recentEvents.isFetching ? "animate-spin" : ""}`} />
-              تحديث البيانات
+              <RefreshCw className={`size-3.5 ${recentEvents.isFetching ? "animate-spin text-emerald-500" : ""}`} />
+              <span>تحديث البيانات</span>
             </Button>
           }
         />
 
-        {/* Action Buttons Grid */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {OPERATIONS.map(op => {
-            const Icon = op.icon;
-            return (
-              <Card
-                key={op.id}
-                className="group relative cursor-pointer overflow-hidden border-border/80 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500/50 hover:shadow-md dark:hover:border-emerald-500/30"
-                onClick={() => {
-                  setActiveModal(op.id);
-                  setReviewStep(false);
-                }}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 group-hover:scale-105 transition-transform">
-                      <Icon className="size-5" />
-                    </div>
-                    <Badge variant="outline" className={`text-xs font-normal ${op.badgeColor}`}>
-                      {op.badge}
-                    </Badge>
-                  </div>
-                  <CardTitle className="mt-3 text-base font-bold text-slate-900 dark:text-slate-100">
-                    {op.title}
-                  </CardTitle>
-                  <CardDescription className="text-xs leading-5 line-clamp-2">
-                    {op.shortDesc}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-between text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
-                  >
-                    <span>بدء العملية</span>
-                    <ArrowLeftRight className="size-3.5 rotate-180" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
+        {/* Operational Context KPI Section */}
+        <section className="rounded-2xl border border-[#E2E8F0] dark:border-border bg-[#EEF2F6] dark:bg-card/40 p-4 sm:p-5 shadow-2xs">
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4 sm:gap-4">
+            <div className="rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-4 shadow-xs transition-all hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748B] dark:text-muted-foreground">حسابات التسوية</span>
+                <Wallet className="size-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-[#0B1628] dark:text-foreground">
+                {cashAccounts.length}
+              </p>
+              <span className="text-[11px] text-[#64748B] dark:text-muted-foreground">حسابات نقدية نشطة</span>
+            </div>
+
+            <div className="rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-4 shadow-xs transition-all hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748B] dark:text-muted-foreground">أدوات الاستثمار</span>
+                <TrendingUp className="size-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-[#0B1628] dark:text-foreground">
+                {fundInstruments.length}
+              </p>
+              <span className="text-[11px] text-[#64748B] dark:text-muted-foreground">أدوات وصناديق متاحة</span>
+            </div>
+
+            <div className="rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-4 shadow-xs transition-all hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748B] dark:text-muted-foreground">الالتزامات النشطة</span>
+                <CreditCard className="size-4 text-[#64748B] dark:text-slate-400" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-[#0B1628] dark:text-foreground">
+                {(debts.data ?? []).filter(d => d.status === "active").length}
+              </p>
+              <span className="text-[11px] text-[#64748B] dark:text-muted-foreground">ديون قابلة للسداد</span>
+            </div>
+
+            <div className="rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-4 shadow-xs transition-all hover:shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#64748B] dark:text-muted-foreground">القيود الأخيرة</span>
+                <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="mt-1 font-mono text-xl font-bold text-[#0B1628] dark:text-foreground">
+                {recentEvents.data?.length ?? 0}
+              </p>
+              <span className="text-[11px] font-medium text-[#0B1628] dark:text-slate-200">دفتر أستاذ متوازن</span>
+            </div>
+          </div>
         </section>
 
-        {/* Recent Transactions Feed */}
-        <Card className="border-border/80 shadow-sm">
-          <CardHeader className="border-b border-border/60 pb-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-lg font-bold">
-                  <FileText className="size-5 text-emerald-600 dark:text-emerald-400" />
-                  سجل المعاملات والعمليات المنشورة
-                </CardTitle>
-                <CardDescription className="mt-1 text-xs">
-                  العمليات المنشورة فعليًا في دفتر الأستاذ والمقيدة بقيود مزدوجة متوازنة.
-                </CardDescription>
+        {/* Section: Execution of Operations inside soft institutional wrapper */}
+        <section className="rounded-2xl border border-[#E2E8F0] dark:border-border bg-[#EEF2F6] dark:bg-card/40 p-5 sm:p-6 shadow-2xs space-y-5" aria-labelledby="operations-heading">
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3.5">
+            <div>
+              <h2 id="operations-heading" className="flex items-center gap-2 text-base font-bold text-[#0B1628] dark:text-foreground sm:text-lg">
+                <BriefcaseBusiness className="size-5 text-emerald-600 dark:text-emerald-400" />
+                <span>تنفيذ معاملة</span>
+              </h2>
+              <p className="mt-0.5 text-xs text-[#64748B] dark:text-muted-foreground">
+                اختر نوع العملية المالية أو الاستثمارية المراد تسجيلها وترحيلها
+              </p>
+            </div>
+            <span className="rounded-md border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card px-2.5 py-1 text-[11px] font-medium text-[#64748B] dark:text-muted-foreground shadow-2xs">
+              7 مسارات عمليات معتمدة
+            </span>
+          </div>
+
+          {/* Row 1: Primary Inflow & Capital Allocation (3 visually dominant tiles) */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-[#64748B] dark:text-muted-foreground">
+              <span className="size-2 rounded-full bg-emerald-500" />
+              <span>المعاملات الرأسمالية وإدارة السيولة الأساسية</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3.5 sm:gap-4 md:grid-cols-3">
+              {PRIMARY_OPERATIONS.map(op => {
+                const Icon = op.icon;
+                const style = TONE_STYLES[op.tone];
+                return (
+                  <div
+                    key={op.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveModal(op.id);
+                      setReviewStep(false);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveModal(op.id);
+                        setReviewStep(false);
+                      }
+                    }}
+                    className={`group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-5 shadow-xs transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 ${style.cardBorderHover} hover:-translate-y-1 hover:shadow-sm`}
+                  >
+                    {/* Top subtle highlight line */}
+                    <div className={`absolute inset-x-0 top-0 h-1 opacity-90 ${style.accentLine}`} />
+
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className={`flex size-12 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${style.iconBox}`}>
+                          <Icon className="size-6" />
+                        </div>
+                        <Badge variant="outline" className={`text-[11px] font-medium ${style.badge}`}>
+                          {op.badge}
+                        </Badge>
+                      </div>
+
+                      <h3 className="mt-3.5 text-base font-bold text-[#0B1628] dark:text-foreground">
+                        {op.title}
+                      </h3>
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#64748B] dark:text-muted-foreground">
+                        {op.shortDesc}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-[#E2E8F0] dark:border-border/50 pt-3 text-xs font-semibold">
+                      <span className={style.actionText}>بدء العملية</span>
+                      <ArrowLeft className={`size-3.5 transition-transform duration-200 group-hover:-translate-x-1 ${style.arrowColor}`} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Row 2: Liquidations, Outflows & Debt Obligations (4 structured tiles) */}
+          <div className="space-y-2 pt-1">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-[#64748B] dark:text-muted-foreground">
+              <span className="size-2 rounded-full bg-amber-500" />
+              <span>عمليات التسييل والمصروفات والالتزامات</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+              {SECONDARY_OPERATIONS.map(op => {
+                const Icon = op.icon;
+                const style = TONE_STYLES[op.tone];
+                return (
+                  <div
+                    key={op.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setActiveModal(op.id);
+                      setReviewStep(false);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveModal(op.id);
+                        setReviewStep(false);
+                      }
+                    }}
+                    className={`group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-4 shadow-xs transition-all duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-500 ${style.cardBorderHover} hover:-translate-y-0.5 hover:shadow-sm`}
+                  >
+                    {/* Top subtle highlight line */}
+                    <div className={`absolute inset-x-0 top-0 h-0.5 opacity-80 ${style.accentLine}`} />
+
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className={`flex size-10 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105 ${style.iconBox}`}>
+                          <Icon className="size-5" />
+                        </div>
+                        <Badge variant="outline" className={`text-[10.5px] ${style.badge}`}>
+                          {op.badge}
+                        </Badge>
+                      </div>
+
+                      <h3 className="mt-2.5 text-sm font-bold text-[#0B1628] dark:text-foreground">
+                        {op.title}
+                      </h3>
+                      <p className="mt-1 line-clamp-2 text-[11.5px] leading-relaxed text-[#64748B] dark:text-muted-foreground">
+                        {op.shortDesc}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between border-t border-[#E2E8F0] dark:border-border/40 pt-2.5 text-xs font-medium">
+                      <span className={style.actionText}>بدء العملية</span>
+                      <ArrowLeft className={`size-3 transition-transform duration-200 group-hover:-translate-x-1 ${style.arrowColor}`} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Section: Transactions Ledger Feed inside soft institutional wrapper */}
+        <section className="rounded-2xl border border-[#E2E8F0] dark:border-border bg-[#EEF2F6] dark:bg-card/40 p-5 sm:p-6 shadow-2xs space-y-4" aria-labelledby="history-heading">
+          <div className="flex flex-col gap-3 rounded-xl border border-[#E2E8F0] dark:border-border bg-[#F8FAFC] dark:bg-card p-4 shadow-2xs sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 id="history-heading" className="flex items-center gap-2 text-base font-bold text-[#0B1628] dark:text-foreground sm:text-lg">
+                <FileText className="size-5 text-emerald-600 dark:text-emerald-400" />
+                <span>سجل المعاملات</span>
+              </h2>
+              <p className="mt-0.5 text-xs text-[#64748B] dark:text-muted-foreground">
+                عرض ومراجعة العمليات المالية المسجلة في دفتر الأستاذ
+              </p>
+            </div>
+
+            {/* Compact, responsive RTL Toolbar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-44 flex-1 sm:flex-initial">
+                <Search className="pointer-events-none absolute right-3 top-2.5 size-3.5 text-[#64748B] dark:text-muted-foreground" />
+                <Input
+                  placeholder="بحث في البيان أو المبلغ..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="h-9 pr-9 text-xs bg-[#FFFFFF] dark:bg-card border-[#E2E8F0] dark:border-border"
+                />
               </div>
 
-              {/* Filters */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative min-w-44">
-                  <Search className="absolute right-3 top-2.5 size-4 text-slate-400" />
-                  <Input
-                    placeholder="بحث في العمليات..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="h-9 pr-9 text-xs"
-                  />
-                </div>
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="h-9 w-36 text-xs">
-                    <Filter className="ml-1.5 size-3.5 text-slate-400" />
-                    <SelectValue placeholder="تصفية النوع" />
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="h-9 w-32 text-xs bg-[#FFFFFF] dark:bg-card border-[#E2E8F0] dark:border-border">
+                  <Filter className="ml-1 size-3 text-[#64748B] dark:text-muted-foreground" />
+                  <SelectValue placeholder="نوع المعاملة" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="all">كل العمليات</SelectItem>
+                  <SelectItem value="cash_in">إيداع ودخل (+)</SelectItem>
+                  <SelectItem value="cash_out">سحب ومصروف (-)</SelectItem>
+                  <SelectItem value="transfer">تحويل داخلي (⇄)</SelectItem>
+                  <SelectItem value="trade">تداول واستثمار</SelectItem>
+                  <SelectItem value="debt">سداد التزامات</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {cashAccounts.length > 0 && (
+                <Select value={accountFilter} onValueChange={setAccountFilter}>
+                  <SelectTrigger className="h-9 w-32 text-xs bg-[#FFFFFF] dark:bg-card border-[#E2E8F0] dark:border-border">
+                    <Building2 className="ml-1 size-3 text-[#64748B] dark:text-muted-foreground" />
+                    <SelectValue placeholder="الحساب" />
                   </SelectTrigger>
                   <SelectContent align="end">
-                    <SelectItem value="all">كل العمليات</SelectItem>
-                    <SelectItem value="cash_in">إيداعات ودخل</SelectItem>
-                    <SelectItem value="cash_out">سحوبات ومصروفات</SelectItem>
-                    <SelectItem value="transfer">تحويلات داخلية</SelectItem>
-                    <SelectItem value="trade">تداول واستثمار</SelectItem>
-                    <SelectItem value="debt">سداد التزامات</SelectItem>
+                    <SelectItem value="all">كل الحسابات</SelectItem>
+                    {cashAccounts.map(acc => (
+                      <SelectItem key={acc.id} value={String(acc.id)}>
+                        {acc.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-          </CardHeader>
+              )}
 
-          <CardContent className="p-0">
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setTypeFilter("all");
+                    setAccountFilter("all");
+                  }}
+                  className="h-9 px-2.5 text-xs text-[#64748B] hover:text-[#0B1628] dark:text-muted-foreground dark:hover:text-foreground"
+                  title="إعادة تعيين الفلاتر"
+                >
+                  <RotateCcw className="size-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:mr-1">إعادة ضبط</span>
+                </Button>
+              )}
+
+              <Badge variant="outline" className="h-9 border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card px-2.5 text-xs font-normal text-[#64748B] dark:text-muted-foreground shadow-2xs">
+                {filteredEvents.length} عملية
+              </Badge>
+            </div>
+          </div>
+
+          {/* Transactions Table Container */}
+          <div className="overflow-hidden rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card shadow-xs">
             {recentEvents.isLoading ? (
               <div className="space-y-3 p-6">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
               </div>
             ) : filteredEvents.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center">
-                <div className="flex size-14 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400">
-                  <ArrowLeftRight className="size-6" />
+                <div className="flex size-13 items-center justify-center rounded-full border border-[#E2E8F0] dark:border-border bg-[#EEF2F6] dark:bg-muted/40 text-[#64748B] dark:text-muted-foreground">
+                  <FileText className="size-6 text-[#64748B]/80 dark:text-muted-foreground/80" />
                 </div>
-                <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-slate-100">
-                  لا توجد عمليات تطابق البحث
+                <h3 className="mt-4 text-base font-bold text-[#0B1628] dark:text-foreground">
+                  {hasActiveFilters ? "لا توجد نتائج تطابق خيارات البحث" : "لا توجد معاملات حتى الآن"}
                 </h3>
-                <p className="mt-1 text-xs text-slate-500 max-w-sm">
-                  اختر أحد الأزرار بالأعلى لتسجيل إيداع أو سحب أو تحويل أو صفقة استثمارية.
+                <p className="mt-1 max-w-sm text-xs text-[#64748B] dark:text-muted-foreground">
+                  {hasActiveFilters
+                    ? "جرّب تعديل كلمات البحث أو تصفير الفلاتر لعرض كافة القيود المسجلة."
+                    : "ابدأ بإضافة أول معاملة مالية إلى حسابك من أزرار العمليات أعلاه."}
                 </p>
+                {hasActiveFilters ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setTypeFilter("all");
+                      setAccountFilter("all");
+                    }}
+                    className="mt-4 gap-1.5 text-xs border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card"
+                  >
+                    <RotateCcw className="size-3.5" />
+                    إعادة ضبط التصفية
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setActiveModal("deposit");
+                      setReviewStep(false);
+                    }}
+                    className="mt-4 gap-1.5 border-emerald-500/40 text-xs font-medium text-[#0B1628] bg-emerald-50/50 hover:bg-emerald-500/10 dark:text-slate-100 dark:bg-transparent"
+                  >
+                    <ArrowDownLeft className="size-3.5" />
+                    تسجيل إيداع جديد
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-right text-sm">
-                  <thead className="bg-slate-50 text-xs font-semibold text-slate-500 dark:bg-slate-900/50 dark:text-slate-400">
+                  <thead className="border-b border-[#E2E8F0] dark:border-border bg-[#F8FAFC] dark:bg-muted/50 text-[11.5px] font-semibold text-[#0B1628] dark:text-foreground">
                     <tr>
-                      <th className="p-3.5 pr-6">نوع العملية</th>
-                      <th className="p-3.5">المبلغ والعملة</th>
+                      <th className="p-3.5 pr-5">نوع العملية</th>
+                      <th className="p-3.5">الحساب المالي</th>
                       <th className="p-3.5">التاريخ والوقت</th>
-                      <th className="p-3.5">الملاحظة / البيان</th>
-                      <th className="p-3.5 pl-6">حالة القيد</th>
+                      <th className="p-3.5">البيان والملاحظات</th>
+                      <th className="p-3.5">المبلغ الإجمالي</th>
+                      <th className="p-3.5 pl-5">حالة القيد</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60">
+                  <tbody className="bg-[#FFFFFF] dark:bg-card divide-y divide-[#E2E8F0] dark:divide-border/60">
                     {filteredEvents.map(event => {
                       const meta = eventLabel[event.eventType] || {
                         label: event.eventType,
                         icon: ArrowLeftRight,
-                        color: "text-slate-600 bg-slate-100",
+                        color: "text-[#64748B] dark:text-muted-foreground bg-[#EEF2F6] dark:bg-muted/40 border border-[#E2E8F0] dark:border-border",
                         sign: "",
+                        amountColor: "text-[#0B1628] dark:text-foreground",
                       };
                       const Icon = meta.icon;
                       const formattedAmount = formatMoney(event.grossAmount, event.currency, 2);
-                      const isPositive = ["deposit", "income", "opening_balance", "sell"].includes(
-                        event.eventType
-                      );
+                      const accountInfo = event.primaryAccountId ? accountMap.get(event.primaryAccountId) : null;
 
                       return (
                         <tr
                           key={event.id}
-                          className="transition-colors hover:bg-slate-50/70 dark:hover:bg-slate-900/30"
+                          className="transition-colors hover:bg-[#F8FAFC] dark:hover:bg-muted/30"
                         >
-                          <td className="p-3.5 pr-6">
+                          {/* Type Column */}
+                          <td className="p-3.5 pr-5">
                             <div className="flex items-center gap-2.5">
                               <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${meta.color}`}>
                                 <Icon className="size-4" />
                               </div>
                               <div>
-                                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                                <p className="font-semibold text-[#0B1628] dark:text-foreground">
                                   {meta.label}
                                 </p>
-                                <p className="text-[11px] text-slate-400">
-                                  قيد رقم #{event.id}
+                                <p className="font-mono text-[11px] text-[#64748B] dark:text-muted-foreground">
+                                  #{event.id}
                                 </p>
                               </div>
                             </div>
                           </td>
+
+                          {/* Account Column */}
+                          <td className="p-3.5">
+                            <div className="text-xs">
+                              <p className="font-medium text-[#0B1628] dark:text-foreground">
+                                {accountInfo?.name || "حساب المعاملة"}
+                              </p>
+                              <p className="font-mono text-[11px] text-[#64748B] dark:text-muted-foreground">
+                                {event.currency}
+                              </p>
+                            </div>
+                          </td>
+
+                          {/* Date Column */}
+                          <td className="p-3.5 text-xs text-[#64748B] dark:text-muted-foreground">
+                            <div className="flex items-center gap-1.5 font-mono">
+                              <Clock className="size-3 text-[#64748B]/70 dark:text-muted-foreground/70" />
+                              <span>{new Date(event.occurredAt).toLocaleString("en-GB")}</span>
+                            </div>
+                          </td>
+
+                          {/* Memo Column */}
+                          <td className="max-w-xs p-3.5 text-xs text-[#64748B] dark:text-muted-foreground">
+                            <span className="truncate block" title={event.memo || ""}>
+                              {event.memo || "—"}
+                            </span>
+                          </td>
+
+                          {/* Amount Column */}
                           <td className="p-3.5">
                             <div className="font-mono text-sm font-bold tracking-tight">
-                              <span
-                                className={
-                                  isPositive
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : "text-red-600 dark:text-red-400"
-                                }
-                              >
+                              <span className={meta.amountColor}>
                                 {meta.sign} <SensitiveValue>{formattedAmount}</SensitiveValue>
                               </span>
                             </div>
                           </td>
-                          <td className="p-3.5 text-xs text-slate-500 dark:text-slate-400">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="size-3 text-slate-400" />
-                              <span>{new Date(event.occurredAt).toLocaleString("en-GB")}</span>
-                            </div>
-                          </td>
-                          <td className="p-3.5 text-xs text-slate-600 dark:text-slate-300 max-w-xs truncate">
-                            {event.memo || "—"}
-                          </td>
-                          <td className="p-3.5 pl-6">
+
+                          {/* Status Badge */}
+                          <td className="p-3.5 pl-5">
                             <Badge
                               variant="outline"
-                              className="gap-1 border-emerald-300 bg-emerald-50 text-[11px] font-normal text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                              className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-[#0B1628] dark:text-slate-100"
                             >
-                              <ShieldCheck className="size-3 text-emerald-600" />
+                              <ShieldCheck className="size-3 text-emerald-600 dark:text-emerald-400" />
                               <span>قيد مرحل</span>
                             </Badge>
                           </td>
@@ -591,56 +970,72 @@ export default function TransactionsHubPage() {
                 </table>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Interactive Operation Dialog */}
+        {/* Institutional Operation Dialog & Review Summary */}
         <Dialog open={activeModal !== null} onOpenChange={open => !open && resetForm()}>
-          <DialogContent className="max-w-xl" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+          <DialogContent className="max-w-xl sm:max-w-xl w-full overflow-hidden border-border bg-card" dir="rtl">
+            <DialogHeader className="border-b border-border/60 pb-3">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
+                  {activeModal && (
+                    <>
+                      {React.createElement(
+                        ALL_OPERATIONS.find(op => op.id === activeModal)?.icon || ArrowLeftRight,
+                        {
+                          className: `size-5 ${
+                            TONE_STYLES[ALL_OPERATIONS.find(op => op.id === activeModal)?.tone || "emerald"].arrowColor
+                          }`,
+                        }
+                      )}
+                      <span>{ALL_OPERATIONS.find(op => op.id === activeModal)?.title}</span>
+                    </>
+                  )}
+                </DialogTitle>
                 {activeModal && (
-                  <>
-                    {React.createElement(
-                      OPERATIONS.find(op => op.id === activeModal)?.icon || ArrowLeftRight,
-                      { className: "size-5 text-emerald-600" }
-                    )}
-                    <span>{OPERATIONS.find(op => op.id === activeModal)?.title}</span>
-                  </>
+                  <Badge
+                    variant="outline"
+                    className={`text-[11px] ${
+                      TONE_STYLES[ALL_OPERATIONS.find(op => op.id === activeModal)?.tone || "emerald"].badge
+                    }`}
+                  >
+                    {ALL_OPERATIONS.find(op => op.id === activeModal)?.badge}
+                  </Badge>
                 )}
-              </DialogTitle>
-              <DialogDescription className="text-xs">
+              </div>
+              <DialogDescription className="text-xs text-muted-foreground mt-1">
                 {reviewStep
                   ? "راجع تفاصيل العملية قبل تأكيد الترحيل النهائي إلى دفتر الأستاذ."
-                  : OPERATIONS.find(op => op.id === activeModal)?.shortDesc}
+                  : ALL_OPERATIONS.find(op => op.id === activeModal)?.shortDesc}
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleExecute} className="space-y-4">
+            <form onSubmit={handleExecute} className="space-y-4 pt-1">
               {!reviewStep ? (
                 <>
                   {/* Operation: Deposit or Withdrawal */}
                   {(activeModal === "deposit" || activeModal === "withdrawal") && (
                     <>
-                      <div className="grid gap-2">
-                        <Label>الحساب المالي</Label>
+                      <div className="grid gap-2 min-w-0">
+                        <Label className="text-xs font-semibold">الحساب المالي</Label>
                         <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر الحساب المستهدف" />
+                          <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectValue placeholder="اختر الحساب المستهدف" className="truncate" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                             {cashAccounts.map(account => (
                               <SelectItem key={account.id} value={String(account.id)}>
-                                {account.name} — الرصيد: {formatMoney(account.balance, account.currency, 2)}
+                                <span className="truncate">{account.name} — الرصيد: {formatMoney(account.balance, account.currency, 2)}</span>
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label htmlFor="tx-amount">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="tx-amount" className="text-xs font-semibold">
                             المبلغ {selectedAccount ? `(${selectedAccount.currency})` : ""}
                           </Label>
                           <Input
@@ -651,23 +1046,24 @@ export default function TransactionsHubPage() {
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             placeholder="0.00"
+                            className="w-full"
                             required
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label>تصنيف التدفق (اختياري)</Label>
+                        <div className="grid gap-2 min-w-0">
+                          <Label className="text-xs font-semibold">تصنيف التدفق (اختياري)</Label>
                           <Select value={categoryId} onValueChange={setCategoryId}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر تصنيفاً" />
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                              <SelectValue placeholder="اختر تصنيفاً" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                               {(categories.data ?? [])
                                 .filter(c =>
                                   activeModal === "deposit" ? c.direction === "income" : c.direction === "expense"
                                 )
                                 .map(c => (
                                   <SelectItem key={c.id} value={String(c.id)}>
-                                    {c.name}
+                                    <span className="truncate">{c.name}</span>
                                   </SelectItem>
                                 ))}
                             </SelectContent>
@@ -675,8 +1071,8 @@ export default function TransactionsHubPage() {
                         </div>
                       </div>
 
-                      <div className="grid gap-2">
-                        <Label htmlFor="tx-memo">مذكرة أو بيان العملية</Label>
+                      <div className="grid gap-2 min-w-0">
+                        <Label htmlFor="tx-memo" className="text-xs font-semibold">مذكرة أو بيان العملية</Label>
                         <Textarea
                           id="tx-memo"
                           value={memo}
@@ -684,6 +1080,7 @@ export default function TransactionsHubPage() {
                           placeholder="ملاحظات توثيقية إضافية للتدقيق..."
                           rows={2}
                           maxLength={2000}
+                          className="w-full"
                         />
                       </div>
                     </>
@@ -692,34 +1089,34 @@ export default function TransactionsHubPage() {
                   {/* Operation: Internal Transfer */}
                   {activeModal === "transfer" && (
                     <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label>من الحساب (المصدر)</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2 min-w-0">
+                          <Label className="text-xs font-semibold">من الحساب (المصدر)</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="حساب الخصم" />
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                              <SelectValue placeholder="حساب الخصم" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                               {cashAccounts.map(account => (
                                 <SelectItem key={account.id} value={String(account.id)}>
-                                  {account.name} ({formatMoney(account.balance, account.currency, 2)})
+                                  <span className="truncate">{account.name} ({formatMoney(account.balance, account.currency, 2)})</span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="grid gap-2">
-                          <Label>إلى الحساب (الوجهة)</Label>
+                        <div className="grid gap-2 min-w-0">
+                          <Label className="text-xs font-semibold">إلى الحساب (الوجهة)</Label>
                           <Select value={targetAccountId} onValueChange={setTargetAccountId} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="حساب الإيداع" />
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                              <SelectValue placeholder="حساب الإيداع" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                               {cashAccounts
                                 .filter(account => String(account.id) !== primaryAccountId)
                                 .map(account => (
                                   <SelectItem key={account.id} value={String(account.id)}>
-                                    {account.name} ({formatMoney(account.balance, account.currency, 2)})
+                                    <span className="truncate">{account.name} ({formatMoney(account.balance, account.currency, 2)})</span>
                                   </SelectItem>
                                 ))}
                             </SelectContent>
@@ -727,8 +1124,8 @@ export default function TransactionsHubPage() {
                         </div>
                       </div>
 
-                      <div className="grid gap-2">
-                        <Label htmlFor="tr-amount">
+                      <div className="grid gap-2 min-w-0">
+                        <Label htmlFor="tr-amount" className="text-xs font-semibold">
                           مبلغ التحويل {selectedAccount ? `(${selectedAccount.currency})` : ""}
                         </Label>
                         <Input
@@ -739,12 +1136,13 @@ export default function TransactionsHubPage() {
                           value={amount}
                           onChange={e => setAmount(e.target.value)}
                           placeholder="0.00"
+                          className="w-full"
                           required
                         />
                       </div>
 
-                      <div className="grid gap-2">
-                        <Label htmlFor="tr-memo">بيان التحويل</Label>
+                      <div className="grid gap-2 min-w-0">
+                        <Label htmlFor="tr-memo" className="text-xs font-semibold">بيان التحويل</Label>
                         <Textarea
                           id="tr-memo"
                           value={memo}
@@ -752,6 +1150,7 @@ export default function TransactionsHubPage() {
                           placeholder="مذكرة التحويل الداخلي..."
                           rows={2}
                           maxLength={2000}
+                          className="w-full"
                         />
                       </div>
                     </>
@@ -762,39 +1161,39 @@ export default function TransactionsHubPage() {
                     activeModal === "sell" ||
                     activeModal === "fund_redemption") && (
                     <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label>حساب التسوية النقدية</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2 min-w-0">
+                          <Label className="text-xs font-semibold">حساب التسوية النقدية</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر الحساب النقدي" />
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                              <SelectValue placeholder="اختر الحساب النقدي" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                               {cashAccounts.map(account => (
                                 <SelectItem key={account.id} value={String(account.id)}>
-                                  {account.name} ({formatMoney(account.balance, account.currency, 2)})
+                                  <span className="truncate">{account.name} ({formatMoney(account.balance, account.currency, 2)})</span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="grid gap-2">
-                          <Label>
+                        <div className="grid gap-2 min-w-0">
+                          <Label className="text-xs font-semibold">
                             {activeModal === "fund_redemption"
                               ? "الصندوق / الأداة الاستثمارية"
                               : "الأداة الاستثمارية"}
                           </Label>
                           <Select value={instrumentId} onValueChange={setInstrumentId} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر الأداة" />
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                              <SelectValue placeholder="اختر الأداة" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                               {(activeModal === "fund_redemption"
                                 ? fundInstruments
                                 : instruments.data ?? []
                               ).map(inst => (
                                 <SelectItem key={inst.id} value={String(inst.id)}>
-                                  {inst.name} ({inst.symbol || inst.assetType}) — {inst.currency}
+                                  <span className="truncate">{inst.name} ({inst.symbol || inst.assetType}) — {inst.currency}</span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -802,9 +1201,9 @@ export default function TransactionsHubPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label htmlFor="tr-qty">الكمية / عدد الوثائق</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="tr-qty" className="text-xs font-semibold">الكمية / عدد الوثائق</Label>
                           <Input
                             id="tr-qty"
                             type="number"
@@ -813,11 +1212,12 @@ export default function TransactionsHubPage() {
                             value={quantity}
                             onChange={e => setQuantity(e.target.value)}
                             placeholder="0"
+                            className="w-full"
                             required
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="tr-price">
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="tr-price" className="text-xs font-semibold">
                             سعر الوحدة {selectedInstrument ? `(${selectedInstrument.currency})` : ""}
                           </Label>
                           <Input
@@ -828,14 +1228,15 @@ export default function TransactionsHubPage() {
                             value={unitPrice}
                             onChange={e => setUnitPrice(e.target.value)}
                             placeholder="0.00"
+                            className="w-full"
                             required
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label htmlFor="tr-fees">رسوم المعاملة (اختياري)</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="tr-fees" className="text-xs font-semibold">رسوم المعاملة (اختياري)</Label>
                           <Input
                             id="tr-fees"
                             type="number"
@@ -844,10 +1245,11 @@ export default function TransactionsHubPage() {
                             value={feeAmount}
                             onChange={e => setFeeAmount(e.target.value)}
                             placeholder="0.00"
+                            className="w-full"
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="tr-tax">الضرائب (اختياري)</Label>
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="tr-tax" className="text-xs font-semibold">الضرائب (اختياري)</Label>
                           <Input
                             id="tr-tax"
                             type="number"
@@ -856,12 +1258,13 @@ export default function TransactionsHubPage() {
                             value={taxAmount}
                             onChange={e => setTaxAmount(e.target.value)}
                             placeholder="0.00"
+                            className="w-full"
                           />
                         </div>
                       </div>
 
-                      <div className="grid gap-2">
-                        <Label htmlFor="tr-memo">بيان الصفقة</Label>
+                      <div className="grid gap-2 min-w-0">
+                        <Label htmlFor="tr-memo" className="text-xs font-semibold">بيان الصفقة</Label>
                         <Textarea
                           id="tr-memo"
                           value={memo}
@@ -869,6 +1272,7 @@ export default function TransactionsHubPage() {
                           placeholder="ملاحظات توثيق الصفقة..."
                           rows={2}
                           maxLength={2000}
+                          className="w-full"
                         />
                       </div>
                     </>
@@ -877,34 +1281,34 @@ export default function TransactionsHubPage() {
                   {/* Operation: Debt Payment */}
                   {activeModal === "debt_payment" && (
                     <>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label>الالتزام / القرض المستحق</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid gap-2 min-w-0">
+                          <Label className="text-xs font-semibold">الالتزام / القرض المستحق</Label>
                           <Select value={debtId} onValueChange={setDebtId} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر الالتزام" />
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                              <SelectValue placeholder="اختر الالتزام" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                               {(debts.data ?? [])
                                 .filter(d => d.status === "active")
                                 .map(d => (
                                   <SelectItem key={d.id} value={String(d.id)}>
-                                    {d.name} — المستحق: {formatMoney(d.outstanding, d.currency, 2)}
+                                    <span className="truncate">{d.name} — المستحق: {formatMoney(d.outstanding, d.currency, 2)}</span>
                                   </SelectItem>
                                 ))}
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="grid gap-2">
-                          <Label>حساب السداد</Label>
+                        <div className="grid gap-2 min-w-0">
+                          <Label className="text-xs font-semibold">حساب السداد</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر حساب الخصم" />
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                              <SelectValue placeholder="اختر حساب الخصم" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
                               {cashAccounts.map(account => (
                                 <SelectItem key={account.id} value={String(account.id)}>
-                                  {account.name} ({formatMoney(account.balance, account.currency, 2)})
+                                  <span className="truncate">{account.name} ({formatMoney(account.balance, account.currency, 2)})</span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -912,9 +1316,9 @@ export default function TransactionsHubPage() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-3">
-                        <div className="grid gap-2">
-                          <Label htmlFor="dp-principal">مبلغ الأصل المسدد</Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="dp-principal" className="text-xs font-semibold">مبلغ الأصل المسدد</Label>
                           <Input
                             id="dp-principal"
                             type="number"
@@ -923,11 +1327,12 @@ export default function TransactionsHubPage() {
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             placeholder="0.00"
+                            className="w-full"
                             required
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="dp-interest">الفائدة (إن وجدت)</Label>
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="dp-interest" className="text-xs font-semibold">الفائدة (إن وجدت)</Label>
                           <Input
                             id="dp-interest"
                             type="number"
@@ -936,10 +1341,11 @@ export default function TransactionsHubPage() {
                             value={interestAmount}
                             onChange={e => setInterestAmount(e.target.value)}
                             placeholder="0.00"
+                            className="w-full"
                           />
                         </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="dp-fee">رسوم السداد</Label>
+                        <div className="grid gap-2 min-w-0">
+                          <Label htmlFor="dp-fee" className="text-xs font-semibold">رسوم السداد</Label>
                           <Input
                             id="dp-fee"
                             type="number"
@@ -948,12 +1354,13 @@ export default function TransactionsHubPage() {
                             value={feeAmount}
                             onChange={e => setFeeAmount(e.target.value)}
                             placeholder="0.00"
+                            className="w-full"
                           />
                         </div>
                       </div>
 
-                      <div className="grid gap-2">
-                        <Label htmlFor="dp-memo">مذكرة السداد</Label>
+                      <div className="grid gap-2 min-w-0">
+                        <Label htmlFor="dp-memo" className="text-xs font-semibold">مذكرة السداد</Label>
                         <Textarea
                           id="dp-memo"
                           value={memo}
@@ -961,28 +1368,29 @@ export default function TransactionsHubPage() {
                           placeholder="رقم مرجع السداد أو ملاحظة..."
                           rows={2}
                           maxLength={2000}
+                          className="w-full"
                         />
                       </div>
                     </>
                   )}
                 </>
               ) : (
-                /* Step 2: Review & Summary */
-                <div className="space-y-4 py-2">
-                  <div className="rounded-xl border border-border/80 bg-slate-50/70 p-4 dark:bg-slate-900/40 space-y-3">
-                    <div className="flex items-center justify-between border-b pb-2 text-xs text-slate-500">
-                      <span>نوع العملية:</span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100">
-                        {OPERATIONS.find(op => op.id === activeModal)?.title}
+                /* Step 2: Elevated Institutional Review Summary */
+                <div className="space-y-4 py-1">
+                  <div className="rounded-xl border border-border/80 bg-muted/30 p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-border/60 pb-2 text-xs text-muted-foreground">
+                      <span>نوع العملية المسجلة:</span>
+                      <span className="font-bold text-foreground">
+                        {ALL_OPERATIONS.find(op => op.id === activeModal)?.title}
                       </span>
                     </div>
 
                     {selectedAccount && (
                       <div className="flex items-center justify-between text-xs">
-                        <span>
-                          {activeModal === "transfer" ? "حساب المصدر (الخصم):" : "الحساب المستهدف:"}
+                        <span className="text-muted-foreground">
+                          {activeModal === "transfer" ? "حساب المصدر (الخصم):" : "حساب التسوية / الخصم:"}
                         </span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="font-semibold text-foreground">
                           {selectedAccount.name} ({formatMoney(selectedAccount.balance, selectedAccount.currency, 2)})
                         </span>
                       </div>
@@ -990,8 +1398,8 @@ export default function TransactionsHubPage() {
 
                     {selectedTargetAccount && (
                       <div className="flex items-center justify-between text-xs">
-                        <span>حساب الوجهة (الإيداع):</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="text-muted-foreground">حساب الوجهة (الإيداع):</span>
+                        <span className="font-semibold text-foreground">
                           {selectedTargetAccount.name} ({formatMoney(selectedTargetAccount.balance, selectedTargetAccount.currency, 2)})
                         </span>
                       </div>
@@ -999,8 +1407,8 @@ export default function TransactionsHubPage() {
 
                     {selectedInstrument && (
                       <div className="flex items-center justify-between text-xs">
-                        <span>الأداة الاستثمارية:</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="text-muted-foreground">الأداة الاستثمارية:</span>
+                        <span className="font-semibold text-foreground">
                           {selectedInstrument.name} ({selectedInstrument.currency})
                         </span>
                       </div>
@@ -1008,47 +1416,151 @@ export default function TransactionsHubPage() {
 
                     {selectedDebt && (
                       <div className="flex items-center justify-between text-xs">
-                        <span>عقد الالتزام:</span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="text-muted-foreground">عقد الالتزام:</span>
+                        <span className="font-semibold text-foreground">
                           {selectedDebt.name} (المستحق: {formatMoney(selectedDebt.outstanding, selectedDebt.currency, 2)})
                         </span>
                       </div>
                     )}
 
-                    {/* Amount calculation */}
-                    <div className="flex items-center justify-between border-t pt-2 text-sm">
-                      <span className="font-medium text-slate-600 dark:text-slate-400">إجمالي القيمة:</span>
-                      <span className="font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
-                        {activeModal === "buy" || activeModal === "sell" || activeModal === "fund_redemption" ? (
-                          formatMoney(
-                            (Number(quantity) * Number(unitPrice) + Number(feeAmount || 0) + Number(taxAmount || 0)).toFixed(2),
-                            selectedInstrument?.currency || "EGP",
-                            2
-                          )
-                        ) : (
-                          formatMoney(amount, selectedAccount?.currency || "EGP", 2)
+                    {/* Breakdown for trade operations */}
+                    {(activeModal === "buy" || activeModal === "sell" || activeModal === "fund_redemption") && (
+                      <div className="space-y-1.5 border-t border-border/60 pt-2 text-xs">
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <span>القيمة الأساسية ({quantity} × {unitPrice}):</span>
+                          <span className="font-mono font-medium text-foreground">
+                            {formatMoney(
+                              (Number(quantity || 0) * Number(unitPrice || 0)).toFixed(2),
+                              selectedInstrument?.currency || "EGP",
+                              2
+                            )}
+                          </span>
+                        </div>
+                        {Number(feeAmount || 0) > 0 && (
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>رسوم المعاملة:</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {formatMoney(Number(feeAmount).toFixed(2), selectedInstrument?.currency || "EGP", 2)}
+                            </span>
+                          </div>
                         )}
-                      </span>
+                        {Number(taxAmount || 0) > 0 && (
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>الضرائب:</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {formatMoney(Number(taxAmount).toFixed(2), selectedInstrument?.currency || "EGP", 2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Breakdown for debt payment */}
+                    {activeModal === "debt_payment" && (
+                      <div className="space-y-1.5 border-t border-border/60 pt-2 text-xs">
+                        <div className="flex items-center justify-between text-muted-foreground">
+                          <span>أصل الدين المسدد:</span>
+                          <span className="font-mono font-medium text-foreground">
+                            {formatMoney(amount, selectedAccount?.currency || "EGP", 2)}
+                          </span>
+                        </div>
+                        {Number(interestAmount || 0) > 0 && (
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>الفائدة المسددة:</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {formatMoney(interestAmount, selectedAccount?.currency || "EGP", 2)}
+                            </span>
+                          </div>
+                        )}
+                        {Number(feeAmount || 0) > 0 && (
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>رسوم السداد:</span>
+                            <span className="font-mono font-medium text-foreground">
+                              {formatMoney(feeAmount, selectedAccount?.currency || "EGP", 2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Prominent Net Cash Flow highlight box */}
+                    <div className="rounded-lg border border-border/80 bg-card p-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            صافي التدفق النقدي:
+                          </span>
+                          <p className="text-[11px] text-muted-foreground/80">
+                            {activeModal === "buy"
+                              ? "خصم من الحساب النقدي (القيمة + الرسوم + الضرائب)"
+                              : activeModal === "sell" || activeModal === "fund_redemption"
+                              ? "إيداع في الحساب النقدي (القيمة - الرسوم - الضرائب)"
+                              : activeModal === "debt_payment"
+                              ? "إجمالي الخصم للسداد (الأصل + الفائدة + الرسوم)"
+                              : activeModal === "deposit"
+                              ? "إيداع في الحساب المالي"
+                              : activeModal === "withdrawal"
+                              ? "خصم من الحساب المالي"
+                              : "نقل متوازن بين الحسابين"}
+                          </p>
+                        </div>
+                        <div className="text-left font-mono text-base font-bold text-[#0B1628] dark:text-slate-100">
+                          {activeModal === "buy" || activeModal === "sell" || activeModal === "fund_redemption" ? (
+                            <span>
+                              {formatMoney(
+                                (
+                                  activeModal === "buy"
+                                    ? Number(quantity || 0) * Number(unitPrice || 0) +
+                                      Number(feeAmount || 0) +
+                                      Number(taxAmount || 0)
+                                    : Number(quantity || 0) * Number(unitPrice || 0) -
+                                      Number(feeAmount || 0) -
+                                      Number(taxAmount || 0)
+                                ).toFixed(2),
+                                selectedInstrument?.currency || "EGP",
+                                2
+                              )}
+                            </span>
+                          ) : activeModal === "debt_payment" ? (
+                            <span>
+                              {formatMoney(
+                                (
+                                  Number(amount || 0) +
+                                  Number(interestAmount || 0) +
+                                  Number(feeAmount || 0)
+                                ).toFixed(2),
+                                selectedAccount?.currency || "EGP",
+                                2
+                              )}
+                            </span>
+                          ) : (
+                            <span>
+                              {formatMoney(amount, selectedAccount?.currency || "EGP", 2)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     {memo && (
-                      <div className="border-t pt-2 text-xs text-slate-500">
-                        <span className="font-medium">البيان: </span>
+                      <div className="border-t border-border/60 pt-2 text-xs text-muted-foreground">
+                        <span className="font-semibold text-foreground">البيان: </span>
                         <span>{memo}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 rounded-lg bg-emerald-50/70 p-3 text-xs text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-                    <ShieldCheck className="size-4 shrink-0 text-emerald-600" />
+                  {/* Security and ledger invariant guarantee badge */}
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-medium text-[#0B1628] dark:text-slate-100">
+                    <ShieldCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span>
-                      سيتم نشر العملية مباشرة في دفتر الأستاذ بقيد مزدوج متوازن وحفظ سجل التدقيق.
+                      سيتم ترحيل المعاملة بقيد محاسبي مزدوج متوازن مع تثبيت سجل التدقيق المقترن.
                     </span>
                   </div>
                 </div>
               )}
 
-              <DialogFooter className="gap-2 sm:gap-0 pt-2">
+              <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/60">
                 {reviewStep ? (
                   <>
                     <Button

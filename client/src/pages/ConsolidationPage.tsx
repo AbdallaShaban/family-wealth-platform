@@ -450,7 +450,7 @@ export default function ConsolidationPage() {
                               <SensitiveValue>{formatMoney(d.amountConverted, selectedCurrency, 2)}</SensitiveValue>
                             </td>
                             <td className="p-3">
-                              <Badge variant="secondary" className="text-[11px] bg-amber-50 text-amber-900 border-amber-200">
+                              <Badge variant="outline" className="text-[11px] bg-amber-500/10 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
                                 إفصاح دون شطب وهمي
                               </Badge>
                             </td>

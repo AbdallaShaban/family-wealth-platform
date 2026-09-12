@@ -246,21 +246,21 @@ export default function StressTestingPage() {
       case "HIGH":
       case "high":
         return (
-          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+          <Badge className="bg-emerald-500/10 text-[#0B1628] dark:text-slate-100 border-emerald-500/30 font-medium">
             ثقة بيانات عالية (HIGH)
           </Badge>
         );
       case "MEDIUM":
       case "medium":
         return (
-          <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20">
+          <Badge className="bg-sky-500/10 text-[#0B1628] dark:text-slate-100 border-sky-500/30 font-medium">
             ثقة بيانات متوسطة (MEDIUM)
           </Badge>
         );
       case "LOW":
       case "low":
         return (
-          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
+          <Badge className="bg-amber-500/10 text-[#0B1628] dark:text-slate-100 border-amber-500/30 font-medium">
             ثقة بيانات منخفضة (LOW)
           </Badge>
         );
@@ -342,7 +342,7 @@ export default function StressTestingPage() {
               <div className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
                 <span>الفصل المعرفي والمنهجي الصارم (Epistemic Governance):</span>
                 {getConfidenceBadge("medium")}
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[11px]">
+                <Badge variant="outline" className="bg-amber-500/10 text-[#0B1628] dark:text-slate-100 border-amber-500/30 text-[11px] font-medium">
                   نماذج اختبارات الإجهاد هي نماذج قياسية افتراضية (Hypothetical Parametric Simulations) ولا تشكل تعديلاً على دفاتر الأستاذ.
                 </Badge>
               </div>
@@ -403,7 +403,7 @@ export default function StressTestingPage() {
               {profileQuery.isLoading ? (
                 <Skeleton className="h-8 w-28" />
               ) : (
-                <div className="text-2xl font-bold font-mono tracking-tight text-blue-600 dark:text-blue-400">
+                <div className="text-2xl font-bold font-mono tracking-tight text-sky-600 dark:text-sky-400">
                   <SensitiveValue>
                     {formatMoney(marketableAllocation?.valueBase || "0", baseCurrency)}
                   </SensitiveValue>
@@ -423,7 +423,7 @@ export default function StressTestingPage() {
               {profileQuery.isLoading ? (
                 <Skeleton className="h-8 w-28" />
               ) : (
-                <div className="text-2xl font-bold font-mono tracking-tight text-rose-600 dark:text-rose-400">
+                <div className="text-2xl font-bold font-mono tracking-tight text-[#0B1628] dark:text-foreground">
                   <SensitiveValue>
                     {formatMoney(totalMonthlyCommitments, baseCurrency)}
                   </SensitiveValue>
@@ -848,7 +848,7 @@ export default function StressTestingPage() {
                             <th className="p-3 text-rose-600 dark:text-rose-400">P10 (أسوأ 10%)</th>
                             <th className="p-3 text-amber-600 dark:text-amber-400">P25 (متحفظ)</th>
                             <th className="p-3 text-emerald-600 dark:text-emerald-400 font-bold">P50 (الوسيط)</th>
-                            <th className="p-3 text-blue-600 dark:text-blue-400">P75 (متفائل)</th>
+                            <th className="p-3 text-sky-600 dark:text-sky-400">P75 (متفائل)</th>
                             <th className="p-3 text-emerald-600 dark:text-emerald-400">P90 (أفضل 10%)</th>
                           </tr>
                         </thead>
@@ -873,7 +873,7 @@ export default function StressTestingPage() {
                                     {formatMoney(pt.p50, baseCurrency)}
                                   </SensitiveValue>
                                 </td>
-                                <td className="p-3 text-blue-600 dark:text-blue-400">
+                                <td className="p-3 text-sky-600 dark:text-sky-400">
                                   <SensitiveValue>
                                     {formatMoney(pt.p75, baseCurrency)}
                                   </SensitiveValue>
@@ -1153,7 +1153,7 @@ export default function StressTestingPage() {
                 ) : null}
 
                 {/* Governance Model Assumption Banner */}
-                <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 text-xs text-[#0B1628] dark:text-slate-100 space-y-1">
                   <div className="flex items-center gap-2 font-bold">
                     <Info className="size-4 shrink-0" />
                     <span>Indicative Stress Liquidity Horizon — Model Assumption (افتراضات نموذجية استرشادية لآفاق التسييل)</span>
@@ -1172,7 +1172,7 @@ export default function StressTestingPage() {
                         <CardTitle className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
                           المستوى 1: سيولة نقدية فورية
                         </CardTitle>
-                        <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-600">
+                        <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-[#0B1628] dark:text-slate-100 font-medium">
                           بدون خصم (0%)
                         </Badge>
                       </div>
@@ -1197,18 +1197,18 @@ export default function StressTestingPage() {
                   </Card>
 
                   {/* Tier 2 */}
-                  <Card className="border-blue-500/30 bg-blue-500/5">
+                  <Card className="border-sky-500/30 bg-sky-500/5">
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xs font-bold text-blue-700 dark:text-blue-400">
+                        <CardTitle className="text-xs font-bold text-sky-700 dark:text-sky-300">
                           المستوى 2: أصول قابلة للتسويق السريع
                         </CardTitle>
-                        <Badge variant="outline" className="text-[10px] border-blue-500/30 text-blue-600">
+                        <Badge variant="outline" className="text-[10px] border-sky-500/30 text-[#0B1628] dark:text-slate-100 font-medium">
                           افتراض 10% (نطاق 5%–15%)
                         </Badge>
                       </div>
                       <CardDescription className="text-[11px]">أسهم وصكوك مدرجة وصناديق قابلة للتسييل</CardDescription>
-                      <div className="text-[10px] text-blue-600 dark:text-blue-400 font-mono">
+                      <div className="text-[10px] text-sky-600 dark:text-sky-400 font-mono">
                         الأفق الاسترشادي: 1–5 أيام عمل (افتراض نموذجي)
                       </div>
                     </CardHeader>
@@ -1220,7 +1220,7 @@ export default function StressTestingPage() {
                       </div>
                       <div className="p-2 rounded bg-background/80 border text-[11px] flex justify-between items-center">
                         <span className="text-muted-foreground">مدرج الصمود (Tier 1 + 2):</span>
-                        <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                        <span className="font-mono font-bold text-sky-600 dark:text-sky-400">
                           {liquidityData.monthsOfRunwayTier2 !== null ? `${liquidityData.monthsOfRunwayTier2} شهر` : "غير محدود"}
                         </span>
                       </div>
@@ -1234,7 +1234,7 @@ export default function StressTestingPage() {
                         <CardTitle className="text-xs font-bold text-amber-700 dark:text-amber-400">
                           المستوى 3: أصول غير سائلة / خاصة
                         </CardTitle>
-                        <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600">
+                        <Badge variant="outline" className="text-[10px] border-amber-500/30 text-[#0B1628] dark:text-slate-100 font-medium">
                           افتراض 30% (نطاق 25%–40%)
                         </Badge>
                       </div>
