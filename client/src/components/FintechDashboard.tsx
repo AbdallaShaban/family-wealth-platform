@@ -94,11 +94,11 @@ function MetricCard({
       <div className="fintech-metric-icon">
         <Icon className="size-5" />
       </div>
-      <p className="text-slate-700 dark:text-slate-200 font-semibold">{label}</p>
+      <p className="!text-slate-700 dark:!text-slate-200 !font-semibold !text-sm !m-0 !mt-3.5 !mb-1.5">{label}</p>
       <strong>
         <AnimatedMoney value={value} currency={currency} />
       </strong>
-      <small className="text-slate-600 dark:text-slate-300 font-medium text-[11px] block mt-2.5 leading-relaxed">
+      <small className="!text-slate-600 dark:!text-slate-400 !font-medium !text-xs block !mt-2.5 leading-relaxed">
         {detail}
       </small>
     </motion.article>
@@ -524,7 +524,7 @@ export default function FintechDashboard() {
                       return (
                         <div
                           key={event.id}
-                          className="border-b border-slate-100 dark:border-border/60 py-3 px-2 flex items-center justify-between hover:bg-slate-50/60 dark:hover:bg-muted/30 transition-colors rounded-lg last:border-b-0"
+                          className="group border-b border-slate-100 dark:border-border/60 py-3 px-3 flex items-center justify-between hover:bg-slate-50/80 dark:hover:bg-muted/40 transition-colors rounded-lg last:border-b-0"
                         >
                           {/* Right Side (Transaction Details in RTL) */}
                           <div className="flex items-center gap-3 min-w-0">
@@ -551,18 +551,21 @@ export default function FintechDashboard() {
                             </div>
                           </div>
 
+                          {/* Subtle track line connecting details and amount on desktop for comfortable visual tracking */}
+                          <div className="hidden sm:block flex-1 mx-4 border-b border-dashed border-slate-200/60 dark:border-border/40 group-hover:border-slate-300/80 transition-colors" />
+
                           {/* Left Side (Amount in RTL) */}
                           <div className="shrink-0 text-left" dir="ltr">
                             <span
                               className={
                                 isTransfer
-                                  ? "text-sky-800 dark:text-sky-400 font-bold font-mono text-sm sm:text-base tabular-nums"
+                                  ? "text-slate-800 dark:text-slate-200 font-bold font-mono text-base tabular-nums"
                                   : isOutflow
-                                  ? "text-rose-800 dark:text-rose-400 font-bold font-mono text-sm sm:text-base tabular-nums"
-                                  : "text-emerald-800 dark:text-emerald-400 font-bold font-mono text-sm sm:text-base tabular-nums"
+                                  ? "text-rose-900 dark:text-rose-300 font-bold font-mono text-base tabular-nums"
+                                  : "text-emerald-900 dark:text-emerald-300 font-bold font-mono text-base tabular-nums"
                               }
                             >
-                              {isTransfer ? "" : `${isOutflow ? "-" : "+"} `}
+                              {isTransfer ? "↔ " : isOutflow ? "- " : "+ "}
                               <SensitiveValue>
                                 {formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}
                               </SensitiveValue>
@@ -627,15 +630,54 @@ export default function FintechDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <div className="flex h-full min-h-[170px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 p-6 text-center my-2">
-                    <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 mb-3">
-                      <ShieldCheck className="size-5" />
+                  <div className="flex flex-col justify-between h-full space-y-3 py-1">
+                    {/* Reassuring Institutional Health Summary Banner */}
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 p-4">
+                      <div className="flex items-center gap-2.5 mb-3">
+                        <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                          <ShieldCheck className="size-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                            مساحتك المالية خالية من أي ديون
+                          </h4>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                            لا توجد قروض أو أقساط أو مستحقات بطاقات ائتمانية مسجلة حالياً.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Clean Metric Row */}
+                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-emerald-500/15 text-center">
+                        <div className="p-2.5 rounded-lg bg-white dark:bg-card border border-emerald-500/15 shadow-2xs">
+                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block">
+                            إجمالي الالتزامات
+                          </span>
+                          <strong className="text-xs font-bold font-mono text-slate-900 dark:text-slate-100 mt-1 block">
+                            0 {currency}
+                          </strong>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-white dark:bg-card border border-emerald-500/15 shadow-2xs">
+                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block">
+                            نسبة العبء المالي
+                          </span>
+                          <strong className="text-xs font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1 block">
+                            0%
+                          </strong>
+                        </div>
+                        <div className="p-2.5 rounded-lg bg-white dark:bg-card border border-emerald-500/15 shadow-2xs">
+                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 block">
+                            الموقف المالي
+                          </span>
+                          <strong className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1 block truncate">
+                            استقرار كامل وآمن
+                          </strong>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      لا توجد التزامات مالية مستحقة حالياً
-                    </p>
-                    <p className="mt-1 max-w-xs text-[11px] leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
-                      مساحتك المالية خالية من القروض أو البطاقات الائتمانية غير المسددة.
+
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center leading-relaxed font-medium px-2">
+                      تتدفق جميع الإيرادات النقدية مباشرة لتنمية الأصول وبناء الاحتياطي دون استنزاف في فوائد أو أقساط ديون.
                     </p>
                   </div>
                 )}
@@ -649,17 +691,17 @@ export default function FintechDashboard() {
             >
               <div>
                 <p className="fintech-overline">الحسابات والأصول</p>
-                <h2>ملخص مواقعك المالية</h2>
+                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">ملخص مواقفك المالية</h2>
               </div>
               <div className="fintech-account-scroller">
                 {accounts.map(account => (
-                  <button onClick={() => setLocation("/accounts")} key={account.id}>
-                    <span className="text-slate-600 dark:text-slate-300 font-medium">{account.kind}</span>
-                    <strong className="text-slate-900 dark:text-slate-100 font-bold">{account.name}</strong>
-                    <b className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                  <button onClick={() => setLocation("/accounts")} key={account.id} className="hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                    <span className="text-slate-500 dark:text-slate-400 font-medium text-[10px]">{account.kind}</span>
+                    <strong className="!text-slate-800 dark:!text-slate-100 !font-semibold !text-xs truncate block">{account.name}</strong>
+                    <b className="!font-mono !font-bold !text-slate-900 dark:!text-slate-50 !text-sm block" dir="ltr">
                       <SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue>
                     </b>
-                    <ArrowUpRight className="size-4 text-slate-500" />
+                    <ArrowUpRight className="size-4 text-slate-400" />
                   </button>
                 ))}
               </div>
