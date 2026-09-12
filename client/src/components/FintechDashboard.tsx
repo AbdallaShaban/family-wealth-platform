@@ -8,6 +8,7 @@ import { useDemoMode } from "@/contexts/DemoModeContext";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SensitiveValue from "@/components/SensitiveValue";
@@ -17,7 +18,21 @@ const FintechCharts = lazy(() => import("./FintechCharts"));
 import OnboardingChecklist from "./OnboardingChecklist";
 import { OnboardingWizard } from "./OnboardingWizard";
 
-const eventLabels: Record<string, string> = { opening_balance: "رصيد افتتاحي", deposit: "إيداع", withdrawal: "سحب", transfer: "تحويل", buy: "شراء", sell: "بيع", dividend: "توزيع نقدي", income: "دخل", expense: "مصروف", fee: "رسوم", tax: "ضريبة", adjustment: "تسوية", reversal: "عكس عملية" };
+const eventLabels: Record<string, string> = {
+  opening_balance: "رصيد افتتاحي",
+  deposit: "إيداع",
+  withdrawal: "سحب",
+  transfer: "تحويل",
+  buy: "شراء",
+  sell: "بيع",
+  dividend: "توزيع نقدي",
+  income: "دخل",
+  expense: "مصروف",
+  fee: "رسوم",
+  tax: "ضريبة",
+  adjustment: "تسوية",
+  reversal: "عكس عملية",
+};
 
 function AnimatedMoney({ value, currency }: { value: number | string; currency: string }) {
   const target = Number(value) || 0;
@@ -46,15 +61,65 @@ function AnimatedMoney({ value, currency }: { value: number | string; currency: 
     return () => cancelAnimationFrame(frame);
   }, [target, reduceMotion]);
 
-  return <span className="tabular-nums" dir="ltr"><SensitiveValue>{formatMoney(display, currency, 0)}</SensitiveValue></span>;
+  return (
+    <span className="tabular-nums" dir="ltr">
+      <SensitiveValue>{formatMoney(display, currency, 0)}</SensitiveValue>
+    </span>
+  );
 }
 
-function MetricCard({ icon: Icon, label, value, currency, detail, accent = "emerald", delay = 0 }: { icon: typeof Landmark; label: string; value: number | string; currency: string; detail: React.ReactNode; accent?: "emerald" | "cyan" | "amber" | "rose"; delay?: number }) {
-  return <motion.article className={`fintech-metric fintech-metric-${accent}`} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.38, delay, ease: [0.23, 1, 0.32, 1] }}><div className="fintech-metric-icon"><Icon className="size-5" /></div><p>{label}</p><strong><AnimatedMoney value={value} currency={currency} /></strong><small>{detail}</small></motion.article>;
+function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  currency,
+  detail,
+  accent = "emerald",
+  delay = 0,
+}: {
+  icon: typeof Landmark;
+  label: string;
+  value: number | string;
+  currency: string;
+  detail: React.ReactNode;
+  accent?: "emerald" | "cyan" | "amber" | "rose";
+  delay?: number;
+}) {
+  return (
+    <motion.article
+      className={`fintech-metric fintech-metric-${accent}`}
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.38, delay, ease: [0.23, 1, 0.32, 1] }}
+    >
+      <div className="fintech-metric-icon">
+        <Icon className="size-5" />
+      </div>
+      <p className="text-slate-700 dark:text-slate-200 font-semibold">{label}</p>
+      <strong>
+        <AnimatedMoney value={value} currency={currency} />
+      </strong>
+      <small className="text-slate-600 dark:text-slate-300 font-medium text-[11px] block mt-2.5 leading-relaxed">
+        {detail}
+      </small>
+    </motion.article>
+  );
 }
 
 function DashboardSkeleton() {
-  return <DashboardLayout><div className="fintech-page space-y-6" dir="rtl"><Skeleton className="h-36 w-full rounded-[2rem]" /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <Skeleton className="h-44 rounded-[1.5rem]" key={index} />)}</div><Skeleton className="h-[26rem] w-full rounded-[1.5rem]" /></div></DashboardLayout>;
+  return (
+    <DashboardLayout>
+      <div className="fintech-page space-y-6" dir="rtl">
+        <Skeleton className="h-36 w-full rounded-[2rem]" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton className="h-44 rounded-[1.5rem]" key={index} />
+          ))}
+        </div>
+        <Skeleton className="h-[26rem] w-full rounded-[1.5rem]" />
+      </div>
+    </DashboardLayout>
+  );
 }
 
 export default function FintechDashboard() {
@@ -70,21 +135,103 @@ export default function FintechDashboard() {
   const reduceMotion = useReducedMotion();
 
   if (summary.isLoading && !isDemoMode) return <DashboardSkeleton />;
-  if (summary.error && !isDemoMode) return <DashboardLayout><div className="fintech-page py-12" dir="rtl"><Card className="border-rose-200 bg-rose-50/70"><CardContent className="p-8 text-rose-900">تعذر تحميل لوحة التحكم الآن. حاول تحديث الصفحة، أو فعّل وضع العرض التجريبي لمعاينة الواجهة دون أي تغيير في بياناتك.</CardContent></Card></div></DashboardLayout>;
+  if (summary.error && !isDemoMode) {
+    return (
+      <DashboardLayout>
+        <div className="fintech-page py-12" dir="rtl">
+          <Card className="border-rose-200 bg-rose-50/70">
+            <CardContent className="p-8 text-rose-900">
+              تعذر تحميل لوحة التحكم الآن. حاول تحديث الصفحة، أو فعّل وضع العرض التجريبي لمعاينة الواجهة دون أي تغيير في بياناتك.
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   const live = summary.data;
   const hasLiveData = Boolean((live?.accounts.length ?? 0) + (live?.portfolio.length ?? 0) + (live?.recentEvents.length ?? 0));
   const previewMode = getDashboardPreviewMode(isDemoMode, hasLiveData);
   const usingDemo = previewMode === "demo";
   const currency = usingDemo ? demoDashboard.baseCurrency : (live?.workspace.baseCurrency ?? "EGP");
-  const accounts = usingDemo ? demoDashboard.accounts : (live?.accounts ?? []).map(account => ({ id: String(account.id), name: account.name, value: Number(account.baseValue ?? account.balance ?? 0), currency: account.currency, kind: account.accountType }));
-  const allocation = usingDemo ? [...demoDashboard.allocation] : [
-    ...(live?.accounts ?? []).filter(account => account.baseValue !== null && Number(account.baseValue) > 0).map((account, index) => ({ name: account.name, value: Number(account.baseValue), color: ["#10B981", "#38BDF8", "#F59E0B"][index % 3] })),
-    ...(live?.portfolio ?? []).filter(position => position.baseMarketValue !== null && Number(position.baseMarketValue) > 0).map((position, index) => ({ name: position.instrumentName, value: Number(position.baseMarketValue), color: ["#F43F5E", "#34D399"][index % 2] })),
-  ];
+  const accounts = usingDemo
+    ? demoDashboard.accounts
+    : (live?.accounts ?? []).map(account => ({
+        id: String(account.id),
+        name: account.name,
+        value: Number(account.baseValue ?? account.balance ?? 0),
+        currency: account.currency,
+        kind: account.accountType,
+      }));
+  const allocation = usingDemo
+    ? [...demoDashboard.allocation]
+    : [
+        ...(live?.accounts ?? [])
+          .filter(account => account.baseValue !== null && Number(account.baseValue) > 0)
+          .map((account, index) => ({
+            name: account.name,
+            value: Number(account.baseValue),
+            color: ["#10B981", "#38BDF8", "#F59E0B"][index % 3],
+          })),
+        ...(live?.portfolio ?? [])
+          .filter(position => position.baseMarketValue !== null && Number(position.baseMarketValue) > 0)
+          .map((position, index) => ({
+            name: position.instrumentName,
+            value: Number(position.baseMarketValue),
+            color: ["#F43F5E", "#34D399"][index % 2],
+          })),
+      ];
   const cashFlow = usingDemo ? [...demoDashboard.cashFlow] : [];
-  const events = usingDemo ? demoDashboard.events : (live?.recentEvents ?? []).map(event => ({ id: String(event.id), type: eventLabels[event.eventType] ?? event.eventType, amount: event.grossAmount, currency: event.currency, date: new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.occurredAt)), tone: ["expense", "withdrawal", "fee", "tax"].includes(event.eventType) ? "expense" : "income" }));
-  const debtItems = usingDemo ? demoDashboard.debts : (debts.data ?? []).filter(debt => debt.status === "active").map(debt => ({ id: String(debt.id), name: debt.name, outstanding: debt.outstanding, currency: debt.currency, payment: debt.minimumPayment, rate: debt.annualInterestRate }));
+  const events = usingDemo
+    ? demoDashboard.events.map(event => {
+        const isExpense = event.tone === "expense";
+        return {
+          id: event.id,
+          title: event.type,
+          badge: isExpense ? "سحب / مصروف" : event.tone === "growth" ? "تقييم أصل" : "إيداع سيولة",
+          amount: event.amount,
+          currency: event.currency,
+          date: event.date,
+          tone: event.tone,
+          isOutflow: isExpense,
+        };
+      })
+    : (live?.recentEvents ?? []).map(event => {
+        const isOutflow = ["expense", "withdrawal", "fee", "tax", "debt_payment", "buy"].includes(event.eventType);
+        const label = eventLabels[event.eventType] ?? event.eventType;
+        const defaultTitle =
+          event.eventType === "deposit"
+            ? "إيداع سيولة نقدية"
+            : event.eventType === "opening_balance"
+            ? "رصيد افتتاحي للحساب"
+            : event.eventType === "withdrawal"
+            ? "سحب سيولة نقدية"
+            : event.eventType === "expense"
+            ? "مصروف مصنف"
+            : label;
+        return {
+          id: String(event.id),
+          title: event.memo ? event.memo : defaultTitle,
+          badge: label,
+          amount: event.grossAmount,
+          currency: event.currency,
+          date: new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(
+            new Date(event.occurredAt)
+          ),
+          tone: isOutflow ? ("expense" as const) : ("income" as const),
+          isOutflow,
+        };
+      });
+  const debtItems = usingDemo
+    ? demoDashboard.debts
+    : (debts.data ?? []).filter(debt => debt.status === "active").map(debt => ({
+        id: String(debt.id),
+        name: debt.name,
+        outstanding: debt.outstanding,
+        currency: debt.currency,
+        payment: debt.minimumPayment,
+        rate: debt.annualInterestRate,
+      }));
   const netWorth = usingDemo ? demoDashboard.netWorth : (live?.netWorthBase ?? "0");
   const liquidBalance = usingDemo ? demoDashboard.liquidBalance : (live?.liquidBalanceBase ?? "0");
   const liabilities = usingDemo ? demoDashboard.liabilities : (live?.liabilityBalanceBase ?? "0");
@@ -95,38 +242,381 @@ export default function FintechDashboard() {
   const hasInvestments = usingDemo ? true : Boolean((live?.portfolio && live.portfolio.length > 0) || Number(live?.investmentValueBase ?? 0) > 0);
   const hasGoals = usingDemo ? true : Boolean(goals.data && goals.data.length > 0);
 
-  return <DashboardLayout><div className="fintech-page pb-10 space-y-6" dir="rtl">
-    <motion.section className="fintech-hero" initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.42, ease: [0.23, 1, 0.32, 1] }}>
-      <div className="fintech-hero-orb fintech-hero-orb-one" /><div className="fintech-hero-orb fintech-hero-orb-two" />
-      <div className="relative z-10"><div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-100"><span className="fintech-status-dot" />نظرة مالية موحدة <span className="opacity-70">•</span><span>{usingDemo ? "وضع العرض التجريبي" : "بياناتك المسجلة"}</span></div><h1>أهلاً {user?.name?.split(" ")[0] || "بك"}،<br /><span>هذا هو وضعك المالي اليوم.</span></h1><p>تعرض اللوحة ملخصاً تشغيلياً للأرصدة والحيازات والالتزامات، مع تمييز واضح بين البيانات المسجلة وعرض الواجهة التوضيحي.</p></div>
-      <div className="fintech-hero-actions relative z-10"><Button onClick={() => setLocation("/accounts")} className="fintech-primary-action"><Plus className="size-4" />إضافة حساب</Button><Button variant="outline" onClick={toggleDemoMode} className="fintech-ghost-action"><Eye className="size-4" />{usingDemo ? "العودة لبياناتي" : "معاينة ببيانات تجريبية"}</Button></div>
-      <div className="fintech-decision-stamp relative z-10"><ShieldCheck className="size-5" /><div><span>حالة البيانات</span><strong>{usingDemo ? "عرض توضيحي آمن" : "قيودك المالية"}</strong></div></div>
-    </motion.section>
+  return (
+    <DashboardLayout>
+      <div className="fintech-page pb-10 space-y-6" dir="rtl">
+        <motion.section
+          className="fintech-hero"
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.42, ease: [0.23, 1, 0.32, 1] }}
+        >
+          <div className="fintech-hero-orb fintech-hero-orb-one" />
+          <div className="fintech-hero-orb fintech-hero-orb-two" />
+          <div className="relative z-10">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-emerald-100">
+              <span className="fintech-status-dot" />
+              نظرة مالية موحدة <span className="opacity-70">•</span>
+              <span>{usingDemo ? "وضع العرض التجريبي" : "بياناتك المسجلة"}</span>
+            </div>
+            <h1>
+              أهلاً {user?.name?.split(" ")[0] || "بك"}،<br />
+              <span>هذا هو وضعك المالي اليوم.</span>
+            </h1>
+            <p>تعرض اللوحة ملخصاً تشغيلياً للأرصدة والحيازات والالتزامات، مع تمييز واضح بين البيانات المسجلة وعرض الواجهة التوضيحي.</p>
+          </div>
+          <div className="fintech-hero-actions relative z-10">
+            <Button onClick={() => setLocation("/accounts")} className="fintech-primary-action">
+              <Plus className="size-4" />إضافة حساب
+            </Button>
+            <Button variant="outline" onClick={toggleDemoMode} className="fintech-ghost-action">
+              <Eye className="size-4" />{usingDemo ? "العودة لبياناتي" : "معاينة ببيانات تجريبية"}
+            </Button>
+          </div>
+          <div className="fintech-decision-stamp relative z-10">
+            <ShieldCheck className="size-5" />
+            <div>
+              <span>حالة البيانات</span>
+              <strong>{usingDemo ? "عرض توضيحي آمن" : "قيودك المالية"}</strong>
+            </div>
+          </div>
+        </motion.section>
 
-    <OnboardingChecklist
-      hasAccounts={hasAccounts}
-      hasTransactions={hasTransactions}
-      hasInvestments={hasInvestments}
-      hasGoals={hasGoals}
-    />
+        <OnboardingChecklist
+          hasAccounts={hasAccounts}
+          hasTransactions={hasTransactions}
+          hasInvestments={hasInvestments}
+          hasGoals={hasGoals}
+        />
 
-    {!usingDemo && decisions.data?.length ? <section className="fintech-decision-center" aria-label="مركز القرارات"><div className="fintech-panel-heading"><div><p className="fintech-overline">مركز القرار</p><h2>أهم ثلاث إشارات فقط</h2></div><Button variant="ghost" onClick={() => setLocation("/approvals")} className="fintech-text-button">إدارة القرارات</Button></div><div className="grid gap-3 md:grid-cols-3">{decisions.data.slice(0, 3).map(item => <button onClick={() => setLocation(item.actionPath)} className="fintech-decision-item" key={item.id}><span>{item.priority}</span><div><strong>{item.title}</strong><p>{item.detail}</p></div>{item.amount && <b><SensitiveValue>{formatMoney(item.amount, item.currency || currency, 0)}</SensitiveValue></b>}</button>)}</div></section> : null}
+        {!usingDemo && decisions.data?.length ? (
+          <section className="fintech-decision-center" aria-label="مركز القرارات">
+            <div className="fintech-panel-heading">
+              <div>
+                <p className="fintech-overline">مركز القرار</p>
+                <h2>أهم ثلاث إشارات فقط</h2>
+              </div>
+              <Button variant="ghost" onClick={() => setLocation("/approvals")} className="fintech-text-button">
+                إدارة القرارات
+              </Button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {decisions.data.slice(0, 3).map(item => (
+                <button onClick={() => setLocation(item.actionPath)} className="fintech-decision-item" key={item.id}>
+                  <span>{item.priority}</span>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p className="text-slate-600 dark:text-slate-300 font-medium text-xs mt-1">{item.detail}</p>
+                  </div>
+                  {item.amount && (
+                    <b>
+                      <SensitiveValue>{formatMoney(item.amount, item.currency || currency, 0)}</SensitiveValue>
+                    </b>
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-    <section className="fintech-metrics-grid"><MetricCard icon={CircleDollarSign} label="صافي الثروة" value={netWorth} currency={currency} detail={usingDemo ? "لقطة توضيحية قابلة للاستبدال" : "مُقوّم بعملة الأساس"} delay={0.04} /><MetricCard icon={WalletCards} label="السيولة المتاحة" value={liquidBalance} currency={currency} detail="الحسابات النقدية والمصرفية" accent="cyan" delay={0.09} /><MetricCard icon={BarChart3} label="قيمة الاستثمارات" value={investments} currency={currency} detail={<><span>ربح غير محقق </span><SensitiveValue>{formatMoney(pnl, currency, 0)}</SensitiveValue></>} accent="amber" delay={0.14} /><MetricCard icon={BadgeDollarSign} label="الالتزامات" value={liabilities} currency={currency} detail="قروض وبطاقات نشطة" accent="amber" delay={0.19} /></section>
+        <section className="fintech-metrics-grid">
+          <MetricCard
+            icon={CircleDollarSign}
+            label="صافي الثروة"
+            value={netWorth}
+            currency={currency}
+            detail={usingDemo ? "لقطة توضيحية قابلة للاستبدال" : "مُقوّم بعملة الأساس"}
+            delay={0.04}
+          />
+          <MetricCard
+            icon={WalletCards}
+            label="السيولة المتاحة"
+            value={liquidBalance}
+            currency={currency}
+            detail="الحسابات النقدية والمصرفية"
+            accent="cyan"
+            delay={0.09}
+          />
+          <MetricCard
+            icon={BarChart3}
+            label="قيمة الاستثمارات"
+            value={investments}
+            currency={currency}
+            detail={
+              <>
+                <span>ربح غير محقق </span>
+                <SensitiveValue>{formatMoney(pnl, currency, 0)}</SensitiveValue>
+              </>
+            }
+            accent="amber"
+            delay={0.14}
+          />
+          <MetricCard
+            icon={BadgeDollarSign}
+            label="الالتزامات"
+            value={liabilities}
+            currency={currency}
+            detail="قروض وبطاقات نشطة"
+            accent="amber"
+            delay={0.19}
+          />
+        </section>
 
-    {!usingDemo && marketOverview.data?.entries.length ? <section className="fintech-panel" aria-label="مراقبة السوق"><div className="fintech-panel-heading"><div><p className="fintech-overline">مراقبة السوق</p><h2>أسعار الحيازات وعناصر المتابعة</h2><p className="mt-1 text-sm font-normal text-muted-foreground">الأسعار مسجلة من المصدر مع وقتها وحالتها؛ وهي للمتابعة والمراجعة فقط.</p></div><div className="flex gap-2"><Button variant="ghost" onClick={() => setLocation("/investments")} className="fintech-text-button">الحيازات والأسعار</Button></div></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{marketOverview.data.entries.slice(0, 9).map(item => <button key={item.instrumentId} onClick={() => setLocation("/investments")} className="rounded-2xl border bg-muted/20 p-4 text-right transition hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20"><div className="flex items-start justify-between gap-3"><div><strong>{item.symbol || item.name}</strong><p className="mt-1 text-xs text-muted-foreground">{item.symbol ? item.name : item.assetType}</p></div><span className="rounded-full bg-background px-2 py-1 text-[11px] text-muted-foreground">{item.ownership === "owned_and_watching" ? "مملوك ومراقَب" : item.ownership === "owned" ? "مملوك" : "مراقَب"}</span></div><div className="mt-4 flex items-end justify-between gap-3"><b className="text-lg tabular-nums" dir="ltr">{item.price === null ? "—" : formatMoney(item.price, item.currency, 2)}</b><span className={item.quoteStatus === "unavailable" || item.quoteStatus === "stale" ? "text-xs text-amber-700" : "text-xs text-emerald-700"}>{item.quoteStatus === "stale" ? "متأخر" : item.quoteStatus === "unavailable" ? "غير متاح" : item.quoteStatus}</span></div><p className="mt-3 text-xs text-muted-foreground">{item.source || "لا يوجد مصدر مسجل"}{item.asOf ? ` · ${new Intl.DateTimeFormat("ar-EG", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.asOf))}` : ""}</p></button>)}</div></section> : null}
+        {!usingDemo && marketOverview.data?.entries.length ? (
+          <section className="fintech-panel" aria-label="مراقبة السوق">
+            <div className="fintech-panel-heading">
+              <div>
+                <p className="fintech-overline">مراقبة السوق</p>
+                <h2>أسعار الحيازات وعناصر المتابعة</h2>
+                <p className="mt-1 text-sm font-normal text-slate-600 dark:text-slate-300">
+                  الأسعار مسجلة من المصدر مع وقتها وحالتها؛ وهي للمتابعة والمراجعة فقط.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setLocation("/investments")} className="fintech-text-button">
+                  الحيازات والأسعار
+                </Button>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {marketOverview.data.entries.slice(0, 9).map(item => (
+                <button
+                  key={item.instrumentId}
+                  onClick={() => setLocation("/investments")}
+                  className="rounded-2xl border bg-muted/20 p-4 text-right transition hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <strong>{item.symbol || item.name}</strong>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                        {item.symbol ? item.name : item.assetType}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-background px-2 py-1 text-[11px] text-slate-700 dark:text-slate-200 font-medium border border-border/60">
+                      {item.ownership === "owned_and_watching"
+                        ? "مملوك ومراقَب"
+                        : item.ownership === "owned"
+                        ? "مملوك"
+                        : "مراقَب"}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between gap-3">
+                    <b className="text-lg tabular-nums" dir="ltr">
+                      {item.price === null ? "—" : formatMoney(item.price, item.currency, 2)}
+                    </b>
+                    <span
+                      className={
+                        item.quoteStatus === "unavailable" || item.quoteStatus === "stale"
+                          ? "text-xs text-amber-700 dark:text-amber-400 font-semibold"
+                          : "text-xs text-emerald-700 dark:text-emerald-400 font-semibold"
+                      }
+                    >
+                      {item.quoteStatus === "stale"
+                        ? "متأخر"
+                        : item.quoteStatus === "unavailable"
+                        ? "غير متاح"
+                        : item.quoteStatus}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                    {item.source || "لا يوجد مصدر مسجل"}
+                    {item.asOf
+                      ? ` · ${new Intl.DateTimeFormat("ar-EG", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        }).format(new Date(item.asOf))}`
+                      : ""}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-    {previewMode === "empty" ? <section className="fintech-empty-stage"><div className="fintech-empty-icon"><Sparkles className="size-7" /></div><div><p className="fintech-overline">ابدأ من نقطة واضحة</p><h2>لوحتك جاهزة لبناء الصورة المالية.</h2><p>أضف حسابك الأول لإنشاء الرصيد الافتتاحي بقيد متوازن عبر معالج الإعداد المالي، أو فعّل العرض التجريبي لمعاينة الرسوم والبطاقات دون إضافة أي بيانات إلى نطاقك.</p><div className="flex flex-wrap gap-3"><Button onClick={() => setWizardOpen(true)} className="fintech-primary-action"><Sparkles className="size-4" />بدء مساعد الإعداد المالي</Button><Button variant="outline" onClick={toggleDemoMode} className="fintech-outline-action">تشغيل العرض التجريبي</Button></div></div></section> : <>
-      <Suspense fallback={<section className="fintech-content-grid"><Skeleton className="h-[360px] rounded-[1.5rem]" /><Skeleton className="h-[360px] rounded-[1.5rem]" /></section>}><FintechCharts allocation={allocation} cashFlow={cashFlow} currency={currency} usingDemo={usingDemo} onShowLedger={() => setLocation("/cash-flow")} /></Suspense>
-      <section className="fintech-content-grid fintech-lower-grid"><motion.article className="fintech-panel" initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.42, delay: 0.26 }}><div className="fintech-panel-heading"><div><p className="fintech-overline">النشاط الأخير</p><h2>آخر ما تحرك في المساحة</h2></div><Button variant="ghost" onClick={() => setLocation("/ledger")} className="fintech-text-button">عرض الدفتر</Button></div><div className="fintech-event-list">{events.map((event, index) => <div className="fintech-event" key={event.id}><div className={`fintech-event-icon fintech-event-${event.tone}`}>{event.tone === "expense" ? <ArrowDownRight className="size-4" /> : <ArrowUpRight className="size-4" />}</div><div><strong>{event.type}</strong><small>{event.date}</small></div><b><SensitiveValue>{formatMoney(event.amount, event.currency, 0)}</SensitiveValue></b><i style={{ animationDelay: `${index * 80}ms` }} /></div>)}</div></motion.article>
-        <motion.article className="fintech-panel" initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.42, delay: 0.31 }}><div className="fintech-panel-heading"><div><p className="fintech-overline">الالتزامات</p><h2>نظرة على السداد</h2></div><Button variant="ghost" onClick={() => setLocation("/debts")} className="fintech-text-button">إدارة الديون</Button></div>{debtItems.length ? <div className="fintech-debt-list">{debtItems.map(debt => <div className="fintech-debt" key={debt.id}><div><strong>{debt.name}</strong><small>دفعة دنيا <SensitiveValue>{formatMoney(debt.payment, debt.currency, 0)}</SensitiveValue> شهرياً</small></div><div><b><SensitiveValue>{formatMoney(debt.outstanding, debt.currency, 0)}</SensitiveValue></b><span>{debt.rate}% سنوياً</span></div></div>)}</div> : <div className="fintech-chart-empty"><BadgeDollarSign className="size-7" /><p>لا توجد التزامات نشطة داخل مساحة FAMILY الحالية.</p></div>}</motion.article></section>
-      <motion.section className="fintech-accounts-strip" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.35, delay: 0.36 }}><div><p className="fintech-overline">الحسابات والأصول</p><h2>ملخص مواقعك المالية</h2></div><div className="fintech-account-scroller">{accounts.map(account => <button onClick={() => setLocation("/accounts")} key={account.id}><span>{account.kind}</span><strong>{account.name}</strong><b><SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue></b><ArrowUpRight className="size-4" /></button>)}</div></motion.section>
-    </>}
-    <OnboardingWizard
-      open={wizardOpen}
-      onOpenChange={setWizardOpen}
-      workspaceName={live?.workspace.name || "مساحة FAMILY"}
-      baseCurrency={live?.workspace.baseCurrency || "EGP"}
-    />
-  </div></DashboardLayout>;
+        {previewMode === "empty" ? (
+          <section className="fintech-empty-stage">
+            <div className="fintech-empty-icon">
+              <Sparkles className="size-7" />
+            </div>
+            <div>
+              <p className="fintech-overline">ابدأ من نقطة واضحة</p>
+              <h2>لوحتك جاهزة لبناء الصورة المالية.</h2>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm">
+                أضف حسابك الأول لإنشاء الرصيد الافتتاحي بقيد متوازن عبر معالج الإعداد المالي، أو فعّل العرض التجريبي لمعاينة الرسوم والبطاقات دون إضافة أي بيانات إلى نطاقك.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={() => setWizardOpen(true)} className="fintech-primary-action">
+                  <Sparkles className="size-4" />بدء مساعد الإعداد المالي
+                </Button>
+                <Button variant="outline" onClick={toggleDemoMode} className="fintech-outline-action">
+                  تشغيل العرض التجريبي
+                </Button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <>
+            <Suspense
+              fallback={
+                <section className="fintech-content-grid">
+                  <Skeleton className="h-[360px] rounded-[1.5rem]" />
+                  <Skeleton className="h-[360px] rounded-[1.5rem]" />
+                </section>
+              }
+            >
+              <FintechCharts
+                allocation={allocation}
+                cashFlow={cashFlow}
+                currency={currency}
+                usingDemo={usingDemo}
+                onShowLedger={() => setLocation("/cash-flow")}
+              />
+            </Suspense>
+            <section className="fintech-content-grid fintech-lower-grid">
+              <motion.article
+                className="fintech-panel"
+                initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.42, delay: 0.26 }}
+              >
+                <div className="fintech-panel-heading">
+                  <div>
+                    <p className="fintech-overline">النشاط الأخير</p>
+                    <h2>آخر ما تحرك في المساحة</h2>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setLocation("/ledger")}
+                    className="fintech-text-button"
+                  >
+                    عرض الدفتر
+                  </Button>
+                </div>
+                <div className="fintech-event-list">
+                  {events.map((event, index) => {
+                    const isOutflow = event.isOutflow;
+                    return (
+                      <div className="fintech-event" key={event.id}>
+                        <div className={`fintech-event-icon fintech-event-${event.tone}`}>
+                          {isOutflow ? <ArrowDownRight className="size-4" /> : <ArrowUpRight className="size-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate block">
+                            {event.title}
+                          </strong>
+                          <small className="text-[11px] font-medium text-slate-600 dark:text-slate-300 block mt-0.5">
+                            {event.date}
+                          </small>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <Badge
+                            variant="outline"
+                            className={`text-[11px] font-semibold px-2 py-0.5 border ${
+                              isOutflow
+                                ? "border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200"
+                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
+                            }`}
+                          >
+                            {event.badge}
+                          </Badge>
+                          <b
+                            className={`font-mono text-xs font-bold tabular-nums ${
+                              isOutflow
+                                ? "text-amber-700 dark:text-amber-400"
+                                : "text-emerald-700 dark:text-emerald-400"
+                            }`}
+                            dir="ltr"
+                          >
+                            <SensitiveValue>
+                              {`${isOutflow ? "-" : "+"} ${formatMoney(Math.abs(Number(event.amount)), event.currency, 0)}`}
+                            </SensitiveValue>
+                          </b>
+                        </div>
+                        <i style={{ animationDelay: `${index * 80}ms` }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.article>
+              <motion.article
+                className="fintech-panel"
+                initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.42, delay: 0.31 }}
+              >
+                <div className="fintech-panel-heading">
+                  <div>
+                    <p className="fintech-overline">الالتزامات</p>
+                    <h2>نظرة على السداد</h2>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setLocation("/debts")}
+                    className="fintech-text-button"
+                  >
+                    إدارة الديون
+                  </Button>
+                </div>
+                {debtItems.length ? (
+                  <div className="fintech-debt-list">
+                    {debtItems.map(debt => (
+                      <div className="fintech-debt" key={debt.id}>
+                        <div>
+                          <strong className="text-xs font-bold text-slate-900 dark:text-slate-100">{debt.name}</strong>
+                          <small className="text-[11px] font-medium text-slate-600 dark:text-slate-300 block mt-0.5">
+                            دفعة دنيا <SensitiveValue>{formatMoney(debt.payment, debt.currency, 0)}</SensitiveValue> شهرياً
+                          </small>
+                        </div>
+                        <div>
+                          <b className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                            <SensitiveValue>{formatMoney(debt.outstanding, debt.currency, 0)}</SensitiveValue>
+                          </b>
+                          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mt-0.5">{debt.rate}% سنوياً</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="fintech-chart-empty">
+                    <BadgeDollarSign className="size-7 text-slate-500" />
+                    <p className="text-slate-600 dark:text-slate-300 font-medium text-xs mt-2">لا توجد التزامات نشطة داخل مساحة FAMILY الحالية.</p>
+                  </div>
+                )}
+              </motion.article>
+            </section>
+            <motion.section
+              className="fintech-accounts-strip"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.35, delay: 0.36 }}
+            >
+              <div>
+                <p className="fintech-overline">الحسابات والأصول</p>
+                <h2>ملخص مواقعك المالية</h2>
+              </div>
+              <div className="fintech-account-scroller">
+                {accounts.map(account => (
+                  <button onClick={() => setLocation("/accounts")} key={account.id}>
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">{account.kind}</span>
+                    <strong className="text-slate-900 dark:text-slate-100 font-bold">{account.name}</strong>
+                    <b className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                      <SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue>
+                    </b>
+                    <ArrowUpRight className="size-4 text-slate-500" />
+                  </button>
+                ))}
+              </div>
+            </motion.section>
+          </>
+        )}
+        <OnboardingWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          workspaceName={live?.workspace.name || "مساحة FAMILY"}
+          baseCurrency={live?.workspace.baseCurrency || "EGP"}
+        />
+      </div>
+    </DashboardLayout>
+  );
 }
+

@@ -96,10 +96,10 @@ export function OnboardingChecklist({
               <Sparkles className="size-4" />
             </div>
             <div>
-              <CardTitle className="text-base font-bold">
+              <CardTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
                 خارطة الجاهزية المالية والمؤسسية
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-0.5">
                 {completedCount === 4
                   ? "اكتملت جميع الخطوات التأسيسية لمساحتك المالية بنجاح."
                   : `أنجزت ${completedCount} من ${steps.length} خطوات تأسيسية (${progressPercent}%).`}
@@ -107,14 +107,14 @@ export function OnboardingChecklist({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={completedCount === 4 ? "secondary" : "outline"} className="text-xs">
+            <Badge variant={completedCount === 4 ? "secondary" : "outline"} className="text-xs font-medium text-slate-700 dark:text-slate-200">
               مكتمل {completedCount} من {steps.length} خطوات
             </Badge>
             <Button
               variant="ghost"
               size="sm"
               onClick={toggleCollapse}
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
               aria-label={collapsed ? "توسيع خارطة البدء" : "طي خارطة البدء"}
             >
               {collapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}
@@ -143,29 +143,29 @@ export function OnboardingChecklist({
                   <div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <Icon className="size-4 text-muted-foreground" />
-                        <strong className="text-xs font-semibold">{step.title}</strong>
+                        <Icon className="size-4 text-slate-600 dark:text-slate-400" />
+                        <strong className="text-xs font-bold text-slate-900 dark:text-slate-100">{step.title}</strong>
                       </div>
                       {step.isComplete ? (
                         <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                       ) : (
-                        <Circle className="size-4 text-muted-foreground/40 shrink-0" />
+                        <Circle className="size-4 text-slate-400/50 dark:text-slate-500 shrink-0" />
                       )}
                     </div>
-                    <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="mt-2 text-[11.5px] leading-relaxed text-slate-600 dark:text-slate-300 font-medium">
                       {step.description}
                     </p>
                   </div>
                   <div className="mt-3 pt-2 border-t border-border/40">
                     {step.isComplete ? (
-                      <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="size-3" /> مكتمل
                       </span>
                     ) : (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="w-full text-xs h-7"
+                        className="w-full text-xs h-7 font-semibold text-slate-800 hover:text-slate-900 dark:text-slate-200"
                         onClick={() => setLocation(step.actionPath)}
                       >
                         {step.actionLabel}
