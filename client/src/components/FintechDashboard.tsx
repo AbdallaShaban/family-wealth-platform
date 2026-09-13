@@ -67,41 +67,47 @@ function AnimatedMoney({ value, currency }: { value: number | string; currency: 
   );
 }
 
-function MetricCard({
+function ExecutiveMetricCell({
   icon: Icon,
   label,
   value,
   currency,
   detail,
   accent = "emerald",
-  delay = 0,
 }: {
   icon: typeof Landmark;
   label: string;
   value: number | string;
   currency: string;
   detail: React.ReactNode;
-  accent?: "emerald" | "cyan" | "amber" | "rose";
-  delay?: number;
+  accent?: "emerald" | "sky" | "amber" | "rose";
 }) {
+  const accentStyles = {
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    sky: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
+    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+  }[accent];
+
   return (
-    <motion.article
-      className={`fintech-metric fintech-metric-${accent}`}
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.38, delay, ease: [0.23, 1, 0.32, 1] }}
-    >
-      <div className="fintech-metric-icon">
-        <Icon className="size-5" />
+    <div className="p-5 sm:p-6 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+      <div className="flex items-center justify-between">
+        <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
+          {label}
+        </span>
+        <div className={`flex size-8 items-center justify-center rounded-lg border ${accentStyles}`}>
+          <Icon className="size-4" />
+        </div>
       </div>
-      <p className="text-slate-800 dark:text-slate-100 font-semibold text-sm m-0 mt-3.5 mb-1.5">{label}</p>
-      <strong className="text-slate-900 dark:text-white font-bold font-mono text-2xl sm:text-3xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
-        <AnimatedMoney value={value} currency={currency} />
-      </strong>
-      <small className="text-slate-600 dark:text-slate-300 text-xs font-medium block mt-2.5 leading-relaxed">
+      <div className="mt-3.5 mb-1.5">
+        <strong className="text-slate-900 dark:text-white font-bold font-mono text-2xl sm:text-3xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+          <AnimatedMoney value={value} currency={currency} />
+        </strong>
+      </div>
+      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block leading-relaxed">
         {detail}
-      </small>
-    </motion.article>
+      </span>
+    </div>
   );
 }
 
@@ -338,25 +344,29 @@ export default function FintechDashboard() {
           </section>
         ) : null}
 
-        <section className="fintech-metrics-grid">
-          <MetricCard
+        <motion.section
+          className="bg-white dark:bg-card rounded-2xl border border-slate-200/70 dark:border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-slate-100 dark:divide-border/60 overflow-hidden"
+          initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.42, delay: 0.05 }}
+        >
+          <ExecutiveMetricCell
             icon={CircleDollarSign}
             label="صافي الثروة"
             value={netWorth}
             currency={currency}
             detail={usingDemo ? "لقطة توضيحية قابلة للاستبدال" : "مُقوّم بعملة الأساس"}
-            delay={0.04}
+            accent="emerald"
           />
-          <MetricCard
+          <ExecutiveMetricCell
             icon={WalletCards}
             label="السيولة المتاحة"
             value={liquidBalance}
             currency={currency}
             detail="الحسابات النقدية والمصرفية"
-            accent="cyan"
-            delay={0.09}
+            accent="sky"
           />
-          <MetricCard
+          <ExecutiveMetricCell
             icon={BarChart3}
             label="قيمة الاستثمارات"
             value={investments}
@@ -368,18 +378,16 @@ export default function FintechDashboard() {
               </>
             }
             accent="amber"
-            delay={0.14}
           />
-          <MetricCard
+          <ExecutiveMetricCell
             icon={BadgeDollarSign}
             label="الالتزامات"
             value={liabilities}
             currency={currency}
             detail="قروض وبطاقات نشطة"
-            accent="amber"
-            delay={0.19}
+            accent="rose"
           />
-        </section>
+        </motion.section>
 
         {!usingDemo && marketOverview.data?.entries.length ? (
           <section className="fintech-panel" aria-label="مراقبة السوق">
@@ -493,7 +501,7 @@ export default function FintechDashboard() {
             </Suspense>
             <section className="fintech-content-grid fintech-lower-grid">
               <motion.article
-                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-4 sm:p-5 flex flex-col justify-between h-full"
+                className="bg-white dark:bg-card border border-slate-200/60 dark:border-border shadow-xs rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-full"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.26 }}
@@ -590,7 +598,7 @@ export default function FintechDashboard() {
                 )}
               </motion.article>
               <motion.article
-                className="bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-xl p-4 sm:p-5 flex flex-col justify-between h-full"
+                className="bg-white dark:bg-card border border-slate-200/60 dark:border-border shadow-xs rounded-2xl p-4 sm:p-5 flex flex-col justify-between h-full"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.31 }}
@@ -699,12 +707,12 @@ export default function FintechDashboard() {
               </motion.article>
             </section>
             <motion.section
-              className="mt-6 bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-2xl p-4 sm:p-5"
+              className="mt-6 bg-slate-50/60 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-200/60 shadow-xs"
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.35, delay: 0.36 }}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-3.5">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-border/60 mb-3.5">
                 <div>
                   <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                     ملخص مواقفك المالية
@@ -729,10 +737,10 @@ export default function FintechDashboard() {
                   <button
                     onClick={() => setLocation("/accounts")}
                     key={account.id}
-                    className="bg-slate-50/70 dark:bg-card/70 border border-slate-200/80 dark:border-border/80 rounded-xl p-3.5 shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-muted/40 transition-all text-right group flex flex-col justify-between min-h-[105px] w-full"
+                    className="bg-white dark:bg-card border border-slate-200/60 dark:border-border/80 rounded-xl p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xs transition-all text-right group flex flex-col justify-between min-h-[105px] w-full"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-200/60 dark:bg-muted text-slate-700 dark:text-slate-300">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-muted text-slate-700 dark:text-slate-300">
                         {account.kind}
                       </span>
                       <ArrowUpRight className="size-3.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors shrink-0" />

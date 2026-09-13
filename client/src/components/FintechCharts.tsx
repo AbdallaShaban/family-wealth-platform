@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import SensitiveValue from "@/components/SensitiveValue";
 import { formatMoney } from "@/lib/financialDisplay";
 import {
@@ -14,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 type AllocationItem = { name: string; value: number; color: string };
 type CashFlowItem = { month: string; income: number; expense: number };
@@ -77,9 +76,16 @@ export default function FintechCharts({
   const hoveredPercent =
     hoveredItem && pieTotal ? Math.round((hoveredItem.value / pieTotal) * 100) : 0;
 
+  // Generate real recent 6 months for clean baseline canvas when cashFlow is empty
+  const defaultRecentMonths = ["إبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر"];
+  const displayCashFlow = cashFlow.length
+    ? cashFlow
+    : defaultRecentMonths.map((month) => ({ month, income: 0, expense: 0 }));
+
   return (
     <section className="fintech-content-grid">
-      <article className="fintech-panel fintech-allocation-panel flex flex-col justify-between">
+      {/* 1. Donut Chart: مواقع القيمة المقيمة */}
+      <article className="bg-white dark:bg-card border border-slate-200/60 dark:border-border shadow-xs rounded-2xl p-5 flex flex-col justify-between h-full">
         <div>
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-2">
             <div>
@@ -166,7 +172,7 @@ export default function FintechCharts({
                 className={`group flex items-center justify-between py-1.5 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
                   isHovered
                     ? "bg-slate-100/90 dark:bg-muted/70 shadow-2xs"
-                    : "hover:bg-slate-50/80 dark:hover:bg-muted/40"
+                    : "hover:bg-slate-50/80 dark:hover:bg-muted/30"
                 }`}
               >
                 {/* Right side (RTL): Color Dot + Account Name */}
@@ -201,51 +207,76 @@ export default function FintechCharts({
         </div>
       </article>
 
-      <article className="fintech-panel fintech-flow-panel">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-2">
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-              الدخل مقابل المصروفات
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-              مقارنة الإيرادات والنفقات النقدية الدورية
-            </p>
+      {/* 2. Flow Chart: الدخل مقابل المصروفات */}
+      <article className="bg-white dark:bg-card border border-slate-200/60 dark:border-border shadow-xs rounded-2xl p-5 flex flex-col justify-between h-full">
+        <div>
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-2">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                الدخل مقابل المصروفات
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                مقارنة الإيرادات والنفقات النقدية الدورية
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="fintech-flow-chart">
-          {cashFlow.length ? (
+
+          <div className="relative h-[290px] mt-2 flex-1 flex flex-col justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cashFlow} margin={{ top: 12, right: 4, left: -24, bottom: 0 }}>
+              <AreaChart
+                data={displayCashFlow}
+                margin={{ top: 12, right: 4, left: -24, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="incomeGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#11a889" stopOpacity={0.35} />
+                    <stop
+                      offset="0%"
+                      stopColor="#11a889"
+                      stopOpacity={cashFlow.length ? 0.35 : 0.05}
+                    />
                     <stop offset="100%" stopColor="#11a889" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="expenseGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="#e46b7a" stopOpacity={0.24} />
+                    <stop
+                      offset="0%"
+                      stopColor="#e46b7a"
+                      stopOpacity={cashFlow.length ? 0.24 : 0.05}
+                    />
                     <stop offset="100%" stopColor="#e46b7a" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="#dce3ee" strokeDasharray="3 4" vertical={false} />
+                <CartesianGrid
+                  stroke="#E2E8F0"
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  className="dark:opacity-20"
+                />
                 <XAxis
                   dataKey="month"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#64748b", fontSize: 12 }}
+                  tick={{ fill: "#94a3b8", fontSize: 11 }}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#64748b", fontSize: 11 }}
-                  tickFormatter={(value) => `${Math.round(value / 1000)}K`}
+                  tick={{ fill: "#94a3b8", fontSize: 11 }}
+                  tickFormatter={(value) =>
+                    value >= 1000 ? `${Math.round(value / 1000)}K` : String(value)
+                  }
+                  domain={cashFlow.length ? [0, "auto"] : [0, 10000]}
                 />
-                <Tooltip content={<ChartTooltip currency={currency} />} />
+                {cashFlow.length ? (
+                  <Tooltip content={<ChartTooltip currency={currency} />} />
+                ) : null}
                 <Area
                   type="monotone"
                   dataKey="income"
                   name="الدخل"
                   stroke="#11a889"
-                  strokeWidth={3}
+                  strokeWidth={cashFlow.length ? 3 : 1.5}
+                  strokeDasharray={cashFlow.length ? undefined : "4 4"}
+                  strokeOpacity={cashFlow.length ? 1 : 0.4}
                   fill="url(#incomeGradient)"
                 />
                 <Area
@@ -253,49 +284,29 @@ export default function FintechCharts({
                   dataKey="expense"
                   name="المصروفات"
                   stroke="#e46b7a"
-                  strokeWidth={3}
+                  strokeWidth={cashFlow.length ? 3 : 1.5}
+                  strokeDasharray={cashFlow.length ? undefined : "4 4"}
+                  strokeOpacity={cashFlow.length ? 1 : 0.4}
                   fill="url(#expenseGradient)"
                 />
               </AreaChart>
             </ResponsiveContainer>
-          ) : (
-            <div className="relative overflow-hidden flex h-full min-h-[235px] flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-slate-50/40 dark:bg-muted/10 p-6 text-center">
-              {/* Subtle Ghost Bar Chart Background Visual */}
-              <div
-                className="absolute inset-0 flex items-end justify-around px-8 pb-4 opacity-15 pointer-events-none select-none"
-                aria-hidden="true"
-              >
-                <div className="w-6 h-14 rounded-t-md bg-slate-400 dark:bg-slate-500 border border-slate-500/30" />
-                <div className="w-6 h-28 rounded-t-md bg-slate-400 dark:bg-slate-500 border border-slate-500/30" />
-                <div className="w-6 h-18 rounded-t-md bg-slate-400 dark:bg-slate-500 border border-slate-500/30" />
-                <div className="w-6 h-36 rounded-t-md bg-slate-400 dark:bg-slate-500 border border-slate-500/30" />
-                <div className="w-6 h-22 rounded-t-md bg-slate-400 dark:bg-slate-500 border border-slate-500/30" />
-                <div className="w-6 h-30 rounded-t-md bg-slate-400 dark:bg-slate-500 border border-slate-500/30" />
-              </div>
 
-              {/* Foreground Content */}
-              <div className="relative z-10 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center shadow-xs mb-3">
-                  <BarChart3 className="size-5" />
-                </div>
-                <p className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                  لا توجد تدفقات دخل أو مصروفات مسجلة لهذه الفترة
-                </p>
-                <p className="mt-1 max-w-xs text-[11.5px] leading-relaxed text-slate-600 dark:text-slate-400 font-medium">
-                  تظهر اتجاهات التدفق ومقارنة الدخل والمصروفات تلقائيًا بمجرد تسجيل العمليات النقدية.
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
+            {/* Centered Institutional Empty State Pill */}
+            {!cashFlow.length && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+                <button
+                  type="button"
                   onClick={onShowLedger}
-                  className="mt-3.5 h-8 gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 bg-white/90 dark:bg-card/90 border-border shadow-2xs hover:bg-white"
+                  className="pointer-events-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 shadow-md backdrop-blur-md text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-all hover:scale-[1.02] cursor-pointer"
                 >
-                  <Plus className="size-3.5" />
-                  تسجيل تدفق
-                </Button>
+                  <span className="size-2 rounded-full bg-slate-400 dark:bg-slate-500" />
+                  <span>لا توجد تدفقات مسجلة لهذه الفترة • اضغط لتسجيل أول حركة</span>
+                  <Plus className="size-3.5 text-emerald-600 dark:text-emerald-400 mr-0.5" />
+                </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </article>
     </section>
