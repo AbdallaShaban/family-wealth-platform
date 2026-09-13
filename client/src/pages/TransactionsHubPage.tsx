@@ -146,7 +146,7 @@ const TONE_STYLES: Record<
     iconBox:
       "bg-[#ECFDF5] dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 group-hover:bg-emerald-100/60 dark:group-hover:bg-emerald-900/60",
     badge:
-      "bg-[#ECFDF5] dark:bg-emerald-950/50 text-[#0B1628] dark:text-slate-100 border border-emerald-500/30 font-semibold",
+      "bg-emerald-50 text-emerald-950 border border-emerald-200 font-semibold text-xs px-2.5 py-1 rounded-full dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60",
     cardBorderHover:
       "hover:border-emerald-500/50 dark:hover:border-emerald-500/40 hover:shadow-emerald-950/10",
     accentLine: "bg-[#10B981]",
@@ -158,7 +158,7 @@ const TONE_STYLES: Record<
     iconBox:
       "bg-[#F0F9FF] dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border border-sky-500/25 dark:border-slate-700/60 group-hover:bg-sky-100/60 dark:group-hover:bg-slate-700/60",
     badge:
-      "bg-[#F0F9FF] dark:bg-slate-800/50 text-[#0B1628] dark:text-slate-200 border border-sky-500/30 dark:border-slate-700/60 font-semibold",
+      "bg-sky-50 text-sky-950 border border-sky-200 font-semibold text-xs px-2.5 py-1 rounded-full dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800/60",
     cardBorderHover:
       "hover:border-sky-500/50 dark:hover:border-slate-700 hover:shadow-sky-950/10 dark:hover:shadow-none",
     accentLine: "bg-[#38BDF8] dark:bg-slate-500",
@@ -170,7 +170,7 @@ const TONE_STYLES: Record<
     iconBox:
       "bg-[#FFFBEB] dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/25 group-hover:bg-amber-100/60 dark:group-hover:bg-amber-500/20",
     badge:
-      "bg-[#FFFBEB] dark:bg-amber-500/10 text-[#0B1628] dark:text-slate-100 border border-amber-500/30 dark:border-amber-500/25 font-semibold",
+      "bg-amber-50 text-amber-950 border border-amber-200 font-semibold text-xs px-2.5 py-1 rounded-full dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/60",
     cardBorderHover:
       "hover:border-amber-500/50 dark:hover:border-slate-700 hover:shadow-amber-950/10 dark:hover:shadow-none",
     accentLine: "bg-[#F59E0B]",
@@ -182,7 +182,7 @@ const TONE_STYLES: Record<
     iconBox:
       "bg-[#F1F5F9] dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/60 group-hover:bg-slate-200/60 dark:group-hover:bg-slate-700/60",
     badge:
-      "bg-[#F1F5F9] dark:bg-slate-800/50 text-[#0B1628] dark:text-slate-100 border border-slate-300 dark:border-slate-700/60 font-semibold",
+      "bg-slate-100 text-slate-900 border border-slate-200 font-semibold text-xs px-2.5 py-1 rounded-full dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60",
     cardBorderHover:
       "hover:border-slate-400 dark:hover:border-slate-600 dark:hover:shadow-none",
     accentLine: "bg-[#64748B]",
@@ -973,10 +973,10 @@ export default function TransactionsHubPage() {
 
         {/* Institutional Operation Dialog & Review Summary */}
         <Dialog open={activeModal !== null} onOpenChange={open => !open && resetForm()}>
-          <DialogContent className="max-w-xl sm:max-w-xl w-full overflow-hidden border-border dark:border-slate-800 bg-card dark:bg-[#0B0F17]" dir="rtl">
-            <DialogHeader className="border-b border-border/60 dark:border-slate-800 pb-3">
+          <DialogContent className="max-w-xl sm:max-w-xl w-full overflow-hidden bg-white text-slate-900 border border-slate-200 shadow-2xl rounded-2xl dark:bg-[#0B0F17] dark:text-slate-100 dark:border-slate-800" dir="rtl">
+            <DialogHeader className="border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center justify-between">
-                <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
+                <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-lg">
                   {activeModal && (
                     <>
                       {React.createElement(
@@ -994,15 +994,13 @@ export default function TransactionsHubPage() {
                 {activeModal && (
                   <Badge
                     variant="outline"
-                    className={`text-[11px] ${
-                      TONE_STYLES[ALL_OPERATIONS.find(op => op.id === activeModal)?.tone || "emerald"].badge
-                    }`}
+                    className={TONE_STYLES[ALL_OPERATIONS.find(op => op.id === activeModal)?.tone || "emerald"].badge}
                   >
                     {ALL_OPERATIONS.find(op => op.id === activeModal)?.badge}
                   </Badge>
                 )}
               </div>
-              <DialogDescription className="text-xs text-muted-foreground mt-1">
+              <DialogDescription className="text-slate-600 dark:text-slate-400 text-xs font-medium mt-1">
                 {reviewStep
                   ? "راجع تفاصيل العملية قبل تأكيد الترحيل النهائي إلى دفتر الأستاذ."
                   : ALL_OPERATIONS.find(op => op.id === activeModal)?.shortDesc}
@@ -1016,12 +1014,12 @@ export default function TransactionsHubPage() {
                   {(activeModal === "deposit" || activeModal === "withdrawal") && (
                     <>
                       <div className="grid gap-2 min-w-0">
-                        <Label className="text-xs font-semibold">الحساب المالي</Label>
+                        <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">الحساب المالي</Label>
                         <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                          <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                          <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                             <SelectValue placeholder="اختر الحساب المستهدف" className="truncate" />
                           </SelectTrigger>
-                          <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                          <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                             {cashAccounts.map(account => (
                               <SelectItem key={account.id} value={String(account.id)}>
                                 <span className="truncate">{account.name} — الرصيد: {formatMoney(account.balance, account.currency, 2)}</span>
@@ -1033,7 +1031,7 @@ export default function TransactionsHubPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="tx-amount" className="text-xs font-semibold">
+                          <Label htmlFor="tx-amount" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">
                             المبلغ {selectedAccount ? `(${selectedAccount.currency})` : ""}
                           </Label>
                           <Input
@@ -1044,17 +1042,17 @@ export default function TransactionsHubPage() {
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label className="text-xs font-semibold">تصنيف التدفق (اختياري)</Label>
+                          <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">تصنيف التدفق (اختياري)</Label>
                           <Select value={categoryId} onValueChange={setCategoryId}>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر تصنيفاً" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                               {(categories.data ?? [])
                                 .filter(c =>
                                   activeModal === "deposit" ? c.direction === "income" : c.direction === "expense"
@@ -1070,7 +1068,7 @@ export default function TransactionsHubPage() {
                       </div>
 
                       <div className="grid gap-2 min-w-0">
-                        <Label htmlFor="tx-memo" className="text-xs font-semibold">مذكرة أو بيان العملية</Label>
+                        <Label htmlFor="tx-memo" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">البيان والملاحظات</Label>
                         <Textarea
                           id="tx-memo"
                           value={memo}
@@ -1078,7 +1076,7 @@ export default function TransactionsHubPage() {
                           placeholder="ملاحظات توثيقية إضافية للتدقيق..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1089,12 +1087,12 @@ export default function TransactionsHubPage() {
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2 min-w-0">
-                          <Label className="text-xs font-semibold">من الحساب (المصدر)</Label>
+                          <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">من الحساب (المصدر)</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="حساب الخصم" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                               {cashAccounts.map(account => (
                                 <SelectItem key={account.id} value={String(account.id)}>
                                   <span className="truncate">{account.name} ({formatMoney(account.balance, account.currency, 2)})</span>
@@ -1104,12 +1102,12 @@ export default function TransactionsHubPage() {
                           </Select>
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label className="text-xs font-semibold">إلى الحساب (الوجهة)</Label>
+                          <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">إلى الحساب (الوجهة)</Label>
                           <Select value={targetAccountId} onValueChange={setTargetAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="حساب الإيداع" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                               {cashAccounts
                                 .filter(account => String(account.id) !== primaryAccountId)
                                 .map(account => (
@@ -1123,7 +1121,7 @@ export default function TransactionsHubPage() {
                       </div>
 
                       <div className="grid gap-2 min-w-0">
-                        <Label htmlFor="tr-amount" className="text-xs font-semibold">
+                        <Label htmlFor="tr-amount" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">
                           مبلغ التحويل {selectedAccount ? `(${selectedAccount.currency})` : ""}
                         </Label>
                         <Input
@@ -1134,13 +1132,13 @@ export default function TransactionsHubPage() {
                           value={amount}
                           onChange={e => setAmount(e.target.value)}
                           placeholder="0.00"
-                          className="w-full"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                           required
                         />
                       </div>
 
                       <div className="grid gap-2 min-w-0">
-                        <Label htmlFor="tr-memo" className="text-xs font-semibold">بيان التحويل</Label>
+                        <Label htmlFor="tr-memo" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">البيان والملاحظات</Label>
                         <Textarea
                           id="tr-memo"
                           value={memo}
@@ -1148,7 +1146,7 @@ export default function TransactionsHubPage() {
                           placeholder="مذكرة التحويل الداخلي..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1161,12 +1159,12 @@ export default function TransactionsHubPage() {
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2 min-w-0">
-                          <Label className="text-xs font-semibold">حساب التسوية النقدية</Label>
+                          <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">حساب التسوية النقدية</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر الحساب النقدي" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                               {cashAccounts.map(account => (
                                 <SelectItem key={account.id} value={String(account.id)}>
                                   <span className="truncate">{account.name} ({formatMoney(account.balance, account.currency, 2)})</span>
@@ -1176,16 +1174,16 @@ export default function TransactionsHubPage() {
                           </Select>
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label className="text-xs font-semibold">
+                          <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">
                             {activeModal === "fund_redemption"
                               ? "الصندوق / الأداة الاستثمارية"
                               : "الأداة الاستثمارية"}
                           </Label>
                           <Select value={instrumentId} onValueChange={setInstrumentId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر الأداة" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                               {(activeModal === "fund_redemption"
                                 ? fundInstruments
                                 : instruments.data ?? []
@@ -1201,7 +1199,7 @@ export default function TransactionsHubPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="tr-qty" className="text-xs font-semibold">الكمية / عدد الوثائق</Label>
+                          <Label htmlFor="tr-qty" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">الكمية / عدد الوثائق</Label>
                           <Input
                             id="tr-qty"
                             type="number"
@@ -1210,12 +1208,12 @@ export default function TransactionsHubPage() {
                             value={quantity}
                             onChange={e => setQuantity(e.target.value)}
                             placeholder="0"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="tr-price" className="text-xs font-semibold">
+                          <Label htmlFor="tr-price" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">
                             سعر الوحدة {selectedInstrument ? `(${selectedInstrument.currency})` : ""}
                           </Label>
                           <Input
@@ -1226,7 +1224,7 @@ export default function TransactionsHubPage() {
                             value={unitPrice}
                             onChange={e => setUnitPrice(e.target.value)}
                             placeholder="0.00"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
@@ -1234,7 +1232,7 @@ export default function TransactionsHubPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="tr-fees" className="text-xs font-semibold">رسوم المعاملة (اختياري)</Label>
+                          <Label htmlFor="tr-fees" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">رسوم المعاملة (اختياري)</Label>
                           <Input
                             id="tr-fees"
                             type="number"
@@ -1243,11 +1241,11 @@ export default function TransactionsHubPage() {
                             value={feeAmount}
                             onChange={e => setFeeAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="tr-tax" className="text-xs font-semibold">الضرائب (اختياري)</Label>
+                          <Label htmlFor="tr-tax" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">الضرائب (اختياري)</Label>
                           <Input
                             id="tr-tax"
                             type="number"
@@ -1256,13 +1254,13 @@ export default function TransactionsHubPage() {
                             value={taxAmount}
                             onChange={e => setTaxAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                           />
                         </div>
                       </div>
 
                       <div className="grid gap-2 min-w-0">
-                        <Label htmlFor="tr-memo" className="text-xs font-semibold">بيان الصفقة</Label>
+                        <Label htmlFor="tr-memo" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">البيان والملاحظات</Label>
                         <Textarea
                           id="tr-memo"
                           value={memo}
@@ -1270,7 +1268,7 @@ export default function TransactionsHubPage() {
                           placeholder="ملاحظات توثيق الصفقة..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1281,12 +1279,12 @@ export default function TransactionsHubPage() {
                     <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="grid gap-2 min-w-0">
-                          <Label className="text-xs font-semibold">الالتزام / القرض المستحق</Label>
+                          <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">الالتزام / القرض المستحق</Label>
                           <Select value={debtId} onValueChange={setDebtId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر الالتزام" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                               {(debts.data ?? [])
                                 .filter(d => d.status === "active")
                                 .map(d => (
@@ -1298,12 +1296,12 @@ export default function TransactionsHubPage() {
                           </Select>
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label className="text-xs font-semibold">حساب السداد</Label>
+                          <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">حساب السداد</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر حساب الخصم" className="truncate" />
                             </SelectTrigger>
-                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)]">
+                            <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                               {cashAccounts.map(account => (
                                 <SelectItem key={account.id} value={String(account.id)}>
                                   <span className="truncate">{account.name} ({formatMoney(account.balance, account.currency, 2)})</span>
@@ -1316,7 +1314,7 @@ export default function TransactionsHubPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="dp-principal" className="text-xs font-semibold">مبلغ الأصل المسدد</Label>
+                          <Label htmlFor="dp-principal" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">مبلغ الأصل المسدد</Label>
                           <Input
                             id="dp-principal"
                             type="number"
@@ -1325,12 +1323,12 @@ export default function TransactionsHubPage() {
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="dp-interest" className="text-xs font-semibold">الفائدة (إن وجدت)</Label>
+                          <Label htmlFor="dp-interest" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">الفائدة (إن وجدت)</Label>
                           <Input
                             id="dp-interest"
                             type="number"
@@ -1339,11 +1337,11 @@ export default function TransactionsHubPage() {
                             value={interestAmount}
                             onChange={e => setInterestAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
-                          <Label htmlFor="dp-fee" className="text-xs font-semibold">رسوم السداد</Label>
+                          <Label htmlFor="dp-fee" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">رسوم السداد</Label>
                           <Input
                             id="dp-fee"
                             type="number"
@@ -1352,13 +1350,13 @@ export default function TransactionsHubPage() {
                             value={feeAmount}
                             onChange={e => setFeeAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full"
+                            className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                           />
                         </div>
                       </div>
 
                       <div className="grid gap-2 min-w-0">
-                        <Label htmlFor="dp-memo" className="text-xs font-semibold">مذكرة السداد</Label>
+                        <Label htmlFor="dp-memo" className="text-slate-800 dark:text-slate-200 font-semibold text-xs block mb-1.5">البيان والملاحظات</Label>
                         <Textarea
                           id="dp-memo"
                           value={memo}
@@ -1366,7 +1364,7 @@ export default function TransactionsHubPage() {
                           placeholder="رقم مرجع السداد أو ملاحظة..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full"
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-600 rounded-xl dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1375,20 +1373,20 @@ export default function TransactionsHubPage() {
               ) : (
                 /* Step 2: Elevated Institutional Review Summary */
                 <div className="space-y-4 py-1">
-                  <div className="rounded-xl border border-border/80 bg-muted/30 p-4 space-y-3">
-                    <div className="flex items-center justify-between border-b border-border/60 pb-2 text-xs text-muted-foreground">
+                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 text-xs text-slate-600 dark:text-slate-400">
                       <span>نوع العملية المسجلة:</span>
-                      <span className="font-bold text-foreground">
+                      <span className="font-bold text-slate-900 dark:text-white">
                         {ALL_OPERATIONS.find(op => op.id === activeModal)?.title}
                       </span>
                     </div>
 
                     {selectedAccount && (
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">
+                        <span className="text-slate-600 dark:text-slate-400">
                           {activeModal === "transfer" ? "حساب المصدر (الخصم):" : "حساب التسوية / الخصم:"}
                         </span>
-                        <span className="font-semibold text-foreground">
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {selectedAccount.name} ({formatMoney(selectedAccount.balance, selectedAccount.currency, 2)})
                         </span>
                       </div>
@@ -1396,8 +1394,8 @@ export default function TransactionsHubPage() {
 
                     {selectedTargetAccount && (
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">حساب الوجهة (الإيداع):</span>
-                        <span className="font-semibold text-foreground">
+                        <span className="text-slate-600 dark:text-slate-400">حساب الوجهة (الإيداع):</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {selectedTargetAccount.name} ({formatMoney(selectedTargetAccount.balance, selectedTargetAccount.currency, 2)})
                         </span>
                       </div>
@@ -1405,8 +1403,8 @@ export default function TransactionsHubPage() {
 
                     {selectedInstrument && (
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">الأداة الاستثمارية:</span>
-                        <span className="font-semibold text-foreground">
+                        <span className="text-slate-600 dark:text-slate-400">الأداة الاستثمارية:</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {selectedInstrument.name} ({selectedInstrument.currency})
                         </span>
                       </div>
@@ -1414,8 +1412,8 @@ export default function TransactionsHubPage() {
 
                     {selectedDebt && (
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">عقد الالتزام:</span>
-                        <span className="font-semibold text-foreground">
+                        <span className="text-slate-600 dark:text-slate-400">عقد الالتزام:</span>
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {selectedDebt.name} (المستحق: {formatMoney(selectedDebt.outstanding, selectedDebt.currency, 2)})
                         </span>
                       </div>
@@ -1423,10 +1421,10 @@ export default function TransactionsHubPage() {
 
                     {/* Breakdown for trade operations */}
                     {(activeModal === "buy" || activeModal === "sell" || activeModal === "fund_redemption") && (
-                      <div className="space-y-1.5 border-t border-border/60 pt-2 text-xs">
-                        <div className="flex items-center justify-between text-muted-foreground">
+                      <div className="space-y-1.5 border-t border-slate-200 dark:border-slate-800 pt-2 text-xs">
+                        <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                           <span>القيمة الأساسية ({quantity} × {unitPrice}):</span>
-                          <span className="font-mono font-medium text-foreground">
+                          <span className="font-mono font-semibold text-slate-900 dark:text-white">
                             {formatMoney(
                               (Number(quantity || 0) * Number(unitPrice || 0)).toFixed(2),
                               selectedInstrument?.currency || "EGP",
@@ -1435,17 +1433,17 @@ export default function TransactionsHubPage() {
                           </span>
                         </div>
                         {Number(feeAmount || 0) > 0 && (
-                          <div className="flex items-center justify-between text-muted-foreground">
+                          <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                             <span>رسوم المعاملة:</span>
-                            <span className="font-mono font-medium text-foreground">
+                            <span className="font-mono font-semibold text-slate-900 dark:text-white">
                               {formatMoney(Number(feeAmount).toFixed(2), selectedInstrument?.currency || "EGP", 2)}
                             </span>
                           </div>
                         )}
                         {Number(taxAmount || 0) > 0 && (
-                          <div className="flex items-center justify-between text-muted-foreground">
+                          <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                             <span>الضرائب:</span>
-                            <span className="font-mono font-medium text-foreground">
+                            <span className="font-mono font-semibold text-slate-900 dark:text-white">
                               {formatMoney(Number(taxAmount).toFixed(2), selectedInstrument?.currency || "EGP", 2)}
                             </span>
                           </div>
@@ -1455,25 +1453,25 @@ export default function TransactionsHubPage() {
 
                     {/* Breakdown for debt payment */}
                     {activeModal === "debt_payment" && (
-                      <div className="space-y-1.5 border-t border-border/60 pt-2 text-xs">
-                        <div className="flex items-center justify-between text-muted-foreground">
+                      <div className="space-y-1.5 border-t border-slate-200 dark:border-slate-800 pt-2 text-xs">
+                        <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                           <span>أصل الدين المسدد:</span>
-                          <span className="font-mono font-medium text-foreground">
+                          <span className="font-mono font-semibold text-slate-900 dark:text-white">
                             {formatMoney(amount, selectedAccount?.currency || "EGP", 2)}
                           </span>
                         </div>
                         {Number(interestAmount || 0) > 0 && (
-                          <div className="flex items-center justify-between text-muted-foreground">
+                          <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                             <span>الفائدة المسددة:</span>
-                            <span className="font-mono font-medium text-foreground">
+                            <span className="font-mono font-semibold text-slate-900 dark:text-white">
                               {formatMoney(interestAmount, selectedAccount?.currency || "EGP", 2)}
                             </span>
                           </div>
                         )}
                         {Number(feeAmount || 0) > 0 && (
-                          <div className="flex items-center justify-between text-muted-foreground">
+                          <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
                             <span>رسوم السداد:</span>
-                            <span className="font-mono font-medium text-foreground">
+                            <span className="font-mono font-semibold text-slate-900 dark:text-white">
                               {formatMoney(feeAmount, selectedAccount?.currency || "EGP", 2)}
                             </span>
                           </div>
@@ -1482,13 +1480,13 @@ export default function TransactionsHubPage() {
                     )}
 
                     {/* Prominent Net Cash Flow highlight box */}
-                    <div className="rounded-lg border border-border/80 bg-card p-3">
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F17] p-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-xs font-semibold text-muted-foreground">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                             صافي التدفق النقدي:
                           </span>
-                          <p className="text-[11px] text-muted-foreground/80">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             {activeModal === "buy"
                               ? "خصم من الحساب النقدي (القيمة + الرسوم + الضرائب)"
                               : activeModal === "sell" || activeModal === "fund_redemption"
@@ -1502,7 +1500,7 @@ export default function TransactionsHubPage() {
                               : "نقل متوازن بين الحسابين"}
                           </p>
                         </div>
-                        <div className="text-left font-mono text-base font-bold text-[#0B1628] dark:text-slate-100">
+                        <div className="text-left font-mono text-base font-bold text-slate-900 dark:text-white">
                           {activeModal === "buy" || activeModal === "sell" || activeModal === "fund_redemption" ? (
                             <span>
                               {formatMoney(
@@ -1541,15 +1539,15 @@ export default function TransactionsHubPage() {
                     </div>
 
                     {memo && (
-                      <div className="border-t border-border/60 pt-2 text-xs text-muted-foreground">
-                        <span className="font-semibold text-foreground">البيان: </span>
-                        <span>{memo}</span>
+                      <div className="border-t border-slate-200 dark:border-slate-800 pt-2 text-xs text-slate-600 dark:text-slate-400">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">البيان: </span>
+                        <span className="text-slate-700 dark:text-slate-300">{memo}</span>
                       </div>
                     )}
                   </div>
 
                   {/* Security and ledger invariant guarantee badge */}
-                  <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs font-medium text-[#0B1628] dark:text-slate-100">
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-300 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/40 p-3 text-xs font-medium text-emerald-950 dark:text-emerald-300">
                     <ShieldCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span>
                       سيتم ترحيل المعاملة بقيد محاسبي مزدوج متوازن مع تثبيت سجل التدقيق المقترن.
@@ -1558,7 +1556,7 @@ export default function TransactionsHubPage() {
                 </div>
               )}
 
-              <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border/60">
+              <DialogFooter className="gap-2 sm:gap-0 pt-3 border-t border-slate-200 dark:border-slate-800">
                 {reviewStep ? (
                   <>
                     <Button
@@ -1566,13 +1564,14 @@ export default function TransactionsHubPage() {
                       variant="outline"
                       onClick={() => setReviewStep(false)}
                       disabled={isPending}
+                      className="border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl text-sm font-semibold"
                     >
                       تعديل البيانات
                     </Button>
                     <Button
                       type="submit"
                       disabled={isPending}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold"
                     >
                       {isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                       تأكيد ونشر القيد
@@ -1585,12 +1584,13 @@ export default function TransactionsHubPage() {
                       variant="ghost"
                       onClick={resetForm}
                       disabled={isPending}
+                      className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50 rounded-xl text-sm font-semibold"
                     >
                       إلغاء
                     </Button>
                     <Button
                       type="submit"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-4 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold"
                     >
                       مراجعة العملية
                     </Button>
