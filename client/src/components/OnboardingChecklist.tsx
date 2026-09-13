@@ -22,14 +22,6 @@ export function OnboardingChecklist({
   hasGoals,
 }: OnboardingChecklistProps) {
   const [, setLocation] = useLocation();
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
-
   const steps = [
     {
       id: "accounts",
@@ -72,6 +64,18 @@ export function OnboardingChecklist({
   const completedCount = steps.filter((step) => step.isComplete).length;
   const progressPercent = Math.round((completedCount / steps.length) * 100);
 
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored !== null) {
+        return stored === "true";
+      }
+    } catch {
+      // safe fallback
+    }
+    return completedCount >= 2;
+  });
+
   const toggleCollapse = () => {
     const next = !collapsed;
     setCollapsed(next);
@@ -85,23 +89,29 @@ export function OnboardingChecklist({
   if (collapsed) {
     return (
       <div
-        className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-gradient-to-l from-emerald-50/50 via-background to-background dark:from-emerald-950/20 px-4 py-2.5 shadow-xs transition-all"
+        className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-gradient-to-l from-emerald-50/50 via-background to-background dark:from-emerald-950/20 px-4 py-2 shadow-xs transition-all"
         dir="rtl"
       >
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
             <Sparkles className="size-3.5" />
           </div>
-          <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-            <strong className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-              خارطة الجاهزية المالية والمؤسسية
+          <div className="flex items-center gap-2 flex-wrap min-w-0 text-xs">
+            <strong className="font-bold text-slate-900 dark:text-slate-100">
+              خارطة الجاهزية
             </strong>
-            <span className="text-slate-300 dark:text-slate-600 text-xs hidden sm:inline">•</span>
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
-              {completedCount === 4
-                ? "اكتملت جميع الخطوات التأسيسية (100%)"
-                : `مكتمل ${completedCount} من ${steps.length} خطوات (${progressPercent}%)`}
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400 font-mono">
+              اكتمال الجاهزية {progressPercent}%
             </span>
+            <span className="text-slate-300 dark:text-slate-600">•</span>
+            <span className="text-slate-600 dark:text-slate-300 font-medium">
+              مكتمل {completedCount} من {steps.length} خطوات
+            </span>
+          </div>
+          {/* Subtle mini progress bar */}
+          <div className="hidden md:block w-28 max-w-[120px] ml-2">
+            <Progress value={progressPercent} className="h-1.5" />
           </div>
         </div>
         <Button
@@ -110,7 +120,7 @@ export function OnboardingChecklist({
           onClick={toggleCollapse}
           className="text-xs font-semibold gap-1.5 h-7 px-2.5 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 shrink-0"
         >
-          <span>عرض الخارطة</span>
+          <span>عرض الخطوات</span>
           <ChevronDown className="size-3.5" />
         </Button>
       </div>

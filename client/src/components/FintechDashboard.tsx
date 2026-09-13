@@ -500,12 +500,12 @@ export default function FintechDashboard() {
               >
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-2">
                   <div>
-                    <p className="text-[11px] font-bold tracking-wider text-emerald-700 dark:text-emerald-400 uppercase font-mono">
-                      النشاط الأخير
-                    </p>
-                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                       آخر ما تحرك في المساحة
                     </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      أحدث العمليات النقدية والتحويلات المسجلة
+                    </p>
                   </div>
                   <Button
                     variant="ghost"
@@ -531,15 +531,15 @@ export default function FintechDashboard() {
                             {/* Right Side (Transaction Details in RTL) */}
                             <div className="flex items-center gap-3 min-w-0">
                               {isTransfer ? (
-                                <div className="w-8 h-8 rounded-full bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40 text-sky-700 dark:text-sky-300 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex items-center justify-center shrink-0">
                                   <ArrowLeftRight className="size-4" />
                                 </div>
                               ) : isOutflow ? (
-                                <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40 text-rose-700 dark:text-rose-300 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/60 text-rose-950 dark:text-rose-300 flex items-center justify-center shrink-0">
                                   <ArrowUpRight className="size-4" />
                                 </div>
                               ) : (
-                                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-300 flex items-center justify-center shrink-0">
                                   <ArrowDownLeft className="size-4" />
                                 </div>
                               )}
@@ -561,10 +561,10 @@ export default function FintechDashboard() {
                               <span
                                 className={
                                   isTransfer
-                                    ? "text-slate-800 dark:text-slate-200 font-bold font-mono text-base tabular-nums"
+                                    ? "text-slate-900 dark:text-slate-100 font-bold font-mono text-base tabular-nums"
                                     : isOutflow
-                                    ? "text-rose-900 dark:text-rose-300 font-bold font-mono text-base tabular-nums"
-                                    : "text-emerald-900 dark:text-emerald-300 font-bold font-mono text-base tabular-nums"
+                                    ? "text-rose-950 dark:text-rose-300 font-bold font-mono text-base tabular-nums"
+                                    : "text-emerald-950 dark:text-emerald-300 font-bold font-mono text-base tabular-nums"
                                 }
                               >
                                 {isTransfer ? "↔ " : isOutflow ? "- " : "+ "}
@@ -597,12 +597,12 @@ export default function FintechDashboard() {
               >
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-2">
                   <div>
-                    <p className="text-[11px] font-bold tracking-wider text-emerald-700 dark:text-emerald-400 uppercase font-mono">
-                      الالتزامات
-                    </p>
-                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                    <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                       نظرة على السداد
                     </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      موقف الالتزامات والأقساط وخدمة الدين
+                    </p>
                   </div>
                   <Button
                     variant="ghost"
@@ -699,29 +699,51 @@ export default function FintechDashboard() {
               </motion.article>
             </section>
             <motion.section
-              className="fintech-accounts-strip"
+              className="mt-6 bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs rounded-2xl p-4 sm:p-5"
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.35, delay: 0.36 }}
             >
-              <div>
-                <p className="fintech-overline">الحسابات والأصول</p>
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">ملخص مواقفك المالية</h2>
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-border/60 mb-3.5">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    ملخص مواقفك المالية
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                    توزيع الأرصدة والسيولة عبر الحسابات المسجلة
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/accounts")}
+                  className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 h-8 gap-1"
+                >
+                  <span>عرض الحسابات</span>
+                  <span aria-hidden="true">←</span>
+                </Button>
               </div>
-              <div className="fintech-account-scroller">
-                {accounts.map(account => (
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full">
+                {accounts.map((account) => (
                   <button
                     onClick={() => setLocation("/accounts")}
                     key={account.id}
-                    className="bg-white dark:bg-card border border-slate-200 dark:border-border rounded-xl p-3 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm transition-all text-right group flex flex-col justify-between gap-1.5"
+                    className="bg-slate-50/70 dark:bg-card/70 border border-slate-200/80 dark:border-border/80 rounded-xl p-3.5 shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/60 dark:hover:bg-muted/40 transition-all text-right group flex flex-col justify-between min-h-[105px] w-full"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="text-slate-500 dark:text-slate-400 text-xs">{account.kind}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-200/60 dark:bg-muted text-slate-700 dark:text-slate-300">
+                        {account.kind}
+                      </span>
                       <ArrowUpRight className="size-3.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors shrink-0" />
                     </div>
-                    <strong className="text-slate-900 dark:text-slate-100 font-bold text-xs sm:text-sm truncate block">{account.name}</strong>
-                    <div className="text-left w-full mt-1" dir="ltr">
-                      <span className="text-slate-900 dark:text-emerald-400 font-bold font-mono text-sm tabular-nums">
+
+                    <strong className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate block mt-2 w-full" title={account.name}>
+                      {account.name}
+                    </strong>
+
+                    <div className="text-left w-full mt-2" dir="ltr">
+                      <span className="font-mono font-bold text-slate-900 dark:text-white text-sm sm:text-base tabular-nums">
                         <SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue>
                       </span>
                     </div>
