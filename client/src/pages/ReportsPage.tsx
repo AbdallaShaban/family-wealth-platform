@@ -93,12 +93,11 @@ export function ReportsPage() {
     <DashboardLayout>
       <div dir="rtl" className="mx-auto max-w-7xl space-y-6 pb-12">
         <PageHeader
-          title="التقارير المالية والمطابقة المحاسبية التحليلية"
+          title="كشوف الحساب والتقارير"
           description="قوائم مالية متوافقة مع القيد المزدوج، وجسر تحليلي لصافي الثروة الاقتصادي، ومطابقة تدفقات نقدية مدققة."
           breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والتحليل", href: "/reports" },
-            { label: "التقارير المالية" },
+            { label: "الحوكمة والإدارة", href: "/reports" },
+            { label: "كشوف الحساب والتقارير" },
           ]}
           badge={{ text: "محاسبة مدققة", variant: "institutional" }}
           icon={FileChartColumn}
@@ -753,7 +752,7 @@ export function ReportsPage() {
                             <span className="font-semibold">{money(data.economicNetWorthBridge.securitiesAdjustments.cumulativeRealizedPnl)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>• أرباح/خسائر غير محققة للحيازات النشطة (القيمة العادلة - تكلفة الحيازات):</span>
+                            <span>• أرباح/خسائر غير محققة للأصول النشطة (القيمة العادلة - تكلفة الأصول):</span>
                             <span className="font-semibold">{money(data.economicNetWorthBridge.securitiesAdjustments.activeLotsUnrealizedPnl)}</span>
                           </div>
                           <div className="flex justify-between text-slate-500">
@@ -921,7 +920,7 @@ export function ReportsPage() {
                         </div>
                       </CardHeader>
                       <CardContent className="text-xs text-slate-600 dark:text-slate-400">
-                        رصيد المقاصة = تكلفة الحيازات النشطة - الأرباح المحققة: {money(data.reconciliationAudit.controls.controlH_ClearingSettlementReconciliation.clearingBalance)}
+                        رصيد المقاصة = تكلفة الأصول النشطة - الأرباح المحققة: {money(data.reconciliationAudit.controls.controlH_ClearingSettlementReconciliation.clearingBalance)}
                       </CardContent>
                     </Card>
 

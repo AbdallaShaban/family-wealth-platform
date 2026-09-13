@@ -77,7 +77,7 @@ const PRIMARY_OPERATIONS: OperationConfig[] = [
   {
     id: "buy",
     title: "شراء / استثمار",
-    shortDesc: "تنفيذ شراء أسهم أو صناديق أو ذهب مع خصم القيمة وتحديث الحيازة.",
+    shortDesc: "تنفيذ شراء أسهم أو صناديق أو ذهب مع خصم القيمة وتحديث الأصل الاستثماري.",
     icon: TrendingUp,
     badge: "استثمار رأسمالي",
     tone: "emerald",
@@ -97,7 +97,7 @@ const SECONDARY_OPERATIONS: OperationConfig[] = [
   {
     id: "sell",
     title: "بيع أصل / استثمار",
-    shortDesc: "بيع حيازة استثمارية مسجلة وإيداع العائد في حساب التسوية.",
+    shortDesc: "بيع أصل استثماري مسجل وإيداع العائد في حساب التسوية.",
     icon: TrendingDown,
     badge: "تسييل أصل",
     tone: "amber",
@@ -554,7 +554,6 @@ export default function TransactionsHubPage() {
           title="المعاملات المالية"
           description="إدارة وتنفيذ ومراجعة جميع العمليات المالية والاستثمارية"
           breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
             { label: "النقد والالتزامات", href: "/transactions" },
             { label: "المعاملات المالية" },
           ]}
@@ -827,12 +826,12 @@ export default function TransactionsHubPage() {
                   <FileText className="size-6 text-slate-400 dark:text-slate-500" />
                 </div>
                 <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-slate-100">
-                  {hasActiveFilters ? "لا توجد نتائج تطابق خيارات البحث" : "لا توجد معاملات حتى الآن"}
+                  {hasActiveFilters ? "لا توجد نتائج تطابق خيارات البحث" : "لا توجد معاملات مسجلة في هذه الفترة"}
                 </h3>
                 <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
                   {hasActiveFilters
                     ? "جرّب تعديل كلمات البحث أو تصفير الفلاتر لعرض كافة القيود المسجلة."
-                    : "ابدأ بإضافة أول معاملة مالية إلى حسابك من أزرار العمليات أعلاه."}
+                    : "ابدأ بإضافة أول معاملة لتغذية كشوف الحساب ودفتر الأستاذ من أزرار العمليات أعلاه."}
                 </p>
                 {hasActiveFilters ? (
                   <Button

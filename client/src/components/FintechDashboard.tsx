@@ -267,7 +267,7 @@ export default function FintechDashboard() {
           <div className="relative z-10 flex flex-col justify-center">
             <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
               <span className="fintech-status-dot" />
-              <span>نظرة مالية موحدة</span>
+              <span>النظرة المالية العامة</span>
               <span className="opacity-40">•</span>
               <span className="text-slate-200">{usingDemo ? "وضع العرض التجريبي" : "بياناتك المسجلة"}</span>
             </div>
@@ -276,7 +276,7 @@ export default function FintechDashboard() {
               <span className="text-emerald-400">هذا هو وضعك المالي اليوم.</span>
             </h1>
             <p className="!m-0 !mt-1 !text-xs md:!text-[12.5px] !leading-relaxed text-slate-300/90 max-w-xl">
-              ملخص تشغيلي متوازن للأرصدة النقدية والحيازات والالتزامات المالية في مساحتك.
+              ملخص تشغيلي متوازن للأرصدة النقدية والاستثمارات والأصول والالتزامات المالية في مساحتك.
             </p>
           </div>
           <div className="relative z-10 flex flex-wrap items-center gap-2.5 sm:self-center shrink-0">
@@ -394,14 +394,14 @@ export default function FintechDashboard() {
             <div className="fintech-panel-heading">
               <div>
                 <p className="fintech-overline">مراقبة السوق</p>
-                <h2>أسعار الحيازات وعناصر المتابعة</h2>
+                <h2>أسعار الأصول وعناصر المتابعة</h2>
                 <p className="mt-1 text-sm font-normal text-slate-600 dark:text-slate-300">
                   الأسعار مسجلة من المصدر مع وقتها وحالتها؛ وهي للمتابعة والمراجعة فقط.
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setLocation("/investments")} className="fintech-text-button">
-                  الحيازات والأسعار
+                  الأصول والأسعار
                 </Button>
               </div>
             </div>

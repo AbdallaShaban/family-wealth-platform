@@ -60,10 +60,10 @@ const roleArabicLabels: Record<MinimumRole, string> = {
 const navigationGroups: NavigationGroup[] = [
   {
     id: "overview",
-    label: "النظرة المالية",
+    label: "النظرة المالية العامة",
     icon: LayoutDashboard,
     items: [
-      { icon: LayoutDashboard, label: "النظرة المالية", path: "/", minimumRole: "viewer" },
+      { icon: LayoutDashboard, label: "النظرة المالية العامة", path: "/", minimumRole: "viewer" },
       { icon: Globe2, label: "النظرة المالية والتقييم", path: "/valuation", minimumRole: "advisor" },
       { icon: Sparkles, label: "الصحة المالية", path: "/wealth-health", minimumRole: "viewer" },
     ],
@@ -84,9 +84,9 @@ const navigationGroups: NavigationGroup[] = [
     icon: WalletCards,
     items: [
       { icon: ArrowLeftRight, label: "المعاملات المالية", path: "/transactions", minimumRole: "editor" },
-      { icon: WalletCards, label: "التدفق النقدي", path: "/cash-flow", minimumRole: "editor" },
+      { icon: WalletCards, label: "التدفق النقدي والسيولة", path: "/cash-flow", minimumRole: "editor" },
       { icon: CreditCard, label: "الديون والالتزامات", path: "/debts", minimumRole: "editor" },
-      { icon: ClipboardCheck, label: "المطابقة والتسوية", path: "/reconciliation", minimumRole: "editor" },
+      { icon: ClipboardCheck, label: "المطابقة والتسوية البنكية", path: "/reconciliation", minimumRole: "editor" },
       { icon: FileSpreadsheet, label: "كشوف الحساب والملفات", path: "/imports", minimumRole: "editor" },
     ],
   },
@@ -107,7 +107,7 @@ const navigationGroups: NavigationGroup[] = [
     label: "الحوكمة والإدارة",
     icon: ShieldCheck,
     items: [
-      { icon: FileChartColumn, label: "التقارير المالية", path: "/reports", minimumRole: "viewer" },
+      { icon: FileChartColumn, label: "كشوف الحساب والتقارير", path: "/reports", minimumRole: "viewer" },
       { icon: Building2, label: "التوحيد المالي", path: "/consolidation", minimumRole: "viewer" },
       { icon: CheckCircle2, label: "الموافقات", path: "/approvals", minimumRole: "editor" },
       { icon: FileLock2, label: "الخزنة", path: "/vault", minimumRole: "editor" },
@@ -570,7 +570,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
   const canAccessCurrentRoute = !routeItem || roleRank[role] >= roleRank[routeItem.minimumRole];
   const currentLabel = canAccessCurrentRoute
-    ? routeItem?.label ?? (location === "/" ? "النظرة المالية" : "نظرة تفصيلية")
+    ? routeItem?.label ?? (location === "/" ? "النظرة المالية العامة" : "نظرة تفصيلية")
     : "وصول محدود";
   const navigate = (path: string) => {
     setLocation(path);

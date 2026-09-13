@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   BriefcaseBusiness,
   CircleAlert,
+  CircleDollarSign,
   Landmark,
   Loader2,
   Plus,
@@ -145,6 +146,13 @@ export default function InvestmentsPageRedesign() {
   const valuedHoldings = holdings.filter((item) => item.marketValue !== null && item.marketValue !== undefined);
   const needsQuote = holdings.filter((item) => item.quoteStatus === "unavailable");
 
+  const totalMarketValue = useMemo(() => {
+    return holdings.reduce((sum, pos) => {
+      const val = Number(pos.baseMarketValue ?? (pos.currency === baseCurrency ? pos.marketValue : 0) ?? 0);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+  }, [holdings, baseCurrency]);
+
   const submitInstrument = (event: React.FormEvent) => {
     event.preventDefault();
     createInstrument.mutate({ name, symbol: symbol || null, currency, assetType, isin: null });
@@ -182,14 +190,14 @@ export default function InvestmentsPageRedesign() {
     <DashboardLayout>
       <main className="mx-auto max-w-7xl space-y-6" dir="rtl">
         <PageHeader
-          title="الاستثمارات والحيازات"
-          description="بوابة الاستثمار الموحدة: الحيازات الفعلية، الأدوات الاستثمارية، تنفيذ الصفقات، مؤشرات الأداء، الأرباح المحققة، وحزم FIFO المحاسبية."
+          title="الاستثمارات والمحافظ"
+          description="بوابة الاستثمار الموحدة: الأصول الاستثمارية والمراكز، الأدوات، تنفيذ الصفقات، مؤشرات الأداء، الأرباح المحققة، وحزم FIFO المحاسبية."
           icon={BriefcaseBusiness}
           breadcrumbs={[
-            { label: "الثروة والأصول", href: "/accounts" },
-            { label: "الاستثمارات والحيازات" },
+            { label: "الثروة والأصول", href: "/investments" },
+            { label: "الاستثمارات والمحافظ" },
           ]}
-          badge={{ text: "حيازات وأسهم مدققة", variant: "institutional" }}
+          badge={{ text: "محافظ وأصول استثمارية مدققة", variant: "institutional" }}
           actions={
             <div className="flex flex-wrap gap-2">
               <Button
@@ -207,7 +215,7 @@ export default function InvestmentsPageRedesign() {
                 className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all flex items-center gap-1.5"
               >
                 <BarChart3 className="size-3.5" />
-                عزو العوائد الكامل
+                تحليل عوائد المحفظة
               </Button>
               <Button
                 variant="outline"
@@ -224,11 +232,33 @@ export default function InvestmentsPageRedesign() {
 
         {/* Executive Metric Strip */}
         <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/60 mb-6 overflow-hidden">
-          {/* Cell 1: الحيازات المنشورة */}
+          {/* Cell 1: القيمة السوقية الإجمالية */}
           <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
-                الحيازات المنشورة
+                القيمة السوقية الإجمالية
+              </span>
+              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30">
+                <CircleDollarSign className="size-3.5 sm:size-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 mb-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+                <SensitiveValue>
+                  {portfolio.isLoading ? "—" : formatMoney(totalMarketValue, baseCurrency, 2)}
+                </SensitiveValue>
+              </strong>
+            </div>
+            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+              إجمالي تقييم الأصول والأسهم بالسعر الحالي
+            </span>
+          </div>
+
+          {/* Cell 2: إجمالي الأصول النشطة */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+                إجمالي الأصول النشطة
               </span>
               <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 dark:border-indigo-500/30">
                 <BriefcaseBusiness className="size-3.5 sm:size-4" />
@@ -240,15 +270,15 @@ export default function InvestmentsPageRedesign() {
               </strong>
             </div>
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
-              مراكز فعلية نشأت من صفقات دفتر الأستاذ
+              المراكز المفتوحة داخل المحفظة
             </span>
           </div>
 
-          {/* Cell 2: حيازات بسعر موثق */}
+          {/* Cell 3: أصول مقيّمة بالسوق */}
           <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
-                حيازات بسعر موثق
+                أصول مقيّمة بالسوق
               </span>
               <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30">
                 <CheckCircle2 className="size-3.5 sm:size-4" />
@@ -260,15 +290,15 @@ export default function InvestmentsPageRedesign() {
               </strong>
             </div>
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
-              تدخل القيمة فقط عند توثيق سعر سوق مؤرخ
+              أصول محدثة بآخر سعر إغلاق
             </span>
           </div>
 
-          {/* Cell 3: تتطلب سعر سوق */}
+          {/* Cell 4: بانتظار التسعير */}
           <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
-                تتطلب سعر سوق
+                بانتظار التسعير
               </span>
               <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30">
                 <Clock className="size-3.5 sm:size-4" />
@@ -280,29 +310,7 @@ export default function InvestmentsPageRedesign() {
               </strong>
             </div>
             <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
-              حيازات كميتها موجبة وبانتظار تسجيل السعر
-            </span>
-          </div>
-
-          {/* Cell 4: إجمالي الربح المحقق FIFO */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-            <div className="flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
-                إجمالي الربح المحقق FIFO
-              </span>
-              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 dark:border-sky-500/30">
-                <DollarSign className="size-3.5 sm:size-4" />
-              </div>
-            </div>
-            <div className="mt-2.5 mb-1">
-              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
-                <SensitiveValue>
-                  {realizedSummary.data ? formatMoney(realizedSummary.data.realizedPnl, baseCurrency, 2) : "—"}
-                </SensitiveValue>
-              </strong>
-            </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
-              ناتج مطابقات بيع FIFO التاريخية المكتملة
+              أصول تحتاج تحديث سعر السوق
             </span>
           </div>
         </section>
@@ -311,7 +319,7 @@ export default function InvestmentsPageRedesign() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1 mb-6 h-auto w-full justify-start">
             <TabsTrigger value="holdings" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
-              الحيازات
+              الأصول الاستثمارية
             </TabsTrigger>
             <TabsTrigger value="instruments" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
               الأدوات
@@ -334,7 +342,7 @@ export default function InvestmentsPageRedesign() {
           <TabsContent value="holdings">
             {portfolio.isLoading ? (
               <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-12 text-center shadow-xs">
-                <p className="text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الحيازات…</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الأصول الاستثمارية…</p>
               </div>
             ) : portfolio.error ? (
               <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-sm text-destructive">
@@ -345,10 +353,10 @@ export default function InvestmentsPageRedesign() {
                 <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/80">
                   <h2 className="text-slate-900 dark:text-white font-bold text-base flex items-center gap-2">
                     <TrendingUp className="size-5 text-sky-600 dark:text-sky-400" />
-                    الحيازات الفعلية
+                    الأصول الاستثمارية والمراكز
                   </h2>
                   <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
-                    الكمية ومتوسط التكلفة والقيمة تُستمد من الصفقات المنشورة والأسعار الموثقة.
+                    الكمية ومتوسط التكلفة والقيمة تُستمد من الصفقات المعتمدة والأسعار الموثقة بالسوق.
                   </p>
                 </div>
                 <div className="overflow-x-auto">
@@ -412,10 +420,10 @@ export default function InvestmentsPageRedesign() {
                   <BriefcaseBusiness className="size-6" />
                 </div>
                 <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">
-                  لا توجد حيازات منشورة
+                  لا توجد أصول استثمارية مسجلة حالياً
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 text-xs max-w-md mx-auto mb-5">
-                  أضف أداة، ثم سجّل صفقة شراء صريحة ليظهر المركز ومتوسط التكلفة في هذه الصفحة.
+                  ابدأ بتسجيل أول صفقة شراء أو إضافة أداة مالية لبناء محفظتك الاستثمارية.
                 </p>
                 <Button
                   size="sm"
@@ -706,7 +714,7 @@ export default function InvestmentsPageRedesign() {
                         className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                       >
                         {trade.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
-                        {canAdvise ? "تسجيل ونشر الصفقة" : "تتطلب صلاحية مستشار"}
+                        {canAdvise ? "تسجيل واعتماد الصفقة" : "تتطلب صلاحية مستشار"}
                       </Button>
                     </form>
                   ) : (
@@ -802,12 +810,12 @@ export default function InvestmentsPageRedesign() {
               <CardContent className="px-0 pb-0 pt-5 space-y-6">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] p-4">
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">الحيازات النشطة</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">الأصول النشطة</p>
                     <p className="mt-1 text-2xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">{holdings.length}</p>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">موزعة على الأدوات المصنفة</p>
                   </div>
                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] p-4">
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">حيازات مقيمة بسعر موثق</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">أصول مقيّمة بالسوق</p>
                     <p className="mt-1 text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">{valuedHoldings.length}</p>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">تظهر قيمتها السوقية بدقة</p>
                   </div>
@@ -822,7 +830,7 @@ export default function InvestmentsPageRedesign() {
 
                 <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420]/50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">تحليل عزو العوائد المتقدم (Brinson Allocation & Selection)</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">تحليل عوائد المحفظة المتقدم (Brinson Allocation & Selection)</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">للاطلاع على منحنى العائد المرجح زمنيًا (TWR) وتحليل المخاطر المتقدم.</p>
                   </div>
                   <Button

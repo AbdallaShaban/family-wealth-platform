@@ -11,14 +11,14 @@ import { SettlementMatchingView } from "@/pages/SettlementPage";
 import { formatMoney } from "@/lib/financialDisplay";
 
 const countLabels = [
-  ["postedEntries", "القيود المنشورة"],
-  ["postedEvents", "الأحداث المنشورة"],
+  ["postedEntries", "القيود المعتمدة"],
+  ["postedEvents", "المعاملات المعتمدة"],
   ["postedLines", "سطور القيد"],
   ["accounts", "الحسابات المفحوصة"],
-  ["persistedPositions", "الحيازات المحفوظة"],
+  ["persistedPositions", "الأصول المسجلة"],
   ["unbalancedEntries", "قيود غير متوازنة"],
   ["invalidReversals", "عكوس غير صالحة"],
-  ["positionMismatches", "فروقات الحيازات"],
+  ["positionMismatches", "فروقات الأصول"],
 ] as const;
 
 export default function ReconciliationPage() {
@@ -29,12 +29,12 @@ export default function ReconciliationPage() {
     <DashboardLayout>
       <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
         <PageHeader
-          title="تسوية ومطابقة العمليات"
-          description="مركز موحد لفحص توازن قيود الدفتر الأستاذ ومطابقة تسويات المستحقات والزكاة والمطالبات التأمينية مع الأحداث المنشورة."
+          title="المطابقة والتسوية البنكية"
+          description="مركز موحد لفحص توازن قيود الدفتر الأستاذ ومطابقة تسويات المستحقات والزكاة والمطالبات التأمينية مع المعاملات المعتمدة."
           icon={Scale}
           breadcrumbs={[
-            { label: "النقد والالتزامات", href: "/cash-flow" },
-            { label: "تسوية ومطابقة العمليات" },
+            { label: "النقد والالتزامات", href: "/reconciliation" },
+            { label: "المطابقة والتسوية البنكية" },
           ]}
           badge="تدقيق محاسبي موثق"
           actions={
@@ -104,17 +104,17 @@ export default function ReconciliationPage() {
                         </Badge>
                       </div>
                       <CardDescription className="text-xs">
-                        إجمالي الحركات والسطور المحاسبية المنشورة في دفتر الأستاذ المزدوج
+                        إجمالي الحركات والسطور المحاسبية المعتمدة في دفتر الأستاذ المزدوج
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="p-3 rounded-xl border bg-muted/20 text-center">
-                          <p className="text-[11px] text-muted-foreground">القيود المنشورة</p>
+                          <p className="text-[11px] text-muted-foreground">القيود المعتمدة</p>
                           <p className="text-xl font-bold font-mono text-foreground mt-1">{data.counts.postedEntries}</p>
                         </div>
                         <div className="p-3 rounded-xl border bg-muted/20 text-center">
-                          <p className="text-[11px] text-muted-foreground">الأحداث المنشورة</p>
+                          <p className="text-[11px] text-muted-foreground">المعاملات المعتمدة</p>
                           <p className="text-xl font-bold font-mono text-foreground mt-1">{data.counts.postedEvents}</p>
                         </div>
                         <div className="p-3 rounded-xl border bg-muted/20 text-center">
@@ -127,7 +127,7 @@ export default function ReconciliationPage() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
-                        <span>الحيازات المحفوظة: <b className="font-mono text-foreground">{data.counts.persistedPositions}</b></span>
+                        <span>الأصول المسجلة: <b className="font-mono text-foreground">{data.counts.persistedPositions}</b></span>
                         <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                           <CheckCircle2 className="size-3.5" />
                           <span>قيود غير متوازنة: {data.counts.unbalancedEntries}</span>
@@ -152,7 +152,7 @@ export default function ReconciliationPage() {
                         </Badge>
                       </div>
                       <CardDescription className="text-xs">
-                        المجاميع المحاسبية المشتقة من سطور القيود المنشورة فقط
+                        المجاميع المحاسبية المشتقة من سطور القيود المعتمدة فقط
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -186,7 +186,7 @@ export default function ReconciliationPage() {
                   <Card>
                     <CardHeader>
                       <CardTitle>تغطية التدفق النقدي</CardTitle>
-                      <CardDescription>فحص ارتباط أحداث الدخل والمصروف والديون بقيد منشور.</CardDescription>
+                      <CardDescription>فحص ارتباط أحداث الدخل والمصروف والديون بقيد معتمد.</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-3 sm:grid-cols-3">
                       <div>
@@ -194,7 +194,7 @@ export default function ReconciliationPage() {
                         <p className="mt-1 font-semibold">{data.cashFlowCoverage.cashFlowEvents}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500">مرتبطة بقيد</p>
+                        <p className="text-xs text-slate-500">مرتبطة بقيد معتمد</p>
                         <p className="mt-1 font-semibold">{data.cashFlowCoverage.linkedPostedEvents}</p>
                       </div>
                       <div>
@@ -205,8 +205,8 @@ export default function ReconciliationPage() {
                   </Card>
                 <Card>
                   <CardHeader>
-                    <CardTitle>الحيازات وإعادة البناء</CardTitle>
-                    <CardDescription>المقارنة بين الحيازة المحفوظة ونتيجة أحداث الشراء والبيع المنشورة. لا يتم الحفظ تلقائيًا.</CardDescription>
+                    <CardTitle>الأصول وإعادة البناء</CardTitle>
+                    <CardDescription>المقارنة بين الأصول المحفوظة ونتيجة أحداث الشراء والبيع المعتمدة. لا يتم الحفظ تلقائيًا.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {data.positions.length ? (
@@ -223,7 +223,7 @@ export default function ReconciliationPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-slate-500">لا توجد حيازات قابلة للفحص في النطاق الحالي.</p>
+                      <p className="text-sm text-slate-500">لا توجد أصول استثمارية مسجلة للفحص في النطاق الحالي.</p>
                     )}
                   </CardContent>
                 </Card>
