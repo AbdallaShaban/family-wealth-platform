@@ -668,36 +668,36 @@ export default function FintechDashboard() {
 
                     {/* Subtle 3-Pillar Compact Metric Grid */}
                     <div className="grid grid-cols-3 gap-2.5 text-center">
-                      <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-card/80 border border-slate-200/80 dark:border-border shadow-xs">
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                      <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs">
+                        <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs block">
                           إجمالي الالتزامات
                         </span>
-                        <strong className="text-sm font-bold font-mono text-slate-900 dark:text-white mt-1 block">
+                        <strong className="text-slate-900 dark:text-white font-bold font-mono text-base mt-1 block">
                           0 {currency}
                         </strong>
                       </div>
-                      <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-card/80 border border-slate-200/80 dark:border-border shadow-xs">
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
+                      <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs">
+                        <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs block">
                           عبء خدمة الدين
                         </span>
-                        <strong className="text-sm font-bold font-mono text-emerald-700 dark:text-emerald-400 mt-1 block">
+                        <strong className="text-slate-900 dark:text-white font-bold font-mono text-base mt-1 block">
                           0.0%
                         </strong>
                       </div>
-                      <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-card/80 border border-slate-200/80 dark:border-border shadow-xs">
-                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium block">
-                          التصنيف الائتماني الداخلي
+                      <div className="p-3 rounded-xl bg-white dark:bg-card border border-slate-200/80 dark:border-border shadow-xs">
+                        <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs block">
+                          التصنيف الائتماني
                         </span>
-                        <strong className="text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-400 mt-1 block truncate">
-                          ممتاز (AAA)
+                        <strong className="text-slate-900 dark:text-white font-bold font-mono text-base mt-1 block truncate">
+                          ممتاز AAA
                         </strong>
                       </div>
                     </div>
 
                     {/* Operational Solvency Bottom Indicator */}
-                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/50 dark:bg-muted/30 border border-slate-100 dark:border-border/60 text-xs text-slate-600 dark:text-slate-400">
-                      <span className="font-medium">الملاءة المالية التشغيلية:</span>
-                      <span className="font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                    <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/50 dark:bg-muted/30 border border-slate-100 dark:border-border/60 text-xs text-slate-700 dark:text-slate-300">
+                      <span className="font-semibold">الملاءة المالية التشغيلية:</span>
+                      <span className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
                         <span className="inline-block size-2 rounded-full bg-emerald-500" />
                         تغطية سيولة تامة 100%
                       </span>
@@ -707,12 +707,12 @@ export default function FintechDashboard() {
               </motion.article>
             </section>
             <motion.section
-              className="mt-6 bg-slate-50/60 dark:bg-slate-900/40 p-5 rounded-2xl border border-slate-200/60 shadow-xs"
+              className="mt-6"
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.35, delay: 0.36 }}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-border/60 mb-3.5">
+              <div className="flex items-center justify-between mb-3.5">
                 <div>
                   <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
                     ملخص مواقفك المالية
@@ -737,20 +737,23 @@ export default function FintechDashboard() {
                   <button
                     onClick={() => setLocation("/accounts")}
                     key={account.id}
-                    className="bg-white dark:bg-card border border-slate-200/60 dark:border-border/80 rounded-xl p-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xs transition-all text-right group flex flex-col justify-between min-h-[105px] w-full"
+                    className="bg-white dark:bg-card border border-slate-200/70 dark:border-border/80 rounded-2xl p-4 shadow-xs hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm transition-all text-right group flex flex-col justify-between min-h-[120px] w-full"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-muted text-slate-700 dark:text-slate-300">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-muted text-slate-700 dark:text-slate-300">
                         {account.kind}
                       </span>
                       <ArrowUpRight className="size-3.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors shrink-0" />
                     </div>
 
-                    <strong className="text-slate-900 dark:text-slate-100 font-semibold text-sm truncate block mt-2 w-full" title={account.name}>
+                    <strong
+                      className="text-slate-900 dark:text-slate-100 font-semibold text-sm leading-snug line-clamp-2 block mt-2.5 w-full break-words"
+                      title={account.name}
+                    >
                       {account.name}
                     </strong>
 
-                    <div className="text-left w-full mt-2" dir="ltr">
+                    <div className="text-left w-full mt-3" dir="ltr">
                       <span className="font-mono font-bold text-slate-900 dark:text-white text-sm sm:text-base tabular-nums">
                         <SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue>
                       </span>

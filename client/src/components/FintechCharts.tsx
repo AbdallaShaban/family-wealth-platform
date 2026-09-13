@@ -292,17 +292,19 @@ export default function FintechCharts({
               </AreaChart>
             </ResponsiveContainer>
 
-            {/* Centered Institutional Empty State Pill */}
+            {/* Minimal Institutional Empty State */}
             {!cashFlow.length && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4 text-center">
+                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium">
+                  لا توجد تدفقات نقدية مسجلة لهذه الفترة
+                </p>
                 <button
                   type="button"
                   onClick={onShowLedger}
-                  className="pointer-events-auto inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 dark:bg-slate-900/95 border border-slate-200/80 dark:border-slate-800 shadow-md backdrop-blur-md text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-all hover:scale-[1.02] cursor-pointer"
+                  className="pointer-events-auto inline-flex items-center gap-1.5 bg-white dark:bg-card border border-slate-200 dark:border-border text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-muted text-xs font-semibold px-4 py-2 rounded-xl shadow-xs mt-2 transition-all cursor-pointer"
                 >
-                  <span className="size-2 rounded-full bg-slate-400 dark:bg-slate-500" />
-                  <span>لا توجد تدفقات مسجلة لهذه الفترة • اضغط لتسجيل أول حركة</span>
-                  <Plus className="size-3.5 text-emerald-600 dark:text-emerald-400 mr-0.5" />
+                  <Plus className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>تسجيل أول حركة</span>
                 </button>
               </div>
             )}

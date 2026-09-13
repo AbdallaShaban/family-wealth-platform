@@ -65,6 +65,10 @@ export function OnboardingChecklist({
   const progressPercent = Math.round((completedCount / steps.length) * 100);
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
+    // Force collapsed by default on initial page load whenever 2 or more steps are completed
+    if (completedCount >= 2) {
+      return true;
+    }
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored !== null) {
@@ -73,7 +77,7 @@ export function OnboardingChecklist({
     } catch {
       // safe fallback
     }
-    return completedCount >= 2;
+    return false;
   });
 
   const toggleCollapse = () => {
