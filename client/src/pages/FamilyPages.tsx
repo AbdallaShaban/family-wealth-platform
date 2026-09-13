@@ -2702,9 +2702,41 @@ const auditActionLabel: Record<string, string> = {
   approval_decided: "تسجيل قرار اعتماد",
   period_closed: "إغلاق فترة",
 };
-const auditTargetLabel: Record<string, string> = { workspace: "مساحة العمل", account: "حساب", financial_event: "عملية مالية", price_quote: "سعر سوق", fx_rate: "سعر صرف", approval_request: "طلب اعتماد", invitation: "دعوة", special_asset: "أصل خاص", insurance_policy: "بوليصة تأمين" };
+const auditTargetLabel: Record<string, string> = { workspace: "مساحة العمل", account: "حساب", financial_event: "عملية مالية", price_quote: "سعر سوق", fx_rate: "سعر صرف", approval_request: "طلب اعتماد", invitation: "دعوة", special_asset: "أصل خاص", insurance_policy: "وثيقة تأمين" };
 const humanizeAuditAction = (value: string) => auditActionLabel[value] || value.replaceAll("_", " ");
 const humanizeAuditTarget = (value: string) => auditTargetLabel[value] || value.replaceAll("_", " ");
+
+// Semantic audit badge: maps raw action key → Arabic label + semantic color class
+const AUDIT_ACTION_BADGE_MAP: Record<string, { label: string; cls: string }> = {
+  // Financial posting – Emerald
+  cash_event_posted:          { label: "ترحيل قيد مالي",          cls: "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60" },
+  transfer_posted:            { label: "ترحيل تحويل مالي",        cls: "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60" },
+  trade_posted:               { label: "ترحيل صفقة تداول",        cls: "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60" },
+  // FX & pricing – Sky
+  fx_rate_recorded:           { label: "تسجيل سعر صرف",           cls: "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60" },
+  price_quote_recorded:       { label: "تسجيل سعر سوق",           cls: "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60" },
+  // Valuation / snapshots – Indigo
+  valuation_snapshot_captured:{ label: "لقطة تقييم رسمية",        cls: "bg-indigo-50 text-indigo-700 border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60" },
+  special_asset_revalued:     { label: "إعادة تقييم أصل",         cls: "bg-indigo-50 text-indigo-700 border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60" },
+  // Exports / statements – Purple
+  financial_statements_exported: { label: "تصدير قوائم وتقارير", cls: "bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60" },
+  statements_exported:        { label: "تصدير قوائم وتقارير",     cls: "bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60" },
+  period_closed:              { label: "إغلاق فترة محاسبية",       cls: "bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60" },
+  // Account / instrument creation – Amber
+  account_created:            { label: "إنشاء حساب مالي",          cls: "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60" },
+  // Governance / access – Slate (neutral)
+  workspace_invitation_created:  { label: "إصدار دعوة عضوية",     cls: "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700/60" },
+  workspace_invitation_cancelled:{ label: "إلغاء دعوة عضوية",     cls: "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700/60" },
+  approval_requested:         { label: "طلب اعتماد",               cls: "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700/60" },
+  approval_decided:           { label: "قرار اعتماد مسجل",         cls: "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700/60" },
+};
+
+function AuditActionBadge({ action }: { action: string }) {
+  const match = AUDIT_ACTION_BADGE_MAP[action];
+  const label = match?.label ?? (auditActionLabel[action] || action.replaceAll("_", " "));
+  const cls = match?.cls ?? "bg-slate-100 text-slate-700 border-slate-200/80 dark:bg-slate-800/60 dark:text-slate-300 dark:border-slate-700/60";
+  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold border font-mono ${cls}`}>{label}</span>;
+}
 
 export function MembersPage() {
   const utils = trpc.useUtils();
@@ -2735,14 +2767,19 @@ export { ReportsPage } from "./ReportsPage";
 export function AuditPage() {
   const audit = trpc.family.audit.recent.useQuery();
   return <DashboardLayout><div dir="rtl" className="mx-auto max-w-6xl space-y-6"><PageHeader
-    title="سجل التدقيق"
-    description="أثر تغييرات قابل للمراجعة ضمن نطاقك؛ لا تعرض الواجهة سجلات نطاق آخر."
+    title="سجل التدقيق الرقابي"
+    description="أثر التغييرات والعمليات المالية والرقابية الموثقة زمنياً ضمن مساحتك المالية."
     breadcrumbs={[
       { label: "الرئيسية", href: "/" },
-      { label: "الحوكمة والتحليل", href: "/operations" },
-      { label: "سجل التدقيق" },
+      { label: "الحوكمة والإدارة", href: "/operations" },
+      { label: "سجل التدقيق الرقابي" },
     ]}
-    badge={{ text: "سجل غير قابل للتعديل", variant: "institutional" }}
+    badge={
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
+        <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+        <span>سجل رقابي غير قابل للتعديل (Append-Only)</span>
+      </div>
+    }
     icon={ShieldCheck}
-  />{audit.isLoading ? <PageLoading /> : audit.error ? <InlineError message={textError(audit.error)} /> : audit.data?.length ? <Card><CardContent className="p-0"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-right text-sm"><thead className="bg-slate-50 text-xs text-slate-600"><tr><th className="p-4 font-semibold">التاريخ والوقت</th><th className="p-4 font-semibold">نوع العملية</th><th className="p-4 font-semibold">المستخدم</th><th className="p-4 font-semibold">التفاصيل</th></tr></thead><tbody className="divide-y">{audit.data.map(record => <tr key={record.id} className="align-top hover:bg-emerald-50/40"><td className="p-4 whitespace-nowrap text-slate-600">{dateTime(record.occurredAt)}</td><td className="p-4 font-semibold text-slate-900">{humanizeAuditAction(record.action)}</td><td className="p-4"><Badge variant="outline">المستخدم #{record.actorUserId}</Badge></td><td className="p-4 text-slate-600">{humanizeAuditTarget(record.targetType)} <span className="font-mono text-xs">#{record.targetId}</span></td></tr>)}</tbody></table></div></CardContent></Card> : <EmptyState icon={ShieldCheck} title="لا توجد أحداث تدقيق حتى الآن" description="سيظهر هنا إنشاء الحسابات والأسعار ونشر العمليات من مصدرها الفعلي." />}</div></DashboardLayout>;
+  />{audit.isLoading ? <PageLoading /> : audit.error ? <InlineError message={textError(audit.error)} /> : audit.data?.length ? <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden"><div className="overflow-x-auto"><table className="w-full min-w-[820px] text-right text-sm"><thead><tr className="bg-slate-50/90 dark:bg-[#0E1420] border-b border-slate-200/90 dark:border-slate-800/80"><th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">التاريخ والوقت</th><th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">نوع العملية</th><th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">المستخدم المنفذ</th><th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">تفاصيل القيد والحدث</th></tr></thead><tbody>{audit.data.map((record, idx) => <tr key={record.id} className={`border-b border-slate-100 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-[#111827]/40 transition-colors align-top ${idx === audit.data.length - 1 ? "border-b-0" : ""}`}><td className="py-3.5 px-4 whitespace-nowrap"><span className="font-mono tabular-nums text-slate-600 dark:text-slate-300 text-xs font-medium">{dateTime(record.occurredAt)}</span></td><td className="py-3.5 px-4"><AuditActionBadge action={record.action} /></td><td className="py-3.5 px-4"><span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 text-slate-800 dark:text-slate-200 font-mono text-xs font-semibold">#{record.actorUserId}</span></td><td className="py-3.5 px-4"><span className="text-slate-700 dark:text-slate-300 text-xs">{humanizeAuditTarget(record.targetType)}</span>{" "}<span className="font-mono text-xs text-slate-500 dark:text-slate-400">#{record.targetId}</span></td></tr>)}</tbody></table></div></div> : <div className="flex flex-col items-center justify-center py-16 text-center"><div className="size-14 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center mx-auto mb-4"><ShieldCheck className="size-6" /></div><p className="text-sm font-bold text-slate-800 dark:text-slate-200">لا توجد أحداث تدقيق حتى الآن</p><p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400 max-w-xs leading-5">سيظهر هنا إنشاء الحسابات والأسعار ونشر العمليات من مصدرها الفعلي بمجرد بدء التشغيل.</p></div>}</div></DashboardLayout>;
 }
