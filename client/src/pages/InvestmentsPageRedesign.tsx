@@ -189,189 +189,289 @@ export default function InvestmentsPageRedesign() {
             { label: "الثروة والأصول", href: "/accounts" },
             { label: "الاستثمارات والحيازات" },
           ]}
-          badge="حيازات وأسهم مدققة"
+          badge={{ text: "حيازات وأسهم مدققة", variant: "institutional" }}
           actions={
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setActiveTab("trades")}>
-                <Plus className="ml-1 size-4" />
-                تسجيل صفقة
+              <Button
+                size="sm"
+                onClick={() => setActiveTab("trades")}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent flex items-center gap-1.5"
+              >
+                <Plus className="size-3.5" />
+                + تسجيل صفقة
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setLocation("/performance")}>
-                <BarChart3 className="ml-1 size-4" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation("/performance")}
+                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all flex items-center gap-1.5"
+              >
+                <BarChart3 className="size-3.5" />
                 عزو العوائد الكامل
               </Button>
-              <Button size="sm" onClick={() => setLocation("/risk")}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation("/risk")}
+                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all flex items-center gap-1.5"
+              >
+                <GitCompareArrows className="size-3.5" />
                 مراجعة التوزيع
               </Button>
             </div>
           }
         />
 
-        {/* Overview Metric Cards */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="fintech-surface-card">
-            <CardHeader className="pb-3">
-              <CardDescription>الحيازات المنشورة</CardDescription>
-              <CardTitle className="text-3xl">{portfolio.isLoading ? "—" : holdings.length}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">مراكز فعلية نشأت من صفقات دفتر الأستاذ.</CardContent>
-          </Card>
-          <Card className="fintech-surface-card">
-            <CardHeader className="pb-3">
-              <CardDescription>حيازات بسعر موثق</CardDescription>
-              <CardTitle className="text-3xl text-emerald-700">{portfolio.isLoading ? "—" : valuedHoldings.length}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">تدخل القيمة فقط عند توثيق سعر سوق مؤرخ.</CardContent>
-          </Card>
-          <Card className="fintech-surface-card">
-            <CardHeader className="pb-3">
-              <CardDescription>تتطلب سعر سوق</CardDescription>
-              <CardTitle className="text-3xl text-amber-700">{portfolio.isLoading ? "—" : needsQuote.length}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">حيازات كميتها موجبة وبانتظار تسجيل السعر.</CardContent>
-          </Card>
-          <Card className="fintech-surface-card">
-            <CardHeader className="pb-3">
-              <CardDescription>إجمالي الربح المحقق (FIFO)</CardDescription>
-              <CardTitle className={`text-2xl font-bold ${Number(realizedSummary.data?.realizedPnl || 0) >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+        {/* Executive Metric Strip */}
+        <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/60 mb-6 overflow-hidden">
+          {/* Cell 1: الحيازات المنشورة */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+                الحيازات المنشورة
+              </span>
+              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 dark:border-indigo-500/30">
+                <BriefcaseBusiness className="size-3.5 sm:size-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 mb-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+                {portfolio.isLoading ? "—" : holdings.length}
+              </strong>
+            </div>
+            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+              مراكز فعلية نشأت من صفقات دفتر الأستاذ
+            </span>
+          </div>
+
+          {/* Cell 2: حيازات بسعر موثق */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+                حيازات بسعر موثق
+              </span>
+              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30">
+                <CheckCircle2 className="size-3.5 sm:size-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 mb-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+                {portfolio.isLoading ? "—" : valuedHoldings.length}
+              </strong>
+            </div>
+            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+              تدخل القيمة فقط عند توثيق سعر سوق مؤرخ
+            </span>
+          </div>
+
+          {/* Cell 3: تتطلب سعر سوق */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+                تتطلب سعر سوق
+              </span>
+              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30">
+                <Clock className="size-3.5 sm:size-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 mb-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+                {portfolio.isLoading ? "—" : needsQuote.length}
+              </strong>
+            </div>
+            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+              حيازات كميتها موجبة وبانتظار تسجيل السعر
+            </span>
+          </div>
+
+          {/* Cell 4: إجمالي الربح المحقق FIFO */}
+          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+                إجمالي الربح المحقق FIFO
+              </span>
+              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 dark:border-sky-500/30">
+                <DollarSign className="size-3.5 sm:size-4" />
+              </div>
+            </div>
+            <div className="mt-2.5 mb-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
                 <SensitiveValue>
                   {realizedSummary.data ? formatMoney(realizedSummary.data.realizedPnl, baseCurrency, 2) : "—"}
                 </SensitiveValue>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground">ناتج مطابقات بيع FIFO التاريخية المكتملة.</CardContent>
-          </Card>
+              </strong>
+            </div>
+            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+              ناتج مطابقات بيع FIFO التاريخية المكتملة
+            </span>
+          </div>
         </section>
 
-        {/* 6 Unified Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-auto p-1 gap-1">
-            <TabsTrigger value="holdings" className="py-2.5">الحيازات</TabsTrigger>
-            <TabsTrigger value="instruments" className="py-2.5">الأدوات</TabsTrigger>
-            <TabsTrigger value="trades" className="py-2.5">تسجيل الصفقات</TabsTrigger>
-            <TabsTrigger value="performance" className="py-2.5">ملخص الأداء</TabsTrigger>
-            <TabsTrigger value="realized" className="py-2.5">الأرباح المحققة</TabsTrigger>
-            <TabsTrigger value="lots" className="py-2.5">حزم FIFO</TabsTrigger>
+        {/* 6 Unified Tabs with Bank-Grade Segmented Control */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1 mb-6 h-auto w-full justify-start">
+            <TabsTrigger value="holdings" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
+              الحيازات
+            </TabsTrigger>
+            <TabsTrigger value="instruments" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
+              الأدوات
+            </TabsTrigger>
+            <TabsTrigger value="trades" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
+              تسجيل الصفقات
+            </TabsTrigger>
+            <TabsTrigger value="performance" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
+              ملخص الأداء
+            </TabsTrigger>
+            <TabsTrigger value="realized" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
+              الأرباح المحققة
+            </TabsTrigger>
+            <TabsTrigger value="lots" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
+              حزم FIFO
+            </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: Holdings */}
           <TabsContent value="holdings">
-            <Card className="fintech-surface-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="size-5 text-primary" />
-                  الحيازات الفعلية
-                </CardTitle>
-                <CardDescription>الكمية ومتوسط التكلفة والقيمة تُستمد من الصفقات المنشورة والأسعار الموثقة.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {portfolio.isLoading ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">جارٍ تحميل الحيازات…</p>
-                ) : portfolio.error ? (
-                  <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{errorText(portfolio.error)}</p>
-                ) : holdings.length ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[720px] text-right text-sm">
-                      <thead className="bg-slate-50 text-xs text-slate-600">
-                        <tr>
-                          <th className="p-4">الأداة</th>
-                          <th className="p-4">الكمية</th>
-                          <th className="p-4">متوسط التكلفة</th>
-                          <th className="p-4">القيمة السوقية</th>
-                          <th className="p-4">حالة السعر</th>
-                          <th className="p-4">إجراء</th>
+            {portfolio.isLoading ? (
+              <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-12 text-center shadow-xs">
+                <p className="text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الحيازات…</p>
+              </div>
+            ) : portfolio.error ? (
+              <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-6 text-sm text-destructive">
+                {errorText(portfolio.error)}
+              </div>
+            ) : holdings.length ? (
+              <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+                <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/80">
+                  <h2 className="text-slate-900 dark:text-white font-bold text-base flex items-center gap-2">
+                    <TrendingUp className="size-5 text-sky-600 dark:text-sky-400" />
+                    الحيازات الفعلية
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
+                    الكمية ومتوسط التكلفة والقيمة تُستمد من الصفقات المنشورة والأسعار الموثقة.
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[720px] text-right text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800">
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الأداة</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الكمية</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">متوسط التكلفة</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">القيمة السوقية</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">حالة السعر</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">إجراء</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {holdings.map((pos) => (
+                        <tr key={pos.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <strong className="text-slate-900 dark:text-slate-100 font-bold text-sm block">{pos.instrumentName}</strong>
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono">{pos.symbol || "بدون رمز"} · {pos.currency}</p>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{pos.quantity}</td>
+                          <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
+                            <SensitiveValue>{formatMoney(pos.averageCost, pos.costCurrency, 2)}</SensitiveValue>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                            <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                              pos.quoteStatus === "unavailable"
+                                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40"
+                                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
+                            }`}>
+                              {pos.quoteStatus === "unavailable" ? "يتطلب سعرًا" : "متاح"}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setTradeInstrumentId(String(pos.instrumentId));
+                                setSide("sell");
+                                setActiveTab("trades");
+                              }}
+                              className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all"
+                            >
+                              تداول
+                            </Button>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {holdings.map((pos) => (
-                          <tr key={pos.id}>
-                            <td className="p-4">
-                              <strong>{pos.instrumentName}</strong>
-                              <p className="mt-1 text-xs text-muted-foreground">{pos.symbol || "بدون رمز"} · {pos.currency}</p>
-                            </td>
-                            <td className="p-4 font-mono font-semibold">{pos.quantity}</td>
-                            <td className="p-4">
-                              <SensitiveValue>{formatMoney(pos.averageCost, pos.costCurrency, 2)}</SensitiveValue>
-                            </td>
-                            <td className="p-4 font-semibold">
-                              <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
-                            </td>
-                            <td className="p-4">
-                              <Badge variant={pos.quoteStatus === "unavailable" ? "outline" : "secondary"}>
-                                {pos.quoteStatus === "unavailable" ? "يتطلب سعرًا" : "متاح"}
-                              </Badge>
-                            </td>
-                            <td className="p-4">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setTradeInstrumentId(String(pos.instrumentId));
-                                  setSide("sell");
-                                  setActiveTab("trades");
-                                }}
-                              >
-                                تداول
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="fintech-empty-state">
-                    <BriefcaseBusiness className="fintech-empty-state-icon" />
-                    <h3>لا توجد حيازات منشورة</h3>
-                    <p>أضف أداة، ثم سجّل صفقة شراء صريحة ليظهر المركز ومتوسط التكلفة في هذه الصفحة.</p>
-                    <Button className="mt-4" onClick={() => setActiveTab("trades")}>
-                      بدء تسجيل صفقة
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-8 text-center shadow-xs">
+                <div className="flex size-12 items-center justify-center rounded-2xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-3">
+                  <BriefcaseBusiness className="size-6" />
+                </div>
+                <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">
+                  لا توجد حيازات منشورة
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 text-xs max-w-md mx-auto mb-5">
+                  أضف أداة، ثم سجّل صفقة شراء صريحة ليظهر المركز ومتوسط التكلفة في هذه الصفحة.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => setActiveTab("trades")}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent inline-flex items-center gap-1.5"
+                >
+                  <Plus className="size-3.5" />
+                  بدء تسجيل صفقة
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           {/* TAB 2: Instruments */}
           <TabsContent value="instruments">
             <section className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
-              <Card className="fintech-surface-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="size-5 text-primary" />
+              <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+                    <Plus className="size-5 text-sky-600 dark:text-sky-400" />
                     إضافة أداة استثمارية
                   </CardTitle>
-                  <CardDescription>تقتصر إضافة الأدوات وأسعارها على دور المالك أو المستشار.</CardDescription>
+                  <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">تقتصر إضافة الأدوات وأسعارها على دور المالك أو المستشار.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-5">
                   <form onSubmit={submitInstrument} className="grid gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="instrument-name">الاسم</Label>
-                      <Input id="instrument-name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canAdvise} required minLength={2} />
+                      <Label htmlFor="instrument-name" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الاسم</Label>
+                      <Input id="instrument-name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canAdvise} required minLength={2} className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800" />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="grid gap-2">
-                        <Label htmlFor="instrument-symbol">الرمز (Ticker)</Label>
-                        <Input id="instrument-symbol" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} disabled={!canAdvise} maxLength={48} placeholder="مثال: GC=F أو AAPL" />
+                        <Label htmlFor="instrument-symbol" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الرمز (Ticker)</Label>
+                        <Input id="instrument-symbol" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} disabled={!canAdvise} maxLength={48} placeholder="مثال: GC=F أو AAPL" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 uppercase font-mono" />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="instrument-currency">العملة</Label>
-                        <Input id="instrument-currency" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} disabled={!canAdvise} minLength={3} maxLength={3} required />
+                        <Label htmlFor="instrument-currency" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">العملة</Label>
+                        <Input id="instrument-currency" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} disabled={!canAdvise} minLength={3} maxLength={3} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 uppercase font-mono" />
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label>الفئة</Label>
+                      <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الفئة</Label>
                       <Select value={assetType} onValueChange={(val) => setAssetType(val as AssetType)} disabled={!canAdvise}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
+                        <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                           {Object.entries(assetTypeLabel).map(([val, lbl]) => (
                             <SelectItem key={val} value={val}>{lbl}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button type="submit" disabled={!canAdvise || createInstrument.isPending}>
+                    <Button
+                      type="submit"
+                      disabled={!canAdvise || createInstrument.isPending}
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent mt-2"
+                    >
                       {createInstrument.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                       {canAdvise ? "حفظ الأداة" : "تتطلب صلاحية مستشار"}
                     </Button>
@@ -379,52 +479,56 @@ export default function InvestmentsPageRedesign() {
                 </CardContent>
               </Card>
 
-              <Card className="fintech-surface-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Landmark className="size-5 text-primary" />
+              <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+                    <Landmark className="size-5 text-sky-600 dark:text-sky-400" />
                     سجل الأدوات
                   </CardTitle>
-                  <CardDescription>وجود الأداة لا يعني وجود حيازة أو قيمة؛ كلاهما يتطلب صفقة وسعرًا موثقًا.</CardDescription>
+                  <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">وجود الأداة لا يعني وجود حيازة أو قيمة؛ كلاهما يتطلب صفقة وسعرًا موثقًا.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   {instruments.isLoading ? (
-                    <p className="py-12 text-center text-sm text-muted-foreground">جارٍ تحميل الأدوات…</p>
+                    <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الأدوات…</p>
                   ) : instruments.error ? (
-                    <p className="flex gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                    <div className="m-4 flex gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
                       <CircleAlert className="size-4 shrink-0" />
                       {errorText(instruments.error)}
-                    </p>
+                    </div>
                   ) : instruments.data?.length ? (
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[520px] text-right text-sm">
-                        <thead className="bg-slate-50 text-xs text-slate-600">
-                          <tr>
-                            <th className="p-3">الاسم</th>
-                            <th className="p-3">الرمز</th>
-                            <th className="p-3">الفئة</th>
-                            <th className="p-3">العملة</th>
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-800">
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الاسم</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الرمز</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الفئة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">العملة</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                           {instruments.data.map((item) => (
-                            <tr key={item.id}>
-                              <td className="p-3 font-semibold">{item.name}</td>
-                              <td className="p-3 font-mono text-xs">{item.symbol || "—"}</td>
-                              <td className="p-3">
-                                <Badge variant="outline">{assetTypeLabel[item.assetType as AssetType] || item.assetType}</Badge>
+                            <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                              <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{item.name}</td>
+                              <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{item.symbol || "—"}</td>
+                              <td className="py-3 px-4">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                                  {assetTypeLabel[item.assetType as AssetType] || item.assetType}
+                                </span>
                               </td>
-                              <td className="p-3">{item.currency}</td>
+                              <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-300">{item.currency}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
                   ) : (
-                    <div className="fintech-empty-state">
-                      <Landmark className="fintech-empty-state-icon" />
-                      <h3>لا توجد أدوات استثمارية</h3>
-                      <p>أضف أداة برمزها وبياناتها الأساسية، ثم سجّل سعرًا أو صفقة بصورة صريحة.</p>
+                    <div className="p-8 text-center">
+                      <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
+                        <Landmark className="size-5" />
+                      </div>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">لا توجد أدوات استثمارية</h3>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs">أضف أداة برمزها وبياناتها الأساسية، ثم سجّل سعرًا أو صفقة بصورة صريحة.</p>
                     </div>
                   )}
                 </CardContent>
@@ -435,34 +539,34 @@ export default function InvestmentsPageRedesign() {
           {/* TAB 3: Trades & Orders */}
           <TabsContent value="trades">
             <section className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
-              <Card className="fintech-surface-card">
-                <CardHeader>
-                  <CardTitle>مراجعة وتسجيل صفقة شراء أو بيع</CardTitle>
-                  <CardDescription>
+              <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
+                  <CardTitle className="text-slate-900 dark:text-white font-bold text-base">مراجعة وتسجيل صفقة شراء أو بيع</CardTitle>
+                  <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">
                     الرسوم والضرائب تُسجل مع القيد المتوازن. لا يتم تعديل أي رصيد خارج دفتر الأستاذ. الأرباح المحققة تُحسب وفق منهجية FIFO ومقيدة بدفتر الأستاذ المزدوج.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-5">
                   {accounts.isLoading || instruments.isLoading ? (
-                    <p className="py-12 text-center text-sm text-muted-foreground">جارٍ تجهيز نموذج الصفقة…</p>
+                    <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تجهيز نموذج الصفقة…</p>
                   ) : tradeAccounts.length && instruments.data?.length ? (
                     <form onSubmit={submitTrade} className="grid gap-4">
                       <div className="grid gap-3 sm:grid-cols-3">
                         <div className="grid gap-2">
-                          <Label>نوع الصفقة</Label>
+                          <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">نوع الصفقة</Label>
                           <Select value={side} onValueChange={(v) => setSide(v as "buy" | "sell")}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
+                            <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue /></SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                               <SelectItem value="buy">شراء</SelectItem>
                               <SelectItem value="sell">بيع</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div className="grid gap-2">
-                          <Label>حساب التسوية</Label>
+                          <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">حساب التسوية</Label>
                           <Select value={tradeAccountId} onValueChange={setTradeAccountId}>
-                            <SelectTrigger><SelectValue placeholder="اختر حسابًا" /></SelectTrigger>
-                            <SelectContent>
+                            <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue placeholder="اختر حسابًا" /></SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                               {tradeAccounts.map((acc) => (
                                 <SelectItem key={acc.id} value={String(acc.id)}>
                                   {acc.name} — {acc.currency}
@@ -472,10 +576,10 @@ export default function InvestmentsPageRedesign() {
                           </Select>
                         </div>
                         <div className="grid gap-2">
-                          <Label>الأداة الاستثمارية</Label>
+                          <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الأداة الاستثمارية</Label>
                           <Select value={tradeInstrumentId} onValueChange={setTradeInstrumentId}>
-                            <SelectTrigger><SelectValue placeholder="اختر أداة" /></SelectTrigger>
-                            <SelectContent>
+                            <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue placeholder="اختر أداة" /></SelectTrigger>
+                            <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                               {instruments.data.map((item) => (
                                 <SelectItem key={item.id} value={String(item.id)}>
                                   {item.name} — {item.currency}
@@ -488,57 +592,63 @@ export default function InvestmentsPageRedesign() {
 
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="grid gap-2">
-                          <Label htmlFor="trade-quantity">الكمية</Label>
-                          <Input id="trade-quantity" inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
+                          <Label htmlFor="trade-quantity" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الكمية</Label>
+                          <Input id="trade-quantity" inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="trade-price">سعر الوحدة</Label>
-                          <Input id="trade-price" inputMode="decimal" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} required />
+                          <Label htmlFor="trade-price" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">سعر الوحدة</Label>
+                          <Input id="trade-price" inputMode="decimal" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="trade-fee">الرسوم (اختياري)</Label>
-                          <Input id="trade-fee" inputMode="decimal" value={feeAmount} onChange={(e) => setFeeAmount(e.target.value)} placeholder="0" />
+                          <Label htmlFor="trade-fee" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الرسوم (اختياري)</Label>
+                          <Input id="trade-fee" inputMode="decimal" value={feeAmount} onChange={(e) => setFeeAmount(e.target.value)} placeholder="0" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="trade-tax">الضرائب (اختياري)</Label>
-                          <Input id="trade-tax" inputMode="decimal" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} placeholder="0" />
+                          <Label htmlFor="trade-tax" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الضرائب (اختياري)</Label>
+                          <Input id="trade-tax" inputMode="decimal" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} placeholder="0" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
                         </div>
                       </div>
 
                       <div className="grid gap-2">
-                        <Label htmlFor="trade-memo">مذكرة العملية</Label>
-                        <Textarea id="trade-memo" value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={2000} placeholder="اختياري" />
+                        <Label htmlFor="trade-memo" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">مذكرة العملية</Label>
+                        <Textarea id="trade-memo" value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={2000} placeholder="اختياري" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800" />
                       </div>
 
-                      <Button type="submit" disabled={trade.isPending || !canAdvise}>
+                      <Button
+                        type="submit"
+                        disabled={trade.isPending || !canAdvise}
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent mt-2"
+                      >
                         {trade.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                         {canAdvise ? "تسجيل ونشر الصفقة" : "تتطلب صلاحية مستشار"}
                       </Button>
                     </form>
                   ) : (
-                    <div className="fintech-empty-state">
-                      <Landmark className="fintech-empty-state-icon" />
-                      <h3>جهّز الحساب والأداة أولًا</h3>
-                      <p>يلزم حساب تسوية نشط وأداة استثمارية قبل تسجيل صفقة فعلية.</p>
+                    <div className="p-8 text-center">
+                      <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
+                        <Landmark className="size-5" />
+                      </div>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">جهّز الحساب والأداة أولًا</h3>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs">يلزم حساب تسوية نشط وأداة استثمارية قبل تسجيل صفقة فعلية.</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Manual Quote Card */}
-              <Card className="fintech-surface-card">
-                <CardHeader>
-                  <CardTitle>سعر سوق يدوي موثق</CardTitle>
-                  <CardDescription>تسجيل سعر للأداة مع طابع زمني دقيق دون الحاجة لمصدر خارجي.</CardDescription>
+              <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
+                  <CardTitle className="text-slate-900 dark:text-white font-bold text-base">سعر سوق يدوي موثق</CardTitle>
+                  <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">تسجيل سعر للأداة مع طابع زمني دقيق دون الحاجة لمصدر خارجي.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-5">
                   {instruments.data?.length ? (
                     <form className="grid gap-4" onSubmit={submitQuote}>
                       <div className="grid gap-2">
-                        <Label>الأداة</Label>
+                        <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الأداة</Label>
                         <Select value={quoteInstrumentId} onValueChange={setQuoteInstrumentId}>
-                          <SelectTrigger><SelectValue placeholder="اختر أداة" /></SelectTrigger>
-                          <SelectContent>
+                          <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue placeholder="اختر أداة" /></SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                             {instruments.data.map((item) => (
                               <SelectItem key={item.id} value={String(item.id)}>
                                 {item.name} — {item.currency}
@@ -548,16 +658,21 @@ export default function InvestmentsPageRedesign() {
                         </Select>
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="manual-quote">سعر الوحدة</Label>
-                        <Input id="manual-quote" inputMode="decimal" value={quotePrice} onChange={(e) => setQuotePrice(e.target.value)} required />
+                        <Label htmlFor="manual-quote" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">سعر الوحدة</Label>
+                        <Input id="manual-quote" inputMode="decimal" value={quotePrice} onChange={(e) => setQuotePrice(e.target.value)} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
                       </div>
-                      <Button type="submit" variant="outline" disabled={recordQuote.isPending || !canAdvise}>
+                      <Button
+                        type="submit"
+                        variant="outline"
+                        disabled={recordQuote.isPending || !canAdvise}
+                        className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all mt-2"
+                      >
                         {recordQuote.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                         {canAdvise ? "حفظ السعر اليدوي" : "تتطلب صلاحية مستشار"}
                       </Button>
                     </form>
                   ) : (
-                    <p className="flex gap-2 rounded-xl bg-muted/50 p-4 text-sm text-muted-foreground">
+                    <p className="flex gap-2 rounded-xl bg-muted/50 p-4 text-sm text-slate-500 dark:text-slate-400">
                       <CircleAlert className="size-4 shrink-0" />
                       أضف أداة استثمارية أولًا قبل تسجيل سعر.
                     </p>
@@ -569,48 +684,57 @@ export default function InvestmentsPageRedesign() {
 
           {/* TAB 4: Performance Summary */}
           <TabsContent value="performance">
-            <Card className="fintech-surface-card">
-              <CardHeader>
+            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart3 className="size-5 text-primary" />
+                    <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+                      <BarChart3 className="size-5 text-sky-600 dark:text-sky-400" />
                       ملخص أداء المحفظة الاستثمارية
                     </CardTitle>
-                    <CardDescription>مؤشرات الأداء الموزونة بالوقت والتدفقات النقدية من واقع قيود الدفتر.</CardDescription>
+                    <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">مؤشرات الأداء الموزونة بالوقت والتدفقات النقدية من واقع قيود الدفتر.</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setLocation("/performance")}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLocation("/performance")}
+                    className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all"
+                  >
                     فتح شاشة الأداء التفصيلية
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="p-5 space-y-6">
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-xl border bg-slate-50 p-4">
-                    <p className="text-xs text-slate-500">الحيازات النشطة</p>
-                    <p className="mt-1 text-2xl font-bold">{holdings.length}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">موزعة على الأدوات المصنفة</p>
+                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] p-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">الحيازات النشطة</p>
+                    <p className="mt-1 text-2xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">{holdings.length}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">موزعة على الأدوات المصنفة</p>
                   </div>
-                  <div className="rounded-xl border bg-slate-50 p-4">
-                    <p className="text-xs text-slate-500">حيازات مقيمة بسعر موثق</p>
-                    <p className="mt-1 text-2xl font-bold text-emerald-700">{valuedHoldings.length}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">تظهر قيمتها السوقية بدقة</p>
+                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] p-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">حيازات مقيمة بسعر موثق</p>
+                    <p className="mt-1 text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">{valuedHoldings.length}</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">تظهر قيمتها السوقية بدقة</p>
                   </div>
-                  <div className="rounded-xl border bg-slate-50 p-4">
-                    <p className="text-xs text-slate-500">حزم FIFO النشطة</p>
-                    <p className="mt-1 text-2xl font-bold font-mono">
+                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] p-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">حزم FIFO النشطة</p>
+                    <p className="mt-1 text-2xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">
                       {lots.data?.filter((l) => l.status === "open").length ?? 0}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">حزم شراء مفتوحة تتبع أقدمية التكلفة</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">حزم شراء مفتوحة تتبع أقدمية التكلفة</p>
                   </div>
                 </div>
 
-                <div className="rounded-xl border p-4 bg-muted/20 flex items-center justify-between">
+                <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420]/50 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold">تحليل عزو العوائد المتقدم (Brinson Allocation & Selection)</p>
-                    <p className="text-xs text-muted-foreground">للاطلاع على منحنى العائد المرجح زمنيًا (TWR) وتحليل المخاطر المتقدم.</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">تحليل عزو العوائد المتقدم (Brinson Allocation & Selection)</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">للاطلاع على منحنى العائد المرجح زمنيًا (TWR) وتحليل المخاطر المتقدم.</p>
                   </div>
-                  <Button size="sm" onClick={() => setLocation("/performance")}>
+                  <Button
+                    size="sm"
+                    onClick={() => setLocation("/performance")}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent shrink-0"
+                  >
                     الانتقال للأداء
                   </Button>
                 </div>
@@ -620,54 +744,54 @@ export default function InvestmentsPageRedesign() {
 
           {/* TAB 5: Realized P&L */}
           <TabsContent value="realized">
-            <Card className="fintech-surface-card">
-              <CardHeader>
+            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <GitCompareArrows className="size-5 text-primary" />
+                    <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+                      <GitCompareArrows className="size-5 text-sky-600 dark:text-sky-400" />
                       الأرباح والخسائر المحققة (FIFO Realized P&L)
                     </CardTitle>
-                    <CardDescription>النتائج المحققة الناتجة عن صفقات البيع ومطابقتها بحزم الشراء وفق معيار FIFO.</CardDescription>
+                    <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">النتائج المحققة الناتجة عن صفقات البيع ومطابقتها بحزم الشراء وفق معيار FIFO.</CardDescription>
                   </div>
-                  <Badge variant="outline" className="font-mono">
+                  <Badge variant="outline" className="font-mono text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700">
                     {realizedList.data?.length ?? 0} مطابقة مسجلة
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {realizedList.isLoading ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">جارٍ تحميل الأرباح المحققة…</p>
+                  <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الأرباح المحققة…</p>
                 ) : realizedList.data?.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[700px] text-right text-sm">
-                      <thead className="bg-slate-50 text-xs text-slate-600">
-                        <tr>
-                          <th className="p-3">الأداة</th>
-                          <th className="p-3">الكمية المباعة</th>
-                          <th className="p-3">سعر البيع</th>
-                          <th className="p-3">أساس التكلفة (FIFO)</th>
-                          <th className="p-3">الربح/الخسارة المحققة</th>
-                          <th className="p-3">تاريخ البيع</th>
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800">
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الأداة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الكمية المباعة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">سعر البيع</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">أساس التكلفة (FIFO)</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الربح/الخسارة المحققة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">تاريخ البيع</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                         {realizedList.data.map((row) => {
                           const unitPrice = Number(row.quantity) > 0 ? (Number(row.grossProceeds) / Number(row.quantity)).toFixed(2) : "0.00";
                           return (
-                            <tr key={row.id}>
-                              <td className="p-3 font-semibold">{instrumentMap.get(row.instrumentId) || `#${row.instrumentId}`}</td>
-                              <td className="p-3 font-mono">{row.quantity}</td>
-                              <td className="p-3">
+                            <tr key={row.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                              <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{instrumentMap.get(row.instrumentId) || `#${row.instrumentId}`}</td>
+                              <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{row.quantity}</td>
+                              <td className="py-3 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
                                 <SensitiveValue>{formatMoney(unitPrice, row.currency, 2)}</SensitiveValue>
                               </td>
-                              <td className="p-3">
+                              <td className="py-3 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
                                 <SensitiveValue>{formatMoney(row.costBasis, row.currency, 2)}</SensitiveValue>
                               </td>
-                              <td className={`p-3 font-semibold ${Number(row.realizedPnl) >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                              <td className={`py-3 px-4 font-mono font-bold tabular-nums ${Number(row.realizedPnl) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                                 <SensitiveValue>{formatMoney(row.realizedPnl, row.currency, 2)}</SensitiveValue>
                               </td>
-                              <td className="p-3 text-xs text-muted-foreground">
+                              <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
                                 {new Date(row.matchedAt).toLocaleDateString("ar-EG")}
                               </td>
                             </tr>
@@ -677,10 +801,12 @@ export default function InvestmentsPageRedesign() {
                     </table>
                   </div>
                 ) : (
-                  <div className="fintech-empty-state">
-                    <GitCompareArrows className="fintech-empty-state-icon" />
-                    <h3>لا توجد أرباح محققة بعد</h3>
-                    <p>تنشأ الأرباح أو الخسائر المحققة عند تنفيذ صفقات بيع على حيازات مشتراة سابقًا ومطابقتها بحزم FIFO.</p>
+                  <div className="p-8 text-center">
+                    <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
+                      <GitCompareArrows className="size-5" />
+                    </div>
+                    <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">لا توجد أرباح محققة بعد</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs">تنشأ الأرباح أو الخسائر المحققة عند تنفيذ صفقات بيع على حيازات مشتراة سابقًا ومطابقتها بحزم FIFO.</p>
                   </div>
                 )}
               </CardContent>
@@ -689,56 +815,60 @@ export default function InvestmentsPageRedesign() {
 
           {/* TAB 6: FIFO Lots */}
           <TabsContent value="lots">
-            <Card className="fintech-surface-card">
-              <CardHeader>
+            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Layers className="size-5 text-primary" />
+                    <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+                      <Layers className="size-5 text-sky-600 dark:text-sky-400" />
                       سجل حزم الاستثمار (FIFO Lots)
                     </CardTitle>
-                    <CardDescription>كل صفقة شراء تنشئ حزمة منفصلة تسجل الكمية الأصلية والمتبقية وتكلفة الوحدة.</CardDescription>
+                    <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">كل صفقة شراء تنشئ حزمة منفصلة تسجل الكمية الأصلية والمتبقية وتكلفة الوحدة.</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={rebuildReport.data?.status === "matched" ? "secondary" : "outline"} className="gap-1">
+                    <Badge variant={rebuildReport.data?.status === "matched" ? "secondary" : "outline"} className="gap-1 border-slate-200 dark:border-slate-700">
                       <ShieldCheck className="size-3.5" />
                       <span>{rebuildReport.data?.status === "matched" ? "تطابق كامل في إعادة البناء" : "جاهز للتدقيق"}</span>
                     </Badge>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 {lots.isLoading ? (
-                  <p className="py-12 text-center text-sm text-muted-foreground">جارٍ تحميل الحزم…</p>
+                  <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الحزم…</p>
                 ) : lots.data?.length ? (
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[700px] text-right text-sm">
-                      <thead className="bg-slate-50 text-xs text-slate-600">
-                        <tr>
-                          <th className="p-3">الأداة</th>
-                          <th className="p-3">الكمية الأصلية</th>
-                          <th className="p-3">الكمية المتبقية</th>
-                          <th className="p-3">تكلفة الوحدة</th>
-                          <th className="p-3">تاريخ الشراء</th>
-                          <th className="p-3">الحالة</th>
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800">
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الأداة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الكمية الأصلية</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الكمية المتبقية</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">تكلفة الوحدة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">تاريخ الشراء</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الحالة</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                         {lots.data.map((lot) => (
-                          <tr key={lot.id}>
-                            <td className="p-3 font-semibold">{instrumentMap.get(lot.instrumentId) || `#${lot.instrumentId}`}</td>
-                            <td className="p-3 font-mono">{lot.originalQuantity}</td>
-                            <td className="p-3 font-mono font-bold">{lot.remainingQuantity}</td>
-                            <td className="p-3">
+                          <tr key={lot.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                            <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{instrumentMap.get(lot.instrumentId) || `#${lot.instrumentId}`}</td>
+                            <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{lot.originalQuantity}</td>
+                            <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{lot.remainingQuantity}</td>
+                            <td className="py-3 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
                               <SensitiveValue>{formatMoney(lot.unitCost, lot.costCurrency, 2)}</SensitiveValue>
                             </td>
-                            <td className="p-3 text-xs text-muted-foreground">
+                            <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
                               {new Date(lot.acquiredAt).toLocaleDateString("ar-EG")}
                             </td>
-                            <td className="p-3">
-                              <Badge variant={lot.status === "open" ? "secondary" : "outline"}>
+                            <td className="py-3 px-4">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
+                                lot.status === "open"
+                                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200/60 dark:border-slate-700/60"
+                              }`}>
                                 {lot.status === "open" ? "مفتوحة" : "مغلقة"}
-                              </Badge>
+                              </span>
                             </td>
                           </tr>
                         ))}
@@ -746,10 +876,12 @@ export default function InvestmentsPageRedesign() {
                     </table>
                   </div>
                 ) : (
-                  <div className="fintech-empty-state">
-                    <Layers className="fintech-empty-state-icon" />
-                    <h3>لا توجد حزم FIFO بعد</h3>
-                    <p>تنشأ الحزم تلقائيًا عند تسجيل صفقات شراء أدوات استثمارية في الدفتر.</p>
+                  <div className="p-8 text-center">
+                    <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
+                      <Layers className="size-5" />
+                    </div>
+                    <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">لا توجد حزم FIFO بعد</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs">تنشأ الحزم تلقائيًا عند تسجيل صفقات شراء أدوات استثمارية في الدفتر.</p>
                   </div>
                 )}
               </CardContent>
