@@ -1,10 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import PageHeader from "@/components/PageHeader";
 import SensitiveValue from "@/components/SensitiveValue";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, CircleAlert, LockKeyhole, Play, ShieldCheck } from "lucide-react";
+import { CheckCheck, CheckCircle2, CircleAlert, LockKeyhole, Play, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -16,6 +13,27 @@ const statusName: Record<string, string> = { pending: "بانتظار القرا
 const errorText = (error: unknown) => error instanceof Error ? error.message : "تعذر إكمال العملية الآن.";
 const money = (value: string | null | undefined, currency: string | null | undefined) => value && currency ? <SensitiveValue>{formatMoney(value, currency, 0)}</SensitiveValue> : "—";
 const dateTime = (value: number | null | undefined) => value ? new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    pending:  "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+    approved: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+    rejected: "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
+    expired:  "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700",
+    executed: "bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800",
+  };
+  const cls = map[status] ?? "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700";
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold ${cls}`}>{statusName[status] || status}</span>;
+}
+
+function DecisionStatusBadge({ decision }: { decision: string }) {
+  const isApproved = decision === "approved";
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-bold ${isApproved ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800" : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"}`}>
+      {isApproved ? "اعتماد" : "رفض"}
+    </span>
+  );
+}
 
 export default function ApprovalsPage() {
   const utils = trpc.useUtils();
@@ -39,20 +57,241 @@ export default function ApprovalsPage() {
     if (request.actionType === "period_adjustment") closePeriod.mutate({ requestId: request.id });
   };
   const isExecuting = executeCash.isPending || executeTransfer.isPending || executeTrade.isPending || executeBudget.isPending || closePeriod.isPending;
-  return <DashboardLayout><main className="mx-auto max-w-7xl space-y-6" dir="rtl">
-    <PageHeader
-      title="الموافقات والقرارات"
-      description="يعرض المسار طلبًا مجمدًا ثم قرارًا مستقلًا ثم تنفيذًا صريحًا. لا يستطيع مقدم الطلب اعتماد طلبه، ولا يترتب على الاعتماد وحده نشر قيد جديد."
-      breadcrumbs={[
-        { label: "الرئيسية", href: "/" },
-        { label: "الحوكمة والتحليل", href: "/approvals" },
-        { label: "الموافقات والقرارات" },
-      ]}
-      badge={{ text: "حوكمة مزدوجة", variant: "institutional" }}
-      icon={LockKeyhole}
-    />
-    <section className="grid gap-6 xl:grid-cols-[.72fr_1.28fr]"><Card className="fintech-surface-card"><CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="size-5 text-primary" />الطلبات</CardTitle><CardDescription>اختر طلبًا لعرض تفاصيله وإجراء القرار المسموح به.</CardDescription></CardHeader><CardContent>{requests.isLoading ? <p className="py-10 text-center text-sm text-muted-foreground">جارٍ تحميل الطلبات…</p> : requests.error ? <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{errorText(requests.error)}</p> : requests.data?.length ? <div className="space-y-2">{requests.data.map(request => <button className={`approval-request-row ${selected?.id === request.id ? "is-active" : ""}`} type="button" key={request.id} onClick={() => setSelectedId(request.id)}><span><strong>{actionName[request.actionType as ApprovalActionType] || request.actionType}</strong><small>طلبه {request.requesterName || "عضو العائلة"} · {dateTime(request.createdAt)}</small></span><Badge variant={request.status === "pending" ? "outline" : "secondary"}>{statusName[request.status] || request.status}</Badge></button>)}</div> : <div className="fintech-empty-state"><ShieldCheck className="fintech-empty-state-icon" /><h3>لا توجد طلبات اعتماد</h3><p>ستظهر هنا فقط العمليات التي تجاوزت سياسة اعتماد فعالة وتم تجميد بياناتها للمراجعة.</p></div>}</CardContent></Card>
-      <Card className="fintech-surface-card"><CardHeader><CardTitle className="flex items-center gap-2"><CheckCircle2 className="size-5 text-primary" />تفاصيل الطلب</CardTitle><CardDescription>راجع نوع العملية والمبلغ والمقدم وانتهاء الصلاحية قبل أي قرار أو تنفيذ.</CardDescription></CardHeader><CardContent>{selected ? <div className="space-y-5"><div className="grid gap-3 sm:grid-cols-2"><div className="rounded-xl border bg-muted/35 p-4"><p className="text-xs text-muted-foreground">نوع العملية</p><p className="mt-1 font-bold">{actionName[selected.actionType as ApprovalActionType] || selected.actionType}</p></div><div className="rounded-xl border bg-muted/35 p-4"><p className="text-xs text-muted-foreground">القيمة المجمدة</p><p className="mt-1 text-lg font-bold"><SensitiveValue>{money(selected.amount, selected.currency)}</SensitiveValue></p></div><div className="rounded-xl border bg-muted/35 p-4"><p className="text-xs text-muted-foreground">مقدم الطلب</p><p className="mt-1 font-semibold">{selected.requesterName || "عضو العائلة"}</p></div><div className="rounded-xl border bg-muted/35 p-4"><p className="text-xs text-muted-foreground">انتهاء الطلب</p><p className="mt-1 font-semibold">{dateTime(selected.expiresAt)}</p></div></div><div className="rounded-xl border border-border p-4 text-sm"><p className="font-semibold">حالة الطلب: {statusName[selected.status] || selected.status}</p>{selected.executedEventId ? <p className="mt-2 text-muted-foreground">تم تنفيذ العملية في حدث دفتر رقم #{selected.executedEventId}.</p> : <p className="mt-2 text-muted-foreground">يبقى الطلب منفصلًا عن الدفتر حتى يُنفّذ صراحة بعد الاعتماد.</p>}</div>{selected.status === "pending" && selected.requestedByUserId !== currentUser.data?.id && <div className="flex flex-wrap gap-2"><Button disabled={decide.isPending} onClick={() => decide.mutate({ requestId: selected.id, decision: "approved", note: null, reconfirmed: true })}>اعتماد الطلب</Button><Button variant="outline" disabled={decide.isPending} onClick={() => decide.mutate({ requestId: selected.id, decision: "rejected", note: null, reconfirmed: true })}>رفض الطلب</Button></div>}{selected.status === "pending" && selected.requestedByUserId === currentUser.data?.id && <p className="flex items-center gap-2 rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground"><CircleAlert className="size-4" />لا يمكنك اعتماد أو رفض الطلب الذي أنشأته.</p>}{selected.status === "approved" && <Button disabled={isExecuting} onClick={() => execute({ id: selected.id, actionType: selected.actionType as ApprovalActionType })}><Play className="ml-1 size-4" />تنفيذ البيانات المجمدة</Button>}</div> : <div className="fintech-empty-state"><LockKeyhole className="fintech-empty-state-icon" /><h3>اختر طلبًا</h3><p>حدد طلب اعتماد من القائمة لعرض التفاصيل والإجراءات المتاحة وفق صلاحيتك.</p></div>}</CardContent></Card></section>
-    <Card className="fintech-surface-card"><CardHeader><CardTitle>سجل القرارات</CardTitle><CardDescription>يحفظ القرار والمعتمد ووقت الإقرار ومصير التنفيذ ضمن مساحة العائلة فقط.</CardDescription></CardHeader><CardContent>{history.isLoading ? <p className="py-6 text-center text-sm text-muted-foreground">جارٍ تحميل السجل…</p> : history.data?.length ? <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-right text-sm"><thead className="bg-slate-50 text-xs text-slate-600"><tr><th className="p-3">القرار</th><th className="p-3">الطلب</th><th className="p-3">المعتمد</th><th className="p-3">وقت الإقرار</th><th className="p-3">الحالة</th></tr></thead><tbody className="divide-y">{history.data.map(entry => <tr key={entry.id}><td className="p-3 font-semibold">{entry.decision === "approved" ? "اعتماد" : "رفض"}</td><td className="p-3">#{entry.requestId}</td><td className="p-3">{entry.approverName || "عضو معتمد"}</td><td className="p-3 text-muted-foreground">{dateTime(entry.reconfirmedAt || entry.createdAt)}</td><td className="p-3"><Badge variant="outline">{statusName[entry.requestStatus] || entry.requestStatus}</Badge></td></tr>)}</tbody></table></div> : <p className="py-6 text-center text-sm text-muted-foreground">لا يوجد سجل قرارات بعد.</p>}</CardContent></Card>
-  </main></DashboardLayout>;
+
+  return (
+    <DashboardLayout>
+      <main className="mx-auto max-w-7xl space-y-6" dir="rtl">
+        <PageHeader
+          title="الموافقات وقرارات الاعتماد"
+          description="إدارة ومراجعة العمليات المجمدة المشروطة باعتماد مزدوج قبل النفاذ المالي."
+          breadcrumbs={[
+            { label: "الرئيسية", href: "/" },
+            { label: "الحوكمة والإدارة", href: "/approvals" },
+            { label: "الموافقات وقرارات الاعتماد" },
+          ]}
+          badge={
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
+              <CheckCheck className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>حوكمة الاعتماد المزدوج (Four-Eyes Principle)</span>
+            </div>
+          }
+          icon={LockKeyhole}
+        />
+
+        {/* Main grid: Requests + Details */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+
+          {/* ── Requests Column ── */}
+          <div className="lg:col-span-5">
+            <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs h-full">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-slate-900 dark:text-white font-bold text-sm flex items-center gap-2">
+                  <LockKeyhole className="size-4 text-indigo-600 dark:text-indigo-400" />
+                  طلبات الاعتماد
+                </p>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">اختر طلبًا لعرض تفاصيله وإجراء القرار المسموح به.</p>
+
+              {requests.isLoading ? (
+                <p className="py-10 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الطلبات…</p>
+              ) : requests.error ? (
+                <div className="rounded-xl border border-rose-200/80 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 p-4 text-sm text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                  <CircleAlert className="size-4 shrink-0" />{errorText(requests.error)}
+                </div>
+              ) : requests.data?.length ? (
+                <div className="space-y-2">
+                  {requests.data.map(request => (
+                    <button
+                      key={request.id}
+                      type="button"
+                      onClick={() => setSelectedId(request.id)}
+                      className={`w-full text-right p-4 rounded-xl border transition-all cursor-pointer ${
+                        selected?.id === request.id
+                          ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/60 dark:bg-indigo-950/30"
+                          : "border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420] hover:border-slate-300 dark:hover:border-slate-700"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 dark:text-white text-xs truncate">
+                            {actionName[request.actionType as ApprovalActionType] || request.actionType}
+                          </p>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 leading-5">
+                            طلبه {request.requesterName || "عضو العائلة"} · {dateTime(request.createdAt)}
+                          </p>
+                          {request.amount && request.currency && (
+                            <p className="font-mono font-bold text-slate-900 dark:text-white tabular-nums text-sm mt-1">
+                              <SensitiveValue>{formatMoney(request.amount, request.currency, 0)}</SensitiveValue>
+                            </p>
+                          )}
+                        </div>
+                        <StatusBadge status={request.status} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="size-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center mx-auto mb-3">
+                    <ShieldCheck className="size-6" />
+                  </div>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold text-sm mb-1">لا توجد طلبات اعتماد</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm mx-auto leading-relaxed">ستظهر هنا فقط العمليات التي تجاوزت سياسة اعتماد فعالة وتم تجميد بياناتها للمراجعة.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Details Column ── */}
+          <div className="lg:col-span-7">
+            <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs h-full">
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-slate-900 dark:text-white font-bold text-sm flex items-center gap-2">
+                  <CheckCircle2 className="size-4 text-indigo-600 dark:text-indigo-400" />
+                  تفاصيل الطلب
+                </p>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">راجع نوع العملية والمبلغ والمقدم وانتهاء الصلاحية قبل أي قرار أو تنفيذ.</p>
+
+              {selected ? (
+                <div className="space-y-5">
+                  {/* Metric grid */}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0E1420] p-4">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">نوع العملية</p>
+                      <p className="mt-1 font-bold text-slate-900 dark:text-white text-sm">{actionName[selected.actionType as ApprovalActionType] || selected.actionType}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0E1420] p-4">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">القيمة المجمدة</p>
+                      <p className="mt-1 font-mono font-bold text-slate-900 dark:text-white tabular-nums text-lg">
+                        <SensitiveValue>{money(selected.amount, selected.currency)}</SensitiveValue>
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0E1420] p-4">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">مقدم الطلب</p>
+                      <p className="mt-1 font-semibold text-slate-900 dark:text-white text-sm">{selected.requesterName || "عضو العائلة"}</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0E1420] p-4">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">انتهاء الطلب</p>
+                      <p className="mt-1 font-mono font-semibold text-slate-900 dark:text-white text-sm tabular-nums">{dateTime(selected.expiresAt)}</p>
+                    </div>
+                  </div>
+
+                  {/* Status info */}
+                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-[#0E1420] p-4 text-sm flex items-start gap-3">
+                    <div className="flex-1">
+                      <p className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        حالة الطلب: <StatusBadge status={selected.status} />
+                      </p>
+                      <p className="mt-2 text-slate-500 dark:text-slate-400 text-xs leading-5">
+                        {selected.executedEventId
+                          ? `تم تنفيذ العملية في حدث دفتر رقم #${selected.executedEventId}.`
+                          : "يبقى الطلب منفصلًا عن الدفتر حتى يُنفّذ صراحة بعد الاعتماد."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Approve / Reject actions */}
+                  {selected.status === "pending" && selected.requestedByUserId !== currentUser.data?.id && (
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        disabled={decide.isPending}
+                        onClick={() => decide.mutate({ requestId: selected.id, decision: "approved", note: null, reconfirmed: true })}
+                        className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold text-xs py-2.5 px-5 rounded-xl shadow-xs transition-all border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        اعتماد القرار
+                      </button>
+                      <button
+                        type="button"
+                        disabled={decide.isPending}
+                        onClick={() => decide.mutate({ requestId: selected.id, decision: "rejected", note: null, reconfirmed: true })}
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 font-bold text-xs py-2.5 px-5 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        رفض الطلب
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Self-approval guard */}
+                  {selected.status === "pending" && selected.requestedByUserId === currentUser.data?.id && (
+                    <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 p-3 text-sm text-amber-700 dark:text-amber-300">
+                      <CircleAlert className="size-4 shrink-0" />
+                      لا يمكنك اعتماد أو رفض الطلب الذي أنشأته — مبدأ الفصل بين الصلاحيات.
+                    </div>
+                  )}
+
+                  {/* Execute approved */}
+                  {selected.status === "approved" && (
+                    <button
+                      type="button"
+                      disabled={isExecuting}
+                      onClick={() => execute({ id: selected.id, actionType: selected.actionType as ApprovalActionType })}
+                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow-xs transition-all border border-indigo-700 dark:border-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Play className="size-3.5" />
+                      تنفيذ البيانات المجمدة
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="size-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center mx-auto mb-3">
+                    <LockKeyhole className="size-6" />
+                  </div>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold text-sm mb-1">اختر طلبًا</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm mx-auto leading-relaxed">حدد طلب اعتماد من القائمة لعرض التفاصيل والإجراءات المتاحة وفق صلاحيتك.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Decision Log ── */}
+        <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs">
+          <div className="mb-1">
+            <p className="text-slate-900 dark:text-white font-bold text-sm">سجل القرارات</p>
+          </div>
+          <p className="text-slate-500 dark:text-slate-400 text-xs mb-5">يحفظ القرار والمعتمد ووقت الإقرار ومصير التنفيذ ضمن مساحة العائلة فقط.</p>
+
+          {history.isLoading ? (
+            <p className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل السجل…</p>
+          ) : history.data?.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[650px] text-right text-sm">
+                <thead>
+                  <tr className="bg-slate-50/90 dark:bg-[#0E1420] border-b border-slate-200/90 dark:border-slate-800/80">
+                    <th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">القرار</th>
+                    <th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">رقم الطلب</th>
+                    <th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">المعتمد</th>
+                    <th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">وقت الإقرار</th>
+                    <th className="py-3.5 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">حالة الطلب</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.data.map((entry, idx) => (
+                    <tr key={entry.id} className={`border-b border-slate-200/70 dark:border-slate-800/70 hover:bg-slate-50/80 dark:hover:bg-[#0E1420] transition-colors align-middle ${idx === history.data.length - 1 ? "border-b-0" : ""}`}>
+                      <td className="py-3.5 px-4 text-xs"><DecisionStatusBadge decision={entry.decision} /></td>
+                      <td className="py-3.5 px-4 text-xs"><span className="font-mono font-semibold text-slate-700 dark:text-slate-300">#{entry.requestId}</span></td>
+                      <td className="py-3.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-200">{entry.approverName || "عضو معتمد"}</td>
+                      <td className="py-3.5 px-4 text-xs"><span className="font-mono tabular-nums text-slate-600 dark:text-slate-300">{dateTime(entry.reconfirmedAt || entry.createdAt)}</span></td>
+                      <td className="py-3.5 px-4 text-xs"><StatusBadge status={entry.requestStatus} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="size-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center mx-auto mb-3">
+                <CheckCheck className="size-6" />
+              </div>
+              <p className="text-slate-800 dark:text-slate-200 font-bold text-sm mb-1">لا يوجد سجل قرارات بعد</p>
+              <p className="text-slate-500 dark:text-slate-400 text-xs max-w-sm mx-auto leading-relaxed">ستُدوَّن قرارات الاعتماد والرفض هنا فور إصدارها من قِبل أعضاء النطاق المخوّلين.</p>
+            </div>
+          )}
+        </div>
+      </main>
+    </DashboardLayout>
+  );
 }
