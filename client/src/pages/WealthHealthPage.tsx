@@ -2,10 +2,7 @@ import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import PageHeader from "@/components/PageHeader";
 import FinancialTooltip from "@/components/FinancialTooltip";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
@@ -21,10 +18,8 @@ import {
   Coins,
   RefreshCw,
   Sparkles,
-  Info,
   Calculator,
   Save,
-  Clock3,
 } from "lucide-react";
 
 export default function WealthHealthPage() {
@@ -32,7 +27,7 @@ export default function WealthHealthPage() {
 
   // FIRE Simulator Interactive State
   const [spendingMode, setSpendingMode] = useState<"actual_ttm" | "essential_ttm" | "custom">("actual_ttm");
-  const [customSpending, setCustomSpending] = useState<string>("");
+  const [customSpending, setCustomSpending] = useState<string>("120000");
   const [customNominalReturn, setCustomNominalReturn] = useState<string>("7.0");
   const [customInflation, setCustomInflation] = useState<string>("3.0");
   const [customSwr, setCustomSwr] = useState<string>("4.0");
@@ -61,6 +56,7 @@ export default function WealthHealthPage() {
   const fireQuery = trpc.family.wealthHealth.getFireStatus.useQuery(fireQueryInput, {
     staleTime: 15_000,
     retry: 1,
+    placeholderData: prev => prev,
   });
 
   const saveAssumptionsMutation = trpc.family.wealthHealth.saveAssumptions.useMutation({
@@ -105,25 +101,33 @@ export default function WealthHealthPage() {
     return dims[0]?.key || null;
   }, [scoreData?.dimensions]);
 
-  // Scoring tints helper
+  // Executive scoring tints helper
   const getDimensionScoreStyles = (scoreNum: number) => {
     if (scoreNum >= 80) {
       return {
-        text: "text-emerald-600 dark:text-emerald-400 font-extrabold font-mono text-2xl tabular-nums",
-        fill: "bg-emerald-500 dark:bg-emerald-400",
+        text: "text-emerald-600 dark:text-emerald-400 font-extrabold font-mono text-3xl tabular-nums",
+        fill: "bg-emerald-500",
+        badge: "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 font-bold text-[10px] px-2 py-0.5 rounded-md",
+        tier: "ممتاز",
       };
     }
     if (scoreNum >= 50) {
       return {
-        text: "text-amber-600 dark:text-amber-400 font-extrabold font-mono text-2xl tabular-nums",
-        fill: "bg-amber-500 dark:bg-amber-400",
+        text: "text-amber-600 dark:text-amber-400 font-extrabold font-mono text-3xl tabular-nums",
+        fill: "bg-amber-500",
+        badge: "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800 font-bold text-[10px] px-2 py-0.5 rounded-md",
+        tier: "متوسط",
       };
     }
     return {
-      text: "text-rose-600 dark:text-rose-400 font-extrabold font-mono text-2xl tabular-nums",
-      fill: "bg-rose-500 dark:bg-rose-400",
+      text: "text-rose-600 dark:text-rose-400 font-extrabold font-mono text-3xl tabular-nums",
+      fill: "bg-rose-500",
+      badge: "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 font-bold text-[10px] px-2 py-0.5 rounded-md",
+      tier: "منخفض",
     };
   };
+
+  const isNegativeReal = fireData ? parseFloat(fireData.assumptions.realReturnPercent) < 0 : false;
 
   return (
     <DashboardLayout>
@@ -158,7 +162,7 @@ export default function WealthHealthPage() {
         />
 
         {/* ==================================================================== */}
-        {/* 2. OVERALL SCORE HERO GAUGE & CONFIDENCE */}
+        {/* 2. OVERALL SCORE HERO GAUGE & RELIABILITY BOX */}
         {/* ==================================================================== */}
         {scoreQuery.isLoading ? (
           <div className="grid gap-6 md:grid-cols-3">
@@ -188,7 +192,7 @@ export default function WealthHealthPage() {
                 </div>
 
                 <div className="flex items-baseline gap-2 justify-start my-2">
-                  <span className="text-slate-900 dark:text-white font-extrabold font-mono text-4xl lg:text-5xl tabular-nums">
+                  <span className="text-slate-900 dark:text-white font-extrabold font-mono text-5xl tabular-nums">
                     {scoreData.totalScore}
                   </span>
                   <span className="text-slate-400 dark:text-slate-500 font-semibold text-lg">/ 100</span>
@@ -202,12 +206,10 @@ export default function WealthHealthPage() {
               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 font-mono text-[11px]">
                 <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>تقييم حتمي استناداً إلى الدفتر المحاسبي</span>
-                <span>•</span>
-                <span>آخر تقييم: {new Date(scoreData.asOf).toLocaleDateString("ar-EG")}</span>
               </div>
             </div>
 
-            {/* Right: Data Reliability & Quality */}
+            {/* Right: Data Reliability & Quality (3 Distinct Institutional Stat Pills) */}
             <div className="w-full md:w-7/12 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between gap-3 mb-3">
@@ -235,29 +237,39 @@ export default function WealthHealthPage() {
                       ? "ثقة عالية"
                       : scoreData.confidence.level === "medium"
                       ? "ثقة متوسطة"
-                      : "ثقة منخفضة (بيانات أولية)"}
+                      : "ثقة منخفضة"}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 text-center my-3">
-                  <div className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420] rounded-xl p-3 text-center">
+                  <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200/70 dark:border-slate-800 rounded-xl p-3 text-center">
                     <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">تاريخ الدفتر</p>
                     <p className="text-base font-bold font-mono mt-0.5 text-slate-900 dark:text-white tabular-nums">
                       {scoreData.confidence.historyMonths} شهرًا
                     </p>
                   </div>
-                  <div className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420] rounded-xl p-3 text-center">
+                  <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200/70 dark:border-slate-800 rounded-xl p-3 text-center">
                     <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">اكتمال التصنيف</p>
                     <p className="text-base font-bold font-mono mt-0.5 text-slate-900 dark:text-white tabular-nums">
                       {scoreData.confidence.completenessPercent}%
                     </p>
                   </div>
-                  <div className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420] rounded-xl p-3 text-center">
+                  <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200/70 dark:border-slate-800 rounded-xl p-3 text-center">
                     <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">تقييمات حديثة</p>
                     <p className="text-base font-bold font-mono mt-0.5 text-slate-900 dark:text-white tabular-nums">
                       {scoreData.confidence.freshnessRatio}%
                     </p>
                   </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/60">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    موثوقية مثبتة بالدفتر المالي
+                  </span>
+                  <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-mono font-bold text-[11px] px-2.5 py-0.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+                    آخر تدقيق: {new Date(scoreData.asOf).toLocaleDateString("ar-EG")}
+                  </span>
                 </div>
 
                 {scoreData.confidence.warningsAr.length > 0 && (
@@ -322,14 +334,14 @@ export default function WealthHealthPage() {
 
                       <div className="flex items-baseline justify-between mt-3 mb-1">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">الدرجة المحققة:</span>
-                        <span className={styles.text}>
-                          {scoreData.dimensions.liquidity.score}{" "}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={styles.text}>{scoreData.dimensions.liquidity.score}</span>
                           <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">/ 100</span>
-                        </span>
+                        </div>
                       </div>
 
                       {/* Micro Progress Bar */}
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2 mb-4">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden my-3">
                         <div
                           className={`h-full ${styles.fill} rounded-full transition-all duration-500`}
                           style={{ width: `${Math.min(100, Math.max(0, num))}%` }}
@@ -399,14 +411,14 @@ export default function WealthHealthPage() {
 
                       <div className="flex items-baseline justify-between mt-3 mb-1">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">الدرجة المحققة:</span>
-                        <span className={styles.text}>
-                          {scoreData.dimensions.debtSustainability.score}{" "}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={styles.text}>{scoreData.dimensions.debtSustainability.score}</span>
                           <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">/ 100</span>
-                        </span>
+                        </div>
                       </div>
 
                       {/* Micro Progress Bar */}
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2 mb-4">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden my-3">
                         <div
                           className={`h-full ${styles.fill} rounded-full transition-all duration-500`}
                           style={{ width: `${Math.min(100, Math.max(0, num))}%` }}
@@ -476,14 +488,14 @@ export default function WealthHealthPage() {
 
                       <div className="flex items-baseline justify-between mt-3 mb-1">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">الدرجة المحققة:</span>
-                        <span className={styles.text}>
-                          {scoreData.dimensions.savingsVelocity.score}{" "}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={styles.text}>{scoreData.dimensions.savingsVelocity.score}</span>
                           <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">/ 100</span>
-                        </span>
+                        </div>
                       </div>
 
                       {/* Micro Progress Bar */}
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2 mb-4">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden my-3">
                         <div
                           className={`h-full ${styles.fill} rounded-full transition-all duration-500`}
                           style={{ width: `${Math.min(100, Math.max(0, num))}%` }}
@@ -553,14 +565,14 @@ export default function WealthHealthPage() {
 
                       <div className="flex items-baseline justify-between mt-3 mb-1">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">الدرجة المحققة:</span>
-                        <span className={styles.text}>
-                          {scoreData.dimensions.diversification.score}{" "}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={styles.text}>{scoreData.dimensions.diversification.score}</span>
                           <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">/ 100</span>
-                        </span>
+                        </div>
                       </div>
 
                       {/* Micro Progress Bar */}
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2 mb-4">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden my-3">
                         <div
                           className={`h-full ${styles.fill} rounded-full transition-all duration-500`}
                           style={{ width: `${Math.min(100, Math.max(0, num))}%` }}
@@ -630,14 +642,14 @@ export default function WealthHealthPage() {
 
                       <div className="flex items-baseline justify-between mt-3 mb-1">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">الدرجة المحققة:</span>
-                        <span className={styles.text}>
-                          {scoreData.dimensions.resilienceProtection.score}{" "}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={styles.text}>{scoreData.dimensions.resilienceProtection.score}</span>
                           <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">/ 100</span>
-                        </span>
+                        </div>
                       </div>
 
                       {/* Micro Progress Bar */}
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2 mb-4">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden my-3">
                         <div
                           className={`h-full ${styles.fill} rounded-full transition-all duration-500`}
                           style={{ width: `${Math.min(100, Math.max(0, num))}%` }}
@@ -711,14 +723,14 @@ export default function WealthHealthPage() {
 
                       <div className="flex items-baseline justify-between mt-3 mb-1">
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">الدرجة المحققة:</span>
-                        <span className={styles.text}>
-                          {scoreData.dimensions.fiProgress.score}{" "}
+                        <div className="flex items-baseline gap-1.5">
+                          <span className={styles.text}>{scoreData.dimensions.fiProgress.score}</span>
                           <span className="text-xs text-slate-400 dark:text-slate-500 font-normal">/ 100</span>
-                        </span>
+                        </div>
                       </div>
 
                       {/* Micro Progress Bar */}
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2 mb-4">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden my-3">
                         <div
                           className={`h-full ${styles.fill} rounded-full transition-all duration-500`}
                           style={{ width: `${Math.min(100, Math.max(0, num))}%` }}
@@ -783,42 +795,42 @@ export default function WealthHealthPage() {
             </div>
 
             <div className="space-y-6">
-              {/* Spending Mode Tabs */}
+              {/* Spending Mode Segmented Control */}
               <div className="space-y-2">
                 <Label className="text-xs font-bold text-slate-700 dark:text-slate-300">أساس الإنفاق السنوي المستهدف:</Label>
-                <div className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap max-w-2xl gap-1">
+                <div className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 inline-flex flex-wrap gap-1 mb-6">
                   <button
                     type="button"
                     onClick={() => setSpendingMode("actual_ttm")}
-                    className={`flex-1 min-w-[160px] py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`font-bold text-xs px-4 py-2 rounded-xl transition-all ${
                       spendingMode === "actual_ttm"
                         ? "bg-white dark:bg-[#1A2234] text-slate-900 dark:text-white shadow-xs border border-slate-200/60 dark:border-slate-700/60"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/40"
                     }`}
                   >
-                    الإنفاق الفعلي لآخر 12 شهرًا
+                    نمط الإنفاق الفعلي (المحقق)
                   </button>
                   <button
                     type="button"
                     onClick={() => setSpendingMode("essential_ttm")}
-                    className={`flex-1 min-w-[160px] py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`font-bold text-xs px-4 py-2 rounded-xl transition-all ${
                       spendingMode === "essential_ttm"
                         ? "bg-white dark:bg-[#1A2234] text-slate-900 dark:text-white shadow-xs border border-slate-200/60 dark:border-slate-700/60"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/40"
                     }`}
                   >
-                    الاستقلال المالي الأساسي (الميسر)
+                    الاستقلال المالي الأساسي
                   </button>
                   <button
                     type="button"
                     onClick={() => setSpendingMode("custom")}
-                    className={`flex-1 min-w-[160px] py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                    className={`font-bold text-xs px-4 py-2 rounded-xl transition-all ${
                       spendingMode === "custom"
                         ? "bg-white dark:bg-[#1A2234] text-slate-900 dark:text-white shadow-xs border border-slate-200/60 dark:border-slate-700/60"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/40"
                     }`}
                   >
-                    التقاعد الوفير / مخصص (Fat FIRE)
+                    الاستقلال المالي الشامل
                   </button>
                 </div>
               </div>
@@ -838,14 +850,14 @@ export default function WealthHealthPage() {
                     className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 rounded-xl font-medium text-xs py-2 px-3 font-mono focus:ring-1 focus:ring-slate-800"
                   />
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    سيتم حساب مستهدف رأس المال المطلوب (Corpus) بناءً على هذا الرقم ومعدل السحب الآمن لمطابقة نمط التقاعد الوفير (Fat FIRE) أو ميزانية تقاعد مستهدفة.
+                    سيتم حساب مستهدف رأس المال المطلوب بناءً على هذا الرقم ومعدل السحب السنوي الآمن لتحقيق نمط الاستقلال المالي الشامل أو ميزانية تقاعد مستهدفة.
                   </p>
                 </div>
               )}
 
-              {/* Assumptions Parameters Row with Dual Slider + Input */}
+              {/* Assumptions Parameters Row with LTR-isolated range tracks */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5">
+                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5 min-h-[115px] flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="param-return" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       العائد الاسمي السنوي (%):
@@ -861,18 +873,21 @@ export default function WealthHealthPage() {
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
                     />
                   </div>
-                  <Slider
-                    min={0}
-                    max={25}
-                    step={0.1}
-                    value={[parseFloat(customNominalReturn) || 0]}
-                    onValueChange={([val]) => setCustomNominalReturn(val.toFixed(1))}
-                    className="py-1"
-                  />
+                  <div dir="ltr" className="w-full">
+                    <input
+                      type="range"
+                      min="0"
+                      max="25"
+                      step="0.1"
+                      value={parseFloat(customNominalReturn) || 0}
+                      onChange={e => setCustomNominalReturn(parseFloat(e.target.value).toFixed(1))}
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-900 dark:accent-white"
+                    />
+                  </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 7.0% سنويًا</p>
                 </div>
 
-                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5">
+                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5 min-h-[115px] flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="param-inflation" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       التضخم السنوي المتوقع (%):
@@ -888,18 +903,21 @@ export default function WealthHealthPage() {
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
                     />
                   </div>
-                  <Slider
-                    min={0}
-                    max={20}
-                    step={0.1}
-                    value={[parseFloat(customInflation) || 0]}
-                    onValueChange={([val]) => setCustomInflation(val.toFixed(1))}
-                    className="py-1"
-                  />
+                  <div dir="ltr" className="w-full">
+                    <input
+                      type="range"
+                      min="0"
+                      max="20"
+                      step="0.1"
+                      value={parseFloat(customInflation) || 0}
+                      onChange={e => setCustomInflation(parseFloat(e.target.value).toFixed(1))}
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-900 dark:accent-white"
+                    />
+                  </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 3.0% سنويًا</p>
                 </div>
 
-                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5">
+                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5 min-h-[115px] flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="param-swr" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                       معدل السحب السنوي الآمن (SWR) (%):
@@ -915,30 +933,44 @@ export default function WealthHealthPage() {
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
                     />
                   </div>
-                  <Slider
-                    min={1}
-                    max={10}
-                    step={0.1}
-                    value={[parseFloat(customSwr) || 4]}
-                    onValueChange={([val]) => setCustomSwr(val.toFixed(1))}
-                    className="py-1"
-                  />
+                  <div dir="ltr" className="w-full">
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="0.1"
+                      value={parseFloat(customSwr) || 4}
+                      onChange={e => setCustomSwr(parseFloat(e.target.value).toFixed(1))}
+                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-900 dark:accent-white"
+                    />
+                  </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 4.0% (قاعدة الـ 25 ضعفًا)</p>
                 </div>
 
-                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5 flex flex-col justify-between text-center">
+                <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5 min-h-[115px] flex flex-col justify-between text-center">
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold">العائد الحقيقي (معادلة Fisher):</p>
-                  <p className="text-2xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">
-                    {fireData?.assumptions.realReturnPercent ?? "—"}%
-                  </p>
+                  <div>
+                    <p
+                      className={`text-2xl font-bold font-mono tabular-nums ${
+                        isNegativeReal ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-white"
+                      }`}
+                    >
+                      {fireData?.assumptions.realReturnPercent ?? "—"}%
+                    </p>
+                    {isNegativeReal && (
+                      <span className="bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 font-bold text-[10px] px-1.5 py-0.5 rounded-md inline-block mt-0.5">
+                        تآكل بالتضخم
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">r = (1+i)/(1+π) − 1</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Horizon Calculation Display */}
-          {fireQuery.isLoading ? (
+          {/* Horizon Calculation Display with Persistent Containment */}
+          {fireQuery.isLoading && !fireData ? (
             <Skeleton className="h-44 rounded-2xl" />
           ) : fireData ? (
             <div className="grid gap-6 lg:grid-cols-12">
@@ -964,38 +996,58 @@ export default function WealthHealthPage() {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-6">
-                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60">
+                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 min-h-[140px] flex flex-col justify-between">
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">الأفق بالسنوات</p>
-                      <p className="text-2xl font-bold font-mono text-slate-900 dark:text-white mt-1 tabular-nums">
-                        {fireData.primaryHorizon.horizonYears ? `${fireData.primaryHorizon.horizonYears} سنة` : "—"}
-                      </p>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono">
-                        {fireData.primaryHorizon.horizonMonths ? `(${fireData.primaryHorizon.horizonMonths} شهرًا)` : "غير محدد"}
-                      </p>
+                      <div className="my-auto">
+                        {fireData.primaryHorizon.horizonYears ? (
+                          <>
+                            <p className="text-2xl font-bold font-mono text-slate-900 dark:text-white tabular-nums">
+                              {fireData.primaryHorizon.horizonYears} سنة
+                            </p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 font-mono">
+                              {fireData.primaryHorizon.horizonMonths ? `(${fireData.primaryHorizon.horizonMonths} شهرًا)` : ""}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-xs font-bold text-amber-700 dark:text-amber-300 leading-snug px-1">
+                            غير محدد (يتطلب تنمية رأس المال)
+                          </p>
+                        )}
+                      </div>
+                      <div />
                     </div>
 
-                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60">
+                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 min-h-[140px] flex flex-col justify-between">
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">تاريخ الوصول المتوقع</p>
-                      <p className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white mt-1 tabular-nums">
-                        {fireData.primaryHorizon.projectedDate ?? "—"}
-                      </p>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">وفق الافتراضات المدخلة</p>
+                      <div className="my-auto">
+                        <p className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white tabular-nums">
+                          {fireData.primaryHorizon.projectedDate ?? "غير محدد"}
+                        </p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">وفق الافتراضات المدخلة</p>
+                      </div>
+                      <div />
                     </div>
 
-                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60">
+                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 min-h-[140px] flex flex-col justify-between">
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">رأس المال المستهدف (K_FI)</p>
-                      <p className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white mt-1 tabular-nums">
-                        <SensitiveValue>{formatMoney(fireData.targetCorpusBase, baseCurrency, 0)}</SensitiveValue>
-                      </p>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">الإنفاق ÷ SWR</p>
+                      <div className="my-auto">
+                        <p className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white tabular-nums">
+                          <SensitiveValue>{formatMoney(fireData.targetCorpusBase, baseCurrency, 0)}</SensitiveValue>
+                        </p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">الإنفاق ÷ SWR</p>
+                      </div>
+                      <div />
                     </div>
 
-                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60">
+                    <div className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 min-h-[140px] flex flex-col justify-between">
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">الفجوة التراكمية المتبقية</p>
-                      <p className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white mt-1 tabular-nums">
-                        <SensitiveValue>{formatMoney(fireData.gapCorpusBase, baseCurrency, 0)}</SensitiveValue>
-                      </p>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">المستهدف − الأصول المؤهلة</p>
+                      <div className="my-auto">
+                        <p className="text-base sm:text-lg font-bold font-mono text-slate-900 dark:text-white tabular-nums">
+                          <SensitiveValue>{formatMoney(fireData.gapCorpusBase, baseCurrency, 0)}</SensitiveValue>
+                        </p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">المستهدف − الأصول المؤهلة</p>
+                      </div>
+                      <div />
                     </div>
                   </div>
 
@@ -1072,7 +1124,7 @@ export default function WealthHealthPage() {
           ) : null}
 
           {/* ==================================================================== */}
-          {/* 5. THREE STANDARD SCENARIOS COMPARISON GRID */}
+          {/* 5. THREE STANDARD SCENARIOS COMPARISON GRID (CONTAINED HEIGHT) */}
           {/* ==================================================================== */}
           {fireData?.scenarios && (
             <div className="space-y-4 pt-2">
@@ -1085,7 +1137,7 @@ export default function WealthHealthPage() {
 
               <div className="grid gap-4 md:grid-cols-3">
                 {/* 1. Conservative Scenario */}
-                <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs min-h-[220px] flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-3">
                       <div>
@@ -1115,13 +1167,13 @@ export default function WealthHealthPage() {
                       <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/60 pb-1.5">
                         <span className="text-slate-500 dark:text-slate-400">الأفق بالسنوات:</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                          {fireData.scenarios.conservative.horizonYears ? `${fireData.scenarios.conservative.horizonYears} سنة` : "غير قابل للتحقيق"}
+                          {fireData.scenarios.conservative.horizonYears ? `${fireData.scenarios.conservative.horizonYears} سنة` : "غير محدد"}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500 dark:text-slate-400">تاريخ الوصول:</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                          {fireData.scenarios.conservative.projectedDate ?? "—"}
+                          {fireData.scenarios.conservative.projectedDate ?? "غير محدد"}
                         </span>
                       </div>
                     </div>
@@ -1129,7 +1181,7 @@ export default function WealthHealthPage() {
                 </div>
 
                 {/* 2. Base Case Scenario (Elevated Surface) */}
-                <div className="bg-slate-50/70 dark:bg-slate-900/40 border border-slate-900/20 dark:border-slate-700 ring-1 ring-slate-900/5 dark:ring-white/10 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div className="bg-slate-50/70 dark:bg-slate-900/40 border-2 border-slate-900/40 dark:border-slate-600 rounded-2xl p-5 shadow-xs min-h-[220px] flex flex-col justify-between relative">
                   <div>
                     <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-slate-700/80 mb-3">
                       <div>
@@ -1159,13 +1211,13 @@ export default function WealthHealthPage() {
                       <div className="flex justify-between border-b border-slate-200/60 dark:border-slate-800/60 pb-1.5">
                         <span className="text-slate-500 dark:text-slate-400">الأفق بالسنوات:</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                          {fireData.scenarios.base.horizonYears ? `${fireData.scenarios.base.horizonYears} سنة` : "غير قابل للتحقيق"}
+                          {fireData.scenarios.base.horizonYears ? `${fireData.scenarios.base.horizonYears} سنة` : "غير محدد"}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500 dark:text-slate-400">تاريخ الوصول:</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                          {fireData.scenarios.base.projectedDate ?? "—"}
+                          {fireData.scenarios.base.projectedDate ?? "غير محدد"}
                         </span>
                       </div>
                     </div>
@@ -1173,7 +1225,7 @@ export default function WealthHealthPage() {
                 </div>
 
                 {/* 3. Optimistic Scenario */}
-                <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+                <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs min-h-[220px] flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80 mb-3">
                       <div>
@@ -1203,13 +1255,13 @@ export default function WealthHealthPage() {
                       <div className="flex justify-between border-b border-slate-100 dark:border-slate-800/60 pb-1.5">
                         <span className="text-slate-500 dark:text-slate-400">الأفق بالسنوات:</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                          {fireData.scenarios.optimistic.horizonYears ? `${fireData.scenarios.optimistic.horizonYears} سنة` : "غير قابل للتحقيق"}
+                          {fireData.scenarios.optimistic.horizonYears ? `${fireData.scenarios.optimistic.horizonYears} سنة` : "غير محدد"}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500 dark:text-slate-400">تاريخ الوصول:</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-                          {fireData.scenarios.optimistic.projectedDate ?? "—"}
+                          {fireData.scenarios.optimistic.projectedDate ?? "غير محدد"}
                         </span>
                       </div>
                     </div>
@@ -1280,7 +1332,7 @@ export default function WealthHealthPage() {
               <button
                 type="submit"
                 disabled={isSavingAssumptions}
-                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold text-xs py-2.5 px-6 rounded-xl shadow-sm transition-all border border-slate-900 dark:border-transparent cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="size-3.5" />
                 <span>{isSavingAssumptions ? "جارٍ الحفظ…" : "اعتماد الافتراضات"}</span>

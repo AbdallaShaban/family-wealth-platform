@@ -63,7 +63,7 @@ export function calculateFisherRealRate(nominalReturn: Decimal, inflationRate: D
   const nomTerm = new Decimal(1).plus(nominalReturn);
   const infTerm = new Decimal(1).plus(inflationRate);
   if (infTerm.lte(0)) {
-    throw new Error(`Inflation rate leads to non-positive denominator: 1 + inflation = ${infTerm.toString()}`);
+    return new Decimal("-0.9999");
   }
   return nomTerm.div(infTerm).minus(1);
 }
@@ -75,7 +75,7 @@ export function calculateFisherRealRate(nominalReturn: Decimal, inflationRate: D
 export function calculateMonthlyRealRate(rReal: Decimal): Decimal {
   const onePlusR = new Decimal(1).plus(rReal);
   if (onePlusR.lte(0)) {
-    throw new Error(`Real return leads to non-positive base for monthly compounding: 1 + r_real = ${onePlusR.toString()}`);
+    return new Decimal("-0.9999");
   }
   const oneTwelfth = new Decimal(1).div(12);
   return onePlusR.pow(oneTwelfth).minus(1);
@@ -1152,22 +1152,28 @@ export function calculateFireHorizon(inputs: FireHorizonInputs): FireHorizonResu
       isReachable = false;
     } else {
       // Asymptotic equilibrium ceiling: A_inf = C / |r_m|
-      const Ainf = C.div(rho);
-      if (KFI.gte(Ainf)) {
+      const Ainf = rho.isZero() ? new Decimal(0) : C.div(rho);
+      if (KFI.gte(Ainf) || Ainf.lte(A0)) {
         // Case 4B: Target exceeds maximum asymptotic ceiling
         status = "unreachable_negative_real_return";
         statusLabelAr = "غير قابل للتحقيق (تآكل القوة الشرائية يضع سقفًا دون المستهدف)";
         isReachable = false;
       } else {
         // Case 4C: Savings surplus overcomes purchasing power decay to reach target
-        status = "reachable_decay_overcome";
-        statusLabelAr = "قابل للتحقيق بتفوق الفائض الشهري على تآكل القوة الشرائية";
-        isReachable = true;
         const num = Ainf.minus(KFI);
         const den = Ainf.minus(A0);
         const oneMinusRho = new Decimal(1).minus(rho);
-        mReal = decLn(num.div(den)).div(decLn(oneMinusRho));
-        mInt = mReal.ceil().toNumber();
+        if (num.gt(0) && den.gt(0) && oneMinusRho.gt(0) && !oneMinusRho.eq(1)) {
+          status = "reachable_decay_overcome";
+          statusLabelAr = "قابل للتحقيق بتفوق الفائض الشهري على تآكل القوة الشرائية";
+          isReachable = true;
+          mReal = decLn(num.div(den)).div(decLn(oneMinusRho));
+          mInt = mReal.ceil().toNumber();
+        } else {
+          status = "unreachable_negative_real_return";
+          statusLabelAr = "غير قابل للتحقيق (تآكل القوة الشرائية يضع سقفًا دون المستهدف)";
+          isReachable = false;
+        }
       }
     }
   }
