@@ -238,7 +238,7 @@ export default function InvestmentsPageRedesign() {
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 القيمة السوقية الإجمالية
               </span>
-              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+              <div className="size-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60 flex items-center justify-center">
                 <CircleDollarSign className="size-4" />
               </div>
             </div>
@@ -260,7 +260,7 @@ export default function InvestmentsPageRedesign() {
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 إجمالي الأصول النشطة
               </span>
-              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+              <div className="size-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800/60 flex items-center justify-center">
                 <BriefcaseBusiness className="size-4" />
               </div>
             </div>
@@ -280,7 +280,7 @@ export default function InvestmentsPageRedesign() {
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 أصول مقيّمة بالسوق
               </span>
-              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+              <div className="size-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/60 flex items-center justify-center">
                 <CheckCircle2 className="size-4" />
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function InvestmentsPageRedesign() {
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 بانتظار التسعير
               </span>
-              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+              <div className="size-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60 flex items-center justify-center">
                 <Clock className="size-4" />
               </div>
             </div>
