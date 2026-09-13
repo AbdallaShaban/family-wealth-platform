@@ -444,22 +444,51 @@ export default function InvestmentsPageRedesign() {
                   <form onSubmit={submitInstrument} className="grid gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="instrument-name" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الاسم</Label>
-                      <Input id="instrument-name" value={name} onChange={(e) => setName(e.target.value)} disabled={!canAdvise} required minLength={2} className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800" />
+                      <Input
+                        id="instrument-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        disabled={!canAdvise}
+                        required
+                        minLength={2}
+                        placeholder="اسم الأداة الاستثمارية"
+                        className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto"
+                      />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="grid gap-2">
                         <Label htmlFor="instrument-symbol" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الرمز (Ticker)</Label>
-                        <Input id="instrument-symbol" value={symbol} onChange={(e) => setSymbol(e.target.value.toUpperCase())} disabled={!canAdvise} maxLength={48} placeholder="مثال: GC=F أو AAPL" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 uppercase font-mono" />
+                        <Input
+                          id="instrument-symbol"
+                          value={symbol}
+                          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                          disabled={!canAdvise}
+                          maxLength={48}
+                          placeholder="مثال: GC=F أو AAPL"
+                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto uppercase font-mono"
+                        />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="instrument-currency" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">العملة</Label>
-                        <Input id="instrument-currency" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} disabled={!canAdvise} minLength={3} maxLength={3} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 uppercase font-mono" />
+                        <Input
+                          id="instrument-currency"
+                          value={currency}
+                          onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                          disabled={!canAdvise}
+                          minLength={3}
+                          maxLength={3}
+                          required
+                          placeholder="SAR"
+                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto uppercase font-mono"
+                        />
                       </div>
                     </div>
                     <div className="grid gap-2">
                       <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الفئة</Label>
                       <Select value={assetType} onValueChange={(val) => setAssetType(val as AssetType)} disabled={!canAdvise}>
-                        <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                          <SelectValue placeholder="اختر الفئة" />
+                        </SelectTrigger>
                         <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                           {Object.entries(assetTypeLabel).map(([val, lbl]) => (
                             <SelectItem key={val} value={val}>{lbl}</SelectItem>
@@ -470,7 +499,7 @@ export default function InvestmentsPageRedesign() {
                     <Button
                       type="submit"
                       disabled={!canAdvise || createInstrument.isPending}
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent mt-2"
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                       {createInstrument.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                       {canAdvise ? "حفظ الأداة" : "تتطلب صلاحية مستشار"}
@@ -500,23 +529,37 @@ export default function InvestmentsPageRedesign() {
                       <table className="w-full min-w-[520px] text-right text-sm">
                         <thead>
                           <tr className="border-b border-slate-200 dark:border-slate-800">
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الاسم</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الرمز</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الفئة</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">العملة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الاسم</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الرمز</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الفئة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">العملة</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                           {instruments.data.map((item) => (
                             <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                              <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{item.name}</td>
-                              <td className="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">{item.symbol || "—"}</td>
-                              <td className="py-3 px-4">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                              <td className="py-3.5 px-4">
+                                <span className="text-slate-900 dark:text-white font-bold text-sm block">{item.name}</span>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {item.symbol ? (
+                                  <span className="font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs border border-slate-200/60 dark:border-slate-700/60">
+                                    {item.symbol}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
                                   {assetTypeLabel[item.assetType as AssetType] || item.assetType}
                                 </span>
                               </td>
-                              <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-300">{item.currency}</td>
+                              <td className="py-3.5 px-4">
+                                <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-200/60 dark:border-slate-700/60">
+                                  {item.currency}
+                                </span>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -524,11 +567,11 @@ export default function InvestmentsPageRedesign() {
                     </div>
                   ) : (
                     <div className="p-8 text-center">
-                      <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
-                        <Landmark className="size-5" />
+                      <div className="flex size-12 items-center justify-center rounded-2xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-3">
+                        <Landmark className="size-6" />
                       </div>
-                      <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">لا توجد أدوات استثمارية</h3>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs">أضف أداة برمزها وبياناتها الأساسية، ثم سجّل سعرًا أو صفقة بصورة صريحة.</p>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">لا توجد أدوات استثمارية</h3>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs max-w-md mx-auto mb-2">أضف أداة برمزها وبياناتها الأساسية، ثم سجّل سعرًا أو صفقة بصورة صريحة.</p>
                     </div>
                   )}
                 </CardContent>
@@ -555,7 +598,9 @@ export default function InvestmentsPageRedesign() {
                         <div className="grid gap-2">
                           <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">نوع الصفقة</Label>
                           <Select value={side} onValueChange={(v) => setSide(v as "buy" | "sell")}>
-                            <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                              <SelectValue />
+                            </SelectTrigger>
                             <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                               <SelectItem value="buy">شراء</SelectItem>
                               <SelectItem value="sell">بيع</SelectItem>
@@ -565,7 +610,9 @@ export default function InvestmentsPageRedesign() {
                         <div className="grid gap-2">
                           <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">حساب التسوية</Label>
                           <Select value={tradeAccountId} onValueChange={setTradeAccountId}>
-                            <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue placeholder="اختر حسابًا" /></SelectTrigger>
+                            <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                              <SelectValue placeholder="اختر حسابًا" />
+                            </SelectTrigger>
                             <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                               {tradeAccounts.map((acc) => (
                                 <SelectItem key={acc.id} value={String(acc.id)}>
@@ -578,7 +625,9 @@ export default function InvestmentsPageRedesign() {
                         <div className="grid gap-2">
                           <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الأداة الاستثمارية</Label>
                           <Select value={tradeInstrumentId} onValueChange={setTradeInstrumentId}>
-                            <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue placeholder="اختر أداة" /></SelectTrigger>
+                            <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                              <SelectValue placeholder="اختر أداة" />
+                            </SelectTrigger>
                             <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                               {instruments.data.map((item) => (
                                 <SelectItem key={item.id} value={String(item.id)}>
@@ -593,31 +642,68 @@ export default function InvestmentsPageRedesign() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="grid gap-2">
                           <Label htmlFor="trade-quantity" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الكمية</Label>
-                          <Input id="trade-quantity" inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
+                          <Input
+                            id="trade-quantity"
+                            inputMode="decimal"
+                            value={quantity}
+                            onChange={(e) => setQuantity(e.target.value)}
+                            required
+                            placeholder="0.00"
+                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="trade-price" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">سعر الوحدة</Label>
-                          <Input id="trade-price" inputMode="decimal" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
+                          <Input
+                            id="trade-price"
+                            inputMode="decimal"
+                            value={unitPrice}
+                            onChange={(e) => setUnitPrice(e.target.value)}
+                            required
+                            placeholder="0.00"
+                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="trade-fee" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الرسوم (اختياري)</Label>
-                          <Input id="trade-fee" inputMode="decimal" value={feeAmount} onChange={(e) => setFeeAmount(e.target.value)} placeholder="0" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
+                          <Input
+                            id="trade-fee"
+                            inputMode="decimal"
+                            value={feeAmount}
+                            onChange={(e) => setFeeAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor="trade-tax" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الضرائب (اختياري)</Label>
-                          <Input id="trade-tax" inputMode="decimal" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} placeholder="0" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
+                          <Input
+                            id="trade-tax"
+                            inputMode="decimal"
+                            value={taxAmount}
+                            onChange={(e) => setTaxAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
+                          />
                         </div>
                       </div>
 
                       <div className="grid gap-2">
                         <Label htmlFor="trade-memo" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">مذكرة العملية</Label>
-                        <Textarea id="trade-memo" value={memo} onChange={(e) => setMemo(e.target.value)} maxLength={2000} placeholder="اختياري" className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800" />
+                        <Textarea
+                          id="trade-memo"
+                          value={memo}
+                          onChange={(e) => setMemo(e.target.value)}
+                          maxLength={2000}
+                          placeholder="ملاحظات أو مذكرة العملية (اختياري)..."
+                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3"
+                        />
                       </div>
 
                       <Button
                         type="submit"
                         disabled={trade.isPending || !canAdvise}
-                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent mt-2"
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                       >
                         {trade.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                         {canAdvise ? "تسجيل ونشر الصفقة" : "تتطلب صلاحية مستشار"}
@@ -625,11 +711,11 @@ export default function InvestmentsPageRedesign() {
                     </form>
                   ) : (
                     <div className="p-8 text-center">
-                      <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
-                        <Landmark className="size-5" />
+                      <div className="flex size-12 items-center justify-center rounded-2xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-3">
+                        <Landmark className="size-6" />
                       </div>
-                      <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">جهّز الحساب والأداة أولًا</h3>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs">يلزم حساب تسوية نشط وأداة استثمارية قبل تسجيل صفقة فعلية.</p>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">جهّز الحساب والأداة أولًا</h3>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs max-w-md mx-auto mb-2">يلزم حساب تسوية نشط وأداة استثمارية قبل تسجيل صفقة فعلية.</p>
                     </div>
                   )}
                 </CardContent>
@@ -647,7 +733,9 @@ export default function InvestmentsPageRedesign() {
                       <div className="grid gap-2">
                         <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الأداة</Label>
                         <Select value={quoteInstrumentId} onValueChange={setQuoteInstrumentId}>
-                          <SelectTrigger className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800"><SelectValue placeholder="اختر أداة" /></SelectTrigger>
+                          <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                            <SelectValue placeholder="اختر أداة" />
+                          </SelectTrigger>
                           <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
                             {instruments.data.map((item) => (
                               <SelectItem key={item.id} value={String(item.id)}>
@@ -659,13 +747,20 @@ export default function InvestmentsPageRedesign() {
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="manual-quote" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">سعر الوحدة</Label>
-                        <Input id="manual-quote" inputMode="decimal" value={quotePrice} onChange={(e) => setQuotePrice(e.target.value)} required className="bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800 font-mono" />
+                        <Input
+                          id="manual-quote"
+                          inputMode="decimal"
+                          value={quotePrice}
+                          onChange={(e) => setQuotePrice(e.target.value)}
+                          required
+                          placeholder="0.00"
+                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
+                        />
                       </div>
                       <Button
                         type="submit"
-                        variant="outline"
                         disabled={recordQuote.isPending || !canAdvise}
-                        className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all mt-2"
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                       >
                         {recordQuote.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                         {canAdvise ? "حفظ السعر اليدوي" : "تتطلب صلاحية مستشار"}
@@ -684,8 +779,8 @@ export default function InvestmentsPageRedesign() {
 
           {/* TAB 4: Performance Summary */}
           <TabsContent value="performance">
-            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
+            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 pb-5 px-0 pt-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
@@ -704,7 +799,7 @@ export default function InvestmentsPageRedesign() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-5 space-y-6">
+              <CardContent className="px-0 pb-0 pt-5 space-y-6">
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] p-4">
                     <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">الحيازات النشطة</p>
@@ -744,8 +839,8 @@ export default function InvestmentsPageRedesign() {
 
           {/* TAB 5: Realized P&L */}
           <TabsContent value="realized">
-            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
+            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 pb-5 px-0 pt-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
@@ -759,20 +854,20 @@ export default function InvestmentsPageRedesign() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 pt-5">
                 {realizedList.isLoading ? (
                   <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الأرباح المحققة…</p>
                 ) : realizedList.data?.length ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
                     <table className="w-full min-w-[700px] text-right text-sm">
                       <thead>
                         <tr className="border-b border-slate-200 dark:border-slate-800">
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الأداة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الكمية المباعة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">سعر البيع</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">أساس التكلفة (FIFO)</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الربح/الخسارة المحققة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">تاريخ البيع</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الأداة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الكمية المباعة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">سعر البيع</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">أساس التكلفة (FIFO)</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الربح/الخسارة المحققة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">تاريخ البيع</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -780,18 +875,18 @@ export default function InvestmentsPageRedesign() {
                           const unitPrice = Number(row.quantity) > 0 ? (Number(row.grossProceeds) / Number(row.quantity)).toFixed(2) : "0.00";
                           return (
                             <tr key={row.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                              <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{instrumentMap.get(row.instrumentId) || `#${row.instrumentId}`}</td>
-                              <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{row.quantity}</td>
-                              <td className="py-3 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
+                              <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">{instrumentMap.get(row.instrumentId) || `#${row.instrumentId}`}</td>
+                              <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{row.quantity}</td>
+                              <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
                                 <SensitiveValue>{formatMoney(unitPrice, row.currency, 2)}</SensitiveValue>
                               </td>
-                              <td className="py-3 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
+                              <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
                                 <SensitiveValue>{formatMoney(row.costBasis, row.currency, 2)}</SensitiveValue>
                               </td>
-                              <td className={`py-3 px-4 font-mono font-bold tabular-nums ${Number(row.realizedPnl) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                              <td className={`py-3.5 px-4 font-mono font-bold tabular-nums ${Number(row.realizedPnl) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                                 <SensitiveValue>{formatMoney(row.realizedPnl, row.currency, 2)}</SensitiveValue>
                               </td>
-                              <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
+                              <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400">
                                 {new Date(row.matchedAt).toLocaleDateString("ar-EG")}
                               </td>
                             </tr>
@@ -802,11 +897,11 @@ export default function InvestmentsPageRedesign() {
                   </div>
                 ) : (
                   <div className="p-8 text-center">
-                    <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
-                      <GitCompareArrows className="size-5" />
+                    <div className="flex size-12 items-center justify-center rounded-2xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-3">
+                      <GitCompareArrows className="size-6" />
                     </div>
-                    <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">لا توجد أرباح محققة بعد</h3>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs">تنشأ الأرباح أو الخسائر المحققة عند تنفيذ صفقات بيع على حيازات مشتراة سابقًا ومطابقتها بحزم FIFO.</p>
+                    <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">لا توجد أرباح محققة بعد</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs max-w-md mx-auto mb-2">تنشأ الأرباح أو الخسائر المحققة عند تنفيذ صفقات بيع على حيازات مشتراة سابقًا ومطابقتها بحزم FIFO.</p>
                   </div>
                 )}
               </CardContent>
@@ -815,8 +910,8 @@ export default function InvestmentsPageRedesign() {
 
           {/* TAB 6: FIFO Lots */}
           <TabsContent value="lots">
-            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
+            <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 pb-5 px-0 pt-0">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
@@ -833,35 +928,35 @@ export default function InvestmentsPageRedesign() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 pt-5">
                 {lots.isLoading ? (
                   <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الحزم…</p>
                 ) : lots.data?.length ? (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
                     <table className="w-full min-w-[700px] text-right text-sm">
                       <thead>
                         <tr className="border-b border-slate-200 dark:border-slate-800">
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الأداة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الكمية الأصلية</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الكمية المتبقية</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">تكلفة الوحدة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">تاريخ الشراء</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3 px-4 text-right">الحالة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الأداة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الكمية الأصلية</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الكمية المتبقية</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">تكلفة الوحدة</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">تاريخ الشراء</th>
+                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الحالة</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                         {lots.data.map((lot) => (
                           <tr key={lot.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                            <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">{instrumentMap.get(lot.instrumentId) || `#${lot.instrumentId}`}</td>
-                            <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{lot.originalQuantity}</td>
-                            <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{lot.remainingQuantity}</td>
-                            <td className="py-3 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
+                            <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">{instrumentMap.get(lot.instrumentId) || `#${lot.instrumentId}`}</td>
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{lot.originalQuantity}</td>
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{lot.remainingQuantity}</td>
+                            <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
                               <SensitiveValue>{formatMoney(lot.unitCost, lot.costCurrency, 2)}</SensitiveValue>
                             </td>
-                            <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
+                            <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-slate-400">
                               {new Date(lot.acquiredAt).toLocaleDateString("ar-EG")}
                             </td>
-                            <td className="py-3 px-4">
+                            <td className="py-3.5 px-4">
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
                                 lot.status === "open"
                                   ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
@@ -877,11 +972,11 @@ export default function InvestmentsPageRedesign() {
                   </div>
                 ) : (
                   <div className="p-8 text-center">
-                    <div className="flex size-10 items-center justify-center rounded-xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-2">
+                    <div className="flex size-12 items-center justify-center rounded-2xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-3">
                       <Layers className="size-5" />
                     </div>
-                    <h3 className="text-slate-900 dark:text-white font-bold text-sm mb-1">لا توجد حزم FIFO بعد</h3>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs">تنشأ الحزم تلقائيًا عند تسجيل صفقات شراء أدوات استثمارية في الدفتر.</p>
+                    <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">لا توجد حزم FIFO بعد</h3>
+                    <p className="text-slate-600 dark:text-slate-400 text-xs max-w-md mx-auto mb-2">تنشأ الحزم تلقائيًا عند تسجيل صفقات شراء أدوات استثمارية في الدفتر.</p>
                   </div>
                 )}
               </CardContent>
