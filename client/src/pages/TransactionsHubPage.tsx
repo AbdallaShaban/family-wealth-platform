@@ -583,8 +583,8 @@ export default function TransactionsHubPage() {
         />
 
         {/* Unified Top 4 Ledger Metrics Executive Strip */}
-        <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 shadow-xs rounded-2xl grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-200/90 dark:divide-slate-800/80 overflow-hidden">
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+        <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 shadow-xs rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 overflow-hidden mb-6">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
                 حسابات التسوية
@@ -603,7 +603,7 @@ export default function TransactionsHubPage() {
             </span>
           </div>
 
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
                 أدوات الاستثمار
@@ -622,7 +622,7 @@ export default function TransactionsHubPage() {
             </span>
           </div>
 
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
                 الالتزامات النشطة
@@ -641,7 +641,7 @@ export default function TransactionsHubPage() {
             </span>
           </div>
 
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors border-b-0 lg:border-l-0">
             <div className="flex items-center justify-between">
               <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
                 القيود المسجلة

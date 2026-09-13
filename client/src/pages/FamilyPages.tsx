@@ -268,9 +268,9 @@ export function AccountsPage() {
         ) : (
           <>
             {/* Executive Top Metric Strip */}
-            <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/60 mb-6 overflow-hidden">
+            <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6 overflow-hidden">
               {/* Cell 1: إجمالي السيولة النقدية */}
-              <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+              <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                     إجمالي السيولة النقدية
@@ -290,7 +290,7 @@ export function AccountsPage() {
               </div>
 
               {/* Cell 2: أرصدة البنوك المصرفية */}
-              <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+              <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                     أرصدة البنوك المصرفية
@@ -310,7 +310,7 @@ export function AccountsPage() {
               </div>
 
               {/* Cell 3: النقد السائل والخزينة */}
-              <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+              <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                     النقد السائل والخزينة
@@ -1591,9 +1591,9 @@ export function CashFlowPage() {
         />
 
         {/* Top Executive Asymmetric Metric Strip (With Semantic Tints) */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
           {/* Cell 1 (صافي التدفق النقدي - Net Cash Flow) */}
-          <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+          <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 صافي التدفق النقدي
@@ -1613,7 +1613,7 @@ export function CashFlowPage() {
           </div>
 
           {/* Cell 2 (التدفقات الداخلة / الدخل - Inflows) */}
-          <div className="p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+          <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 التدفقات الداخلة / الدخل
@@ -1633,7 +1633,7 @@ export function CashFlowPage() {
           </div>
 
           {/* Cell 3 (التدفقات الخارجة / المصروفات - Outflows) */}
-          <div className="p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+          <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 التدفقات الخارجة / المصروفات
@@ -1653,7 +1653,7 @@ export function CashFlowPage() {
           </div>
 
           {/* Cell 4 (الميزانية والانضباط المالي - Budget Allocation) */}
-          <div className="p-5 flex flex-col justify-between last:border-l-0 border-slate-100 dark:border-slate-800/60">
+          <div className="p-5 flex flex-col justify-between border-b-0 lg:border-l-0">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 الميزانية والانضباط المالي
@@ -2051,9 +2051,9 @@ export function DebtsPage() {
         />
 
         {/* Top Executive Asymmetric Metric Strip (With Semantic Tints) */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
           {/* Cell 1 (إجمالي الالتزامات القائمة - Total Principal Remaining) */}
-          <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+          <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 إجمالي الالتزامات القائمة
@@ -2073,7 +2073,7 @@ export function DebtsPage() {
           </div>
 
           {/* Cell 2 (خدمة الدين والأقساط الشهرية - Monthly Debt Service) */}
-          <div className="p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+          <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 خدمة الدين والأقساط الشهرية
@@ -2093,7 +2093,7 @@ export function DebtsPage() {
           </div>
 
           {/* Cell 3 (الالتزامات النشطة - Active Liabilities) */}
-          <div className="p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+          <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 الالتزامات النشطة
@@ -2113,7 +2113,7 @@ export function DebtsPage() {
           </div>
 
           {/* Cell 4 (أقرب استحقاق قادم - Next Due Payment) */}
-          <div className="p-5 flex flex-col justify-between last:border-l-0 border-slate-100 dark:border-slate-800/60">
+          <div className="p-5 flex flex-col justify-between border-b-0 lg:border-l-0">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 أقرب استحقاق قادم

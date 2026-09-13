@@ -252,12 +252,12 @@ export function ReportsPage() {
         {data && (
           <div className="space-y-6">
             {/* Top Key Metrics Banner (Institutional Strip) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6 break-inside-avoid page-break-inside-avoid">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6 break-inside-avoid page-break-inside-avoid">
               {/* Cell 1: Economic Net Worth */}
-              <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+              <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    صافي الثروة الاقتصادي (Economic Net Worth)
+                    إجمالي صافي الثروة
                   </span>
                   <div className="size-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/60 flex items-center justify-center">
                     <Landmark className="size-4" />
@@ -268,16 +268,16 @@ export function ReportsPage() {
                     {money(data.economicNetWorthBridge.economicNetWorth)}
                   </p>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
-                    بالقيمة السوقية العادلة للأصول والالتزامات
+                    القيمة السوقية العادلة للأصول والخصوم
                   </span>
                 </div>
               </div>
 
               {/* Cell 2: Book Equity */}
-              <div className="p-5 flex flex-col justify-between">
+              <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    حقوق الملكية الدفترية (Book Equity)
+                    رأس المال الدفتري
                   </span>
                   <div className="size-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800/60 flex items-center justify-center">
                     <Scale className="size-4" />
@@ -288,16 +288,16 @@ export function ReportsPage() {
                     {money(data.bookBalanceSheet.equity.totalBookEquity)}
                   </p>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
-                    مشتقة 100% من قيود الدفتر المزدوج
+                    إجمالي حقوق الملكية بالدفاتر
                   </span>
                 </div>
               </div>
 
               {/* Cell 3: Net Operating Income */}
-              <div className="p-5 flex flex-col justify-between">
+              <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    الربح التشغيلي الصافي (Net Income)
+                    صافي أرباح الفترة
                   </span>
                   <div className="size-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60 flex items-center justify-center">
                     <TrendingUp className="size-4" />
@@ -308,16 +308,16 @@ export function ReportsPage() {
                     {money(data.incomeStatement.netOperatingIncome)}
                   </p>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
-                    إيرادات تشغيل وتوزيعات ناقص المصروفات
+                    الإيرادات بعد خصم كافة المصروفات
                   </span>
                 </div>
               </div>
 
               {/* Cell 4: Net Cash Flow */}
-              <div className="p-5 flex flex-col justify-between">
+              <div className="p-5 flex flex-col justify-between border-b-0 lg:border-l-0">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                    صافي التدفق النقدي (Net Cash Flow)
+                    صافي السيولة النقدية
                   </span>
                   <div className="size-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60 flex items-center justify-center">
                     <Coins className="size-4" />
@@ -328,7 +328,7 @@ export function ReportsPage() {
                     {money(data.cashFlowStatement.netCashFlow)}
                   </p>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
-                    النقدية في نهاية الفترة: {money(data.cashFlowStatement.endingCash)}
+                    الفائض أو العجز النقدي الفعلي
                   </span>
                 </div>
               </div>
@@ -390,37 +390,37 @@ export function ReportsPage() {
                   value="balance_sheet"
                   className="px-4 py-2 rounded-xl text-xs font-medium transition-colors border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-[#1A2234] data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60"
                 >
-                  الميزانية الدفترية
+                  الميزانية العمومية
                 </TabsTrigger>
                 <TabsTrigger
                   value="income_statement"
                   className="px-4 py-2 rounded-xl text-xs font-medium transition-colors border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-[#1A2234] data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60"
                 >
-                  قائمة الدخل
+                  قائمة الدخل والأرباح
                 </TabsTrigger>
                 <TabsTrigger
                   value="changes_in_equity"
                   className="px-4 py-2 rounded-xl text-xs font-medium transition-colors border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-[#1A2234] data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60"
                 >
-                  التغيرات في الملكية
+                  حركة حقوق الملكية
                 </TabsTrigger>
                 <TabsTrigger
                   value="cash_flows"
                   className="px-4 py-2 rounded-xl text-xs font-medium transition-colors border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-[#1A2234] data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60"
                 >
-                  التدفقات النقدية
+                  قائمة التدفق النقدي
                 </TabsTrigger>
                 <TabsTrigger
                   value="economic_bridge"
                   className="px-4 py-2 rounded-xl text-xs font-medium transition-colors border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-[#1A2234] data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60"
                 >
-                  جسر صافي الثروة
+                  مطابقة صافي الثروة
                 </TabsTrigger>
                 <TabsTrigger
                   value="audit_controls"
                   className="px-4 py-2 rounded-xl text-xs font-medium transition-colors border border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white data-[state=active]:bg-white dark:data-[state=active]:bg-[#1A2234] data-[state=active]:text-slate-900 dark:data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60"
                 >
-                  فحص المطابقة والضوابط
+                  التدقيق والمطابقة المحاسبية
                 </TabsTrigger>
               </TabsList>
 
@@ -443,7 +443,7 @@ export function ReportsPage() {
                       <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
                     )}
                     <div>
-                      <span className="font-bold">معادلة الميزانية الدفترية (Invariant A): </span>
+                      <span className="font-bold">معادلة المركز المالي: </span>
                       <span>الأصول = الالتزامات + حقوق الملكية</span>
                     </div>
                   </div>
@@ -455,7 +455,7 @@ export function ReportsPage() {
                     }`}
                   >
                     {data.bookBalanceSheet.equationCheck.assetsEqualsLiabilitiesPlusEquity
-                      ? "متوازنة تماماً (0.00)"
+                      ? "مدققة ومتوازنة 100%"
                       : `خلل توازن: ${money(data.bookBalanceSheet.equationCheck.imbalanceBase)}`}
                   </span>
                 </div>
@@ -465,7 +465,7 @@ export function ReportsPage() {
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-slate-900 dark:text-white font-bold text-base">الأصول الدفترية (Book Assets)</h3>
+                        <h3 className="text-slate-900 dark:text-white font-bold text-base">الأصول الدفترية</h3>
                         <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-base">{money(data.bookBalanceSheet.assets.totalBookAssets)}</span>
                       </div>
                       <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">السيولة، ورصيد مقاصة الاستثمار، والأصول العينية بالتكلفة التاريخية</p>
@@ -534,7 +534,7 @@ export function ReportsPage() {
                     {/* Liabilities Card */}
                     <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-slate-900 dark:text-white font-bold text-base">الالتزامات الدفترية (Book Liabilities)</h3>
+                        <h3 className="text-slate-900 dark:text-white font-bold text-base">الالتزامات الدفترية</h3>
                         <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-base">{money(data.bookBalanceSheet.liabilities.totalBookLiabilities)}</span>
                       </div>
                       <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">القروض والتسهيلات الائتمانية القائمة</p>
@@ -556,7 +556,7 @@ export function ReportsPage() {
                     {/* Equity Card */}
                     <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-slate-900 dark:text-white font-bold text-base">حقوق الملكية الدفترية (Book Equity)</h3>
+                        <h3 className="text-slate-900 dark:text-white font-bold text-base">حقوق الملكية الدفترية</h3>
                         <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-base">{money(data.bookBalanceSheet.equity.totalBookEquity)}</span>
                       </div>
                       <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">رأس المال المساهم وصافي الدخل التشغيلي المتراكم</p>
@@ -584,7 +584,7 @@ export function ReportsPage() {
                   {/* Revenues */}
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-slate-900 dark:text-white font-bold text-base">الإيرادات والعوائد (Revenues)</h3>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-base">الإيرادات والعوائد</h3>
                       <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-base">{money(data.incomeStatement.revenues.totalRevenues)}</span>
                     </div>
                     <div className="space-y-3 text-xs">
@@ -593,7 +593,7 @@ export function ReportsPage() {
                         <span className="font-mono font-bold text-slate-900 dark:text-white">{money(data.incomeStatement.revenues.operatingIncome)}</span>
                       </div>
                       <div className="flex items-center justify-between rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420] p-3">
-                        <span className="text-slate-700 dark:text-slate-300 font-medium">عوائد التوزيعات النقدية (Dividends)</span>
+                        <span className="text-slate-700 dark:text-slate-300 font-medium">عوائد التوزيعات النقدية</span>
                         <span className="font-mono font-bold text-slate-900 dark:text-white">{money(data.incomeStatement.revenues.dividendIncome)}</span>
                       </div>
                     </div>
@@ -602,7 +602,7 @@ export function ReportsPage() {
                   {/* Expenses */}
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-slate-900 dark:text-white font-bold text-base">المصروفات والتكاليف (Expenses)</h3>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-base">المصروفات والتكاليف</h3>
                       <span className="font-mono font-bold text-rose-600 dark:text-rose-400 text-base">{money(data.incomeStatement.expenses.totalExpenses)}</span>
                     </div>
                     <div className="space-y-3 text-xs">
@@ -641,7 +641,7 @@ export function ReportsPage() {
               <TabsContent value="changes_in_equity" className="space-y-6">
                 <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid">
                   <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">
-                    قائمة التغيرات في حقوق الملكية الدفترية (Statement of Changes in Equity)
+                    قائمة التغيرات في حقوق الملكية الدفترية
                   </h3>
                   <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">
                     مطابقة دقيقة لتطور رأس المال والأرباح المحتجزة من بداية الفترة إلى نهايتها
@@ -649,7 +649,7 @@ export function ReportsPage() {
                   
                   <div className="divide-y divide-slate-100 dark:divide-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden text-xs">
                     <div className="flex items-center justify-between p-4 font-bold text-slate-800 dark:text-slate-200">
-                      <span>رصيد حقوق الملكية في بداية الفترة (Opening Equity)</span>
+                      <span>رصيد حقوق الملكية في بداية الفترة</span>
                       <span className="font-mono">{money(data.equityChangesStatement.openingBookEquity)}</span>
                     </div>
                     <div className="flex items-center justify-between p-4 text-emerald-700 dark:text-emerald-400 font-medium">
@@ -665,7 +665,7 @@ export function ReportsPage() {
                       <span className="font-mono">{money(data.equityChangesStatement.netOperatingIncome)}</span>
                     </div>
                     <div className="flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1420] p-4 text-sm font-bold text-slate-900 dark:text-white">
-                      <span>(=) رصيد حقوق الملكية في نهاية الفترة (Closing Equity)</span>
+                      <span>(=) رصيد حقوق الملكية في نهاية الفترة</span>
                       <span className="font-mono">{money(data.equityChangesStatement.closingBookEquity)}</span>
                     </div>
                   </div>
@@ -691,7 +691,7 @@ export function ReportsPage() {
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="size-4 text-sky-600 dark:text-sky-400 shrink-0" />
                     <span>
-                      <strong className="font-bold">مطابقة التدفقات النقدية (Invariant C): </strong>
+                      <strong className="font-bold">مطابقة التدفقات النقدية: </strong>
                       بداية الفترة ({money(data.cashFlowStatement.beginningCash)}) + التدفقات = نهاية الفترة ({money(data.cashFlowStatement.endingCash)})
                     </span>
                   </div>
@@ -704,7 +704,7 @@ export function ReportsPage() {
                   {/* CFO */}
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
-                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الأنشطة التشغيلية (CFO)</h3>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الأنشطة التشغيلية</h3>
                       <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">المتحصلات والمدفوعات من النشاط المباشر</p>
                       <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                         <div className="flex justify-between py-2 text-slate-700 dark:text-slate-300"><span>مقبوضات تشغيلية</span><span className="font-mono font-bold text-slate-900 dark:text-white">{money(data.cashFlowStatement.operatingActivities.operatingReceipts)}</span></div>
@@ -723,7 +723,7 @@ export function ReportsPage() {
                   {/* CFI */}
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
-                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الأنشطة الاستثمارية (CFI)</h3>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الأنشطة الاستثمارية</h3>
                       <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">شراء وبيع الأوراق المالية والأصول</p>
                       <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                         <div className="flex justify-between py-2 text-rose-600 dark:text-rose-400"><span>مشتريات أوراق مالية</span><span className="font-mono font-bold">-{money(data.cashFlowStatement.investingActivities.securitiesPurchases)}</span></div>
@@ -741,7 +741,7 @@ export function ReportsPage() {
                   {/* CFF & Transfers */}
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
-                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الأنشطة التمويلية (CFF)</h3>
+                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الأنشطة التمويلية</h3>
                       <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">القروض وحقوق الملاك والتحويلات البينية</p>
                       <div className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                         <div className="flex justify-between py-2 text-emerald-600 dark:text-emerald-400"><span>متحصلات قروض جديدة</span><span className="font-mono font-bold">+{money(data.cashFlowStatement.financingActivities.debtBorrowingProceeds)}</span></div>
@@ -749,7 +749,7 @@ export function ReportsPage() {
                         <div className="flex justify-between py-2 text-emerald-600 dark:text-emerald-400"><span>ضخ رأس مال من الملاك</span><span className="font-mono font-bold">+{money(data.cashFlowStatement.financingActivities.ownerCapitalContributions)}</span></div>
                         <div className="flex justify-between py-2 text-rose-600 dark:text-rose-400"><span>مسحوبات الملاك</span><span className="font-mono font-bold">-{money(data.cashFlowStatement.financingActivities.ownerCapitalWithdrawals)}</span></div>
                         <div className="flex justify-between py-2 text-slate-500 dark:text-slate-400">
-                          <span>أثر التحويلات البينية (Invariant D)</span>
+                          <span>أثر التحويلات البينية</span>
                           <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">0.00 (محايدة)</span>
                         </div>
                         <div className="flex justify-between py-2 text-slate-500 dark:text-slate-400">
@@ -772,7 +772,7 @@ export function ReportsPage() {
               <TabsContent value="economic_bridge" className="space-y-6">
                 <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs break-inside-avoid page-break-inside-avoid">
                   <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">
-                    الجسر الرياضي لصافي الثروة الاقتصادي (Reconciliation Bridge)
+                    مطابقة وحركة صافي الثروة الاقتصادي
                   </h3>
                   <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">
                     التوفيق المحاسبي الدقيق بين حقوق الملكية الدفترية وصافي الثروة بالقيمة السوقية العادلة بدون قيود وهمية
@@ -781,7 +781,7 @@ export function ReportsPage() {
                   <div className="divide-y divide-slate-100 dark:divide-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden text-xs">
                     {/* 1. Starting Point */}
                     <div className="flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1420] p-4 font-bold text-slate-900 dark:text-white text-sm">
-                      <span>(1) حقوق الملكية الدفترية (Book Equity)</span>
+                      <span>(1) حقوق الملكية الدفترية</span>
                       <span className="font-mono">{money(data.economicNetWorthBridge.bookEquity)}</span>
                     </div>
 
@@ -844,7 +844,7 @@ export function ReportsPage() {
 
                   {/* 5. Economic Net Worth Result Card (Clean Purged) */}
                   <div className="rounded-2xl p-5 border bg-slate-900 text-white dark:bg-[#111827] dark:border-slate-700 flex items-center justify-between shadow-sm mt-4">
-                    <span className="font-bold text-sm sm:text-base">(=) صافي الثروة الاقتصادي الشامل (Economic Net Worth)</span>
+                    <span className="font-bold text-sm sm:text-base">(=) صافي الثروة الاقتصادي الشامل</span>
                     <span className="font-mono font-extrabold text-xl sm:text-2xl tabular-nums">{money(data.economicNetWorthBridge.economicNetWorth)}</span>
                   </div>
 
@@ -861,12 +861,12 @@ export function ReportsPage() {
               </TabsContent>
 
               {/* ========================================================== */}
-              {/* TAB 6: AUDIT & INVARIANTS A-G */}
+              {/* TAB 6: AUDIT & INVARIANTS */}
               {/* ========================================================== */}
               <TabsContent value="audit_controls" className="space-y-6">
                 <div>
-                  <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">المحددات الإلزامية A–G (Mandatory Accounting Invariants)</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">ضوابط المحاسبة المالية المعتمدة في مواصفة Accounting Specification v2.0</p>
+                  <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">المحددات المحاسبية الإلزامية</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">ضوابط المحاسبة المالية المعتمدة في مواصفة التدقيق الداخلي</p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -874,7 +874,7 @@ export function ReportsPage() {
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">Invariant A — توازن الميزانية</h4>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">توازن الميزانية العمومية</h4>
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                           PASS
                         </span>
@@ -890,7 +890,7 @@ export function ReportsPage() {
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">Invariant B — توازن القيود</h4>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">توازن قيود اليومية (مدين = دائن)</h4>
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                           PASS
                         </span>
@@ -906,7 +906,7 @@ export function ReportsPage() {
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">Invariant C — مطابقة النقدية</h4>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">مطابقة حركة النقدية مع الدفاتر</h4>
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                           PASS
                         </span>
@@ -922,7 +922,7 @@ export function ReportsPage() {
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">Invariant D — تحييد التحويلات</h4>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">تحييد أثر التحويلات الداخلية</h4>
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                           PASS
                         </span>
@@ -938,7 +938,7 @@ export function ReportsPage() {
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">Invariant E — مطابقة أرباح FIFO</h4>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">مطابقة أرباح التخارج (FIFO)</h4>
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                           PASS
                         </span>
@@ -954,7 +954,7 @@ export function ReportsPage() {
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">Invariant F & G — الأمان والدقة</h4>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">سلامة السجلات والدقة الرقمية</h4>
                         <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                           PASS
                         </span>
@@ -968,14 +968,14 @@ export function ReportsPage() {
                 </div>
 
                 <div className="mt-8">
-                  <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الضوابط التكميلية H–J (Auxiliary Accounting Controls)</h3>
+                  <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">الضوابط الرقابية والتأكيدية</h3>
                   <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">اختبارات إضافية للتأكد من نزاهة المقاصة وتتبع العملات والأمان التشفيري</p>
                   
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">Control H — مطابقة المقاصة</h4>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">مطابقة حسابات التسوية والمقاصة</h4>
                           <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                             PASS
                           </span>
@@ -990,7 +990,7 @@ export function ReportsPage() {
                     <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">Control I — أثر أسعار الصرف</h4>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">تتبع أثر تقلبات أسعار الصرف</h4>
                           <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/70 font-bold text-[11px] px-2.5 py-1 rounded-lg">
                             PASS
                           </span>
@@ -1005,7 +1005,7 @@ export function ReportsPage() {
                     <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs break-inside-avoid page-break-inside-avoid flex flex-col justify-between">
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">Control J — بصمة التدقيق SHA-256</h4>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">بصمة التدقيق والتشفير (SHA-256)</h4>
                           <span className="bg-slate-100 text-slate-800 border border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 font-mono text-[11px] px-2.5 py-1 rounded-lg">
                             VERIFIED
                           </span>

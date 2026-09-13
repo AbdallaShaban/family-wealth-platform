@@ -231,9 +231,9 @@ export default function InvestmentsPageRedesign() {
         />
 
         {/* Executive Metric Strip */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 lg:divide-y-0 divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
           {/* Cell 1: القيمة السوقية الإجمالية */}
-          <div className="lg:col-span-2 bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
+          <div className="lg:col-span-2 bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 القيمة السوقية الإجمالية
@@ -255,7 +255,7 @@ export default function InvestmentsPageRedesign() {
           </div>
 
           {/* Cell 2: إجمالي الأصول النشطة */}
-          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-l sm:max-lg:border-l-0 lg:border-l border-slate-100 dark:border-slate-800/60">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 إجمالي الأصول النشطة
@@ -275,7 +275,7 @@ export default function InvestmentsPageRedesign() {
           </div>
 
           {/* Cell 3: أصول مقيّمة بالسوق */}
-          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60 sm:max-lg:border-t sm:max-lg:border-slate-100 dark:sm:max-lg:border-slate-800/60">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 أصول مقيّمة بالسوق
@@ -295,7 +295,7 @@ export default function InvestmentsPageRedesign() {
           </div>
 
           {/* Cell 4: بانتظار التسعير */}
-          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-l last:border-l-0 border-slate-100 dark:border-slate-800/60 sm:max-lg:border-t sm:max-lg:border-slate-100 dark:sm:max-lg:border-slate-800/60">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b-0 lg:border-l-0">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 بانتظار التسعير

@@ -108,6 +108,89 @@ export default function ReconciliationPage() {
                   </div>
                 </div>
 
+                {/* Top Executive Metric Strip */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+                  {/* Cell 1: القيود المعتمدة */}
+                  <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        القيود المحاسبية المعتمدة
+                      </span>
+                      <div className="size-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/60 flex items-center justify-center">
+                        <Scale className="size-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-slate-900 dark:text-white font-extrabold font-mono text-2xl lg:text-3xl tabular-nums tracking-tight">
+                        {data.counts.postedEntries}
+                      </p>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
+                        إجمالي القيود الموثقة بدفتر الأستاذ
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cell 2: المعاملات المعتمدة */}
+                  <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        المعاملات المالية المعتمدة
+                      </span>
+                      <div className="size-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800/60 flex items-center justify-center">
+                        <ShieldCheck className="size-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums">
+                        {data.counts.postedEvents}
+                      </p>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
+                        حركات مالية مؤكدة بالكامل
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cell 3: سطور القيد الموثقة */}
+                  <div className="p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        سطور القيد المزدوج
+                      </span>
+                      <div className="size-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60 flex items-center justify-center">
+                        <CheckCircle2 className="size-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-emerald-600 dark:text-emerald-400 font-bold font-mono text-xl sm:text-2xl tabular-nums">
+                        {data.counts.postedLines}
+                      </p>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
+                        سطور محاسبية متوازنة ثنائية القيد
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Cell 4: الحسابات المفحوصة */}
+                  <div className="p-5 flex flex-col justify-between border-b-0 lg:border-l-0">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        الحسابات الخاضعة للفحص
+                      </span>
+                      <div className="size-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60 flex items-center justify-center">
+                        <Handshake className="size-4" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums">
+                        {data.counts.accounts}
+                      </p>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 block">
+                        حسابات مصرفية وأصول واستثمارات
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
                 <section className="grid gap-6 lg:grid-cols-2">
                   {/* Card 1: Operation & Ledger Activity Counts */}
                   <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs flex flex-col justify-between">

@@ -74,23 +74,25 @@ function ExecutiveMetricCell({
   currency,
   detail,
   accent = "emerald",
+  className = "",
 }: {
-  icon: typeof Landmark;
+  icon: any;
   label: string;
-  value: number | string;
+  value: any;
   currency: string;
-  detail: React.ReactNode;
+  detail: any;
   accent?: "emerald" | "sky" | "amber" | "rose";
+  className?: string;
 }) {
   const accentStyles = {
-    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-    sky: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
-    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
-  }[accent];
+    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30",
+    sky: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 dark:border-sky-500/30",
+    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30",
+    rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 dark:border-rose-500/30",
+  }[accent || "emerald"];
 
   return (
-    <div className="p-5 sm:p-6 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+    <div className={`p-5 sm:p-6 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors ${className}`}>
       <div className="flex items-center justify-between">
         <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
           {label}
@@ -345,7 +347,7 @@ export default function FintechDashboard() {
         ) : null}
 
         <motion.section
-          className="bg-white dark:bg-card rounded-2xl border border-slate-200/70 dark:border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-slate-100 dark:divide-border/60 overflow-hidden"
+          className="bg-white dark:bg-card rounded-2xl border border-slate-200/70 dark:border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 overflow-hidden mb-6"
           initial={reduceMotion ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.42, delay: 0.05 }}
@@ -357,6 +359,7 @@ export default function FintechDashboard() {
             currency={currency}
             detail={usingDemo ? "لقطة توضيحية قابلة للاستبدال" : "مُقوّم بعملة الأساس"}
             accent="emerald"
+            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
           />
           <ExecutiveMetricCell
             icon={WalletCards}
@@ -365,6 +368,7 @@ export default function FintechDashboard() {
             currency={currency}
             detail="الحسابات النقدية والمصرفية"
             accent="sky"
+            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
           />
           <ExecutiveMetricCell
             icon={BarChart3}
@@ -378,6 +382,7 @@ export default function FintechDashboard() {
               </>
             }
             accent="amber"
+            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
           />
           <ExecutiveMetricCell
             icon={BadgeDollarSign}
@@ -386,6 +391,7 @@ export default function FintechDashboard() {
             currency={currency}
             detail="قروض وبطاقات نشطة"
             accent="rose"
+            className="border-b-0 lg:border-l-0"
           />
         </motion.section>
 
