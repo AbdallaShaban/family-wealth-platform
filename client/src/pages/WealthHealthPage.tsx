@@ -22,6 +22,47 @@ import {
   Save,
 } from "lucide-react";
 
+const INSTITUTIONAL_SLIDER_CLASS =
+  "w-full h-2 rounded-full appearance-none cursor-pointer bg-transparent focus:outline-hidden " +
+  /* Webkit (Chrome / Edge / Safari) Track */
+  "[&::-webkit-slider-runnable-track]:h-2 " +
+  "[&::-webkit-slider-runnable-track]:rounded-full " +
+  "[&::-webkit-slider-runnable-track]:bg-slate-200 " +
+  "dark:[&::-webkit-slider-runnable-track]:bg-slate-700 " +
+  "[&::-webkit-slider-runnable-track]:border " +
+  "[&::-webkit-slider-runnable-track]:border-slate-300/80 " +
+  "dark:[&::-webkit-slider-runnable-track]:border-slate-600/80 " +
+  /* Webkit Thumb */
+  "[&::-webkit-slider-thumb]:appearance-none " +
+  "[&::-webkit-slider-thumb]:size-5 " +
+  "[&::-webkit-slider-thumb]:-mt-1.5 " +
+  "[&::-webkit-slider-thumb]:rounded-full " +
+  "[&::-webkit-slider-thumb]:bg-slate-900 " +
+  "dark:[&::-webkit-slider-thumb]:bg-white " +
+  "[&::-webkit-slider-thumb]:border-2 " +
+  "[&::-webkit-slider-thumb]:border-white " +
+  "dark:[&::-webkit-slider-thumb]:border-slate-900 " +
+  "[&::-webkit-slider-thumb]:shadow-md " +
+  "[&::-webkit-slider-thumb]:transition-transform " +
+  "hover:[&::-webkit-slider-thumb]:scale-110 " +
+  /* Firefox Track */
+  "[&::-moz-range-track]:h-2 " +
+  "[&::-moz-range-track]:rounded-full " +
+  "[&::-moz-range-track]:bg-slate-200 " +
+  "dark:[&::-moz-range-track]:bg-slate-700 " +
+  "[&::-moz-range-track]:border " +
+  "[&::-moz-range-track]:border-slate-300/80 " +
+  "dark:[&::-moz-range-track]:border-slate-600/80 " +
+  /* Firefox Thumb */
+  "[&::-moz-range-thumb]:size-5 " +
+  "[&::-moz-range-thumb]:rounded-full " +
+  "[&::-moz-range-thumb]:bg-slate-900 " +
+  "dark:[&::-moz-range-thumb]:bg-white " +
+  "[&::-moz-range-thumb]:border-2 " +
+  "[&::-moz-range-thumb]:border-white " +
+  "dark:[&::-moz-range-thumb]:border-slate-900 " +
+  "[&::-moz-range-thumb]:shadow-md";
+
 export default function WealthHealthPage() {
   const utils = trpc.useUtils();
 
@@ -873,7 +914,7 @@ export default function WealthHealthPage() {
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
                     />
                   </div>
-                  <div dir="ltr" className="w-full">
+                  <div dir="ltr" className="w-full py-1">
                     <input
                       type="range"
                       min="0"
@@ -881,7 +922,7 @@ export default function WealthHealthPage() {
                       step="0.1"
                       value={parseFloat(customNominalReturn) || 0}
                       onChange={e => setCustomNominalReturn(parseFloat(e.target.value).toFixed(1))}
-                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-900 dark:accent-white"
+                      className={INSTITUTIONAL_SLIDER_CLASS}
                     />
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 7.0% سنويًا</p>
@@ -903,7 +944,7 @@ export default function WealthHealthPage() {
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
                     />
                   </div>
-                  <div dir="ltr" className="w-full">
+                  <div dir="ltr" className="w-full py-1">
                     <input
                       type="range"
                       min="0"
@@ -911,7 +952,7 @@ export default function WealthHealthPage() {
                       step="0.1"
                       value={parseFloat(customInflation) || 0}
                       onChange={e => setCustomInflation(parseFloat(e.target.value).toFixed(1))}
-                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-900 dark:accent-white"
+                      className={INSTITUTIONAL_SLIDER_CLASS}
                     />
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 3.0% سنويًا</p>
@@ -933,7 +974,7 @@ export default function WealthHealthPage() {
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
                     />
                   </div>
-                  <div dir="ltr" className="w-full">
+                  <div dir="ltr" className="w-full py-1">
                     <input
                       type="range"
                       min="1"
@@ -941,7 +982,7 @@ export default function WealthHealthPage() {
                       step="0.1"
                       value={parseFloat(customSwr) || 4}
                       onChange={e => setCustomSwr(parseFloat(e.target.value).toFixed(1))}
-                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-900 dark:accent-white"
+                      className={INSTITUTIONAL_SLIDER_CLASS}
                     />
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 4.0% (قاعدة الـ 25 ضعفًا)</p>
