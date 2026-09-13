@@ -231,85 +231,85 @@ export default function InvestmentsPageRedesign() {
         />
 
         {/* Executive Metric Strip */}
-        <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/60 mb-6 overflow-hidden">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 lg:divide-y-0 divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
           {/* Cell 1: القيمة السوقية الإجمالية */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+          <div className="lg:col-span-2 bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60">
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 القيمة السوقية الإجمالية
               </span>
-              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30">
-                <CircleDollarSign className="size-3.5 sm:size-4" />
+              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                <CircleDollarSign className="size-4" />
               </div>
             </div>
-            <div className="mt-2.5 mb-1">
-              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="mt-1">
+              <strong className="text-slate-900 dark:text-white font-extrabold font-mono text-xl sm:text-2xl lg:text-3xl tabular-nums tracking-tight whitespace-nowrap block">
                 <SensitiveValue>
                   {portfolio.isLoading ? "—" : formatMoney(totalMarketValue, baseCurrency, 2)}
                 </SensitiveValue>
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
               إجمالي تقييم الأصول والأسهم بالسعر الحالي
             </span>
           </div>
 
           {/* Cell 2: إجمالي الأصول النشطة */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-l sm:max-lg:border-l-0 lg:border-l border-slate-100 dark:border-slate-800/60">
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 إجمالي الأصول النشطة
               </span>
-              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 dark:border-indigo-500/30">
-                <BriefcaseBusiness className="size-3.5 sm:size-4" />
+              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                <BriefcaseBusiness className="size-4" />
               </div>
             </div>
-            <div className="mt-2.5 mb-1">
-              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="mt-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block">
                 {portfolio.isLoading ? "—" : holdings.length}
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
               المراكز المفتوحة داخل المحفظة
             </span>
           </div>
 
           {/* Cell 3: أصول مقيّمة بالسوق */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-l border-slate-100 dark:border-slate-800/60 sm:max-lg:border-t sm:max-lg:border-slate-100 dark:sm:max-lg:border-slate-800/60">
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 أصول مقيّمة بالسوق
               </span>
-              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30">
-                <CheckCircle2 className="size-3.5 sm:size-4" />
+              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                <CheckCircle2 className="size-4" />
               </div>
             </div>
-            <div className="mt-2.5 mb-1">
-              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="mt-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block">
                 {portfolio.isLoading ? "—" : valuedHoldings.length}
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
               أصول محدثة بآخر سعر إغلاق
             </span>
           </div>
 
           {/* Cell 4: بانتظار التسعير */}
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-l last:border-l-0 border-slate-100 dark:border-slate-800/60 sm:max-lg:border-t sm:max-lg:border-slate-100 dark:sm:max-lg:border-slate-800/60">
             <div className="flex items-center justify-between">
-              <span className="text-slate-700 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider">
+              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
                 بانتظار التسعير
               </span>
-              <div className="flex size-7 sm:size-8 items-center justify-center rounded-lg border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30">
-                <Clock className="size-3.5 sm:size-4" />
+              <div className="size-7 rounded-lg bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                <Clock className="size-4" />
               </div>
             </div>
-            <div className="mt-2.5 mb-1">
-              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap">
+            <div className="mt-1">
+              <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block">
                 {portfolio.isLoading ? "—" : needsQuote.length}
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
               أصول تحتاج تحديث سعر السوق
             </span>
           </div>
