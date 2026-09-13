@@ -5,6 +5,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-display: "Cairo", sans-serif;
   --font-body: "Cairo", sans-serif;

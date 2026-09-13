@@ -973,7 +973,7 @@ export default function TransactionsHubPage() {
 
         {/* Institutional Operation Dialog & Review Summary */}
         <Dialog open={activeModal !== null} onOpenChange={open => !open && resetForm()}>
-          <DialogContent className="max-w-xl sm:max-w-xl w-full overflow-hidden bg-white text-slate-900 border border-slate-200/90 shadow-2xl rounded-2xl dark:bg-[#0B0F17] dark:text-slate-100 dark:border-slate-800" dir="rtl">
+          <DialogContent className="max-w-xl sm:max-w-xl w-full overflow-hidden bg-white text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl" dir="rtl">
             <DialogHeader className="border-b border-slate-200 dark:border-slate-800 pb-3">
               <div className="flex items-center justify-between">
                 <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-lg">
@@ -1016,7 +1016,7 @@ export default function TransactionsHubPage() {
                       <div className="grid gap-2 min-w-0">
                         <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1.5 block">الحساب المالي</Label>
                         <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                          <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                          <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                             <SelectValue placeholder="اختر الحساب المستهدف" className="truncate" />
                           </SelectTrigger>
                           <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1042,14 +1042,14 @@ export default function TransactionsHubPage() {
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
                           <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1.5 block">تصنيف التدفق (اختياري)</Label>
                           <Select value={categoryId} onValueChange={setCategoryId}>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر تصنيفاً" className="truncate" />
                             </SelectTrigger>
                             <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1076,7 +1076,7 @@ export default function TransactionsHubPage() {
                           placeholder="ملاحظات توثيقية إضافية للتدقيق..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                          className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1089,7 +1089,7 @@ export default function TransactionsHubPage() {
                         <div className="grid gap-2 min-w-0">
                           <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1.5 block">من الحساب (المصدر)</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="حساب الخصم" className="truncate" />
                             </SelectTrigger>
                             <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1104,7 +1104,7 @@ export default function TransactionsHubPage() {
                         <div className="grid gap-2 min-w-0">
                           <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1.5 block">إلى الحساب (الوجهة)</Label>
                           <Select value={targetAccountId} onValueChange={setTargetAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="حساب الإيداع" className="truncate" />
                             </SelectTrigger>
                             <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1132,7 +1132,7 @@ export default function TransactionsHubPage() {
                           value={amount}
                           onChange={e => setAmount(e.target.value)}
                           placeholder="0.00"
-                          className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                          className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                           required
                         />
                       </div>
@@ -1146,7 +1146,7 @@ export default function TransactionsHubPage() {
                           placeholder="مذكرة التحويل الداخلي..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                          className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1161,7 +1161,7 @@ export default function TransactionsHubPage() {
                         <div className="grid gap-2 min-w-0">
                           <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1.5 block">حساب التسوية النقدية</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر الحساب النقدي" className="truncate" />
                             </SelectTrigger>
                             <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1180,7 +1180,7 @@ export default function TransactionsHubPage() {
                               : "الأداة الاستثمارية"}
                           </Label>
                           <Select value={instrumentId} onValueChange={setInstrumentId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر الأداة" className="truncate" />
                             </SelectTrigger>
                             <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1208,7 +1208,7 @@ export default function TransactionsHubPage() {
                             value={quantity}
                             onChange={e => setQuantity(e.target.value)}
                             placeholder="0"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
@@ -1224,7 +1224,7 @@ export default function TransactionsHubPage() {
                             value={unitPrice}
                             onChange={e => setUnitPrice(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
@@ -1241,7 +1241,7 @@ export default function TransactionsHubPage() {
                             value={feeAmount}
                             onChange={e => setFeeAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
@@ -1254,7 +1254,7 @@ export default function TransactionsHubPage() {
                             value={taxAmount}
                             onChange={e => setTaxAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                           />
                         </div>
                       </div>
@@ -1268,7 +1268,7 @@ export default function TransactionsHubPage() {
                           placeholder="ملاحظات توثيق الصفقة..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                          className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1281,7 +1281,7 @@ export default function TransactionsHubPage() {
                         <div className="grid gap-2 min-w-0">
                           <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1.5 block">الالتزام / القرض المستحق</Label>
                           <Select value={debtId} onValueChange={setDebtId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر الالتزام" className="truncate" />
                             </SelectTrigger>
                             <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1298,7 +1298,7 @@ export default function TransactionsHubPage() {
                         <div className="grid gap-2 min-w-0">
                           <Label className="text-slate-800 dark:text-slate-200 font-semibold text-xs mb-1.5 block">حساب السداد</Label>
                           <Select value={primaryAccountId} onValueChange={setPrimaryAccountId} required>
-                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500">
+                            <SelectTrigger className="w-full min-w-0 justify-between overflow-hidden bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500">
                               <SelectValue placeholder="اختر حساب الخصم" className="truncate" />
                             </SelectTrigger>
                             <SelectContent className="max-w-[calc(100vw-2rem)] w-[var(--radix-select-trigger-width)] bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
@@ -1323,7 +1323,7 @@ export default function TransactionsHubPage() {
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                             required
                           />
                         </div>
@@ -1337,7 +1337,7 @@ export default function TransactionsHubPage() {
                             value={interestAmount}
                             onChange={e => setInterestAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                           />
                         </div>
                         <div className="grid gap-2 min-w-0">
@@ -1350,7 +1350,7 @@ export default function TransactionsHubPage() {
                             value={feeAmount}
                             onChange={e => setFeeAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                            className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                           />
                         </div>
                       </div>
@@ -1364,7 +1364,7 @@ export default function TransactionsHubPage() {
                           placeholder="رقم مرجع السداد أو ملاحظة..."
                           rows={2}
                           maxLength={2000}
-                          className="w-full bg-white border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl font-medium text-sm dark:bg-[#0E1420] dark:border-slate-700/80 dark:text-slate-100 dark:placeholder:text-slate-500"
+                          className="w-full bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-600 focus:ring-1 focus:ring-slate-600 rounded-xl dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700 dark:placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -1571,7 +1571,7 @@ export default function TransactionsHubPage() {
                     <Button
                       type="submit"
                       disabled={isPending}
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-5 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950"
+                      className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold text-sm py-2.5 px-5 rounded-xl shadow-sm transition-all"
                     >
                       {isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
                       تأكيد ونشر القيد
@@ -1584,13 +1584,13 @@ export default function TransactionsHubPage() {
                       variant="ghost"
                       onClick={resetForm}
                       disabled={isPending}
-                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm font-semibold px-4 py-2.5"
+                      className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-sm font-semibold"
                     >
                       إلغاء
                     </Button>
                     <Button
                       type="submit"
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-5 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950"
+                      className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold text-sm py-2.5 px-5 rounded-xl shadow-sm transition-all"
                     >
                       مراجعة العملية
                     </Button>
