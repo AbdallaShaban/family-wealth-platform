@@ -548,7 +548,7 @@ export default function TransactionsHubPage() {
 
   return (
     <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-7xl space-y-7">
+      <div dir="rtl" className="mx-auto max-w-7xl space-y-4">
         {/* Executive Header / Hero */}
         <PageHeader
           title="المعاملات المالية"
@@ -568,13 +568,14 @@ export default function TransactionsHubPage() {
             </div>
           }
           icon={ArrowLeftRight}
+          className="p-3.5 sm:p-4 space-y-2 rounded-2xl"
           actions={
             <Button
               variant="outline"
               size="sm"
               onClick={invalidateAll}
               disabled={recentEvents.isFetching}
-              className="h-9 gap-2 border-border/80 text-xs hover:border-emerald-500/40 hover:bg-emerald-500/5 hover:text-emerald-600 dark:hover:text-emerald-400"
+              className="h-8 gap-1.5 border-border/80 text-xs hover:border-emerald-500/40 hover:bg-emerald-500/5 hover:text-emerald-600 dark:hover:text-emerald-400"
             >
               <RefreshCw className={`size-3.5 ${recentEvents.isFetching ? "animate-spin text-emerald-500" : ""}`} />
               <span>تحديث البيانات</span>
@@ -584,94 +585,94 @@ export default function TransactionsHubPage() {
 
         {/* Unified Top 4 Ledger Metrics Executive Strip */}
         <section className="bg-white dark:bg-card rounded-2xl border border-slate-200/70 dark:border-border shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-border/60 overflow-hidden">
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 حسابات التسوية
               </span>
-              <div className="flex size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                <Wallet className="size-4" />
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                <Wallet className="size-3.5" />
               </div>
             </div>
-            <div className="mt-3 mb-1">
-              <strong className="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tabular-nums block">
+            <div className="mt-1.5 mb-0.5">
+              <strong className="font-mono text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums block">
                 {cashAccounts.length}
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium block">
               حسابات نقدية نشطة
             </span>
           </div>
 
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 أدوات الاستثمار
               </span>
-              <div className="flex size-8 items-center justify-center rounded-lg border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">
-                <TrendingUp className="size-4" />
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">
+                <TrendingUp className="size-3.5" />
               </div>
             </div>
-            <div className="mt-3 mb-1">
-              <strong className="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tabular-nums block">
+            <div className="mt-1.5 mb-0.5">
+              <strong className="font-mono text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums block">
                 {fundInstruments.length}
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium block">
               أدوات وصناديق متاحة
             </span>
           </div>
 
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 الالتزامات النشطة
               </span>
-              <div className="flex size-8 items-center justify-center rounded-lg border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">
-                <CreditCard className="size-4" />
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">
+                <CreditCard className="size-3.5" />
               </div>
             </div>
-            <div className="mt-3 mb-1">
-              <strong className="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tabular-nums block">
+            <div className="mt-1.5 mb-0.5">
+              <strong className="font-mono text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums block">
                 {(debts.data ?? []).filter(d => d.status === "active").length}
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium block">
               ديون قابلة للسداد
             </span>
           </div>
 
-          <div className="p-4 sm:p-5 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 القيود المسجلة
               </span>
-              <div className="flex size-8 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
-                <ShieldCheck className="size-4" />
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                <ShieldCheck className="size-3.5" />
               </div>
             </div>
-            <div className="mt-3 mb-1">
-              <strong className="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tabular-nums block">
+            <div className="mt-1.5 mb-0.5">
+              <strong className="font-mono text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tabular-nums block">
                 {recentEvents.data?.length ?? 0}
               </strong>
             </div>
-            <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium block">
               دفتر أستاذ متوازن
             </span>
           </div>
         </section>
 
         {/* Compact 1-line Action Dock */}
-        <section className="rounded-2xl border border-slate-200/70 dark:border-border bg-white dark:bg-card p-3.5 sm:p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3" aria-labelledby="operations-heading">
-          <div className="flex items-center gap-3">
+        <section className="rounded-2xl border border-slate-200/70 dark:border-border bg-white dark:bg-card py-2.5 px-3.5 sm:px-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-2.5" aria-labelledby="operations-heading">
+          <div className="flex items-center gap-2.5">
             <Button
               onClick={() => {
                 setActiveModal("deposit");
                 setReviewStep(false);
               }}
-              className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs h-9 px-4 rounded-xl shadow-xs shrink-0 cursor-pointer"
+              className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs h-8 px-3.5 rounded-xl shadow-xs shrink-0 cursor-pointer"
             >
-              <PlusCircle className="size-4" />
+              <PlusCircle className="size-3.5" />
               <span>تسجيل معاملة جديدة</span>
             </Button>
             <span className="hidden lg:inline-block text-xs font-medium text-slate-400 dark:text-muted-foreground">
@@ -679,53 +680,53 @@ export default function TransactionsHubPage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 md:pb-0 scrollbar-none">
             <button
               type="button"
               onClick={() => { setActiveModal("deposit"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <ArrowDownLeft className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              <ArrowDownLeft className="size-3 text-emerald-600 dark:text-emerald-400" />
               <span>إيداع كاش</span>
             </button>
             <button
               type="button"
               onClick={() => { setActiveModal("withdrawal"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <ArrowUpRight className="size-3.5 text-rose-600 dark:text-rose-400" />
+              <ArrowUpRight className="size-3 text-rose-600 dark:text-rose-400" />
               <span>سحب / مصروف</span>
             </button>
             <button
               type="button"
               onClick={() => { setActiveModal("transfer"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <ArrowLeftRight className="size-3.5 text-sky-600 dark:text-sky-400" />
+              <ArrowLeftRight className="size-3 text-sky-600 dark:text-sky-400" />
               <span>تحويل داخلي</span>
             </button>
             <button
               type="button"
               onClick={() => { setActiveModal("buy"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <TrendingUp className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              <TrendingUp className="size-3 text-emerald-600 dark:text-emerald-400" />
               <span>شراء استثمار</span>
             </button>
             <button
               type="button"
               onClick={() => { setActiveModal("sell"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <TrendingDown className="size-3.5 text-amber-600 dark:text-amber-400" />
+              <TrendingDown className="size-3 text-amber-600 dark:text-amber-400" />
               <span>بيع / تسييل</span>
             </button>
             <button
               type="button"
               onClick={() => { setActiveModal("debt_payment"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <CreditCard className="size-3.5 text-slate-600 dark:text-slate-400" />
+              <CreditCard className="size-3 text-slate-600 dark:text-slate-400" />
               <span>سداد التزام</span>
             </button>
           </div>
@@ -734,7 +735,7 @@ export default function TransactionsHubPage() {
         {/* Section: Transactions Ledger Feed - Unified Table Container */}
         <section className="rounded-2xl border border-slate-200/70 dark:border-border bg-white dark:bg-card shadow-xs overflow-hidden" aria-labelledby="history-heading">
           {/* Integrated Header Toolbar directly attached to top of table */}
-          <div className="p-4 sm:p-5 border-b border-slate-200/70 dark:border-border/60 flex flex-col gap-3.5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="p-3 sm:p-4 border-b border-slate-200/70 dark:border-border/60 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 id="history-heading" className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-foreground">
                 <FileText className="size-4 text-emerald-600 dark:text-emerald-400" />
@@ -753,12 +754,12 @@ export default function TransactionsHubPage() {
                   placeholder="بحث في البيان أو المبلغ..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="h-9 pr-9 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border"
+                  className="h-8.5 pr-9 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border"
                 />
               </div>
 
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="h-9 w-32 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border">
+                <SelectTrigger className="h-8.5 w-32 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border">
                   <Filter className="ml-1 size-3 text-slate-400" />
                   <SelectValue placeholder="نوع المعاملة" />
                 </SelectTrigger>
@@ -774,7 +775,7 @@ export default function TransactionsHubPage() {
 
               {cashAccounts.length > 0 && (
                 <Select value={accountFilter} onValueChange={setAccountFilter}>
-                  <SelectTrigger className="h-9 w-32 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border">
+                  <SelectTrigger className="h-8.5 w-32 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border">
                     <Building2 className="ml-1 size-3 text-slate-400" />
                     <SelectValue placeholder="الحساب" />
                   </SelectTrigger>
@@ -798,7 +799,7 @@ export default function TransactionsHubPage() {
                     setTypeFilter("all");
                     setAccountFilter("all");
                   }}
-                  className="h-9 px-2.5 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="h-8.5 px-2.5 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                   title="إعادة تعيين الفلاتر"
                 >
                   <RotateCcw className="size-3.5" />
@@ -806,7 +807,7 @@ export default function TransactionsHubPage() {
                 </Button>
               )}
 
-              <Badge variant="outline" className="h-9 border-slate-200/80 dark:border-border bg-slate-50/50 dark:bg-muted/40 px-2.5 text-xs font-normal text-slate-600 dark:text-muted-foreground">
+              <Badge variant="outline" className="h-8.5 border-slate-200/80 dark:border-border bg-slate-50/50 dark:bg-muted/40 px-2.5 text-xs font-normal text-slate-600 dark:text-muted-foreground">
                 {filteredEvents.length} عملية
               </Badge>
             </div>
@@ -865,14 +866,14 @@ export default function TransactionsHubPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-right text-sm">
-                  <thead className="border-b border-slate-200/80 dark:border-border bg-slate-50/80 dark:bg-slate-900/50 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <thead className="border-b border-slate-200 dark:border-border bg-slate-50/80 dark:bg-slate-900/60 text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
                     <tr>
-                      <th className="py-3.5 px-4 pr-5">نوع العملية</th>
-                      <th className="py-3.5 px-4">الحساب المالي</th>
-                      <th className="py-3.5 px-4">التاريخ والوقت</th>
-                      <th className="py-3.5 px-4">البيان والملاحظات</th>
-                      <th className="py-3.5 px-4">المبلغ الإجمالي</th>
-                      <th className="py-3.5 px-4 pl-5">حالة القيد</th>
+                      <th className="py-3 px-4 pr-5 font-bold text-slate-700 dark:text-slate-300">نوع العملية</th>
+                      <th className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">الحساب المالي</th>
+                      <th className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">التاريخ والوقت</th>
+                      <th className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">البيان والملاحظات</th>
+                      <th className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">المبلغ الإجمالي</th>
+                      <th className="py-3 px-4 pl-5 font-bold text-slate-700 dark:text-slate-300">حالة القيد</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-card divide-y divide-slate-100 dark:divide-border/50">
@@ -894,16 +895,16 @@ export default function TransactionsHubPage() {
                           className="border-b border-slate-100 dark:border-border/50 transition-colors hover:bg-slate-50/60 dark:hover:bg-muted/30 last:border-b-0"
                         >
                           {/* Type Column */}
-                          <td className="py-3.5 px-4 pr-5">
+                          <td className="py-3 px-4 pr-5">
                             <div className="flex items-center gap-2.5">
                               <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${meta.color}`}>
                                 <Icon className="size-4" />
                               </div>
                               <div>
-                                <p className="font-semibold text-slate-900 dark:text-foreground">
+                                <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                                   {meta.label}
                                 </p>
-                                <p className="font-mono text-[11px] text-slate-500 dark:text-muted-foreground">
+                                <p className="font-mono text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                                   #{event.id}
                                 </p>
                               </div>
@@ -911,34 +912,34 @@ export default function TransactionsHubPage() {
                           </td>
 
                           {/* Account Column */}
-                          <td className="py-3.5 px-4">
-                            <div className="text-xs">
-                              <p className="font-semibold text-slate-900 dark:text-foreground">
+                          <td className="py-3 px-4">
+                            <div>
+                              <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                                 {accountInfo?.name || "حساب المعاملة"}
                               </p>
-                              <p className="font-mono text-[11px] text-slate-500 dark:text-muted-foreground mt-0.5">
+                              <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                                 {event.currency}
                               </p>
                             </div>
                           </td>
 
                           {/* Date Column */}
-                          <td className="py-3.5 px-4 text-xs text-slate-500 dark:text-muted-foreground">
-                            <div className="flex items-center gap-1.5 font-mono">
-                              <Clock className="size-3 text-slate-400" />
+                          <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center gap-1.5 font-mono text-xs text-slate-500 dark:text-slate-400">
+                              <Clock className="size-3 text-slate-400 shrink-0" />
                               <span>{new Date(event.occurredAt).toLocaleString("en-GB")}</span>
                             </div>
                           </td>
 
                           {/* Memo Column */}
-                          <td className="max-w-xs py-3.5 px-4 text-xs text-slate-600 dark:text-muted-foreground">
+                          <td className="max-w-xs py-3 px-4 text-xs text-slate-600 dark:text-slate-300">
                             <span className="truncate block" title={event.memo || ""}>
                               {event.memo || "—"}
                             </span>
                           </td>
 
                           {/* Amount Column */}
-                          <td className="py-3.5 px-4">
+                          <td className="py-3 px-4">
                             <div className="font-mono text-sm sm:text-base font-bold tracking-tight" dir="ltr">
                               <span className={`${meta.amountColor} font-bold font-mono text-sm sm:text-base tabular-nums`}>
                                 {meta.sign} <SensitiveValue>{formattedAmount}</SensitiveValue>
@@ -947,16 +948,16 @@ export default function TransactionsHubPage() {
                           </td>
 
                           {/* Status Badge */}
-                          <td className="py-3.5 px-4 pl-5">
+                          <td className="py-3 px-4 pl-5">
                             {event.status === "posted" ? (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/50 dark:border-emerald-800/40 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
-                                <span className="size-1.5 rounded-full bg-emerald-600 shrink-0" />
+                              <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2.5 py-1 text-xs font-medium text-emerald-950 dark:text-emerald-300 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block ml-1.5 shrink-0" />
                                 <span>مرحّل</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/50 dark:border-amber-800/40 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300">
-                                <span className="size-1.5 rounded-full bg-amber-500 shrink-0" />
-                                <span>قيد المعالجة</span>
+                              <span className="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 px-2.5 py-1 text-xs font-medium text-amber-950 dark:text-amber-300 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 inline-block ml-1.5 shrink-0" />
+                                <span>معلق</span>
                               </span>
                             )}
                           </td>
