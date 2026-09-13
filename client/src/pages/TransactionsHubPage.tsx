@@ -156,23 +156,23 @@ const TONE_STYLES: Record<
   },
   sky: {
     iconBox:
-      "bg-[#F0F9FF] dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-500/25 group-hover:bg-sky-100/60 dark:group-hover:bg-sky-900/60",
+      "bg-[#F0F9FF] dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border border-sky-500/25 dark:border-slate-700/60 group-hover:bg-sky-100/60 dark:group-hover:bg-slate-700/60",
     badge:
-      "bg-[#F0F9FF] dark:bg-sky-950/50 text-[#0B1628] dark:text-slate-100 border border-sky-500/30 font-semibold",
+      "bg-[#F0F9FF] dark:bg-slate-800/50 text-[#0B1628] dark:text-slate-200 border border-sky-500/30 dark:border-slate-700/60 font-semibold",
     cardBorderHover:
-      "hover:border-sky-500/50 dark:hover:border-sky-500/40 hover:shadow-sky-950/10",
-    accentLine: "bg-[#38BDF8]",
+      "hover:border-sky-500/50 dark:hover:border-slate-700 hover:shadow-sky-950/10 dark:hover:shadow-none",
+    accentLine: "bg-[#38BDF8] dark:bg-slate-500",
     actionText:
-      "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-sky-700 dark:group-hover:text-sky-400",
-    arrowColor: "text-sky-600 dark:text-sky-400",
+      "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-sky-700 dark:group-hover:text-slate-200",
+    arrowColor: "text-sky-600 dark:text-slate-300",
   },
   amber: {
     iconBox:
-      "bg-[#FFFBEB] dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-500/25 group-hover:bg-amber-100/60 dark:group-hover:bg-amber-900/60",
+      "bg-[#FFFBEB] dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 dark:border-amber-500/25 group-hover:bg-amber-100/60 dark:group-hover:bg-amber-500/20",
     badge:
-      "bg-[#FFFBEB] dark:bg-amber-950/50 text-[#0B1628] dark:text-slate-100 border border-amber-500/30 font-semibold",
+      "bg-[#FFFBEB] dark:bg-amber-500/10 text-[#0B1628] dark:text-slate-100 border border-amber-500/30 dark:border-amber-500/25 font-semibold",
     cardBorderHover:
-      "hover:border-amber-500/50 dark:hover:border-amber-500/40 hover:shadow-amber-950/10",
+      "hover:border-amber-500/50 dark:hover:border-slate-700 hover:shadow-amber-950/10 dark:hover:shadow-none",
     accentLine: "bg-[#F59E0B]",
     actionText:
       "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-amber-700 dark:group-hover:text-amber-400",
@@ -180,11 +180,11 @@ const TONE_STYLES: Record<
   },
   slate: {
     iconBox:
-      "bg-[#F1F5F9] dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 group-hover:bg-slate-200/60 dark:group-hover:bg-slate-700/60",
+      "bg-[#F1F5F9] dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/60 group-hover:bg-slate-200/60 dark:group-hover:bg-slate-700/60",
     badge:
-      "bg-[#F1F5F9] dark:bg-slate-800/50 text-[#0B1628] dark:text-slate-100 border border-slate-300 dark:border-slate-700 font-semibold",
+      "bg-[#F1F5F9] dark:bg-slate-800/50 text-[#0B1628] dark:text-slate-100 border border-slate-300 dark:border-slate-700/60 font-semibold",
     cardBorderHover:
-      "hover:border-slate-400 dark:hover:border-slate-500",
+      "hover:border-slate-400 dark:hover:border-slate-600 dark:hover:shadow-none",
     accentLine: "bg-[#64748B]",
     actionText:
       "text-[#0B1628] dark:text-slate-100 font-semibold group-hover:text-slate-900 dark:group-hover:text-slate-200",
@@ -200,93 +200,93 @@ const eventLabel: Record<
   deposit: {
     label: "إيداع سيولة",
     icon: ArrowDownLeft,
-    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40",
+    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25",
     sign: "+",
-    amountColor: "text-emerald-950 dark:text-emerald-300",
+    amountColor: "text-emerald-950 dark:text-emerald-400",
   },
   opening_balance: {
     label: "رصيد افتتاحي",
     icon: PlusCircle,
-    color: "text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40",
+    color: "text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60",
     sign: "+",
-    amountColor: "text-emerald-950 dark:text-emerald-300",
+    amountColor: "text-emerald-950 dark:text-emerald-400",
   },
   income: {
     label: "دخل مصنف",
     icon: ArrowDownLeft,
-    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40",
+    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25",
     sign: "+",
-    amountColor: "text-emerald-950 dark:text-emerald-300",
+    amountColor: "text-emerald-950 dark:text-emerald-400",
   },
   withdrawal: {
     label: "سحب سيولة",
     icon: ArrowUpRight,
-    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40",
+    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/25",
     sign: "-",
-    amountColor: "text-rose-950 dark:text-rose-300",
+    amountColor: "text-rose-950 dark:text-rose-400",
   },
   expense: {
     label: "مصروف مصنف",
     icon: ArrowUpRight,
-    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40",
+    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/25",
     sign: "-",
-    amountColor: "text-rose-950 dark:text-rose-300",
+    amountColor: "text-rose-950 dark:text-rose-400",
   },
   transfer: {
     label: "تحويل داخلي",
     icon: ArrowLeftRight,
-    color: "text-sky-700 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 border border-sky-200/60 dark:border-sky-800/40",
+    color: "text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60",
     sign: "↔",
-    amountColor: "text-slate-900 dark:text-slate-100",
+    amountColor: "text-slate-900 dark:text-slate-200",
   },
   buy: {
     label: "شراء استثمار",
     icon: TrendingUp,
-    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40",
+    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25",
     sign: "-",
-    amountColor: "text-rose-950 dark:text-rose-300",
+    amountColor: "text-rose-950 dark:text-rose-400",
   },
   sell: {
     label: "بيع / تسييل",
     icon: TrendingDown,
-    color: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40",
+    color: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/25",
     sign: "+",
-    amountColor: "text-emerald-950 dark:text-emerald-300",
+    amountColor: "text-emerald-950 dark:text-emerald-400",
   },
   debt_payment: {
     label: "سداد دين",
     icon: CreditCard,
-    color: "text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700",
+    color: "text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60",
     sign: "-",
-    amountColor: "text-rose-950 dark:text-rose-300",
+    amountColor: "text-rose-950 dark:text-rose-400",
   },
   fund_redemption: {
     label: "استرداد صندوق",
     icon: Coins,
-    color: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40",
+    color: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/25",
     sign: "+",
-    amountColor: "text-emerald-950 dark:text-emerald-300",
+    amountColor: "text-emerald-950 dark:text-emerald-400",
   },
   dividend: {
     label: "توزيع نقدي",
     icon: ArrowDownLeft,
-    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40",
+    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25",
     sign: "+",
-    amountColor: "text-emerald-950 dark:text-emerald-300",
+    amountColor: "text-emerald-950 dark:text-emerald-400",
   },
   fee: {
     label: "رسوم",
     icon: ArrowUpRight,
-    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40",
+    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/25",
     sign: "-",
-    amountColor: "text-rose-950 dark:text-rose-300",
+    amountColor: "text-rose-950 dark:text-rose-400",
   },
   tax: {
     label: "ضرائب",
     icon: ArrowUpRight,
-    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-800/40",
+    color: "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border border-rose-200/60 dark:border-rose-500/25",
     sign: "-",
-    amountColor: "text-rose-950 dark:text-rose-300",
+    amountColor: "text-rose-950 dark:text-rose-400",
   },
 };
 
@@ -568,14 +568,14 @@ export default function TransactionsHubPage() {
             </div>
           }
           icon={ArrowLeftRight}
-          className="p-3.5 sm:p-4 space-y-2 rounded-2xl"
+          className="p-3.5 sm:p-4 space-y-2 rounded-2xl dark:bg-[#0B0F17]/90 dark:border-slate-800/80 dark:shadow-none"
           actions={
             <Button
               variant="outline"
               size="sm"
               onClick={invalidateAll}
               disabled={recentEvents.isFetching}
-              className="h-8 gap-1.5 border-border/80 text-xs hover:border-emerald-500/40 hover:bg-emerald-500/5 hover:text-emerald-600 dark:hover:text-emerald-400"
+              className="h-8 gap-1.5 border-border/80 text-xs hover:border-emerald-500/40 hover:bg-emerald-500/5 hover:text-emerald-600 dark:border-slate-800 dark:bg-[#0E1420] dark:text-slate-300 dark:hover:bg-slate-800/50"
             >
               <RefreshCw className={`size-3.5 ${recentEvents.isFetching ? "animate-spin text-emerald-500" : ""}`} />
               <span>تحديث البيانات</span>
@@ -584,13 +584,13 @@ export default function TransactionsHubPage() {
         />
 
         {/* Unified Top 4 Ledger Metrics Executive Strip */}
-        <section className="bg-white dark:bg-card rounded-2xl border border-slate-200/70 dark:border-border shadow-xs grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-border/60 overflow-hidden">
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+        <section className="bg-white dark:bg-[#0B0F17]/90 rounded-2xl border border-slate-200/70 dark:border-slate-800/80 shadow-xs dark:shadow-none grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x lg:divide-x-reverse divide-slate-100 dark:divide-slate-800/80 overflow-hidden">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 حسابات التسوية
               </span>
-              <div className="flex size-7 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30">
                 <Wallet className="size-3.5" />
               </div>
             </div>
@@ -604,12 +604,12 @@ export default function TransactionsHubPage() {
             </span>
           </div>
 
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 أدوات الاستثمار
               </span>
-              <div className="flex size-7 items-center justify-center rounded-lg border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60">
                 <TrendingUp className="size-3.5" />
               </div>
             </div>
@@ -623,12 +623,12 @@ export default function TransactionsHubPage() {
             </span>
           </div>
 
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 الالتزامات النشطة
               </span>
-              <div className="flex size-7 items-center justify-center rounded-lg border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 dark:border-rose-500/30">
                 <CreditCard className="size-3.5" />
               </div>
             </div>
@@ -642,12 +642,12 @@ export default function TransactionsHubPage() {
             </span>
           </div>
 
-          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-muted/20 transition-colors">
+          <div className="py-3 px-4 flex flex-col justify-between hover:bg-slate-50/40 dark:hover:bg-slate-800/30 transition-colors">
             <div className="flex items-center justify-between">
               <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wider">
                 القيود المسجلة
               </span>
-              <div className="flex size-7 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+              <div className="flex size-7 items-center justify-center rounded-lg border bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30">
                 <ShieldCheck className="size-3.5" />
               </div>
             </div>
@@ -663,19 +663,19 @@ export default function TransactionsHubPage() {
         </section>
 
         {/* Compact 1-line Action Dock */}
-        <section className="rounded-2xl border border-slate-200/70 dark:border-border bg-white dark:bg-card py-2.5 px-3.5 sm:px-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-2.5" aria-labelledby="operations-heading">
+        <section className="rounded-2xl border border-slate-200/70 dark:border-slate-800/80 bg-white dark:bg-[#0B0F17]/90 py-2.5 px-3.5 sm:px-4 shadow-xs dark:shadow-none flex flex-col md:flex-row md:items-center justify-between gap-2.5" aria-labelledby="operations-heading">
           <div className="flex items-center gap-2.5">
             <Button
               onClick={() => {
                 setActiveModal("deposit");
                 setReviewStep(false);
               }}
-              className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs h-8 px-3.5 rounded-xl shadow-xs shrink-0 cursor-pointer"
+              className="gap-2 bg-white hover:bg-slate-100 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-all dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200 border border-slate-200/80 dark:border-transparent shrink-0 cursor-pointer h-auto"
             >
-              <PlusCircle className="size-3.5" />
+              <PlusCircle className="size-3.5 text-slate-950" />
               <span>تسجيل معاملة جديدة</span>
             </Button>
-            <span className="hidden lg:inline-block text-xs font-medium text-slate-400 dark:text-muted-foreground">
+            <span className="hidden lg:inline-block text-xs font-medium text-slate-400 dark:text-slate-500">
               إجراء سريع:
             </span>
           </div>
@@ -684,7 +684,7 @@ export default function TransactionsHubPage() {
             <button
               type="button"
               onClick={() => { setActiveModal("deposit"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:bg-slate-800/50 dark:border-slate-700/60 dark:text-slate-300 dark:hover:bg-slate-800 hover:text-white transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
               <ArrowDownLeft className="size-3 text-emerald-600 dark:text-emerald-400" />
               <span>إيداع كاش</span>
@@ -692,7 +692,7 @@ export default function TransactionsHubPage() {
             <button
               type="button"
               onClick={() => { setActiveModal("withdrawal"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:bg-slate-800/50 dark:border-slate-700/60 dark:text-slate-300 dark:hover:bg-slate-800 hover:text-white transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
               <ArrowUpRight className="size-3 text-rose-600 dark:text-rose-400" />
               <span>سحب / مصروف</span>
@@ -700,15 +700,15 @@ export default function TransactionsHubPage() {
             <button
               type="button"
               onClick={() => { setActiveModal("transfer"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:bg-slate-800/50 dark:border-slate-700/60 dark:text-slate-300 dark:hover:bg-slate-800 hover:text-white transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <ArrowLeftRight className="size-3 text-sky-600 dark:text-sky-400" />
+              <ArrowLeftRight className="size-3 text-slate-600 dark:text-slate-300" />
               <span>تحويل داخلي</span>
             </button>
             <button
               type="button"
               onClick={() => { setActiveModal("buy"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:bg-slate-800/50 dark:border-slate-700/60 dark:text-slate-300 dark:hover:bg-slate-800 hover:text-white transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
               <TrendingUp className="size-3 text-emerald-600 dark:text-emerald-400" />
               <span>شراء استثمار</span>
@@ -716,7 +716,7 @@ export default function TransactionsHubPage() {
             <button
               type="button"
               onClick={() => { setActiveModal("sell"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:bg-slate-800/50 dark:border-slate-700/60 dark:text-slate-300 dark:hover:bg-slate-800 hover:text-white transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
               <TrendingDown className="size-3 text-amber-600 dark:text-amber-400" />
               <span>بيع / تسييل</span>
@@ -724,24 +724,24 @@ export default function TransactionsHubPage() {
             <button
               type="button"
               onClick={() => { setActiveModal("debt_payment"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 dark:border-border bg-white dark:bg-card hover:bg-slate-50 dark:hover:bg-muted/40 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/80 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 dark:bg-slate-800/50 dark:border-slate-700/60 dark:text-slate-300 dark:hover:bg-slate-800 hover:text-white transition-colors whitespace-nowrap shadow-2xs cursor-pointer"
             >
-              <CreditCard className="size-3 text-slate-600 dark:text-slate-400" />
+              <CreditCard className="size-3 text-slate-600 dark:text-slate-300" />
               <span>سداد التزام</span>
             </button>
           </div>
         </section>
 
         {/* Section: Transactions Ledger Feed - Unified Table Container */}
-        <section className="rounded-2xl border border-slate-200/70 dark:border-border bg-white dark:bg-card shadow-xs overflow-hidden" aria-labelledby="history-heading">
+        <section className="rounded-2xl border border-slate-200/70 dark:border-slate-800/80 bg-white dark:bg-[#0B0F17]/90 shadow-xs dark:shadow-none overflow-hidden" aria-labelledby="history-heading">
           {/* Integrated Header Toolbar directly attached to top of table */}
-          <div className="p-3 sm:p-4 border-b border-slate-200/70 dark:border-border/60 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="p-3 sm:p-4 border-b border-slate-200/70 dark:border-slate-800/80 flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 id="history-heading" className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-foreground">
+              <h2 id="history-heading" className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
                 <FileText className="size-4 text-emerald-600 dark:text-emerald-400" />
                 <span>سجل المعاملات</span>
               </h2>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-muted-foreground">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 عرض ومراجعة العمليات المالية المسجلة في دفتر الأستاذ
               </p>
             </div>
@@ -749,21 +749,21 @@ export default function TransactionsHubPage() {
             {/* Compact, responsive RTL Toolbar */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative min-w-44 flex-1 sm:flex-initial">
-                <Search className="pointer-events-none absolute right-3 top-2.5 size-3.5 text-slate-400" />
+                <Search className="pointer-events-none absolute right-3 top-2.5 size-3.5 text-slate-400 dark:text-slate-500" />
                 <Input
                   placeholder="بحث في البيان أو المبلغ..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="h-8.5 pr-9 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border"
+                  className="h-8.5 pr-9 text-xs bg-slate-50/50 dark:bg-[#0E1420] border-slate-200/80 dark:border-slate-800 dark:text-slate-100 placeholder:text-slate-500"
                 />
               </div>
 
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="h-8.5 w-32 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border">
-                  <Filter className="ml-1 size-3 text-slate-400" />
+                <SelectTrigger className="h-8.5 w-32 text-xs bg-slate-50/50 dark:bg-[#0E1420] border-slate-200/80 dark:border-slate-800 dark:text-slate-100">
+                  <Filter className="ml-1 size-3 text-slate-400 dark:text-slate-500" />
                   <SelectValue placeholder="نوع المعاملة" />
                 </SelectTrigger>
-                <SelectContent align="end">
+                <SelectContent align="end" className="dark:bg-[#0E1420] dark:border-slate-800 dark:text-slate-100">
                   <SelectItem value="all">كل العمليات</SelectItem>
                   <SelectItem value="cash_in">إيداع ودخل (+)</SelectItem>
                   <SelectItem value="cash_out">سحب ومصروف (-)</SelectItem>
@@ -775,11 +775,11 @@ export default function TransactionsHubPage() {
 
               {cashAccounts.length > 0 && (
                 <Select value={accountFilter} onValueChange={setAccountFilter}>
-                  <SelectTrigger className="h-8.5 w-32 text-xs bg-slate-50/50 dark:bg-muted/40 border-slate-200/80 dark:border-border">
-                    <Building2 className="ml-1 size-3 text-slate-400" />
+                  <SelectTrigger className="h-8.5 w-32 text-xs bg-slate-50/50 dark:bg-[#0E1420] border-slate-200/80 dark:border-slate-800 dark:text-slate-100">
+                    <Building2 className="ml-1 size-3 text-slate-400 dark:text-slate-500" />
                     <SelectValue placeholder="الحساب" />
                   </SelectTrigger>
-                  <SelectContent align="end">
+                  <SelectContent align="end" className="dark:bg-[#0E1420] dark:border-slate-800 dark:text-slate-100">
                     <SelectItem value="all">كل الحسابات</SelectItem>
                     {cashAccounts.map(acc => (
                       <SelectItem key={acc.id} value={String(acc.id)}>
@@ -799,7 +799,7 @@ export default function TransactionsHubPage() {
                     setTypeFilter("all");
                     setAccountFilter("all");
                   }}
-                  className="h-8.5 px-2.5 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="h-8.5 px-2.5 text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/50"
                   title="إعادة تعيين الفلاتر"
                 >
                   <RotateCcw className="size-3.5" />
@@ -807,7 +807,7 @@ export default function TransactionsHubPage() {
                 </Button>
               )}
 
-              <Badge variant="outline" className="h-8.5 border-slate-200/80 dark:border-border bg-slate-50/50 dark:bg-muted/40 px-2.5 text-xs font-normal text-slate-600 dark:text-muted-foreground">
+              <Badge variant="outline" className="h-8.5 border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420] px-2.5 text-xs font-normal text-slate-600 dark:text-slate-400">
                 {filteredEvents.length} عملية
               </Badge>
             </div>
@@ -817,19 +817,19 @@ export default function TransactionsHubPage() {
           <div>
             {recentEvents.isLoading ? (
               <div className="space-y-3 p-6">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full dark:bg-slate-800/40" />
+                <Skeleton className="h-10 w-full dark:bg-slate-800/40" />
+                <Skeleton className="h-10 w-full dark:bg-slate-800/40" />
               </div>
             ) : filteredEvents.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 text-center">
-                <div className="flex size-13 items-center justify-center rounded-full border border-slate-200/80 dark:border-border bg-slate-50 dark:bg-muted/40 text-slate-400">
-                  <FileText className="size-6 text-slate-400" />
+                <div className="flex size-13 items-center justify-center rounded-full border border-slate-200/80 dark:border-slate-800 bg-slate-50 dark:bg-[#0E1420] text-slate-400 dark:text-slate-500">
+                  <FileText className="size-6 text-slate-400 dark:text-slate-500" />
                 </div>
-                <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-foreground">
+                <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-slate-100">
                   {hasActiveFilters ? "لا توجد نتائج تطابق خيارات البحث" : "لا توجد معاملات حتى الآن"}
                 </h3>
-                <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-muted-foreground">
+                <p className="mt-1 max-w-sm text-xs text-slate-500 dark:text-slate-400">
                   {hasActiveFilters
                     ? "جرّب تعديل كلمات البحث أو تصفير الفلاتر لعرض كافة القيود المسجلة."
                     : "ابدأ بإضافة أول معاملة مالية إلى حسابك من أزرار العمليات أعلاه."}
@@ -843,7 +843,7 @@ export default function TransactionsHubPage() {
                       setTypeFilter("all");
                       setAccountFilter("all");
                     }}
-                    className="mt-4 gap-1.5 text-xs border-slate-200/80 dark:border-border bg-white dark:bg-card"
+                    className="mt-4 gap-1.5 text-xs border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0E1420] dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     <RotateCcw className="size-3.5" />
                     إعادة ضبط التصفية
@@ -856,7 +856,7 @@ export default function TransactionsHubPage() {
                       setActiveModal("deposit");
                       setReviewStep(false);
                     }}
-                    className="mt-4 gap-1.5 border-emerald-500/40 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100/60 dark:text-emerald-300 dark:bg-emerald-950/30"
+                    className="mt-4 gap-1.5 border-emerald-500/40 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100/60 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/25 dark:hover:bg-emerald-500/20"
                   >
                     <ArrowDownLeft className="size-3.5" />
                     تسجيل إيداع جديد
@@ -866,7 +866,7 @@ export default function TransactionsHubPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-right text-sm">
-                  <thead className="border-b border-slate-200 dark:border-border bg-slate-50/80 dark:bg-slate-900/60 text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
+                  <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-[#0E1420] text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
                     <tr>
                       <th className="py-3 px-4 pr-5 font-bold text-slate-700 dark:text-slate-300">نوع العملية</th>
                       <th className="py-3 px-4 font-bold text-slate-700 dark:text-slate-300">الحساب المالي</th>
@@ -876,14 +876,14 @@ export default function TransactionsHubPage() {
                       <th className="py-3 px-4 pl-5 font-bold text-slate-700 dark:text-slate-300">حالة القيد</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-card divide-y divide-slate-100 dark:divide-border/50">
+                  <tbody className="bg-white dark:bg-[#0B0F17]/90 divide-y divide-slate-100 dark:divide-slate-800/60">
                     {filteredEvents.map(event => {
                       const meta = eventLabel[event.eventType] || {
                         label: event.eventType,
                         icon: ArrowLeftRight,
-                        color: "text-slate-600 dark:text-muted-foreground bg-slate-100 dark:bg-muted/40 border border-slate-200 dark:border-border",
+                        color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60",
                         sign: "",
-                        amountColor: "text-slate-900 dark:text-slate-100",
+                        amountColor: "text-slate-900 dark:text-slate-200",
                       };
                       const Icon = meta.icon;
                       const formattedAmount = formatMoney(event.grossAmount, event.currency, 2);
@@ -892,7 +892,7 @@ export default function TransactionsHubPage() {
                       return (
                         <tr
                           key={event.id}
-                          className="border-b border-slate-100 dark:border-border/50 transition-colors hover:bg-slate-50/60 dark:hover:bg-muted/30 last:border-b-0"
+                          className="border-b border-slate-100 dark:border-slate-800/60 transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/40 last:border-b-0"
                         >
                           {/* Type Column */}
                           <td className="py-3 px-4 pr-5">
@@ -940,8 +940,8 @@ export default function TransactionsHubPage() {
 
                           {/* Amount Column */}
                           <td className="py-3 px-4">
-                            <div className="font-mono text-sm sm:text-base font-bold tracking-tight" dir="ltr">
-                              <span className={`${meta.amountColor} font-bold font-mono text-sm sm:text-base tabular-nums`}>
+                            <div className="font-mono text-sm font-bold tracking-tight" dir="ltr">
+                              <span className={`${meta.amountColor} font-bold font-mono text-sm tabular-nums`}>
                                 {meta.sign} <SensitiveValue>{formattedAmount}</SensitiveValue>
                               </span>
                             </div>
@@ -950,13 +950,13 @@ export default function TransactionsHubPage() {
                           {/* Status Badge */}
                           <td className="py-3 px-4 pl-5">
                             {event.status === "posted" ? (
-                              <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2.5 py-1 text-xs font-medium text-emerald-950 dark:text-emerald-300 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block ml-1.5 shrink-0" />
+                              <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/25 px-2.5 py-1 text-xs font-medium text-emerald-950 dark:text-emerald-400 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block ml-1.5 shrink-0" />
                                 <span>مرحّل</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 px-2.5 py-1 text-xs font-medium text-amber-950 dark:text-amber-300 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 inline-block ml-1.5 shrink-0" />
+                              <span className="inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/25 px-2.5 py-1 text-xs font-medium text-amber-950 dark:text-amber-400 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 inline-block ml-1.5 shrink-0" />
                                 <span>معلق</span>
                               </span>
                             )}
@@ -973,8 +973,8 @@ export default function TransactionsHubPage() {
 
         {/* Institutional Operation Dialog & Review Summary */}
         <Dialog open={activeModal !== null} onOpenChange={open => !open && resetForm()}>
-          <DialogContent className="max-w-xl sm:max-w-xl w-full overflow-hidden border-border bg-card" dir="rtl">
-            <DialogHeader className="border-b border-border/60 pb-3">
+          <DialogContent className="max-w-xl sm:max-w-xl w-full overflow-hidden border-border dark:border-slate-800 bg-card dark:bg-[#0B0F17]" dir="rtl">
+            <DialogHeader className="border-b border-border/60 dark:border-slate-800 pb-3">
               <div className="flex items-center justify-between">
                 <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
                   {activeModal && (
