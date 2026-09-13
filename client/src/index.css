@@ -404,4 +404,42 @@ textarea:user-invalid {
 @media (max-width: 1120px) { .assessment-shell { grid-template-columns: 220px minmax(0, 1fr); }.evidence-rail { padding: 24px 15px; }.hero-decision-grid { grid-template-columns: 1fr 225px; gap: 30px; }.summary-band { grid-template-columns: repeat(3, 1fr); }.metric-card:nth-child(3) { border-left: 0; }.maturity-section, .evidence-layout { gap: 22px 34px; }.verdict-section { grid-template-columns: 60px 1.2fr .8fr; gap: 25px; } }
 @media (max-width: 860px) { .assessment-shell { display: block; }.evidence-rail, .report-main { grid-column: auto; }.evidence-rail { position: relative; height: auto; min-height: 0; padding: 17px 21px; gap: 16px; }.rail-stamp, .report-nav { display: none; }.rail-footer { border: 0; padding: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }.rail-footer p { display: none; }.hero-dossier { min-height: 548px; }.hero-decision-grid { grid-template-columns: 1fr 210px; gap: 22px; }.evidence-layout, .maturity-section { grid-template-columns: 1fr; }.evidence-layout .section-heading, .evidence-intro, .evidence-photo, .evidence-grid, .maturity-section .section-heading, .maturity-copy, .chart-card { grid-column: 1; grid-row: auto; }.evidence-photo { min-height: 230px; }.maturity-copy { margin-bottom: 4px; }.risk-workspace { grid-template-columns: 1fr; }.risk-list { border-left: 0; border-bottom: 1px solid #dcd4c9; }.risk-detail { min-height: 330px; }.target-workbench { grid-template-columns: 1fr; }.professional-guardrails { border-top: 1px solid rgba(255,255,255,.13); }.verdict-section { grid-template-columns: 62px 1fr; }.decision-card { grid-column: 2; margin-top: 0; }.summary-band { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 600px) { .hero-dossier { padding: 22px 21px 30px; min-height: 0; }.hero-topline { font-size: 8px; }.hero-decision-grid { display: block; margin-top: 30px; }.hero-copy h1 { font-size: 38px; }.hero-copy > p { font-size: 13px; }.hero-facts span { padding: 9px 12px; }.decision-seal { width: auto; margin-top: 28px; min-height: 218px; }.summary-band { grid-template-columns: repeat(2, 1fr); }.metric-card { min-height: 104px; border-bottom: 1px solid #d3ccbf; }.metric-card:nth-child(2n) { border-left: 0; }.metric-card:last-child { grid-column: 1 / -1; }.section-block { padding: 61px 21px; }.section-heading h2 { font-size: 28px; }.evidence-grid { grid-template-columns: 1fr; }.risk-header { display: block; }.risk-filters { width: fit-content; margin-top: 15px; }.risk-row { grid-template-columns: 31px 1fr; }.risk-row .severity { grid-column: 2; justify-self: start; margin-right: 41px; }.risk-row-copy small { white-space: normal; }.coverage-head { display: none; }.coverage-row { grid-template-columns: 1fr auto; gap: 7px 13px; padding: 14px 8px; }.coverage-row p { grid-column: 1 / -1; }.roadmap-panel { min-height: 740px; padding: 60px 21px; }.roadmap-content { width: 100%; }.roadmap-shade { background: linear-gradient(90deg, rgba(11,25,38,.94), rgba(11,25,38,.78)); }.roadmap-list article { grid-template-columns: 46px 1fr; gap: 10px; }.roadmap-list small { grid-column: 2; text-align: right; }.target-intro { display: grid; gap: 16px; }.target-stamp { flex: auto; width: 100%; }.architecture-map { padding: 13px; }.architecture-spine { justify-content: flex-start; font-size: 8px; gap: 4px; }.architecture-spine i { flex-basis: 9px; }.architecture-layer { grid-template-columns: 24px 33px 1fr; padding: 11px 8px; }.layer-chips { grid-column: 2 / -1; }.layer-copy p { font-size: 9px; }.professional-guardrails { padding: 21px; }.verdict-section { padding: 61px 21px; grid-template-columns: 1fr; gap: 17px; }.verdict-mark { padding: 0; }.verdict-mark img { width: 50px; height: 50px; }.decision-card { grid-column: auto; }.report-footer { padding: 19px 21px; display: grid; gap: 7px; } }
-@media print { .evidence-rail, .hero-actions, .risk-filters { display: none !important; }.assessment-shell { display: block; }.hero-dossier { min-height: 420px; }.report-main { background: #fff; }.section-block, .roadmap-panel, .verdict-section { break-inside: avoid; }.roadmap-panel { min-height: auto; padding: 50px; }.risk-workspace { min-height: auto; }.risk-detail { min-height: auto; }.report-footer { background: #fff; } }
+@media print {
+  aside,
+  header,
+  nav,
+  .fintech-v2-sidebar,
+  .fintech-topbar,
+  .fintech-mobile-nav,
+  .fintech-mobile-menu,
+  .no-print {
+    display: none !important;
+  }
+  body, main, .fintech-v2-main, .fintech-content-shell, .fintech-route-frame {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+  }
+  .break-inside-avoid,
+  .page-break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  .evidence-rail, .hero-actions, .risk-filters { display: none !important; }
+  .assessment-shell { display: block; }
+  .hero-dossier { min-height: 420px; }
+  .report-main { background: #fff; }
+  .section-block, .roadmap-panel, .verdict-section { break-inside: avoid; }
+  .roadmap-panel { min-height: auto; padding: 50px; }
+  .risk-workspace { min-height: auto; }
+  .risk-detail { min-height: auto; }
+  .report-footer { background: #fff; }
+}
