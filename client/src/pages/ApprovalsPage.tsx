@@ -12,7 +12,11 @@ const actionName: Record<ApprovalActionType, string> = { cash_event: "حركة �
 const statusName: Record<string, string> = { pending: "بانتظار القرار", approved: "معتمدة", rejected: "مرفوضة", expired: "منتهية", executed: "منفذة" };
 const errorText = (error: unknown) => error instanceof Error ? error.message : "تعذر إكمال العملية الآن.";
 const money = (value: string | null | undefined, currency: string | null | undefined) => value && currency ? <SensitiveValue>{formatMoney(value, currency, 0)}</SensitiveValue> : "—";
-const dateTime = (value: number | null | undefined) => value ? new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)) : "—";
+const dateTime = (value: number | null | undefined) => {
+  if (!value) return <span className="text-slate-400">—</span>;
+  const iso = new Date(value).toISOString();
+  return <span dir="ltr" className="inline-flex items-center font-mono tabular-nums text-xs">{iso.slice(0, 10)} • {iso.slice(11, 16)}</span>;
+};
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
