@@ -444,3 +444,39 @@ textarea:user-invalid {
   .risk-detail { min-height: auto; }
   .report-footer { background: #fff; }
 }
+
+/* Page Header Container Layout Stability Fix */
+.page-header-container {
+  height: auto !important;
+  min-height: fit-content;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Floating labels background & z-index collision prevention */
+.floating-label,
+label[data-floating="true"],
+.peer-focus\:scale-75 ~ label,
+.peer-placeholder-shown ~ label {
+  background-color: var(--color-card, #ffffff) !important;
+  z-index: 1;
+  margin-bottom: 0.375rem;
+}
+
+.dark .floating-label,
+.dark label[data-floating="true"],
+.dark .peer-focus\:scale-75 ~ label,
+.dark .peer-placeholder-shown ~ label {
+  background-color: var(--color-card, #12243b) !important;
+}
+
+/* RTL datepicker and time input alignment */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  direction: rtl;
+  text-align: right;
+}
+
+

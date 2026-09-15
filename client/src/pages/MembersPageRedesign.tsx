@@ -130,20 +130,20 @@ export default function MembersPageRedesign() {
     <DashboardLayout>
       <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
         <PageHeader
-          title="الأعضاء ومساحات FAMILY"
+          title="الأعضاء ومساحات العمل (Workspaces & Members)"
           description="العضوية والصلاحية تُفرضان من الخادم. يُقبل البريد المدعو عند تسجيل صاحبه الدخول، ولا تمنح الدعوة الوصول قبل ذلك."
           breadcrumbs={[
             { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والتحليل", href: "/members" },
-            { label: "الأعضاء ومساحات FAMILY" },
+            { label: "الحوكمة والإدارة", href: "/members" },
+            { label: "الأعضاء ومساحات العمل" },
           ]}
-          badge={{ text: "إدارة الوصول", variant: "institutional" }}
+          badge={{ text: "إدارة الوصول والصلاحيات", variant: "institutional" }}
           icon={UsersRound}
           actions={
             user?.role === "admin" ? (
               <Link
                 href="/admin/users"
-                className="inline-flex h-10 items-center rounded-lg border border-primary/25 bg-primary/5 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+                className="inline-flex h-9 items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs"
               >
                 إدارة مستخدمي المنصة
               </Link>
@@ -152,448 +152,434 @@ export default function MembersPageRedesign() {
         />
 
         <section className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
-          <Card className="fintech-surface-card">
-            <CardHeader>
-              <CardTitle>مساحة العمل النشطة</CardTitle>
-              <CardDescription>يمكنك التنقل فقط بين المساحات التي تملك عضوية فعالة فيها.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {workspaces.isLoading ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">جارٍ تحميل المساحات…</p>
-              ) : (
-                <div className="space-y-3">
-                  {workspaces.data?.map((space) => (
-                    <button
-                      key={space.id}
-                      type="button"
-                      onClick={() => setActive.mutate({ workspaceId: space.id })}
-                      disabled={setActive.isPending || bootstrap.data?.workspace.id === space.id}
-                      className={`members-workspace-row ${
-                        bootstrap.data?.workspace.id === space.id ? "is-active" : ""
+          <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs">
+            <p className="text-slate-900 dark:text-white font-bold text-sm mb-0.5">مساحات العمل النشطة</p>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-4">يمكنك التنقل فقط بين المساحات التي تملك عضوية فعالة فيها.</p>
+            {workspaces.isLoading ? (
+              <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">جارىّ تحميل المساحات…</p>
+            ) : (
+              <div className="space-y-2">
+                {workspaces.data?.map((space) => (
+                  <button
+                    key={space.id}
+                    type="button"
+                    onClick={() => setActive.mutate({ workspaceId: space.id })}
+                    disabled={setActive.isPending || bootstrap.data?.workspace.id === space.id}
+                    className={`w-full p-3.5 rounded-xl border flex items-center justify-between text-right transition-all ${bootstrap.data?.workspace.id === space.id
+                      ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/40 dark:bg-indigo-950/20"
+                      : "border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0E1420] hover:border-slate-300 dark:hover:border-slate-700"
                       }`}
-                    >
-                      <span>
-                        <strong>{space.name}</strong>
-                        <small>
-                          عملة الأساس: {space.baseCurrency}
-                          {bootstrap.data?.workspace.id === space.id ? " · نشطة الآن" : ""}
-                        </small>
-                      </span>
-                      <Badge variant="outline">{roleLabel[space.role] || space.role}</Badge>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  >
+                    <span>
+                      <strong className="block text-slate-900 dark:text-white text-xs font-bold">{space.name}</strong>
+                      <small className="text-slate-500 dark:text-slate-400 text-[11px]">
+                        عملة الأساس: {space.baseCurrency}
+                        {bootstrap.data?.workspace.id === space.id ? " · نشطة الآن" : ""}
+                      </small>
+                    </span>
+                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs px-2.5 py-0.5 rounded-md">
+                      {roleLabel[space.role] || space.role}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <Card className="fintech-surface-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UsersRound className="size-5 text-primary" />
-                أعضاء النطاق
-              </CardTitle>
-              <CardDescription>
-                المالك فقط يستطيع إنشاء دعوات. تتطلب الدعوة تسجيل الدخول بالبريد نفسه خلال سبعة أيام.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {members.isLoading || bootstrap.isLoading ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">جارٍ تحميل الأعضاء…</p>
-              ) : members.error ? (
-                <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-                  {errorText(members.error)}
-                </p>
-              ) : (
-                <>
-                  {isOwner && (
-                    <form
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        invite.mutate({ email, role });
-                      }}
-                      className="grid gap-3 rounded-xl border bg-muted/35 p-4 sm:grid-cols-[1fr_150px_auto]"
-                    >
-                      <div className="grid gap-2">
-                        <Label htmlFor="member-email">البريد الإلكتروني</Label>
-                        <Input
-                          id="member-email"
-                          type="email"
-                          value={email}
-                          onChange={(event) => setEmail(event.target.value)}
-                          placeholder="email@example.com"
-                          required
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>الدور</Label>
-                        <Select value={role} onValueChange={(value) => setRole(value as typeof role)}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="advisor">مستشار</SelectItem>
-                            <SelectItem value="editor">محرر</SelectItem>
-                            <SelectItem value="viewer">مشاهد</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button className="self-end" type="submit" disabled={invite.isPending}>
-                        {invite.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}دعوة عضو
-                      </Button>
-                    </form>
-                  )}
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[520px] text-right text-sm">
-                      <thead className="bg-slate-50 text-xs text-slate-600">
-                        <tr>
-                          <th className="p-3">العضو</th>
-                          <th className="p-3">البريد</th>
-                          <th className="p-3">الدور</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {members.data?.activeMembers.map((member) => (
-                          <tr key={member.id}>
-                            <td className="p-3 font-semibold">{member.name || "عضو FAMILY"}</td>
-                            <td className="p-3 text-slate-600" dir="ltr">
-                              {member.email || "بريد غير متاح"}
-                            </td>
-                            <td className="p-3">
-                              <Badge variant="secondary">{roleLabel[member.role] || member.role}</Badge>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {members.data?.invitations.length ? (
-                    <div>
-                      <h2 className="mb-3 text-sm font-bold">الدعوات</h2>
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[520px] text-right text-sm">
-                          <thead className="bg-slate-50 text-xs text-slate-600">
-                            <tr>
-                              <th className="p-3">البريد</th>
-                              <th className="p-3">الدور</th>
-                              <th className="p-3">الحالة</th>
-                              <th className="p-3">إجراء</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y">
-                            {members.data.invitations.map((invitation) => (
-                              <tr key={invitation.id}>
-                                <td className="p-3" dir="ltr">
-                                  {invitation.email}
-                                </td>
-                                <td className="p-3">{roleLabel[invitation.role] || invitation.role}</td>
-                                <td className="p-3">
-                                  <Badge
-                                    variant={invitation.status === "pending" ? "outline" : "secondary"}
-                                  >
-                                    {invitationLabel[invitation.status] || invitation.status}
-                                  </Badge>
-                                </td>
-                                <td className="p-3">
-                                  {isOwner && invitation.status === "pending" ? (
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="ghost"
-                                      className="text-red-700 hover:text-red-800"
-                                      disabled={cancelInvitation.isPending}
-                                      onClick={() => setPendingCancelId(invitation.id)}
-                                    >
-                                      إلغاء
-                                    </Button>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+          <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs">
+            <div className="flex items-center gap-2 mb-0.5">
+              <UsersRound className="size-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <p className="text-slate-900 dark:text-white font-bold text-sm">دعوة عضو جديد</p>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-5">المالك فقط يستطيع إنشاء دعوات. تتطلب الدعوة تسجيل الدخول بالبريد نفسه خلال سبعة أيام.</p>
+            {members.isLoading || bootstrap.isLoading ? (
+              <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">جارىّ تحميل الأعضاء…</p>
+            ) : members.error ? (
+              <div className="rounded-xl border border-rose-200/80 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/30 p-4 text-sm text-rose-700 dark:text-rose-300">
+                {errorText(members.error)}
+              </div>
+            ) : (
+              <>
+                {isOwner && (
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      invite.mutate({ email, role });
+                    }}
+                    className="grid gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0E1420] p-4 sm:grid-cols-[1fr_150px_auto] mb-5"
+                  >
+                    <div className="grid gap-1.5">
+                      <label htmlFor="member-email" className="text-xs font-semibold text-slate-700 dark:text-slate-300">البريد الإلكتروني</label>
+                      <input
+                        id="member-email"
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="email@example.com"
+                        required
+                        dir="ltr"
+                        className="h-9 bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 rounded-xl text-xs py-2 px-3 font-medium w-full focus:outline-none focus:ring-2 focus:ring-slate-400"
+                      />
                     </div>
-                  ) : null}
-                </>
-              )}
-            </CardContent>
-          </Card>
+                    <div className="grid gap-1.5">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">الدور</label>
+                      <Select value={role} onValueChange={(value) => setRole(value as typeof role)}>
+                        <SelectTrigger className="h-9 text-xs bg-white dark:bg-[#0E1420] border-slate-300 dark:border-slate-700/80 rounded-xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="advisor" className="text-xs">مستشار</SelectItem>
+                          <SelectItem value="editor" className="text-xs">محرر</SelectItem>
+                          <SelectItem value="viewer" className="text-xs">مشاهد</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={invite.isPending}
+                      className="self-end bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold text-xs py-2 px-4 rounded-xl shadow-xs transition-all border border-slate-900 dark:border-transparent disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {invite.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                      دعوة عضو
+                    </button>
+                  </form>
+                )}
+
+                {/* Members table */}
+                <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                  <table className="w-full min-w-[520px] text-right text-sm">
+                    <thead>
+                      <tr className="bg-slate-50/90 dark:bg-[#0E1420] border-b border-slate-200/90 dark:border-slate-800/80">
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">العضو</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">البريد</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">الدور</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {members.data?.activeMembers.map((member) => (
+                        <tr key={member.id} className="hover:bg-slate-50/60 dark:hover:bg-[#111827]/40 transition-colors">
+                          <td className="py-3 px-4 text-xs font-bold text-slate-900 dark:text-white">{member.name || "عضو FAMILY"}</td>
+                          <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400" dir="ltr">
+                            {member.email || "بريد غير متاح"}
+                          </td>
+                          <td className="py-3 px-4 text-xs">
+                            <span className="bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs px-2.5 py-0.5 rounded-md">
+                              {roleLabel[member.role] || member.role}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Invitations */}
+                {members.data?.invitations.length ? (
+                  <div className="mt-4">
+                    <p className="mb-3 text-xs font-bold text-slate-800 dark:text-slate-200">الدعوات</p>
+                    <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                      <table className="w-full min-w-[520px] text-right text-sm">
+                        <thead>
+                          <tr className="bg-slate-50/90 dark:bg-[#0E1420] border-b border-slate-200/90 dark:border-slate-800/80">
+                            <th className="py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">البريد</th>
+                            <th className="py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">الدور</th>
+                            <th className="py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">الحالة</th>
+                            <th className="py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400">إجراء</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                          {members.data.invitations.map((invitation) => (
+                            <tr key={invitation.id} className="hover:bg-slate-50/60 dark:hover:bg-[#111827]/40 transition-colors">
+                              <td className="py-3 px-4 text-xs" dir="ltr">{invitation.email}</td>
+                              <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">{roleLabel[invitation.role] || invitation.role}</td>
+                              <td className="py-3 px-4 text-xs">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${invitation.status === "pending"
+                                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                  : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700"
+                                  }`}>
+                                  {invitationLabel[invitation.status] || invitation.status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-xs">
+                                {isOwner && invitation.status === "pending" ? (
+                                  <button
+                                    type="button"
+                                    disabled={cancelInvitation.isPending}
+                                    onClick={() => setPendingCancelId(invitation.id)}
+                                    className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline disabled:opacity-50"
+                                  >
+                                    إلغاء
+                                  </button>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+
         </section>
+
 
         {/* Phase 13: Auditor / Tax Advisor Tokens Section */}
         {isAdvisorOrOwner && (
-          <Card className="fintech-surface-card border-primary/20">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">
-                      رموز وصول المدقق المالي والمستشار الضريبي (Auditor Access Tokens)
-                    </CardTitle>
-                    <CardDescription>
-                      إصدار رموز وصول مؤقتة، محددة النطاق، ومقيدة بالقراءة فقط لتمكين التدقيق الخارجي دون منح صلاحيات تشغيلية.
-                    </CardDescription>
-                  </div>
+          <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs mt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="size-4" />
                 </div>
-                <Badge variant="outline" className="border-primary/30 text-primary self-start sm:self-center">
-                  قراءة وتدقيق فقط
-                </Badge>
+                <p className="text-slate-900 dark:text-white font-bold text-sm">رموز وصول المدقق المالي (Auditor Access Tokens)</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Newly Issued Token Display Banner */}
-              {newlyIssuedToken && (
-                <div className="p-4 bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 rounded-xl space-y-3">
-                  <div className="flex items-center gap-2 text-[#0B1628] dark:text-slate-100 font-semibold text-sm">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span>تم إصدار الرمز بنجاح: {newlyIssuedToken.label}</span>
-                  </div>
-                  <p className="text-xs text-[#64748B] dark:text-slate-300">
-                    انسخ هذا الرمز أو رابط البوابة المباشر وشاركه عبر قناة آمنة. لن يُعرض الرمز الخام مرة أخرى.
-                  </p>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <Input
-                      readOnly
-                      dir="ltr"
-                      value={newlyIssuedToken.token}
-                      className="font-mono text-xs bg-white dark:bg-slate-900 select-all"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => copyToClipboard(newlyIssuedToken.token, "رمز الوصول")}
-                      className="shrink-0"
-                    >
-                      <Copy className="w-4 h-4 ml-1" />
-                      نسخ الرمز
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        copyToClipboard(
-                          `${window.location.origin}/auditor-portal?token=${encodeURIComponent(
-                            newlyIssuedToken.token
-                          )}`,
-                          "رابط بوابة التدقيق"
-                        )
-                      }
-                      className="shrink-0"
-                    >
-                      <ExternalLink className="w-4 h-4 ml-1" />
-                      نسخ الرابط المباشر
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">قراءة وتدقيق فقط</span>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-5 leading-5">
+              إصدار رموز وصول مؤقتة، محددة النطاق، ومقيدة بالقراءة فقط لتمكين التدقيق الخارجي دون منح صلاحيات تشغيلية.
+            </p>
 
-              {/* Token Issuance Form */}
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!auditorLabel.trim() || !targetAuditor.trim() || !auditorPurpose.trim()) {
-                    toast.error("يرجى ملء جميع الحقول الإلزامية لإصدار الرمز.");
-                    return;
-                  }
-                  if (selectedScopes.length === 0) {
-                    toast.error("يرجى اختيار نطاق تدقيقي واحد على الأقل.");
-                    return;
-                  }
-                  issueAuditorTokenMutation.mutate({
-                    label: auditorLabel,
-                    targetAuditor,
-                    purpose: auditorPurpose,
-                    durationHours: Number(auditorHours),
-                    allowedScopes: selectedScopes as any,
-                  });
-                }}
-                className="grid gap-4 rounded-xl border bg-muted/20 p-4"
-              >
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="aud-label" className="text-xs font-semibold">
-                      وصف الرمز / المرجع <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="aud-label"
-                      placeholder="مثال: مراجعة الربع الأول 2026"
-                      value={auditorLabel}
-                      onChange={(e) => setAuditorLabel(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label htmlFor="aud-target" className="text-xs font-semibold">
-                      اسم المدقق أو الجهة <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="aud-target"
-                      placeholder="مثال: مكتب المراجع القانوني المستقل"
-                      value={targetAuditor}
-                      onChange={(e) => setTargetAuditor(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label className="text-xs font-semibold">مدة الصلاحية</Label>
-                    <Select value={auditorHours} onValueChange={setAuditorHours}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="24">24 ساعة (يوم عمل واحد)</SelectItem>
-                        <SelectItem value="72">72 ساعة (3 أيام)</SelectItem>
-                        <SelectItem value="168">7 أيام (أسبوع)</SelectItem>
-                        <SelectItem value="720">30 يومًا (شهر)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+            {/* Newly Issued Token Display Banner */}
+            {newlyIssuedToken && (
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 rounded-xl space-y-3 mb-4">
+                <div className="flex items-center gap-2 text-slate-900 dark:text-slate-100 font-bold text-sm">
+                  <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span>تم إصدار الرمز بنجاح: {newlyIssuedToken.label}</span>
                 </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  انسخ هذا الرمز أو رابط البوابة المباشر وشاركه عبر قناة آمنة. لن يُعرض الرمز الخام مرة أخرى.
+                </p>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    readOnly
+                    dir="ltr"
+                    value={newlyIssuedToken.token}
+                    className="h-9 flex-1 font-mono text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 select-all text-slate-900 dark:text-slate-100 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(newlyIssuedToken.token, "رمز الوصول")}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-bold text-xs border border-slate-900 dark:border-transparent shrink-0"
+                  >
+                    <Copy className="size-3.5" />
+                    نسخ الرمز
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyToClipboard(
+                        `${window.location.origin}/auditor-portal?token=${encodeURIComponent(newlyIssuedToken.token)}`,
+                        "رابط بوابة التدقيق"
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold text-xs border border-slate-200 dark:border-slate-700 shrink-0"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    نسخ الرابط المباشر
+                  </button>
+                </div>
+              </div>
+            )}
 
+            {/* Token Issuance Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!auditorLabel.trim() || !targetAuditor.trim() || !auditorPurpose.trim()) {
+                  toast.error("يرجى ملء جميع الحقول الإلزامية لإصدار الرمز.");
+                  return;
+                }
+                if (selectedScopes.length === 0) {
+                  toast.error("يرجى اختيار نطاق تدقيقي واحد على الأقل.");
+                  return;
+                }
+                issueAuditorTokenMutation.mutate({
+                  label: auditorLabel,
+                  targetAuditor,
+                  purpose: auditorPurpose,
+                  durationHours: Number(auditorHours),
+                  allowedScopes: selectedScopes as any,
+                });
+              }}
+              className="grid gap-4 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/60 dark:bg-[#0E1420] p-4 mb-5"
+            >
+              <div className="grid gap-4 md:grid-cols-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="aud-purpose" className="text-xs font-semibold">
-                    الغرض من التدقيق والملاحظات الإلزامية <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="aud-purpose"
-                    placeholder="مثال: التدقيق الدوري على القوائم المالية السنوية والامتثال الزكوي"
-                    value={auditorPurpose}
-                    onChange={(e) => setAuditorPurpose(e.target.value)}
+                  <label htmlFor="aud-label" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    وصف الرمز / المرجع <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="aud-label"
+                    placeholder="مثال: مراجعة الربع الأول 2026"
+                    value={auditorLabel}
+                    onChange={(e) => setAuditorLabel(e.target.value)}
                     required
+                    className="h-9 bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 rounded-xl text-xs py-2 px-3 font-medium w-full focus:outline-none focus:ring-2 focus:ring-slate-400"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold">
-                    النطاقات والتقارير المصرح للمدقق بالاطلاع عليها:
-                  </Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {AVAILABLE_SCOPES.map((scope) => (
-                      <label
-                        key={scope.id}
-                        className="flex items-center gap-2 p-2.5 rounded-lg border bg-background text-xs cursor-pointer hover:bg-muted/40 transition-colors"
-                      >
-                        <Checkbox
-                          checked={selectedScopes.includes(scope.id)}
-                          onCheckedChange={() => toggleScope(scope.id)}
-                        />
-                        <span>{scope.label}</span>
-                      </label>
-                    ))}
-                  </div>
+                <div className="grid gap-1.5">
+                  <label htmlFor="aud-target" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    اسم المدقق أو الجهة <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="aud-target"
+                    placeholder="مثال: مكتب المراجع القانوني المستقل"
+                    value={targetAuditor}
+                    onChange={(e) => setTargetAuditor(e.target.value)}
+                    required
+                    className="h-9 bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 rounded-xl text-xs py-2 px-3 font-medium w-full focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  />
                 </div>
-
-                <div className="flex justify-end pt-2">
-                  <Button
-                    type="submit"
-                    disabled={issueAuditorTokenMutation.isPending}
-                    className="gap-2"
-                  >
-                    {issueAuditorTokenMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <KeyRound className="w-4 h-4" />
-                    )}
-                    إصدار رمز وصول المدقق
-                  </Button>
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">مدة الصلاحية</label>
+                  <Select value={auditorHours} onValueChange={setAuditorHours}>
+                    <SelectTrigger className="h-9 text-xs bg-white dark:bg-[#0E1420] border-slate-300 dark:border-slate-700/80 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24" className="text-xs">24 ساعة (يوم عمل واحد)</SelectItem>
+                      <SelectItem value="72" className="text-xs">72 ساعة (3 أيام)</SelectItem>
+                      <SelectItem value="168" className="text-xs">7 أيام (أسبوع)</SelectItem>
+                      <SelectItem value="720" className="text-xs">30 يومًا (شهر)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </form>
-
-              {/* Existing Tokens Table */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-foreground">سجل رموز الوصول الصادرة:</h3>
-                {auditorTokens.isLoading ? (
-                  <p className="py-6 text-center text-xs text-muted-foreground">جارٍ تحميل الرموز…</p>
-                ) : auditorTokens.data?.length ? (
-                  <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full min-w-[640px] text-right text-xs">
-                      <thead className="bg-muted/40 text-muted-foreground">
-                        <tr>
-                          <th className="p-2.5">المعرف / الوصف</th>
-                          <th className="p-2.5">الجهة المراجعة</th>
-                          <th className="p-2.5">النطاقات المصرح بها</th>
-                          <th className="p-2.5">تاريخ الانتهاء</th>
-                          <th className="p-2.5">الحالة</th>
-                          <th className="p-2.5 text-center">إجراءات</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {auditorTokens.data.map((tok) => (
-                          <tr key={tok.tokenId} className="hover:bg-muted/20">
-                            <td className="p-2.5">
-                              <div className="font-semibold text-foreground">{tok.label}</div>
-                              <div className="font-mono text-[10px] text-muted-foreground" dir="ltr">
-                                {tok.tokenId}
-                              </div>
-                            </td>
-                            <td className="p-2.5 font-medium">{tok.targetAuditor}</td>
-                            <td className="p-2.5">
-                              <div className="flex flex-wrap gap-1">
-                                {tok.allowedScopes.map((sc) => (
-                                  <Badge key={sc} variant="outline" className="text-[10px] py-0">
-                                    {sc}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="p-2.5 text-muted-foreground" dir="ltr">
-                              {new Date(tok.expiresAt).toLocaleDateString("ar-SA")}
-                            </td>
-                            <td className="p-2.5">
-                              <Badge
-                                variant={
-                                  tok.status === "active"
-                                    ? "default"
-                                    : tok.status === "expired"
-                                    ? "secondary"
-                                    : "destructive"
-                                }
-                                className="text-[10px]"
-                              >
-                                {tok.status === "active"
-                                  ? "نشط"
-                                  : tok.status === "expired"
-                                  ? "منتهي"
-                                  : "ملغى"}
-                              </Badge>
-                            </td>
-                            <td className="p-2.5 text-center">
-                              {tok.status === "active" ? (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-red-600 hover:text-red-700 h-7 text-xs px-2"
-                                  disabled={revokeAuditorTokenMutation.isPending}
-                                  onClick={() => setPendingRevokeId(tok.tokenId)}
-                                >
-                                  إلغاء الصلاحية
-                                </Button>
-                              ) : (
-                                <span className="text-muted-foreground">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="py-6 text-center text-xs text-muted-foreground bg-muted/10 rounded-lg border border-dashed">
-                    لا توجد رموز وصول للمدققين حاليًا في هذه المساحة.
-                  </p>
-                )}
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="grid gap-1.5">
+                <label htmlFor="aud-purpose" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  الغرض من التدقيق <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  id="aud-purpose"
+                  placeholder="مثال: التدقيق الدوري على القوائم المالية السنوية"
+                  value={auditorPurpose}
+                  onChange={(e) => setAuditorPurpose(e.target.value)}
+                  required
+                  className="h-9 bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 rounded-xl text-xs py-2 px-3 font-medium w-full focus:outline-none focus:ring-2 focus:ring-slate-400"
+                />
+              </div>
+
+              {/* Scope checkboxes */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  النطاقات والتقارير المصرح للمدقق بالاطلاع عليها:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {AVAILABLE_SCOPES.map((scope) => (
+                    <label
+                      key={scope.id}
+                      className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-[#0E1420]/40 text-slate-700 dark:text-slate-300 text-xs cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                    >
+                      <Checkbox
+                        checked={selectedScopes.includes(scope.id)}
+                        onCheckedChange={() => toggleScope(scope.id)}
+                      />
+                      <span>{scope.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={issueAuditorTokenMutation.isPending}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 font-bold text-xs py-3 px-4 rounded-xl shadow-xs transition-all border border-slate-900 dark:border-transparent flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {issueAuditorTokenMutation.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <KeyRound className="size-3.5" />
+                )}
+                إصدار رمز وصول المدقق
+              </button>
+            </form>
+
+            {/* Existing Tokens Table */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">سجل رموز الوصول الصادرة:</p>
+              {auditorTokens.isLoading ? (
+                <p className="py-6 text-center text-xs text-slate-500 dark:text-slate-400">جارىّ تحميل الرموز…</p>
+              ) : auditorTokens.data?.length ? (
+                <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-800">
+                  <table className="w-full min-w-[640px] text-right text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/90 dark:bg-[#0E1420] border-b border-slate-200/90 dark:border-slate-800/80">
+                        <th className="py-3 px-3 font-bold text-slate-600 dark:text-slate-400">المعرف / الوصف</th>
+                        <th className="py-3 px-3 font-bold text-slate-600 dark:text-slate-400">الجهة المراجعة</th>
+                        <th className="py-3 px-3 font-bold text-slate-600 dark:text-slate-400">النطاقات</th>
+                        <th className="py-3 px-3 font-bold text-slate-600 dark:text-slate-400">تاريخ الانتهاء</th>
+                        <th className="py-3 px-3 font-bold text-slate-600 dark:text-slate-400">الحالة</th>
+                        <th className="py-3 px-3 font-bold text-slate-600 dark:text-slate-400 text-center">إجراءات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {auditorTokens.data.map((tok) => (
+                        <tr key={tok.tokenId} className="hover:bg-slate-50/60 dark:hover:bg-[#111827]/40 transition-colors">
+                          <td className="p-3">
+                            <div className="font-bold text-slate-900 dark:text-white">{tok.label}</div>
+                            <div className="font-mono text-[10px] text-slate-500 dark:text-slate-400" dir="ltr">{tok.tokenId}</div>
+                          </td>
+                          <td className="p-3 font-medium text-slate-700 dark:text-slate-300">{tok.targetAuditor}</td>
+                          <td className="p-3">
+                            <div className="flex flex-wrap gap-1">
+                              {tok.allowedScopes.map((sc) => (
+                                <span key={sc} className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                  {sc}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="p-3 text-slate-500 dark:text-slate-400" dir="ltr">
+                            <span className="font-mono tabular-nums text-xs">{new Date(tok.expiresAt).toISOString().slice(0, 10)}</span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${tok.status === "active"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                              : tok.status === "expired"
+                                ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700"
+                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                              }`}>
+                              {tok.status === "active" ? "نشط" : tok.status === "expired" ? "منتهي" : "ملغى"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            {tok.status === "active" ? (
+                              <button
+                                type="button"
+                                disabled={revokeAuditorTokenMutation.isPending}
+                                onClick={() => setPendingRevokeId(tok.tokenId)}
+                                className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline disabled:opacity-50"
+                              >
+                                إلغاء الصلاحية
+                              </button>
+                            ) : (
+                              <span className="text-slate-400 dark:text-slate-600">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-[#0E1420]/30">
+                  <div className="size-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center mx-auto mb-2.5">
+                    <Lock className="size-5" />
+                  </div>
+                  <p className="text-slate-800 dark:text-slate-200 font-bold text-xs mb-1">سجل رموز الوصول فارغ</p>
+                  <p className="text-slate-500 dark:text-slate-400 text-xs">لا توجد رموز وصول للمدققين حاليًا في هذه المساحة.</p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
+
 
         <ConfirmDialog
           open={Boolean(pendingCancelId)}
@@ -627,6 +613,6 @@ export default function MembersPageRedesign() {
           }}
         />
       </main>
-    </DashboardLayout>
+    </DashboardLayout >
   );
 }

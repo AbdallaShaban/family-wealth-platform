@@ -47,7 +47,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4",
+        "page-header-container relative overflow-hidden rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs space-y-4",
         "after:absolute after:top-0 after:right-0 after:h-full after:w-1 after:bg-emerald-500",
         className
       )}

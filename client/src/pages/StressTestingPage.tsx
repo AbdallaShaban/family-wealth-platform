@@ -98,7 +98,7 @@ export default function StressTestingPage() {
   const [mcHorizonYears, setMcHorizonYears] = useState<number>(20);
   const [mcIterations, setMcIterations] = useState<number>(2000);
   const [mcSeed, setMcSeed] = useState<number>(421337);
-  const [mcMonthlyOutflow, setMcMonthlyOutflow] = useState<string>("");
+  const [mcMonthlyOutflow, setMcMonthlyOutflow] = useState<string>("0.00");
 
   // Liquidity ladder parameters state
   const [revenueHaircutPct, setRevenueHaircutPct] = useState<number>(50); // 50%
@@ -129,9 +129,9 @@ export default function StressTestingPage() {
       horizonYears: mcHorizonYears,
       iterations: mcIterations,
       seed: mcSeed,
-      spendingAnnualBase: mcMonthlyOutflow.trim()
-        ? (parseFloat(mcMonthlyOutflow) * 12).toFixed(4)
-        : undefined,
+      spendingAnnualBase: mcMonthlyOutflow.trim() !== ""
+        ? (parseFloat(mcMonthlyOutflow || "0") * 12).toFixed(4)
+        : "0.0000",
     },
     {
       staleTime: 60_000,

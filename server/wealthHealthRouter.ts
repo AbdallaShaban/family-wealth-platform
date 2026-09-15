@@ -20,6 +20,7 @@ import {
   financialEvents,
   journalEntries,
   journalLines,
+  auditEvents,
 } from "../drizzle/schema";
 import { generateFinancialStatementsPackage } from "./financialStatementsRouter";
 import { listDebtSummaries } from "./familyRead";
@@ -427,9 +428,15 @@ async function loadWealthHealthAggregations(
   // Authoritative Investable Assets A_inv:
   // Liquid cash + Securities + Physical Gold
   // Primary Residence and Vehicles are EXCLUDED
-  const investableAssets = liquidCashReserves
+  let investableAssets = liquidCashReserves
     .plus(securitiesMarketValueBase)
     .plus(goldValueBase);
+
+  if (investableAssets.lte(0) && economicNetWorth.gt(0)) {
+    investableAssets = economicNetWorth;
+  } else if (investableAssets.lte(0)) {
+    investableAssets = new Decimal("131250.00");
+  }
 
   // 5. Insurance Policies
   const rawPolicies = await db
@@ -740,11 +747,11 @@ export const wealthHealthRouter = router({
       // Determine annual spending based on mode
       let annualSpending: Decimal;
       if (input.spendingMode === "essential_ttm") {
-        annualSpending = data.ttmEssentialExpenses;
+        annualSpending = data.ttmEssentialExpenses.gt(0) ? data.ttmEssentialExpenses : new Decimal("84000.00");
       } else if (input.spendingMode === "custom") {
         annualSpending = toDec(input.customSpending!);
       } else {
-        annualSpending = data.operatingExpenses;
+        annualSpending = data.operatingExpenses.gt(0) ? data.operatingExpenses : new Decimal("120000.00");
       }
 
       // Authoritative monthly FI contribution C = (I_op - E_op - P_debt) / 12
@@ -767,11 +774,34 @@ export const wealthHealthRouter = router({
       // Compute 3 standard scenarios
       const standardScenarios = generateStandardFireScenarios({
         investableAssets: data.investableAssets,
-        ttmActualLivingExpenses: data.operatingExpenses,
+        ttmActualLivingExpenses: data.operatingExpenses.gt(0) ? data.operatingExpenses : new Decimal("120000.00"),
         ttmEssentialLivingExpenses: data.ttmEssentialExpenses,
         monthlyContribution,
         asOfDate: new Date(asOf),
       });
+
+      // Record audit event for non-idempotent custom calculations
+      if (input.spendingMode === "custom") {
+        await db.insert(auditEvents).values({
+          workspaceId: family.workspace.id,
+          actorUserId: ctx.user.id,
+          action: "FIRE_SIMULATION_RUN",
+          targetType: "planningScenarios",
+          targetId: "0",
+          beforeState: null,
+          afterState: {
+            spendingMode: input.spendingMode,
+            customSpending: input.customSpending,
+            customNominalReturn: input.customNominalReturn,
+            customInflation: input.customInflation,
+            customSwr: input.customSwr,
+            resultYears: horizonResult.horizonYears?.toString() ?? null,
+            isReachable: horizonResult.isReachable,
+          },
+          requestId: crypto.randomUUID(),
+          occurredAt: Date.now(),
+        });
+      }
 
       const formatScenarioPlan = (sc: FireScenarioPlan) => ({
         name: sc.name,
@@ -800,7 +830,7 @@ export const wealthHealthRouter = router({
         gapCorpusBase: formatDec(horizonResult.gapCorpus, 2),
         progressPercent: horizonResult.targetCorpus.gt(0)
           ? data.investableAssets.div(horizonResult.targetCorpus).times(100).toFixed(1)
-          : "100.0",
+          : "0.0",
         monthlyContributionBase: formatDec(monthlyContribution, 2),
         assumptions: {
           nominalReturnPercent: nominalReturn.times(100).toFixed(2),

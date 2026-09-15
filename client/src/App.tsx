@@ -29,6 +29,7 @@ const StressTestingPage = lazy(() => import("./pages/StressTestingPage"));
 const ConsolidationPage = lazy(() => import("./pages/ConsolidationPage"));
 const AuditorPortalPage = lazy(() => import("./pages/AuditorPortalPage"));
 const TransactionsHubPage = lazy(() => import("./pages/TransactionsHubPage"));
+const FxManagementPage = lazy(() => import("./pages/FxManagementPage"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -77,6 +78,8 @@ function Router() {
       <Route path={"/auditor"} component={AuditorPortalPage} />
       <Route path={"/auditor-portal"} component={AuditorPortalPage} />
       <Route path={"/audit"} component={AuditPage} />
+      <Route path={"/settings/fx"} component={FxManagementPage} />
+      <Route path={"/exchange-rates"} component={FxManagementPage} />
       <Route path={"/admin/users"} component={PlatformAdministrationPage} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}

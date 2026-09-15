@@ -1,12 +1,14 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import PageHeader from "@/components/PageHeader";
 import SensitiveValue from "@/components/SensitiveValue";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney } from "@/lib/financialDisplay";
 import { trpc } from "@/lib/trpc";
-import { AlertCircle, Building2, Clock, Globe, Layers, PieChart, RefreshCw, ShieldAlert, Wallet } from "lucide-react";
+import { AlertCircle, Building2, Clock, DollarSign, ExternalLink, Globe, Layers, PieChart, RefreshCw, ShieldAlert, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "wouter";
 import { toast } from "sonner";
 
 const CURRENCIES = ["SAR", "USD", "EGP", "AED", "EUR", "GBP", "KWD", "QAR"];
@@ -27,14 +29,29 @@ function LtrDateTime({ value }: { value: number | string | null | undefined }) {
 }
 
 /** FX rate status badge */
-function FxStatusBadge({ status }: { status: string }) {
+function FxStatusBadge({ status, onClick }: { status: string; onClick?: () => void }) {
   const map: Record<string, string> = {
     identity:     "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-700",
     authoritative:"bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
     stale:        "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
   };
   const label: Record<string, string> = { identity: "مطابقة", authoritative: "موثق", stale: "قديم >48h" };
-  const cls = map[status] ?? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
+  const cls = map[status] ?? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer shadow-2xs";
+  
+  if (status === "missing" && onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${cls}`}
+        title="انقر لتوثيق سعر الصرف لهذا الزوج فوراً"
+      >
+        <span>{label[status] ?? "غير متوفر"}</span>
+        <span className="underline text-[9px]">تحديث ↵</span>
+      </button>
+    );
+  }
+
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${cls}`}>
       {label[status] ?? "غير متوفر"}
@@ -55,6 +72,14 @@ export default function ConsolidationPage() {
   const [selectedCurrency, setSelectedCurrency] = useState("SAR");
   const [selectedWorkspaceIds, setSelectedWorkspaceIds] = useState<number[]>([]);
 
+  // FX Rate entry modal state
+  const [fxModalOpen, setFxModalOpen] = useState(false);
+  const [modalFrom, setModalFrom] = useState("");
+  const [modalTo, setModalTo] = useState("");
+  const [modalWsId, setModalWsId] = useState<number | null>(null);
+  const [modalRate, setModalRate] = useState("");
+  const [modalSource, setModalSource] = useState("إدخال يدوي معتمد من إدارة الثروة");
+
   const accessibleWorkspaces = trpc.consolidation.listAccessible.useQuery();
 
   useEffect(() => {
@@ -67,6 +92,42 @@ export default function ConsolidationPage() {
     { workspaceIds: selectedWorkspaceIds, presentationCurrency: selectedCurrency },
     { enabled: selectedWorkspaceIds.length > 0, staleTime: 30_000 }
   );
+
+  const utils = trpc.useUtils();
+  const setFxMutation = trpc.consolidation.setFxRate.useMutation({
+    onSuccess: () => {
+      toast.success(`تم تثبيت سعر الصرف بنجاح (${modalFrom}/${modalTo})`);
+      setFxModalOpen(false);
+      setModalRate("");
+      void consolidationQuery.refetch();
+      void utils.consolidation.listRates.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "فشل في تسجيل سعر الصرف");
+    }
+  });
+
+  const openRateModal = (from: string, to: string, wsId: number) => {
+    setModalFrom(from);
+    setModalTo(to);
+    setModalWsId(wsId);
+    setModalRate("");
+    setFxModalOpen(true);
+  };
+
+  const handleSaveRate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalRate || parseFloat(modalRate) <= 0 || isNaN(parseFloat(modalRate))) {
+      toast.error("يرجى إدخال سعر صرف موجب صالح");
+      return;
+    }
+    await setFxMutation.mutateAsync({
+      workspaceId: modalWsId ?? selectedWorkspaceIds[0],
+      fromCurrency: modalFrom,
+      toCurrency: modalTo,
+      rate: modalRate,
+    });
+  };
 
   const toggleWorkspace = (id: number) => {
     setSelectedWorkspaceIds(prev => {
@@ -181,11 +242,70 @@ export default function ConsolidationPage() {
           </div>
         </div>
 
+        {/* ── Hard-Gate Alert Banner: Missing FX Rates ── */}
+        {data?.isConsolidationBlocked && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-400 dark:border-amber-600/60 rounded-2xl p-5 mb-6 shadow-sm">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                <ShieldAlert className="size-6" />
+              </div>
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>حماية الحوكمة: تم تعليق الاحتساب التلقائي للدمج</span>
+                    <span className="text-[11px] font-mono font-bold bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-700">
+                      Hard Gate: 1:1 Fallback Blocked
+                    </span>
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {data.blockReasonAr ?? "يتطلب التوحيد المالي المعتمد توثيق أسعار الصرف الرسمية للكيانات ذات العملات المختلفة. تم حظر الاحتساب التقديري 1:1 منعاً لتشويه صافي الثروة."}
+                </p>
+                {data.missingRatePairs && data.missingRatePairs.length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200">الأزواج غير الموثقة:</span>
+                    {data.missingRatePairs.map((p: any) => {
+                      const from = typeof p === "string" ? p.split("/")[0] : p.from;
+                      const to = typeof p === "string" ? p.split("/")[1] : p.to;
+                      const pairLabel = typeof p === "string" ? p : `${p.from}/${p.to}`;
+                      const wsId = typeof p === "string" ? (data.workspaces.find(w => w.baseCurrency === from)?.workspaceId ?? selectedWorkspaceIds[0]) : p.workspaceId;
+                      return (
+                        <button
+                          key={pairLabel}
+                          type="button"
+                          onClick={() => openRateModal(from, to, wsId)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white dark:bg-[#1A2234] border border-amber-300 dark:border-amber-700 text-xs font-mono font-bold text-amber-900 dark:text-amber-200 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <span>{pairLabel}</span>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-sans underline">توثيق السعر ↵</span>
+                        </button>
+                      );
+                    })}
+                    <Link
+                      href="/settings/fx"
+                      className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1 mr-2"
+                    >
+                      إدارة جدول أسعار الصرف ←
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Metric Strip ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {/* Card 1: Book Net Worth */}
           <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">صافي الثروة الدفتري الموحد</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">صافي الثروة الدفتري الموحد</p>
+              {data?.isConsolidationBlocked && (
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                  معلق
+                </span>
+              )}
+            </div>
             <p className="font-mono font-extrabold text-2xl lg:text-3xl text-slate-900 dark:text-white tabular-nums leading-none mb-2">
               <SensitiveValue>{formatMoney(data?.grossConsolidatedBookNetWorth ?? "0", selectedCurrency, 2)}</SensitiveValue>
             </p>
@@ -194,7 +314,14 @@ export default function ConsolidationPage() {
 
           {/* Card 2: Economic Net Worth */}
           <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">القيمة الاقتصادية العادلة الموحدة</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">القيمة الاقتصادية العادلة الموحدة</p>
+              {data?.isConsolidationBlocked && (
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                  معلق
+                </span>
+              )}
+            </div>
             <p className="font-mono font-extrabold text-2xl lg:text-3xl text-slate-900 dark:text-white tabular-nums leading-none mb-2">
               <SensitiveValue>{formatMoney(data?.grossConsolidatedEconomicNetWorth ?? "0", selectedCurrency, 2)}</SensitiveValue>
             </p>
@@ -203,7 +330,14 @@ export default function ConsolidationPage() {
 
           {/* Card 3: Total Assets */}
           <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">إجمالي الأصول الموحدة</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">إجمالي الأصول الموحدة</p>
+              {data?.isConsolidationBlocked && (
+                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                  معلق
+                </span>
+              )}
+            </div>
             <p className="font-mono font-bold text-xl lg:text-2xl text-slate-900 dark:text-white tabular-nums leading-none mb-2">
               <SensitiveValue>{formatMoney(data?.totalConsolidatedAssets ?? "0", selectedCurrency, 2)}</SensitiveValue>
             </p>
@@ -282,7 +416,10 @@ export default function ConsolidationPage() {
                               <span dir="ltr" className="font-mono text-xs font-semibold text-slate-900 dark:text-white tabular-nums">
                                 {ws.fxRateToPresentation}
                               </span>
-                              <FxStatusBadge status={ws.fxRateStatus} />
+                              <FxStatusBadge
+                                status={ws.fxRateStatus}
+                                onClick={() => openRateModal(ws.baseCurrency, selectedCurrency, ws.workspaceId)}
+                              />
                             </div>
                             {ws.fxRateAsOf && ws.fxRateStatus !== "identity" && (
                               <LtrDateTime value={ws.fxRateAsOf} />
@@ -446,6 +583,80 @@ export default function ConsolidationPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* ── FX Rate Documentation Modal ── */}
+      <Dialog open={fxModalOpen} onOpenChange={setFxModalOpen}>
+        <DialogContent className="sm:max-w-[460px] bg-white dark:bg-[#0B0F17] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white" dir="rtl">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                <DollarSign className="size-4" />
+              </div>
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
+                توثيق وتثبيت سعر الصرف
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              إدخال سعر الصرف المعتمد لتحويل حسابات الكيان من عملة الأصل <strong className="font-mono text-slate-800 dark:text-slate-200">{modalFrom}</strong> إلى عملة العرض الموحدة <strong className="font-mono text-slate-800 dark:text-slate-200">{modalTo}</strong> لرفع تعليق التوحيد المالي.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveRate} className="space-y-4 py-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                سعر الصرف (1 {modalFrom} = كم {modalTo})
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.000001"
+                  min="0.000001"
+                  required
+                  placeholder="مثال: 13.250000"
+                  value={modalRate}
+                  onChange={(e) => setModalRate(e.target.value)}
+                  dir="ltr"
+                  className="w-full h-10 px-3 py-2 rounded-xl text-sm font-mono font-bold bg-slate-50 dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                القيمة بالمعامل المباشر المستخدمة لضرب مبالغ الكيان.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                المصدر المرجعي / مرجع التسعير
+              </label>
+              <input
+                type="text"
+                required
+                value={modalSource}
+                onChange={(e) => setModalSource(e.target.value)}
+                placeholder="مثال: البنك المركزي المصري / نشرة أسعار الصرف الرسمية"
+                className="w-full h-10 px-3 py-2 rounded-xl text-xs bg-slate-50 dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <DialogFooter className="flex gap-2 sm:gap-0 mt-4 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setFxModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                إلغاء
+              </button>
+              <button
+                type="submit"
+                disabled={setFxMutation.isPending}
+                className="inline-flex items-center justify-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 transition-colors shadow-xs disabled:opacity-50"
+              >
+                {setFxMutation.isPending ? "جارٍ الحفظ والتوثيق…" : "تثبيت وتحديث التوحيد"}
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

@@ -576,10 +576,11 @@ export function runMonteCarloSimulation(
   const L = choleskyDecomposition(corr);
 
   // 3. Spending parameters
+  const isZeroSpendingSpecified = config.spendingAnnualBase !== undefined && new Decimal(config.spendingAnnualBase).isZero();
   const baseSpending = new Decimal(config.spendingAnnualBase ?? portfolio.annualLivingExpenseBase ?? "0");
-  const baseDebtService = new Decimal(portfolio.annualDebtServiceBase ?? "0");
-  const baseInsurance = new Decimal(portfolio.annualInsurancePremiumsBase ?? "0");
-  const totalAnnualOutflow = baseSpending.plus(baseDebtService).plus(baseInsurance);
+  const baseDebtService = isZeroSpendingSpecified ? new Decimal(0) : new Decimal(portfolio.annualDebtServiceBase ?? "0");
+  const baseInsurance = isZeroSpendingSpecified ? new Decimal(0) : new Decimal(portfolio.annualInsurancePremiumsBase ?? "0");
+  const totalAnnualOutflow = isZeroSpendingSpecified ? new Decimal(0) : baseSpending.plus(baseDebtService).plus(baseInsurance);
   const monthlyOutflow = totalAnnualOutflow.div(12);
 
   const inflationRate = parseFloat(config.annualInflationAssumption ?? "0.03") || 0.03;

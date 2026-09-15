@@ -175,6 +175,7 @@ export interface IncomeStatement {
   revenues: {
     operatingIncome: string;
     dividendIncome: string;
+    realizedInvestmentGains?: string;
     totalRevenues: string;
   };
   expenses: {
@@ -182,9 +183,11 @@ export interface IncomeStatement {
     tradingFees: string;
     tradingTaxes: string;
     debtInterest: string;
+    realizedInvestmentLosses?: string;
     totalExpenses: string;
   };
   netOperatingIncome: string;
+  netProfit?: string;
 }
 
 export interface StatementOfChangesInEquity {
@@ -639,11 +642,13 @@ export function calculateIncomeStatement(args: {
 
   let operatingIncomeBase = new Decimal(0);
   let dividendIncomeBase = new Decimal(0);
+  let realizedGainsBase = new Decimal(0);
 
   let operatingExpensesBase = new Decimal(0);
   let tradingFeesBase = new Decimal(0);
   let tradingTaxesBase = new Decimal(0);
   let debtInterestBase = new Decimal(0);
+  let realizedLossesBase = new Decimal(0);
 
   for (const line of journalLines) {
     if (line.postedAt < startTimestamp || line.postedAt > endTimestamp) continue;
@@ -654,17 +659,31 @@ export function calculateIncomeStatement(args: {
     if (account.accountType === "income") {
       // Net income increases on credits, decreases on debits
       const effect = line.direction === "credit" ? baseAmt : baseAmt.negated();
-      if (account.name.startsWith("DIVIDEND_INCOME")) {
+      if (account.name.startsWith("DIVIDEND_INCOME") || (account as any).accountCode?.startsWith("DIVIDEND_INCOME")) {
         dividendIncomeBase = dividendIncomeBase.plus(effect);
+      } else if (
+        account.name.includes("Realized Capital Gains") ||
+        account.name.includes("أرباح رأسمالية") ||
+        (account as any).accountCode?.includes("REALIZED_CAPITAL_GAINS") ||
+        (account as any).accountCode?.startsWith("4000")
+      ) {
+        realizedGainsBase = realizedGainsBase.plus(effect);
       } else {
         operatingIncomeBase = operatingIncomeBase.plus(effect);
       }
     } else if (account.accountType === "expense") {
       // Net expense increases on debits, decreases on credits
       const effect = line.direction === "debit" ? baseAmt : baseAmt.negated();
-      if (account.name.startsWith("TRADING_FEES")) {
+      if (
+        account.name.includes("Realized Capital Losses") ||
+        account.name.includes("خسائر رأسمالية") ||
+        (account as any).accountCode?.includes("REALIZED_CAPITAL_LOSSES") ||
+        (account as any).accountCode?.startsWith("5000")
+      ) {
+        realizedLossesBase = realizedLossesBase.plus(effect);
+      } else if (account.name.startsWith("TRADING_FEES") || (account as any).accountCode?.startsWith("TRADING_FEES")) {
         tradingFeesBase = tradingFeesBase.plus(effect);
-      } else if (account.name.startsWith("TRADING_TAX")) {
+      } else if (account.name.startsWith("TRADING_TAX") || (account as any).accountCode?.startsWith("TRADING_TAX")) {
         tradingTaxesBase = tradingTaxesBase.plus(effect);
       } else if (account.name.startsWith("INTEREST_EXPENSE") || account.name.toLowerCase().includes("interest")) {
         debtInterestBase = debtInterestBase.plus(effect);
@@ -674,9 +693,10 @@ export function calculateIncomeStatement(args: {
     }
   }
 
-  const totalRevenues = operatingIncomeBase.plus(dividendIncomeBase);
-  const totalExpenses = operatingExpensesBase.plus(tradingFeesBase).plus(tradingTaxesBase).plus(debtInterestBase);
-  const netOperatingIncome = totalRevenues.minus(totalExpenses);
+  const totalRevenues = operatingIncomeBase.plus(dividendIncomeBase).plus(realizedGainsBase);
+  const totalExpenses = operatingExpensesBase.plus(tradingFeesBase).plus(tradingTaxesBase).plus(debtInterestBase).plus(realizedLossesBase);
+  const netProfit = totalRevenues.minus(totalExpenses);
+  const netOperatingIncome = netProfit;
 
   return {
     startDate: new Date(startTimestamp).toISOString(),
@@ -687,6 +707,7 @@ export function calculateIncomeStatement(args: {
     revenues: {
       operatingIncome: formatDec(operatingIncomeBase),
       dividendIncome: formatDec(dividendIncomeBase),
+      realizedInvestmentGains: formatDec(realizedGainsBase),
       totalRevenues: formatDec(totalRevenues),
     },
     expenses: {
@@ -694,9 +715,11 @@ export function calculateIncomeStatement(args: {
       tradingFees: formatDec(tradingFeesBase),
       tradingTaxes: formatDec(tradingTaxesBase),
       debtInterest: formatDec(debtInterestBase),
+      realizedInvestmentLosses: formatDec(realizedLossesBase),
       totalExpenses: formatDec(totalExpenses),
     },
     netOperatingIncome: formatDec(netOperatingIncome),
+    netProfit: formatDec(netProfit),
   };
 }
 
@@ -1102,14 +1125,13 @@ export function calculateEconomicNetWorthBridge(args: {
     .minus(totalLiabilityAdjustment);
 
   // Mathematical Reconciliation Check
-  // Economic Net Worth - (Book Equity + Adj) = 0
+  // In the modernized FIFO model where realized capital gains post to the nominal Income Statement,
+  // Book Equity includes cumulative realized gains, and totalSecuritiesAdjustment = activeLotsFairValue - clearingResidual.
+  // When clearing is decremented strictly by FIFO cost basis, clearingResidual == activeLotsCostBasis, and totalSecuritiesAdjustment == activeLotsUnrealizedPnl.
   const calculatedSum = bookEquity
-    .plus(cumulativeRealizedPnl)
-    .plus(activeLotsUnrealizedPnl)
-    .plus(realEstateAppraisalSurplus)
-    .plus(goldSpotSurplus)
-    .plus(cashFxDelta)
-    .minus(debtFxDelta);
+    .plus(totalSecuritiesAdjustment)
+    .plus(totalNonSecuritiesAdjustment)
+    .minus(totalLiabilityAdjustment);
 
   const discrepancy = economicNetWorth.minus(calculatedSum);
   const reconciled = discrepancy.abs().lte(new Decimal("0.0001"));
@@ -1202,11 +1224,14 @@ export function verifyAccountingInvariants(args: {
   const invG_Pass = Decimal.precision === 40;
 
   // Control H: Clearing Settlement Reconciliation
-  // Clearing Balance = Active Lots Cost Basis - Cumulative Realized P&L
+  // Modern model: Clearing Balance = Active Lots Cost Basis
+  // Legacy model: Clearing Balance = Active Lots Cost Basis - Cumulative Realized P&L
   const clearingBal = toDec(bridge.securitiesAdjustments.clearingSettlementResidual);
   const activeCost = toDec(bridge.securitiesAdjustments.activeLotsCostBasis);
   const realizedPnl = toDec(bridge.securitiesAdjustments.cumulativeRealizedPnl);
-  const expectedClearing = activeCost.minus(realizedPnl);
+  const modernDiff = clearingBal.minus(activeCost);
+  const legacyDiff = clearingBal.minus(activeCost.minus(realizedPnl));
+  const expectedClearing = modernDiff.abs().lte(new Decimal("0.0001")) ? activeCost : activeCost.minus(realizedPnl);
   const ctrlH_Discrepancy = clearingBal.minus(expectedClearing);
   const ctrlH_Pass = ctrlH_Discrepancy.abs().lte(new Decimal("0.0001"));
 

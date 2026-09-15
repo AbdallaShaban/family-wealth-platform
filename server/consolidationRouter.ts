@@ -18,7 +18,7 @@ import {
   workspaces,
 } from "../drizzle/schema";
 import { calculateConsolidation, type FxRateResolver, type RawWorkspaceEntity } from "./consolidationMath";
-import { getCachedReadModel } from "./readModelCache";
+import { getCachedReadModel, invalidateReadModelCache } from "./readModelCache";
 
 export const consolidationRouter = router({
   listAccessible: protectedProcedure.query(async ({ ctx }) => {
@@ -257,5 +257,73 @@ export const consolidationRouter = router({
         // 5. Execute pure consolidation calculation
         return calculateConsolidation(rawEntities, presentationCurrency, fxResolver);
       });
+    }),
+
+  listRates: protectedProcedure
+    .input(z.object({ workspaceId: z.number().int().positive().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) {
+        throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "قاعدة بيانات FAMILY غير متاحة حاليًا." });
+      }
+      const accessible = await listAccessibleWorkspaces(ctx.user);
+      const wsIds = accessible.map(w => w.id);
+      if (wsIds.length === 0) return [];
+      const targetWsIds = input?.workspaceId ? [input.workspaceId] : wsIds;
+      const rows = await db
+        .select()
+        .from(fxRates)
+        .where(inArray(fxRates.workspaceId, targetWsIds))
+        .orderBy(desc(fxRates.asOf));
+      return rows;
+    }),
+
+  setFxRate: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.number().int().positive(),
+        fromCurrency: z.string().trim().length(3),
+        toCurrency: z.string().trim().length(3),
+        rate: z.string().trim().refine(v => !isNaN(Number(v)) && Number(v) > 0, "أدخل سعر صرف موجب وصحيح."),
+        asOf: z.number().int().positive().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) {
+        throw new TRPCError({ code: "SERVICE_UNAVAILABLE", message: "قاعدة بيانات FAMILY غير متاحة حاليًا." });
+      }
+      const [membership] = await db
+        .select()
+        .from(memberships)
+        .where(
+          and(
+            eq(memberships.workspaceId, input.workspaceId),
+            eq(memberships.userId, ctx.user.id),
+            eq(memberships.status, "active")
+          )
+        );
+      if (!membership) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية على مساحة العمل هذه." });
+      }
+
+      const now = Date.now();
+      const fromCurr = input.fromCurrency.toUpperCase();
+      const toCurr = input.toCurrency.toUpperCase();
+      const asOf = input.asOf ?? now;
+
+      await db.insert(fxRates).values({
+        workspaceId: input.workspaceId,
+        fromCurrency: fromCurr,
+        toCurrency: toCurr,
+        rate: new Decimal(input.rate).toFixed(10),
+        source: "manual",
+        rateStatus: "manual",
+        asOf,
+        createdAt: now,
+      });
+
+      invalidateReadModelCache(`consolidation:${ctx.user.id}:*`);
+      return { success: true, from: fromCurr, to: toCurr, rate: input.rate };
     }),
 });

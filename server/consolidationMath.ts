@@ -106,6 +106,10 @@ export type ConsolidatedSummaryResult = {
   workspaces: ConsolidatedWorkspaceBreakdown[];
   assetAllocation: ConsolidatedAssetAllocationItem[];
   interEntityDisclosures: InterEntityDisclosureItem[];
+  hasMissingRates: boolean;
+  missingRatePairs: Array<{ from: string; to: string; workspaceId: number; workspaceName: string }>;
+  isConsolidationBlocked: boolean;
+  blockReasonAr?: string;
   epistemology: {
     classification: "EMPIRICAL_OBSERVATION";
     consolidationType: "GROSS_COMBINED_WITH_DISCLOSURE";
@@ -170,9 +174,18 @@ export function calculateConsolidation(
 
   const workspaceBreakdowns: ConsolidatedWorkspaceBreakdown[] = [];
   const disclosures: InterEntityDisclosureItem[] = [];
+  const missingRatePairs: Array<{ from: string; to: string; workspaceId: number; workspaceName: string }> = [];
 
   for (const entity of entities) {
     const fx = convertAmount(new Decimal(1), entity.baseCurrency, targetCurrency, fxResolver);
+    if (fx.status === "missing" && entity.baseCurrency.toUpperCase() !== targetCurrency) {
+      missingRatePairs.push({
+        from: entity.baseCurrency,
+        to: targetCurrency,
+        workspaceId: entity.workspaceId,
+        workspaceName: entity.workspaceName,
+      });
+    }
 
     const convertedBookNetWorth = entity.grossBookNetWorth.mul(fx.rate);
     const convertedEconomicNetWorth = entity.economicNetWorth.mul(fx.rate);
@@ -323,6 +336,12 @@ export function calculateConsolidation(
     workspaces: workspaceBreakdowns,
     assetAllocation,
     interEntityDisclosures: disclosures,
+    hasMissingRates: missingRatePairs.length > 0,
+    missingRatePairs,
+    isConsolidationBlocked: missingRatePairs.length > 0,
+    blockReasonAr: missingRatePairs.length > 0
+      ? `يوجد نقص في أسعار الصرف الموثقة لـ (${missingRatePairs.length}) كيان مقابل عملة العرض (${targetCurrency}). تم حظر توحيد القيم لمنع الاعتماد الافتراضي 1:1.`
+      : undefined,
     epistemology: {
       classification: "EMPIRICAL_OBSERVATION",
       consolidationType: "GROSS_COMBINED_WITH_DISCLOSURE",

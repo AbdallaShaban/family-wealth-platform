@@ -1109,12 +1109,75 @@ export async function postTrade(args: {
       const feeAccount = await ensureSystemAccount(tx, args.context.workspace.id, instrument.currency, `TRADING_FEES:${instrument.currency}`, "رسوم تداول", "expense");
       const taxAccount = await ensureSystemAccount(tx, args.context.workspace.id, instrument.currency, `TRADING_TAX:${instrument.currency}`, "ضرائب تداول", "expense");
       const accountProceeds = convertThroughBase(netProceeds, instrumentFxRate, accountFxRate);
+
+      // Pre-compute FIFO lot matches to determine exact historical cost basis of sold units
+      const lotRows = await tx.select().from(investmentLots).where(and(
+        eq(investmentLots.workspaceId, args.context.workspace.id),
+        eq(investmentLots.accountId, account.id),
+        eq(investmentLots.instrumentId, instrument.id),
+        gt(investmentLots.remainingQuantity, "0"),
+      )).orderBy(asc(investmentLots.acquiredAt), asc(investmentLots.id));
+
+      let totalCostBasis: Decimal;
+      if (lotRows.length > 0) {
+        const fifoLots: FifoLot[] = lotRows.map((row: any) => ({
+          id: row.id,
+          acquiredAt: row.acquiredAt,
+          remainingQuantity: new Decimal(row.remainingQuantity),
+          unitCost: new Decimal(row.unitCost),
+          currency: row.costCurrency,
+        }));
+        if (fifoLots.some(l => l.currency !== instrument.currency)) {
+          throw invalid("لا يمكن مطابقة Lots بعملة مختلفة عن عملة البيع.");
+        }
+        const previewMatches = allocateFifo({
+          lots: fifoLots,
+          quantity,
+          unitPrice,
+          fee: feeAmount,
+          tax: taxAmount,
+          currency: instrument.currency,
+        });
+        totalCostBasis = previewMatches.reduce((sum, m) => sum.plus(m.costBasis), new Decimal(0));
+      } else {
+        totalCostBasis = position ? new Decimal(position.averageCost).mul(quantity) : grossAmount;
+      }
+
+      // Realized Capital Gain or Loss = Gross Proceeds - Historical Cost Basis
+      const realizedGainOrLoss = grossAmount.minus(totalCostBasis);
+
       const sellLines: JournalDraftLine[] = [
         monetaryLine(account.id, "debit", accountProceeds, account.currency, accountFxRate, netProceeds.mul(instrumentFxRate)),
         monetaryLine(feeAccount.id, "debit", feeAmount, instrument.currency, instrumentFxRate),
         monetaryLine(taxAccount.id, "debit", taxAmount, instrument.currency, instrumentFxRate),
-        monetaryLine(clearing.id, "credit", grossAmount, instrument.currency, instrumentFxRate),
+        // FIFO Book Value Reduction: credit clearing strictly by the cost basis of sold units
+        monetaryLine(clearing.id, "credit", totalCostBasis, instrument.currency, instrumentFxRate),
       ];
+
+      if (realizedGainOrLoss.gt(0)) {
+        // Realized Capital Gain (Credit Revenue/Gain Account 4000)
+        const gainAccount = await ensureSystemAccount(
+          tx,
+          args.context.workspace.id,
+          instrument.currency,
+          `4000:REALIZED_CAPITAL_GAINS:${instrument.currency}`,
+          "4000: Realized Capital Gains",
+          "income"
+        );
+        sellLines.push(monetaryLine(gainAccount.id, "credit", realizedGainOrLoss, instrument.currency, instrumentFxRate));
+      } else if (realizedGainOrLoss.lt(0)) {
+        // Realized Capital Loss (Debit Expense/Loss Account 5000)
+        const lossAccount = await ensureSystemAccount(
+          tx,
+          args.context.workspace.id,
+          instrument.currency,
+          `5000:REALIZED_CAPITAL_LOSSES:${instrument.currency}`,
+          "5000: Realized Capital Losses",
+          "expense"
+        );
+        sellLines.push(monetaryLine(lossAccount.id, "debit", realizedGainOrLoss.abs(), instrument.currency, instrumentFxRate));
+      }
+
       lines = sellLines.filter(line => !line.amount.isZero());
     }
     const event = await createPostedEvent(tx, {

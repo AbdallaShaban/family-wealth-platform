@@ -227,7 +227,9 @@ export type FireHorizonStatus =
   | "unreachable_zero_growth"
   | "unreachable_positive_return_negative_contribution"
   | "unreachable_negative_real_return"
-  | "unreachable_deficit";
+  | "unreachable_deficit"
+  | "unreachable_capital_exhaustion";
+
 
 export interface FireHorizonResult {
   status: FireHorizonStatus;
@@ -1039,6 +1041,29 @@ export function calculateFireHorizon(inputs: FireHorizonInputs): FireHorizonResu
     throw new Error(`Invalid safe withdrawal rate (SWR): ${swr.toString()}. Must be positive.`);
   }
 
+  // Guard against uninitialized or zero spending / target:
+  if (S.lte(0)) {
+    return {
+      status: "unreachable_capital_exhaustion",
+      statusLabelAr: "غير محدد (يتطلب تحديد ميزانية نفقات سنوية موجبة)",
+      isReachable: false,
+      horizonMonths: null,
+      horizonYears: null,
+      projectedDate: null,
+      targetCorpus: new Decimal(0),
+      investableAssets: A0,
+      annualSpending: new Decimal(0),
+      swr,
+      nominalReturn: rNom,
+      inflation: iInf,
+      realReturn: calculateFisherRealRate(rNom, iInf),
+      monthlyRealRate: calculateMonthlyRealRate(calculateFisherRealRate(rNom, iInf)),
+      monthlyContribution: C,
+      gapCorpus: new Decimal(0),
+      verifiedExact: true,
+    };
+  }
+
   // K_FI = S / SWR
   const KFI = S.div(swr);
   const gapCorpus = KFI.minus(A0).lt(0) ? new Decimal(0) : KFI.minus(A0);
@@ -1051,8 +1076,8 @@ export function calculateFireHorizon(inputs: FireHorizonInputs): FireHorizonResu
   // STATE MATRIX IMPLEMENTATION
   // ==========================================================================
 
-  // State 1: FI Already Achieved (A0 >= KFI)
-  if (A0.gte(KFI)) {
+  // State 1: FI Already Achieved (A0 >= KFI > 0)
+  if (KFI.gt(0) && A0.gte(KFI)) {
     return {
       status: "achieved",
       statusLabelAr: "الاستقلال المالي محقق بالفعل",

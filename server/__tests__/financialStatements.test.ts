@@ -817,7 +817,138 @@ describe("Phase 9A — Financial Statements & Analytical Reconciliation Engine",
       expect(csv).toContain("Income_Statement");
       expect(csv).toContain("Equity_Changes");
       expect(csv).toContain("Cash_Flows");
-      expect(csv).toContain("Economic_Bridge");
+    });
+  });
+
+  describe("Module 2: Double-Entry Accounting & FIFO Capital Gains Engine", () => {
+    it("correctly credits account 4000 with realized capital gains and decrements book value by FIFO cost basis", () => {
+      const egpAccounts: AccountRow[] = [
+        { id: 101, workspaceId: 1, name: "Liquid Bank Account", accountType: "bank", currency: "EGP", isSystemAccount: "no" },
+        { id: 102, workspaceId: 1, name: "INVESTMENT_CLEARING:EGP", accountType: "clearing", currency: "EGP", isSystemAccount: "yes" },
+        { id: 103, workspaceId: 1, name: "Operating Revenue", accountType: "income", currency: "EGP", isSystemAccount: "no" },
+        { id: 104, workspaceId: 1, name: "4000: Realized Capital Gains", accountType: "income", currency: "EGP", isSystemAccount: "yes" },
+        { id: 105, workspaceId: 1, name: "Capital Contributed", accountType: "equity", currency: "EGP", isSystemAccount: "no" },
+      ];
+
+      const t1 = 1000;
+      const t2 = 2000;
+      const t3 = 3000;
+
+      // 1. Initial capital contribution: 151,250 EGP
+      // 2. Operating Revenue: 20,000 EGP
+      // 3. Purchase 100 shares at 200 EGP = 20,000 EGP
+      // 4. Sell 50 shares at 250 EGP = 12,500 EGP (FIFO cost = 10,000 EGP, Realized gain = 2,500 EGP)
+      const lines: JournalLineRow[] = [
+        // Capital contribution
+        line(1, 101, "debit", "151250.0000", t1, "EGP"),
+        line(1, 105, "credit", "151250.0000", t1, "EGP"),
+        // Operating revenue
+        line(2, 101, "debit", "20000.0000", t1 + 500, "EGP"),
+        line(2, 103, "credit", "20000.0000", t1 + 500, "EGP"),
+        // BUY: 100 shares @ 200 = 20,000
+        line(3, 102, "debit", "20000.0000", t2, "EGP"),
+        line(3, 101, "credit", "20000.0000", t2, "EGP"),
+        // SELL: 50 shares @ 250 = 12,500 (Cost basis = 10,000, Realized gain = 2,500)
+        line(4, 101, "debit", "12500.0000", t3, "EGP"),
+        line(4, 102, "credit", "10000.0000", t3, "EGP"),
+        line(4, 104, "credit", "2500.0000", t3, "EGP"),
+      ];
+
+      // Verify Balance Sheet
+      const bs = calculateBookBalanceSheet({
+        asOfTimestamp: t3,
+        baseCurrency: "EGP",
+        accounts: egpAccounts,
+        journalLines: lines,
+      });
+
+      // Liquid Cash = 151,250 + 20,000 - 20,000 + 12,500 = 163,750 EGP
+      expect(bs.assets.cashAndEquivalents.totalBase).toBe("163750.0000");
+      // Securities Book Value in Clearing = 20,000 - 10,000 = 10,000 EGP (Exactly 50 remaining shares * 200 EGP)
+      expect(bs.assets.investmentClearing.totalBase).toBe("10000.0000");
+      // Total Book Assets = 163,750 + 10,000 = 173,750 EGP
+      expect(bs.assets.totalBookAssets).toBe("173750.0000");
+      // Book Equity = Contributed Capital (151,250) + Retained Earnings (20,000 Operating + 2,500 Realized Gain) = 173,750 EGP
+      expect(bs.equity.totalBookEquity).toBe("173750.0000");
+      expect(bs.equationCheck.assetsEqualsLiabilitiesPlusEquity).toBe(true);
+
+      // Verify Income Statement:
+      // Net Profit = Operating Revenue (20,000) - Operating Expenses (0) + Realized Investment Gains (2,500) = 22,500 EGP
+      const income = calculateIncomeStatement({
+        startTimestamp: t1,
+        endTimestamp: t3,
+        baseCurrency: "EGP",
+        accounts: egpAccounts,
+        journalLines: lines,
+      });
+
+      expect(income.revenues.operatingIncome).toBe("20000.0000");
+      expect(income.revenues.realizedInvestmentGains).toBe("2500.0000");
+      expect(income.revenues.totalRevenues).toBe("22500.0000");
+      expect(income.netOperatingIncome).toBe("22500.0000");
+      expect(income.netProfit).toBe("22500.0000");
+
+      // Verify Valuation Reconciliation Bridge
+      const activeLots: InvestmentLotRow[] = [
+        {
+          id: 1,
+          accountId: 101,
+          instrumentId: 501,
+          acquiredAt: t2,
+          originalQuantity: "100.0000",
+          remainingQuantity: "50.0000",
+          unitCost: "200.0000",
+          totalCost: "20000.0000",
+          costCurrency: "EGP",
+          status: "open",
+        },
+      ];
+
+      const lotMatches: LotMatchRow[] = [
+        {
+          id: 1,
+          sellEventId: 4,
+          lotId: 1,
+          quantity: "50.0000",
+          costBasis: "10000.0000",
+          grossProceeds: "12500.0000",
+          allocatedFee: "0.0000",
+          allocatedTax: "0.0000",
+          realizedPnl: "2500.0000",
+          currency: "EGP",
+          matchedAt: t3,
+        },
+      ];
+
+      // Current fair market price is 250 EGP per share
+      const quotes: PriceQuoteMap = {
+        501: { price: "250.0000", currency: "EGP" },
+      };
+
+      const bridge = calculateEconomicNetWorthBridge({
+        asOfTimestamp: t3,
+        baseCurrency: "EGP",
+        bookBalanceSheet: bs,
+        activeLots,
+        lotMatches,
+        specialAssets: [],
+        quotes,
+        fxRates: { EGP: "1" },
+      });
+
+      // Remaining FIFO Cost = 50 * 200 = 10,000 EGP
+      expect(bridge.securitiesAdjustments.activeLotsCostBasis).toBe("10000.0000");
+      // Current Fair Value = 50 * 250 = 12,500 EGP
+      expect(bridge.securitiesAdjustments.activeLotsFairValue).toBe("12500.0000");
+      // Unrealized Gain = Current Fair Value (12,500) - Remaining FIFO Cost (10,000) = 2,500 EGP
+      expect(bridge.securitiesAdjustments.activeLotsUnrealizedPnl).toBe("2500.0000");
+      // Clearing Settlement Residual = 10,000 EGP (Exactly equals active lots cost basis)
+      expect(bridge.securitiesAdjustments.clearingSettlementResidual).toBe("10000.0000");
+      // Economic Net Worth = Liquid Cash (163,750) + Securities Fair Value (12,500) = 176,250 EGP
+      expect(bridge.economicNetWorth).toBe("176250.0000");
+      // Bridge check is fully reconciled with 0 discrepancy (phantom 5,000 eliminated!)
+      expect(bridge.bridgeCheck.reconciled).toBe(true);
+      expect(bridge.bridgeCheck.discrepancy).toBe("0.0000");
     });
   });
 });

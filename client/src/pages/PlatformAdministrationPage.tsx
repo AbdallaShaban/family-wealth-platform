@@ -76,10 +76,10 @@ export default function PlatformAdministrationPage() {
       description="تدير هذه الشاشة أدوار التطبيق العامة فقط. لا تمنح أو تلغي وصولًا إلى سجلات مساحات FAMILY، ولا تعرض أي بيانات مالية."
       breadcrumbs={[
         { label: "الرئيسية", href: "/" },
-        { label: "الحوكمة والتحليل", href: "/admin/users" },
+        { label: "الحوكمة والإدارة", href: "/admin/users" },
         { label: "إدارة مستخدمي المنصة" },
       ]}
-      badge={{ text: "إدارة النظام", variant: "destructive" }}
+      badge={{ text: "صلاحيات النظام المقيدة", variant: "institutional" }}
       icon={ShieldCheck}
     />
 
