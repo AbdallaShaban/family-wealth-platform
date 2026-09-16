@@ -5,8 +5,10 @@ dist
 .env
 .env.*
 !.env.example
+npm-debug.log*
 *.log
 .manus-logs
+.DS_Store
 coverage
 .vscode
 .idea

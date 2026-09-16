@@ -62,7 +62,7 @@ fi
 echo "[INFO] Database connectivity confirmed."
 
 # 4. Automated Migration Check and Application
-# Exactly 35 migrations (0000_... to 0034_...) must be managed by drizzle-kit
+# Exactly 36 migrations (0000_... to 0035_...) managed by drizzle-kit
 echo "[INFO] Applying pending migrations via drizzle-kit..."
 pnpm exec drizzle-kit migrate
 
