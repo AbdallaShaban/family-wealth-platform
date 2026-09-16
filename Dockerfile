@@ -29,8 +29,8 @@ COPY . .
 RUN pnpm check
 RUN pnpm build
 
-# Prune dev dependencies for production runtime
-RUN pnpm prune --prod
+# Retain full node_modules so all runtime and build-time plugins remain available
+# RUN pnpm prune --prod
 
 # ----------------------------------------------------------------------------
 # Stage 2: Minimal Production Runtime
