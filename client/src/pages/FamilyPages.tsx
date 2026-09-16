@@ -17,7 +17,7 @@ import { trpc } from "@/lib/trpc";
 import FintechDashboard from "@/components/FintechDashboard";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, BadgeDollarSign, BookOpenCheck, BriefcaseBusiness, Building2, Calendar, CalendarClock, CheckCircle2, CircleAlert, CreditCard, FileChartColumn, Landmark, Loader2, Plus, ReceiptText, ShieldCheck, Target, TrendingUp, Umbrella, UsersRound, Wallet, WalletCards } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Redirect } from "wouter";
 import { Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { toast } from "sonner";
 import SensitiveValue from "@/components/SensitiveValue";
@@ -175,10 +175,9 @@ export function WealthDashboard() {
 
 export function FamilyHomeGate() {
   const { loading, isAuthenticated } = useAuth();
-  const [, setLocation] = useLocation();
-  if (loading) return <div className="min-h-screen bg-[#f3f0e9] p-8"><Skeleton className="mx-auto mt-24 h-72 max-w-4xl" /></div>;
+  if (loading) return <div className="fintech-route-loading" role="status" aria-label="جارٍ تحميل الشاشة"><i /><i /><i /></div>;
   if (isAuthenticated) return <WealthDashboard />;
-  return <main dir="rtl" className="min-h-screen overflow-hidden bg-[#f3f0e9] text-slate-950"><div className="mx-auto grid min-h-screen max-w-7xl lg:grid-cols-[1.1fr_.9fr]"><section className="flex flex-col justify-between p-7 sm:p-12 lg:p-16"><div className="flex items-center gap-3"><div className="flex size-10 items-center justify-center rounded-xl bg-emerald-700 text-white"><ShieldCheck className="size-5" /></div><div><p className="font-bold tracking-[.16em]">FAMILY</p><p className="text-xs text-slate-500">PRIVATE WEALTH CONTROL</p></div></div><div className="max-w-xl py-14"><p className="mb-5 text-sm font-semibold text-emerald-700">منظومة مالية شخصية محمية</p><h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-6xl">الرؤية الواضحة تبدأ من دفتر <span className="text-emerald-700">موثوق</span>.</h1><p className="mt-6 max-w-lg text-base leading-8 text-slate-600">FAMILY يربط الحسابات والعمليات والأصول الاستثمارية والأهداف ضمن مصدر مالي واحد، مع صلاحيات على مستوى الخادم وسجل تدقيق للعمليات المعتمدة.</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><Button size="lg" className="bg-emerald-700 px-7 hover:bg-emerald-800" onClick={() => startLogin()}>الدخول إلى مساحتك الآمنة</Button></div></div><p className="text-xs leading-5 text-slate-500">لا تعرض هذه الصفحة أي رصيد أو بيانات مالية. تُنشأ مساحة FAMILY الخاصة بك بعد المصادقة.</p></section><aside className="relative bg-slate-950 px-7 py-12 text-white sm:px-12 lg:p-16"><div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,.23),transparent_28%),radial-gradient(circle_at_80%_75%,rgba(217,119,6,.16),transparent_30%)]" /><div className="relative flex h-full flex-col justify-between"><div className="border-b border-white/15 pb-6 text-xs font-semibold tracking-[.18em] text-emerald-300">FAMILY / CONTROL LAYER</div><div className="space-y-5"><div className="rounded-2xl border border-white/15 bg-white/5 p-5 backdrop-blur"><p className="text-sm text-slate-300">مصدر الحقيقة</p><p className="mt-2 text-2xl font-semibold">دفتر قيود متوازن</p><p className="mt-3 text-sm leading-6 text-slate-400">لا يتم تغيير الرصيد من الواجهة؛ كل عملية تُرحّل في دفتر القيود وتُسجّل في الأثر التدقيقي.</p></div><div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div className="rounded-xl bg-white/5 p-4"><p className="text-emerald-300">النطاق</p><p className="mt-2 font-semibold">معزول لكل مستخدم</p></div><div className="rounded-xl bg-white/5 p-4"><p className="text-emerald-300">التقييم</p><p className="mt-2 font-semibold">بأسعار موثقة فقط</p></div></div></div><p className="text-xs leading-5 text-slate-400">قد يطلب منك تسجيل الدخول لإكمال جلسة مصادقة آمنة قبل الوصول إلى أي بيانات أو عمليات.</p></div></aside></div></main>;
+  return <Redirect to="/login" replace />;
 }
 
 export function AccountsPage() {

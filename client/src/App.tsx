@@ -10,6 +10,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 
 const familyPage = <T extends keyof typeof import("./pages/FamilyPages")>(name: T) => lazy(() => import("./pages/FamilyPages").then(module => ({ default: module[name] as React.ComponentType })));
 const FamilyHomeGate = lazy(() => import("./pages/FamilyHomeGate"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
 const AccountsPage = familyPage("AccountsPage"); const LedgerPage = familyPage("LedgerPage"); const CashFlowPage = familyPage("CashFlowPage"); const CashFlowRegisterPage = familyPage("CashFlowRegisterPage"); const RecurringRulesPage = familyPage("RecurringRulesPage"); const DebtsPage = familyPage("DebtsPage"); const EmergencyFundPage = familyPage("EmergencyFundPage"); const TransfersPage = familyPage("TransfersPage"); const InvestmentsPage = lazy(() => import("./pages/InvestmentsPageRedesign")); const TradingPage = lazy(() => import("./pages/TradingPageRedesign")); const ValuationPage = lazy(() => import("./pages/ValuationPageRedesign")); const GoalsPlanningPage = familyPage("GoalsPlanningPage"); const RiskAllocationPage = familyPage("RiskAllocationPage"); const FeeTaxRulesPage = familyPage("FeeTaxRulesPage"); const AssetsInsurancePage = familyPage("AssetsInsurancePage"); const RebalanceReviewPage = familyPage("RebalanceReviewPage"); const MembersPage = lazy(() => import("./pages/MembersPageRedesign")); const ReportsPage = familyPage("ReportsPage"); const AuditPage = familyPage("AuditPage");
 const BankImportInbox = lazy(() => import("./pages/BankImportInbox"));
 const GovernanceApprovals = lazy(() => import("./pages/ApprovalsPage"));
@@ -36,6 +37,8 @@ function Router() {
   return (
     <Suspense fallback={<div className="fintech-route-loading" role="status" aria-label="جارٍ تحميل الشاشة"><i /><i /><i /></div>}><Switch>
       <Route path={"/"} component={FamilyHomeGate} />
+      <Route path={"/login"} component={LoginPage} />
+      <Route path={"/auth"} component={LoginPage} />
       <Route path={"/trading/swing"} component={SwingTradingPage} />
       <Route path={"/family/trading/swing"} component={SwingTradingPage} />
       <Route path={"/swing"} component={SwingTradingPage} />
