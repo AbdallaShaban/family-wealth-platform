@@ -7,7 +7,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { DemoModeProvider } from "./contexts/DemoModeContext";
 import { PrivacyModeProvider } from "./contexts/PrivacyModeContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import PriorityAlerts from "./components/PriorityAlerts";
 
 const familyPage = <T extends keyof typeof import("./pages/FamilyPages")>(name: T) => lazy(() => import("./pages/FamilyPages").then(module => ({ default: module[name] as React.ComponentType })));
 const FamilyHomeGate = lazy(() => import("./pages/FamilyHomeGate"));
@@ -30,12 +29,16 @@ const ConsolidationPage = lazy(() => import("./pages/ConsolidationPage"));
 const AuditorPortalPage = lazy(() => import("./pages/AuditorPortalPage"));
 const TransactionsHubPage = lazy(() => import("./pages/TransactionsHubPage"));
 const FxManagementPage = lazy(() => import("./pages/FxManagementPage"));
+const SwingTradingPage = lazy(() => import("./pages/SwingTradingPage"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Suspense fallback={<div className="fintech-route-loading" role="status" aria-label="جارٍ تحميل الشاشة"><i /><i /><i /></div>}><Switch>
       <Route path={"/"} component={FamilyHomeGate} />
+      <Route path={"/trading/swing"} component={SwingTradingPage} />
+      <Route path={"/family/trading/swing"} component={SwingTradingPage} />
+      <Route path={"/swing"} component={SwingTradingPage} />
       <Route path={"/transactions"} component={TransactionsHubPage} />
       <Route path={"/family/transactions"} component={TransactionsHubPage} />
       <Route path={"/accounts"} component={AccountsPage} />
@@ -103,7 +106,6 @@ function App() {
         <PrivacyModeProvider><DemoModeProvider>
           <TooltipProvider>
             <Toaster />
-            <PriorityAlerts />
             <Router />
           </TooltipProvider>
         </DemoModeProvider></PrivacyModeProvider>

@@ -1,7 +1,25 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, BadgeDollarSign, BarChart3, CircleDollarSign, Eye, Landmark, Plus, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  BadgeDollarSign,
+  BarChart3,
+  CircleDollarSign,
+  DollarSign,
+  Eye,
+  Landmark,
+  MoreHorizontal,
+  Plus,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { demoDashboard, getDashboardPreviewMode } from "@/lib/demoDashboard";
 import { useDemoMode } from "@/contexts/DemoModeContext";
@@ -11,7 +29,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SensitiveValue from "@/components/SensitiveValue";
-import { formatMoney } from "@/lib/financialDisplay";
+import { formatMoney, formatDateTime, formatDate } from "@/lib/financialDisplay";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
 
 const FintechCharts = lazy(() => import("./FintechCharts"));
 import OnboardingChecklist from "./OnboardingChecklist";
@@ -159,7 +211,48 @@ export default function FintechDashboard() {
   const decisions = trpc.family.planning.decisionCenter.useQuery(undefined, { enabled: !isDemoMode });
   const marketOverview = trpc.family.marketOverview.useQuery(undefined, { enabled: !isDemoMode });
   const goals = trpc.family.goals.list.useQuery(undefined, { enabled: !isDemoMode });
+  const cashFlowQuery = trpc.family.cashFlow.history.useQuery(undefined, { enabled: !isDemoMode });
+  const triggersQuery = trpc.family.market.getPriceTriggers.useQuery(undefined, { enabled: !isDemoMode });
+  const setTriggerMutation = trpc.family.market.setPriceTriggers.useMutation();
+  const postDividendMutation = trpc.family.ledger.postDividend.useMutation();
+  const utils = trpc.useUtils();
   const reduceMotion = useReducedMotion();
+
+  // Dialog state: Price Triggers
+  const [triggerModalOpen, setTriggerModalOpen] = useState(false);
+  const [selectedTriggerItem, setSelectedTriggerItem] = useState<{
+    instrumentId: number;
+    name: string;
+    symbol: string | null;
+    currency: string;
+    targetBuyPrice: string;
+    targetTakeProfitPrice: string;
+    currentPrice: number | null;
+  } | null>(null);
+
+  // Dialog state: Cash Dividend
+  const [dividendModalOpen, setDividendModalOpen] = useState(false);
+  const [selectedDividendItem, setSelectedDividendItem] = useState<{
+    instrumentId: number;
+    name: string;
+    symbol: string | null;
+    currency: string;
+  } | null>(null);
+  const [dividendAmount, setDividendAmount] = useState("");
+  const [dividendAccountId, setDividendAccountId] = useState("");
+  const [dividendMemo, setDividendMemo] = useState("");
+  const [isSubmittingDividend, setIsSubmittingDividend] = useState(false);
+  const [isSubmittingTrigger, setIsSubmittingTrigger] = useState(false);
+
+  // Safely memoize portfolioMap BEFORE any early returns
+  type PortfolioItem = NonNullable<typeof summary.data>["portfolio"][number];
+  const portfolioMap = useMemo(() => {
+    const map = new Map<number, PortfolioItem>();
+    if (summary.data?.portfolio) {
+      summary.data.portfolio.forEach(pos => map.set(pos.instrumentId, pos));
+    }
+    return map;
+  }, [summary.data?.portfolio]);
 
   if (summary.isLoading && !isDemoMode) return <DashboardSkeleton />;
   if (summary.error && !isDemoMode) {
@@ -208,7 +301,89 @@ export default function FintechDashboard() {
             color: ["#F43F5E", "#34D399"][index % 2],
           })),
       ];
-  const cashFlow = usingDemo ? [...demoDashboard.cashFlow] : [];
+  const cashFlow = usingDemo ? [...demoDashboard.cashFlow] : (cashFlowQuery.data ?? []);
+
+  const openTriggerModal = (
+    item: { instrumentId: number; name: string; symbol: string | null; currency: string },
+    targetBuy: number | null,
+    targetSell: number | null,
+    currentPrice: number | null
+  ) => {
+    setSelectedTriggerItem({
+      instrumentId: item.instrumentId,
+      name: item.name,
+      symbol: item.symbol,
+      currency: item.currency,
+      targetBuyPrice: targetBuy !== null ? String(targetBuy) : "",
+      targetTakeProfitPrice: targetSell !== null ? String(targetSell) : "",
+      currentPrice,
+    });
+    setTriggerModalOpen(true);
+  };
+
+  const handleSaveTriggers = async () => {
+    if (!selectedTriggerItem) return;
+    try {
+      setIsSubmittingTrigger(true);
+      await setTriggerMutation.mutateAsync({
+        instrumentId: selectedTriggerItem.instrumentId,
+        targetBuyPrice: selectedTriggerItem.targetBuyPrice.trim() || null,
+        targetTakeProfitPrice: selectedTriggerItem.targetTakeProfitPrice.trim() || null,
+      });
+      await utils.family.market.getPriceTriggers.invalidate();
+      toast.success("تم حفظ أهداف الأسعار وتنبيهات التداول بنجاح");
+      setTriggerModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "حدث خطأ أثناء حفظ التنبيهات");
+    } finally {
+      setIsSubmittingTrigger(false);
+    }
+  };
+
+  const openDividendModal = (item: { instrumentId: number; name: string; symbol: string | null; currency: string }) => {
+    const defaultAcc = (live?.accounts ?? []).find(a =>
+      ["cash", "bank", "brokerage"].includes(a.accountType)
+    );
+    setSelectedDividendItem(item);
+    setDividendAmount("");
+    setDividendAccountId(defaultAcc ? String(defaultAcc.id) : "");
+    setDividendMemo(`توزيع أرباح نقدية: ${item.name}`);
+    setDividendModalOpen(true);
+  };
+
+  const handlePostDividend = async () => {
+    if (!selectedDividendItem) return;
+    const amountNum = parseFloat(dividendAmount);
+    if (!amountNum || amountNum <= 0) {
+      toast.error("يرجى إدخال مبلغ توزيع صحيح");
+      return;
+    }
+    const accId = parseInt(dividendAccountId, 10);
+    if (!accId) {
+      toast.error("يرجى اختيار الحساب المستلم للتوزيع النقدي");
+      return;
+    }
+    try {
+      setIsSubmittingDividend(true);
+      await postDividendMutation.mutateAsync({
+        accountId: accId,
+        instrumentId: selectedDividendItem.instrumentId,
+        amount: dividendAmount.trim(),
+        currency: selectedDividendItem.currency,
+        occurredAt: Date.now(),
+        memo: dividendMemo.trim() || undefined,
+        idempotencyKey: `div_${selectedDividendItem.instrumentId}_${Date.now()}`,
+      });
+      await utils.family.dashboard.invalidate();
+      toast.success("تم قيد وتوزيع الأرباح النقدية بنجاح دون المساس بعدد الأسهم");
+      setDividendModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || "تعذر تسجيل التوزيع النقدي");
+    } finally {
+      setIsSubmittingDividend(false);
+    }
+  };
+
   const events = usingDemo
     ? demoDashboard.events.map(event => {
         const isExpense = event.tone === "expense";
@@ -247,9 +422,7 @@ export default function FintechDashboard() {
           badge: label,
           amount: event.grossAmount,
           currency: event.currency,
-          date: new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(
-            new Date(event.occurredAt)
-          ),
+          date: formatDateTime(event.occurredAt),
           tone: isTransfer ? ("transfer" as const) : isOutflow ? ("expense" as const) : ("income" as const),
           isOutflow,
           isTransfer,
@@ -377,7 +550,28 @@ export default function FintechDashboard() {
             label="صافي الثروة"
             value={netWorth}
             currency={currency}
-            detail={usingDemo ? "لقطة توضيحية قابلة للاستبدال" : "مُقوّم بعملة الأساس"}
+            detail={
+              usingDemo ? (
+                "لقطة توضيحية قابلة للاستبدال"
+              ) : live?.netWorthDelta ? (
+                <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                  <span
+                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10.5px] font-bold font-mono border ${
+                      live.netWorthDelta.isPositive
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60"
+                        : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60"
+                    }`}
+                  >
+                    <span>{live.netWorthDelta.isPositive ? "▲ +" : "▼ -"}</span>
+                    <span>{currency} {formatMoney(live.netWorthDelta.absolute, currency, 2)}</span>
+                    <span>({live.netWorthDelta.isPositive ? "+" : "-"}{live.netWorthDelta.percentage}%)</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">عن الإغلاق السابق</span>
+                </div>
+              ) : (
+                "مُقوّم بعملة الأساس"
+              )
+            }
             accent="indigo"
             isPriority={true}
             className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
@@ -387,7 +581,26 @@ export default function FintechDashboard() {
             label="السيولة المتاحة"
             value={liquidBalance}
             currency={currency}
-            detail="الحسابات النقدية والمصرفية"
+            detail={
+              !usingDemo && live?.unsettledCashBase && Number(live.unsettledCashBase) > 0 ? (
+                <div className="text-[11px] leading-tight space-y-0.5 mt-0.5">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                    <span>سيولة حرة:</span>
+                    <b className="font-mono text-emerald-600 dark:text-emerald-400">
+                      {formatMoney(live.freeLiquidityBase ?? liquidBalance, currency, 0)}
+                    </b>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 text-[10.5px]">
+                    <span>معلّق تسوية T+2:</span>
+                    <b className="font-mono text-amber-600 dark:text-amber-400">
+                      {formatMoney(live.unsettledCashBase, currency, 0)}
+                    </b>
+                  </div>
+                </div>
+              ) : (
+                "الحسابات النقدية والمصرفية"
+              )
+            }
             accent="emerald"
             className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
           />
@@ -417,72 +630,200 @@ export default function FintechDashboard() {
         </motion.section>
 
         {!usingDemo && marketOverview.data?.entries.length ? (
-          <section className="fintech-panel" aria-label="مراقبة السوق">
-            <div className="fintech-panel-heading">
+          <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs" aria-label="مراقبة السوق">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
               <div>
-                <p className="fintech-overline">مراقبة السوق</p>
-                <h2>أسعار الأصول وعناصر المتابعة</h2>
-                <p className="mt-1 text-sm font-normal text-slate-600 dark:text-slate-300">
-                  الأسعار مسجلة من المصدر مع وقتها وحالتها؛ وهي للمتابعة والمراجعة فقط.
+                <div className="flex items-center gap-2">
+                  <p className="fintech-overline m-0">المحفظة وسوق المال</p>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    EGX & NAV Live Feed
+                  </span>
+                </div>
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mt-1">
+                  قائمة المتابعة وجدول الأرباح والخسائر المؤسسي (P&L)
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  متابعة لحظية لأسعار الأسهم المصرية (EGX)، الذهب عيار 24، وصناديق الاستثمار مع حساب متوسط تكلفة FIFO والعوائد غير المحققة.
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => setLocation("/investments")} className="fintech-text-button">
-                  الأصول والأسعار
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLocation("/investments")}
+                  className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200 dark:border-slate-800 h-9 cursor-pointer"
+                >
+                  <span>إدارة المراكز الاستثمارية</span>
+                  <ArrowUpRight className="size-3.5" />
                 </Button>
               </div>
             </div>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {marketOverview.data.entries.slice(0, 9).map(item => (
-                <button
-                  key={item.instrumentId}
-                  onClick={() => setLocation("/investments")}
-                  className="rounded-2xl border bg-muted/20 p-4 text-right transition hover:border-emerald-400 hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <strong>{item.symbol || item.name}</strong>
-                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                        {item.symbol ? item.name : item.assetType}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-background px-2 py-1 text-[11px] text-slate-700 dark:text-slate-200 font-medium border border-border/60">
-                      {item.ownership === "owned_and_watching"
-                        ? "مملوك ومراقَب"
-                        : item.ownership === "owned"
-                        ? "مملوك"
-                        : "مراقَب"}
-                    </span>
-                  </div>
-                  <div className="mt-4 flex items-end justify-between gap-3">
-                    <b className="text-lg tabular-nums" dir="ltr">
-                      {item.price === null ? "—" : formatMoney(item.price, item.currency, 2)}
-                    </b>
-                    <span
-                      className={
-                        item.quoteStatus === "unavailable" || item.quoteStatus === "stale"
-                          ? "text-xs text-amber-700 dark:text-amber-400 font-semibold"
-                          : "text-xs text-emerald-700 dark:text-emerald-400 font-semibold"
-                      }
-                    >
-                      {item.quoteStatus === "stale"
-                        ? "متأخر"
-                        : item.quoteStatus === "unavailable"
-                        ? "غير متاح"
-                        : item.quoteStatus}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                    {item.source || "لا يوجد مصدر مسجل"}
-                    {item.asOf
-                      ? ` · ${new Intl.DateTimeFormat("ar-EG", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        }).format(new Date(item.asOf))}`
-                      : ""}
-                  </p>
-                </button>
-              ))}
+
+            {/* Institutional High-Density Table */}
+            <div className="rounded-xl border border-slate-100 dark:border-slate-800/80 overflow-hidden">
+              <Table dir="rtl">
+                <TableHeader className="bg-slate-50/70 dark:bg-slate-900/40">
+                  <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
+                    <TableHead className="text-right text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4">الأصل والرمز</TableHead>
+                    <TableHead className="text-left text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4" dir="ltr">السعر الحالي</TableHead>
+                    <TableHead className="text-left text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4" dir="ltr">تكلفة الشراء (FIFO)</TableHead>
+                    <TableHead className="text-left text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4" dir="ltr">العائد غير المحقق (P&L)</TableHead>
+                    <TableHead className="text-center text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4">أهداف التداول (Triggers)</TableHead>
+                    <TableHead className="text-center text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-3 w-16">إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {marketOverview.data.entries.map((item) => {
+                    const position = portfolioMap.get(item.instrumentId);
+                    const isOwned = Boolean(position && Number(position.quantity) > 0);
+                    const currentPrice = item.price !== null ? Number(item.price) : (position?.marketPrice !== null ? Number(position?.marketPrice) : null);
+                    const avgCost = isOwned && position?.averageCost ? Number(position.averageCost) : null;
+                    const quantity = isOwned && position?.quantity ? Number(position.quantity) : 0;
+                    
+                    // P&L calculation
+                    let unrealizedPnlAbs: number | null = null;
+                    let unrealizedPnlPct: number | null = null;
+                    if (isOwned && currentPrice !== null && avgCost !== null && avgCost > 0) {
+                      unrealizedPnlAbs = (currentPrice - avgCost) * quantity;
+                      unrealizedPnlPct = ((currentPrice - avgCost) / avgCost) * 100;
+                    }
+
+                    const triggers = triggersQuery.data?.[item.instrumentId];
+                    const targetBuy = triggers?.targetBuyPrice ? Number(triggers.targetBuyPrice) : null;
+                    const targetSell = triggers?.targetTakeProfitPrice ? Number(triggers.targetTakeProfitPrice) : null;
+
+                    // Live status dot
+                    const isLive = item.quoteStatus === "live" || (item.quoteStatus === "delayed" && item.asOf && (Date.now() - item.asOf < 24 * 3600 * 1000));
+                    const statusColor = isLive ? "bg-emerald-500" : "bg-slate-400";
+                    const statusLabel = isLive ? "مباشر / معتمد" : item.quoteStatus === "stale" ? "سعر سابق" : "غير متاح";
+
+                    return (
+                      <TableRow key={item.instrumentId} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 border-b border-slate-100 dark:border-slate-800/60 transition-colors">
+                        {/* 1. Asset & Ticker */}
+                        <TableCell className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <span className={`size-2 rounded-full shrink-0 ${statusColor}`} title={statusLabel} />
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <strong className="font-mono font-bold text-slate-900 dark:text-white text-xs tracking-wider" dir="ltr">
+                                  {item.symbol || "—"}
+                                </strong>
+                                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
+                                  {item.assetType === "equity" ? "أسهم" : item.assetType === "gold" ? "ذهب" : item.assetType === "fund" ? "صندوق" : item.assetType}
+                                </span>
+                                {isOwned && (
+                                  <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50">
+                                    مملوك
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5 truncate max-w-[200px]" title={item.name}>
+                                {item.name}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* 2. Current Price */}
+                        <TableCell className="py-3 px-4 text-left" dir="ltr">
+                          <div className="font-mono font-bold text-slate-900 dark:text-white text-sm tabular-nums">
+                            {currentPrice !== null ? formatMoney(currentPrice, item.currency, 2) : "—"}
+                          </div>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block mt-0.5">
+                            {item.asOf ? formatDateTime(item.asOf) : "—"}
+                          </span>
+                        </TableCell>
+
+                        {/* 3. FIFO Cost Basis */}
+                        <TableCell className="py-3 px-4 text-left" dir="ltr">
+                          {isOwned && avgCost !== null ? (
+                            <div>
+                              <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs tabular-nums">
+                                {formatMoney(avgCost, item.currency, 2)}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block font-mono">
+                                {quantity.toLocaleString("en-US", { maximumFractionDigits: 4 })} وحدة
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs font-mono">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* 4. Unrealized P&L */}
+                        <TableCell className="py-3 px-4 text-left" dir="ltr">
+                          {isOwned && unrealizedPnlAbs !== null && unrealizedPnlPct !== null ? (
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`font-mono font-bold text-xs tabular-nums ${unrealizedPnlAbs > 0 ? "text-emerald-600 dark:text-emerald-400" : unrealizedPnlAbs < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-600"}`}>
+                                  {unrealizedPnlAbs > 0 ? "+" : ""}{formatMoney(unrealizedPnlAbs, item.currency, 2)}
+                                </span>
+                                <span className={`font-mono font-bold text-[10px] px-1 py-0.2 rounded ${unrealizedPnlPct > 0 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : unrealizedPnlPct < 0 ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" : "bg-slate-100 text-slate-700"}`}>
+                                  {unrealizedPnlPct > 0 ? "+" : ""}{unrealizedPnlPct.toFixed(2)}%
+                                </span>
+                              </div>
+                              <span className="text-[9.5px] text-slate-400 font-semibold block mt-0.5">
+                                عائد غير محقق
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 text-xs font-mono">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* 5. Custom Price Triggers */}
+                        <TableCell className="py-3 px-4 text-center">
+                          <div className="inline-flex items-center gap-2 text-xs font-mono">
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 text-[10.5px]" title="سعر الشراء المستهدف">
+                              شراء: {targetBuy ? formatMoney(targetBuy, item.currency, 2) : "—"}
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/50 text-[10.5px]" title="سعر جني الأرباح المستهدف">
+                              جني: {targetSell ? formatMoney(targetSell, item.currency, 2) : "—"}
+                            </span>
+                          </div>
+                        </TableCell>
+
+                        {/* 6. Quick Action Dropdown */}
+                        <TableCell className="py-3 px-3 text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="size-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 text-right">
+                              <DropdownMenuLabel className="text-xs font-bold">إجراءات الأداة</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-xs font-medium cursor-pointer"
+                                onClick={() => openTriggerModal(item, targetBuy, targetSell, currentPrice)}
+                              >
+                                <SlidersHorizontal className="size-3.5 ml-2" />
+                                تعديل تنبيهات السعر
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-xs font-medium cursor-pointer"
+                                onClick={() => setLocation("/investments")}
+                              >
+                                <ArrowUpRight className="size-3.5 ml-2" />
+                                تنفيذ شراء / بيع
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-xs font-medium cursor-pointer"
+                                onClick={() => openDividendModal(item)}
+                              >
+                                <DollarSign className="size-3.5 ml-2" />
+                                تسجيل توزيع نقدي
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           </section>
         ) : null}
@@ -797,6 +1138,200 @@ export default function FintechDashboard() {
           workspaceName={live?.workspace.name || "مساحة FAMILY"}
           baseCurrency={live?.workspace.baseCurrency || "EGP"}
         />
+
+        {/* Dialog: Edit Price Triggers */}
+        <Dialog open={triggerModalOpen} onOpenChange={setTriggerModalOpen}>
+          <DialogContent dir="rtl" className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <SlidersHorizontal className="size-4 text-emerald-600" />
+                <span>أهداف التداول وتنبيهات الأسعار</span>
+              </DialogTitle>
+              <DialogDescription>
+                حدد أهداف الشراء وجني الأرباح للأصل{" "}
+                <b className="text-slate-900 dark:text-white">
+                  {selectedTriggerItem?.symbol || selectedTriggerItem?.name}
+                </b>
+                . ستتلقى تنبيهاً ذكياً فور وصول السعر للهدف.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              {selectedTriggerItem?.currentPrice !== null && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 text-xs">
+                  <span className="text-slate-600 dark:text-slate-400">السعر المرجعي الحالي:</span>
+                  <strong className="font-mono font-bold text-slate-900 dark:text-white" dir="ltr">
+                    {formatMoney(selectedTriggerItem?.currentPrice ?? 0, selectedTriggerItem?.currency || "EGP", 2)}
+                  </strong>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="targetBuyPrice" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  سعر الشراء المستهدف (Dip Buy Trigger)
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="targetBuyPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="مثال: 75.50"
+                    value={selectedTriggerItem?.targetBuyPrice || ""}
+                    onChange={(e) =>
+                      setSelectedTriggerItem((prev) => (prev ? { ...prev, targetBuyPrice: e.target.value } : null))
+                    }
+                    className="font-mono text-left"
+                    dir="ltr"
+                  />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 pointer-events-none font-mono">
+                    {selectedTriggerItem?.currency || "EGP"}
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-slate-500">
+                  يُطلق تنبيهاً عند انخفاض السعر إلى هذا المستوى أو أدنى منه.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="targetTakeProfitPrice" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  سعر جني الأرباح المستهدف (Take-Profit Trigger)
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="targetTakeProfitPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="مثال: 110.00"
+                    value={selectedTriggerItem?.targetTakeProfitPrice || ""}
+                    onChange={(e) =>
+                      setSelectedTriggerItem((prev) => (prev ? { ...prev, targetTakeProfitPrice: e.target.value } : null))
+                    }
+                    className="font-mono text-left"
+                    dir="ltr"
+                  />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 pointer-events-none font-mono">
+                    {selectedTriggerItem?.currency || "EGP"}
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-slate-500">
+                  يُطلق تنبيهاً عند ارتفاع السعر وتحقيق هدف جني الأرباح.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:justify-start">
+              <Button
+                variant="outline"
+                onClick={() => setTriggerModalOpen(false)}
+                disabled={isSubmittingTrigger}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleSaveTriggers}
+                disabled={isSubmittingTrigger}
+                className="bg-slate-900 hover:bg-slate-800 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              >
+                {isSubmittingTrigger ? "جارٍ الحفظ..." : "حفظ التنبيهات"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog: Log Cash Dividend */}
+        <Dialog open={dividendModalOpen} onOpenChange={setDividendModalOpen}>
+          <DialogContent dir="rtl" className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <DollarSign className="size-4 text-emerald-600" />
+                <span>تسجيل توزيع أرباح نقدية</span>
+              </DialogTitle>
+              <DialogDescription>
+                قيد توزيع نقدي للأصل{" "}
+                <b className="text-slate-900 dark:text-white">
+                  {selectedDividendItem?.symbol || selectedDividendItem?.name}
+                </b>
+                . يُودع المبلغ في الحساب المختار كإيراد توزيعات دون التأثير على عدد الأسهم.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="dividendAccount" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  الحساب المستلم للتوزيع
+                </Label>
+                <Select value={dividendAccountId} onValueChange={setDividendAccountId}>
+                  <SelectTrigger id="dividendAccount" className="w-full text-right" dir="rtl">
+                    <SelectValue placeholder="اختر الحساب البنكي أو النقدي" />
+                  </SelectTrigger>
+                  <SelectContent dir="rtl">
+                    {(live?.accounts ?? [])
+                      .filter((acc) => ["cash", "bank", "brokerage", "wallet"].includes(acc.accountType))
+                      .map((acc) => (
+                        <SelectItem key={acc.id} value={String(acc.id)}>
+                          {acc.name} ({acc.currency})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="dividendAmount" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  إجمالي المبلغ المستلم (صافي التوزيع)
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="dividendAmount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={dividendAmount}
+                    onChange={(e) => setDividendAmount(e.target.value)}
+                    className="font-mono text-left"
+                    dir="ltr"
+                  />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 pointer-events-none font-mono">
+                    {selectedDividendItem?.currency || "EGP"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="dividendMemo" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  البيان / ملاحظة القيد
+                </Label>
+                <Input
+                  id="dividendMemo"
+                  value={dividendMemo}
+                  onChange={(e) => setDividendMemo(e.target.value)}
+                  placeholder="مثال: توزيعات أرباح النصف الأول 2026"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 text-[11px] text-emerald-800 dark:text-emerald-300">
+                <b>ملاحظة محاسبية:</b> سيُسجل هذا التوزيع كقيد إيراد استثماري ويُضاف لرصيد الحساب المالي، دون تغيير في رصيد الأسهم أو كلفة الشراء التاريخية.
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:justify-start">
+              <Button
+                variant="outline"
+                onClick={() => setDividendModalOpen(false)}
+                disabled={isSubmittingDividend}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handlePostDividend}
+                disabled={isSubmittingDividend}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {isSubmittingDividend ? "جارٍ القيد..." : "قيد التوزيع في الحساب"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

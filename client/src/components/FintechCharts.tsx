@@ -77,7 +77,7 @@ export default function FintechCharts({
     hoveredItem && pieTotal ? Math.round((hoveredItem.value / pieTotal) * 100) : 0;
 
   // Generate real recent 6 months for clean baseline canvas when cashFlow is empty
-  const defaultRecentMonths = ["إبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر"];
+  const defaultRecentMonths = ["Apr", "May", "Jun", "Jul", "Aug", "Sep"];
   const displayCashFlow = cashFlow.length
     ? cashFlow
     : defaultRecentMonths.map((month) => ({ month, income: 0, expense: 0 }));
@@ -221,8 +221,8 @@ export default function FintechCharts({
             </div>
           </div>
 
-          <div className="relative h-[290px] mt-2 flex-1 flex flex-col justify-center">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="relative min-h-[280px] h-[280px] mt-2 w-full flex-1 flex flex-col justify-center">
+            <ResponsiveContainer width="100%" height={280}>
               <AreaChart
                 data={displayCashFlow}
                 margin={{ top: 12, right: 4, left: -24, bottom: 0 }}

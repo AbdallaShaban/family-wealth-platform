@@ -9,6 +9,7 @@ import { usePrivacyMode } from "@/contexts/PrivacyModeContext";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowLeftRight,
+  BarChart3,
   BookOpenCheck,
   BriefcaseBusiness,
   Building2,
@@ -43,6 +44,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { startLogin } from "@/const";
 import { Button } from "./ui/button";
+import NotificationCenter from "./NotificationCenter";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
 type MenuItem = { icon: LucideIcon; label: string; path: string; minimumRole: MinimumRole };
@@ -96,6 +98,7 @@ const navigationGroups: NavigationGroup[] = [
     icon: TrendingUp,
     items: [
       { icon: TrendingUp, label: "الأداء الاستثماري", path: "/performance", minimumRole: "viewer" },
+      { icon: BarChart3, label: "تداول السوينج والمستشار", path: "/trading/swing", minimumRole: "viewer" },
       { icon: ArrowLeftRight, label: "المخاطر والتخصيص", path: "/risk", minimumRole: "viewer" },
       { icon: ShieldCheck, label: "اختبارات الإجهاد", path: "/stress-testing", minimumRole: "viewer" },
       { icon: Target, label: "الأهداف والتقاعد", path: "/goals", minimumRole: "viewer" },
@@ -729,6 +732,7 @@ function TopbarControls() {
   const { isPrivate, togglePrivacy } = usePrivacyMode();
   return (
     <>
+      <NotificationCenter />
       <button
         onClick={toggleDemoMode}
         className={`fintech-topbar-button ${isDemoMode ? "is-active" : ""}`}

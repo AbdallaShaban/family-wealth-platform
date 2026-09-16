@@ -1,5 +1,6 @@
 import {
   bigint,
+  boolean,
   decimal,
   index,
   int,
@@ -1058,3 +1059,60 @@ export const lotMatches = mysqlTable(
     lotIndex: index("lot_matches_lot_idx").on(table.workspaceId, table.lotId),
   })
 );
+
+export const marketCandles = mysqlTable(
+  "market_candles",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    instrumentId: int("instrumentId").notNull().references(() => instruments.id, { onDelete: "cascade" }),
+    timeframe: mysqlEnum("timeframe", ["1h", "4h", "1d", "1w"]).default("1d").notNull(),
+    timestamp: bigint("timestamp", { mode: "number" }).notNull(),
+    open: decimal("open", { precision: 14, scale: 4 }).notNull(),
+    high: decimal("high", { precision: 14, scale: 4 }).notNull(),
+    low: decimal("low", { precision: 14, scale: 4 }).notNull(),
+    close: decimal("close", { precision: 14, scale: 4 }).notNull(),
+    volume: decimal("volume", { precision: 18, scale: 2 }).notNull(),
+  },
+  table => ({
+    instrumentTimeframeTimestampIndex: index("market_candles_instrument_tf_ts_idx").on(
+      table.instrumentId,
+      table.timeframe,
+      table.timestamp
+    ),
+  })
+);
+
+export const swingTrades = mysqlTable(
+  "swing_trades",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    workspaceId: int("workspaceId").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    instrumentId: int("instrumentId").notNull().references(() => instruments.id),
+    assetCategory: mysqlEnum("assetCategory", ["EGX_STOCK", "NBE_MUTUAL_FUND", "TELDA_LIQUIDITY", "GOLD", "CRYPTO_OTHER"]).default("EGX_STOCK").notNull(),
+    fundingAccountId: int("fundingAccountId").references(() => accounts.id, { onDelete: "set null" }),
+    isPaperTrading: boolean("isPaperTrading").default(false).notNull(),
+    direction: mysqlEnum("direction", ["LONG", "SHORT"]).default("LONG").notNull(),
+    quantity: decimal("quantity", { precision: 14, scale: 4 }).notNull(),
+    entryPrice: decimal("entryPrice", { precision: 14, scale: 4 }).notNull(),
+    stopLossPrice: decimal("stopLossPrice", { precision: 14, scale: 4 }),
+    takeProfitPrice: decimal("takeProfitPrice", { precision: 14, scale: 4 }),
+    entryDate: bigint("entryDate", { mode: "number" }).notNull(),
+    exitDeadline: bigint("exitDeadline", { mode: "number" }),
+    targetHoldingDays: int("targetHoldingDays").default(10),
+    status: mysqlEnum("status", ["OPEN", "TARGET_HIT", "STOPPED_OUT", "TIME_EXPIRED", "CLOSED_MANUALLY", "CANCELLED"]).default("OPEN").notNull(),
+    exitPrice: decimal("exitPrice", { precision: 14, scale: 4 }),
+    exitDate: bigint("exitDate", { mode: "number" }),
+    strategyTag: varchar("strategyTag", { length: 100 }),
+    notes: text("notes"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    workspaceStatusIndex: index("swing_trades_workspace_status_idx").on(table.workspaceId, table.status),
+    workspaceInstrumentIndex: index("swing_trades_workspace_instrument_idx").on(table.workspaceId, table.instrumentId),
+  })
+);
+
+export type MarketCandle = typeof marketCandles.$inferSelect;
+export type InsertMarketCandle = typeof marketCandles.$inferInsert;
+export type SwingTrade = typeof swingTrades.$inferSelect;
+export type InsertSwingTrade = typeof swingTrades.$inferInsert;

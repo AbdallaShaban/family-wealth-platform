@@ -7,7 +7,7 @@ import { ENV } from "./_core/env";
 import { accounts, allocationTargets, approvalDecisions, approvalPolicies, approvalRequests, auditEvents, bankStatementImports, bankStatementRows, budgetTemplateLines, budgetTemplates, budgets, cashFlowCategories, emergencyFundPlans, feeTaxRules, financialEvents, financialGoals, financialPeriods, financialProfiles, fxRates, insuranceClaims, insurancePolicies, insurancePremiumPayments, instruments, investmentLots, corporateActions, journalEntries, journalLines, lotMatches, lotTransfers, marketEmailPreferences, memberships, officialValuationSnapshots, personalIous, planningScenarios, positions, priceQuotes, recurringRules, researchNotes, retirementPlans, riskProfiles, specialAssets, specialAssetValuations, users, valuationProvenance, valuationSnapshots, vaultDocuments, watchlistItems, workspaceInvitations, workspaces, zakatAssessments } from "../drizzle/schema";
 import { assertRole, ensurePersonalFamilyContext, listAccessibleWorkspaces, setActiveFamilyWorkspace, type FamilyContext } from "./familyAccess";
 import { createDebt, createFamilyAccount, postCashEvent, postDebtPayment, postImportedCashBatch, postPositionTransfer, postStockSplit, postTrade, postTransfer, reverseImportedCashBatch, revalueAssetAccount } from "./familyLedger";
-import { getCashFlowSummary, getDashboardMarketOverview, getDashboardSummary, getEmergencyFundSummary, getMarketDataQuality, getRiskAllocationSummary, listAccountSnapshots, listDebtSummaries, listPortfolioPositions, listRecentEvents } from "./familyRead";
+import { getCashFlowHistory, getCashFlowSummary, getDashboardMarketOverview, getDashboardSummary, getEmergencyFundSummary, getMarketDataQuality, getRiskAllocationSummary, listAccountSnapshots, listDebtSummaries, listPortfolioPositions, listRecentEvents } from "./familyRead";
 import { getSmtpConfiguration } from "./mailer";
 import { getDb } from "./db";
 import { parseNonNegativeAmount, parsePositiveAmount } from "./ledgerMath";
@@ -23,7 +23,7 @@ import { buildImportRows, detectDuplicate, parseCsv, sha256, validateColumnMappi
 import { canPostImportedRow, shouldKeepImportInReview } from "./bankImportWorkflow";
 import { projectScenario } from "./scenarioMath";
 import { approvalActionTypes, isApprovalExecutable, requiresApproval, type ApprovalActionType } from "./approvalWorkflowMath";
-import { fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
+import { calculateGold24kGramEgp, fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
 import { calculateZakat } from "./zakatMath";
 import { storageGetSignedUrl, storagePut } from "./storage";
 import { decryptVaultValue, encryptVaultValue } from "./vaultCrypto";
@@ -256,6 +256,7 @@ export const familyRouter = router({
       return activeCategories.map(category => ({ ...category, isArchived: false as const }));
     }),
     summary: protectedProcedure.input(z.object({ periodKey: z.string().regex(/^\d{4}-\d{2}$/) })).query(async ({ ctx, input }) => getCashFlowSummary(await familyContext(ctx.user), input.periodKey)),
+    history: protectedProcedure.input(z.object({ months: z.number().int().min(1).max(24).optional() }).optional()).query(async ({ ctx, input }) => getCashFlowHistory(await familyContext(ctx.user), input?.months ?? 6)),
     runway: protectedProcedure.query(async ({ ctx }) => getEmergencyFundSummary(await familyContext(ctx.user))),
     createCategory: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(120), direction: z.enum(["income", "expense"]), color: z.string().trim().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(), isEssential: z.boolean().optional() })).mutation(async ({ ctx, input }) => {
       const family = await familyContext(ctx.user);
@@ -836,6 +837,140 @@ export const familyRouter = router({
     createNote: protectedProcedure.input(z.object({ instrumentId: z.number().int().positive().nullable(), title: z.string().trim().min(2).max(180), thesis: z.string().trim().min(2).max(12_000), risks: z.string().trim().max(12_000).nullable(), sourceUrl: z.string().trim().url().max(2048).nullable(), status: z.enum(["draft", "active"]).default("draft") })).mutation(async () => {
       throw new TRPCError({ code: "BAD_REQUEST", message: "نظام الملاحظات البحثية متوقف في هذا الإصدار." });
     }),
+  }),
+
+  market: router({
+    getDerivedGoldPrice: protectedProcedure.query(async ({ ctx }) => {
+      const family = await familyContext(ctx.user);
+      const db = await getDb();
+      if (!db) throw notAvailable();
+      const [goldQuote] = await db
+        .select()
+        .from(priceQuotes)
+        .where(and(eq(priceQuotes.workspaceId, family.workspace.id), eq(priceQuotes.currency, "USD")))
+        .orderBy(desc(priceQuotes.asOf))
+        .limit(1);
+      const [usdRate] = await db
+        .select()
+        .from(fxRates)
+        .where(
+          and(
+            eq(fxRates.workspaceId, family.workspace.id),
+            eq(fxRates.fromCurrency, "USD"),
+            eq(fxRates.toCurrency, "EGP")
+          )
+        )
+        .orderBy(desc(fxRates.asOf))
+        .limit(1);
+      const goldOunceUsd = goldQuote?.price ? Number(goldQuote.price) : 2600.0;
+      const usdEgpRate = usdRate?.rate ? Number(usdRate.rate) : 48.5;
+      return calculateGold24kGramEgp({ goldOunceUsd, usdEgpRate });
+    }),
+    recordFundNav: protectedProcedure
+      .input(
+        z.object({
+          instrumentId: z.number().int().positive(),
+          navPrice: money,
+          asOf: z.number().int().positive().optional(),
+          source: z.string().trim().max(120).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [instrument] = await db
+          .select()
+          .from(instruments)
+          .where(and(eq(instruments.id, input.instrumentId), eq(instruments.workspaceId, family.workspace.id)))
+          .limit(1);
+        if (!instrument) throw new TRPCError({ code: "NOT_FOUND", message: "الأداة أو الصندوق الاستثماري غير موجود." });
+        const now = Date.now();
+        const asOf = input.asOf ?? now;
+        const insert = await db.insert(priceQuotes).values({
+          workspaceId: family.workspace.id,
+          instrumentId: instrument.id,
+          price: input.navPrice,
+          currency: instrument.currency,
+          source: input.source || "تقييم يدوي معتمد لوثيقة الصندوق",
+          quoteStatus: "manual",
+          asOf,
+          createdAt: now,
+        });
+        invalidateReadModelCache(`wealth-health:score:${family.workspace.id}`);
+        return { id: Number(insert[0].insertId), price: input.navPrice };
+      }),
+    getPriceTriggers: protectedProcedure.query(async ({ ctx }) => {
+      const family = await familyContext(ctx.user);
+      const db = await getDb();
+      if (!db) throw notAvailable();
+      const items = await db
+        .select({
+          instrumentId: watchlistItems.instrumentId,
+          note: watchlistItems.note,
+        })
+        .from(watchlistItems)
+        .where(
+          and(
+            eq(watchlistItems.workspaceId, family.workspace.id),
+            eq(watchlistItems.profileId, family.profile.id)
+          )
+        );
+      const triggersMap: Record<number, { targetBuyPrice?: string | null; targetTakeProfitPrice?: string | null }> = {};
+      items.forEach((item) => {
+        if (item.note) {
+          try {
+            const parsed = JSON.parse(item.note);
+            if (parsed && typeof parsed === "object") {
+              triggersMap[item.instrumentId] = {
+                targetBuyPrice: parsed.targetBuyPrice ?? null,
+                targetTakeProfitPrice: parsed.targetTakeProfitPrice ?? null,
+              };
+            }
+          } catch {
+            // Not a JSON note
+          }
+        }
+      });
+      return triggersMap;
+    }),
+    setPriceTriggers: protectedProcedure
+      .input(
+        z.object({
+          instrumentId: z.number().int().positive(),
+          targetBuyPrice: money.optional().nullable(),
+          targetTakeProfitPrice: money.optional().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const now = Date.now();
+        const notePayload = JSON.stringify({
+          targetBuyPrice: input.targetBuyPrice || null,
+          targetTakeProfitPrice: input.targetTakeProfitPrice || null,
+          updatedAt: now,
+        });
+        await db
+          .insert(watchlistItems)
+          .values({
+            workspaceId: family.workspace.id,
+            profileId: family.profile.id,
+            instrumentId: input.instrumentId,
+            note: notePayload,
+            status: "active",
+            createdByUserId: ctx.user.id,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onDuplicateKeyUpdate({
+            set: { note: notePayload, status: "active", createdByUserId: ctx.user.id, updatedAt: now },
+          });
+        return { success: true };
+      }),
   }),
 
   feeTax: router({
@@ -1445,6 +1580,43 @@ export const familyRouter = router({
         if (frozen) return { approvalRequired: true as const, approvalRequestId: frozen.id, duplicate: frozen.duplicate };
         const event = await postTrade({ context: family, actorUserId: ctx.user.id, ...input });
         return { approvalRequired: false as const, event };
+      }),
+    postDividend: protectedProcedure
+      .input(
+        z.object({
+          accountId: z.number().int().positive(),
+          instrumentId: z.number().int().positive(),
+          amount: money,
+          currency,
+          occurredAt,
+          memo: z.string().trim().max(2_000).optional().nullable(),
+          idempotencyKey,
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [instrument] = await db
+          .select({ id: instruments.id, name: instruments.name, symbol: instruments.symbol, currency: instruments.currency })
+          .from(instruments)
+          .where(and(eq(instruments.id, input.instrumentId), eq(instruments.workspaceId, family.workspace.id)))
+          .limit(1);
+        if (!instrument) throw new TRPCError({ code: "NOT_FOUND", message: "الأداة الاستثمارية غير موجودة ضمن مساحة FAMILY." });
+        const dividendMemo = input.memo || `توزيع أرباح نقدية: ${instrument.name} (${instrument.symbol || ""})`;
+        const event = await postCashEvent({
+          context: family,
+          actorUserId: ctx.user.id,
+          eventType: "income",
+          accountId: input.accountId,
+          amount: input.amount,
+          currency: input.currency.toUpperCase(),
+          occurredAt: input.occurredAt,
+          memo: dividendMemo,
+          idempotencyKey: input.idempotencyKey,
+        });
+        return { eventId: event.id };
       }),
   }),
 

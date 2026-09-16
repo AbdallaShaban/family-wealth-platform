@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { inArray } from "drizzle-orm";
-import { accounts, allocationTargets, budgets, cashFlowCategories, debts, emergencyFundPlans, financialEvents, fxRates, instruments, journalEntries, journalLines, positions, priceQuotes, riskProfiles, watchlistItems } from "../drizzle/schema";
+import { accounts, allocationTargets, budgets, cashFlowCategories, debts, emergencyFundPlans, financialEvents, fxRates, instruments, journalEntries, journalLines, officialValuationSnapshots, positions, priceQuotes, riskProfiles, watchlistItems } from "../drizzle/schema";
 import type { FamilyContext } from "./familyAccess";
 import { getDb } from "./db";
 import { TRPCError } from "@trpc/server";
@@ -51,7 +51,7 @@ export async function listAccountSnapshots(context: FamilyContext) {
 export async function getDashboardSummary(context: FamilyContext) {
   const [accountSnapshots, recentEvents, portfolio] = await Promise.all([
     listAccountSnapshots(context),
-    listRecentEvents(context, 8),
+    listRecentEvents(context, 12),
     listPortfolioPositions(context),
   ]);
   const valuedBalance = accountSnapshots.reduce((total, account) => total.plus(account.baseValue ?? "0"), new Decimal(0));
@@ -62,13 +62,64 @@ export async function getDashboardSummary(context: FamilyContext) {
   const unvaluedCurrencies = Array.from(new Set(accountSnapshots.filter(account => account.baseValue === null).map(account => account.currency)));
   const staleFxCurrencies = Array.from(new Set(accountSnapshots.filter(account => account.valuationStatus === "stale").map(account => account.currency)));
   const unvaluedInstruments = portfolio.filter(position => position.baseMarketValue === null).map(position => position.instrumentName);
+
+  const currentNetWorth = valuedBalance.plus(investmentValue);
+
+  // Unsettled Cash calculation (T+2 / 48h settlement window for recent equity dispositions)
+  const settlementWindowMs = 2 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const unsettledSells = recentEvents.filter(
+    (e) => e.eventType === "sell" && now - e.occurredAt < settlementWindowMs
+  );
+  const unsettledCash = unsettledSells.reduce(
+    (sum, e) => sum.plus(new Decimal(e.grossAmount ?? 0)),
+    new Decimal(0)
+  );
+  const freeLiquidity = Decimal.max(0, liquidBalance.minus(unsettledCash));
+
+  // Prior Period Comparison for Net Worth Delta
+  let netWorthDelta = {
+    absolute: "0.00",
+    percentage: "0.0",
+    isPositive: true,
+  };
+  const db = await getDb();
+  if (db) {
+    const snapshots = await db
+      .select({ netWorthBase: officialValuationSnapshots.netWorthBase })
+      .from(officialValuationSnapshots)
+      .where(eq(officialValuationSnapshots.workspaceId, context.workspace.id))
+      .orderBy(desc(officialValuationSnapshots.valuationAsOf))
+      .limit(2);
+    if (snapshots.length >= 2 && snapshots[1].netWorthBase) {
+      const prev = new Decimal(snapshots[1].netWorthBase);
+      const diff = currentNetWorth.minus(prev);
+      const pct = prev.gt(0) ? diff.div(prev).mul(100) : new Decimal(0);
+      netWorthDelta = {
+        absolute: diff.abs().toFixed(2),
+        percentage: pct.abs().toFixed(1),
+        isPositive: diff.gte(0),
+      };
+    } else if (unrealizedPnl.abs().gt(0) && currentNetWorth.gt(0)) {
+      const pct = unrealizedPnl.div(currentNetWorth).mul(100);
+      netWorthDelta = {
+        absolute: unrealizedPnl.abs().toFixed(2),
+        percentage: pct.abs().toFixed(1),
+        isPositive: unrealizedPnl.gte(0),
+      };
+    }
+  }
+
   return {
     workspace: { id: context.workspace.id, name: context.workspace.name, baseCurrency: context.workspace.baseCurrency },
     membershipRole: context.membership.role,
     liquidBalanceBase: liquidBalance.toFixed(2),
+    freeLiquidityBase: freeLiquidity.toFixed(2),
+    unsettledCashBase: unsettledCash.toFixed(2),
     liabilityBalanceBase: liabilities.toFixed(2),
     investmentValueBase: investmentValue.toFixed(2),
-    netWorthBase: valuedBalance.plus(investmentValue).toFixed(2),
+    netWorthBase: currentNetWorth.toFixed(2),
+    netWorthDelta,
     unrealizedPnlBase: unrealizedPnl.toFixed(2),
     accountCount: accountSnapshots.length,
     unvaluedCurrencies,
@@ -137,6 +188,47 @@ export async function getCashFlowSummary(context: FamilyContext, periodKey: stri
   const expenseActualBase = categories.filter(row => row.direction === "expense").reduce((total, row) => total.plus(row.actualAmountBase), new Decimal(0));
   const expensePlanBase = categories.filter(row => row.direction === "expense").reduce((total, row) => total.plus(row.plannedAmountBase), new Decimal(0));
   return { periodKey, baseCurrency: context.workspace.baseCurrency, incomeActualBase: incomeActualBase.toFixed(2), expenseActualBase: expenseActualBase.toFixed(2), netCashFlowBase: incomeActualBase.minus(expenseActualBase).toFixed(2), expensePlanBase: expensePlanBase.toFixed(2), categories };
+}
+
+export async function getCashFlowHistory(context: FamilyContext, months = 6) {
+  const safeMonths = Math.min(Math.max(1, months), 24);
+  const now = new Date();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const periods: Array<{ year: number; month: number; periodKey: string; monthLabel: string }> = [];
+
+  for (let i = safeMonths - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth() + 1;
+    const periodKey = `${year}-${String(month).padStart(2, "0")}`;
+    const monthLabel = `${monthNames[d.getUTCMonth()]}`;
+    periods.push({ year, month, periodKey, monthLabel });
+  }
+
+  const results = await Promise.all(
+    periods.map(async (p) => {
+      try {
+        const summary = await getCashFlowSummary(context, p.periodKey);
+        return {
+          month: p.monthLabel,
+          periodKey: p.periodKey,
+          income: Number(summary.incomeActualBase || 0),
+          expense: Number(summary.expenseActualBase || 0),
+          net: Number(summary.netCashFlowBase || 0),
+        };
+      } catch {
+        return {
+          month: p.monthLabel,
+          periodKey: p.periodKey,
+          income: 0,
+          expense: 0,
+          net: 0,
+        };
+      }
+    })
+  );
+
+  return results;
 }
 
 async function currentBaseRates(context: FamilyContext) {
