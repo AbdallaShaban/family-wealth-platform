@@ -48,24 +48,24 @@ jobs:
       - name: Install Dependencies (Frozen Lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Verify Invariants (56 Tables, 35 Migrations, MySQL Only)
+      - name: Verify Invariants (58 Tables, 36 Migrations, MySQL Only)
         shell: bash
         run: |
           echo "Verifying migration files count..."
           MIGRATION_COUNT=$(find drizzle -maxdepth 1 -name "*.sql" | wc -l)
-          if [ "$MIGRATION_COUNT" -ne 35 ]; then
-            echo "ERROR: Expected exactly 35 migration SQL files, found $MIGRATION_COUNT"
+          if [ "$MIGRATION_COUNT" -ne 36 ]; then
+            echo "ERROR: Expected exactly 36 migration SQL files, found $MIGRATION_COUNT"
             exit 1
           fi
-          echo "Migration files verified: 35"
+          echo "Migration files verified: 36"
 
           echo "Verifying MySQL schema table definitions..."
           TABLE_COUNT=$(grep -c "export const [A-Za-z0-9_]* = mysqlTable(" drizzle/schema.ts || true)
-          if [ "$TABLE_COUNT" -ne 56 ]; then
-            echo "ERROR: Expected exactly 56 mysqlTable definitions, found $TABLE_COUNT"
+          if [ "$TABLE_COUNT" -ne 58 ]; then
+            echo "ERROR: Expected exactly 58 mysqlTable definitions, found $TABLE_COUNT"
             exit 1
           fi
-          echo "Schema tables verified: 56 MySQL tables"
+          echo "Schema tables verified: 58 MySQL tables"
 
           echo "Verifying no PostgreSQL dependencies in schema..."
           if grep -q "pgTable" drizzle/schema.ts; then

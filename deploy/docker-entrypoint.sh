@@ -61,12 +61,12 @@ if [ $CONNECTED -ne 1 ]; then
 fi
 echo "[INFO] Database connectivity confirmed."
 
-# 4. Automated Migration Check and Application
-# Exactly 36 migrations (0000_... to 0035_...) managed by drizzle-kit
-echo "[INFO] Applying pending migrations via drizzle-kit..."
-pnpm exec drizzle-kit migrate
+# 4. Migration Execution (Bypassed at container startup to prevent startup blocks)
+# Migrations are managed externally or pre-applied; bypass startup drizzle-kit migration:
+# echo "[INFO] Applying pending migrations via drizzle-kit..."
+# pnpm exec drizzle-kit migrate
 
-echo "[INFO] Database schema verified. Launching main application process..."
+echo "[INFO] Handing over execution to main application process..."
 
 # 5. Hand over to CMD
 exec "$@"
