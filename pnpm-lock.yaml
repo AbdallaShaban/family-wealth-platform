@@ -139,6 +139,9 @@ importers:
       dotenv:
         specifier: ^17.2.2
         version: 17.4.2
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
       drizzle-orm:
         specifier: ^0.44.5
         version: 0.44.7(mysql2@3.24.2(@types/node@24.7.0))
@@ -257,9 +260,6 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      drizzle-kit:
-        specifier: ^0.31.4
-        version: 0.31.10
       esbuild:
         specifier: ^0.25.0
         version: 0.25.10
