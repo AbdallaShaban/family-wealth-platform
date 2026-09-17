@@ -17,23 +17,23 @@ import { validateProductionJwtSecret } from "../auditorTokenService";
 
 const operationalMetrics = { startedAt: Date.now(), requests: 0, responses5xx: 0, totalResponseMs: 0, lastRequestAt: null as number | null };
 
-function isPortAvailable(port: number): Promise<boolean> {
+function isPortAvailable(port: number, host: string = "0.0.0.0"): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
-    server.listen(port, () => {
+    server.listen(port, host, () => {
       server.close(() => resolve(true));
     });
     server.on("error", () => resolve(false));
   });
 }
 
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
+async function findAvailablePort(startPort: number = 3000, host: string = "0.0.0.0"): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
+    if (await isPortAvailable(port, host)) {
       return port;
     }
   }
-  throw new Error(`No available port found starting from ${startPort}`);
+  throw new Error(`No available port found starting from ${startPort} on host ${host}`);
 }
 
 async function startServer() {
@@ -92,15 +92,16 @@ async function startServer() {
     serveStatic(app);
   }
 
+  const host = process.env.HOST || "0.0.0.0";
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  const port = await findAvailablePort(preferredPort, host);
 
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
 
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+  server.listen(port, host, () => {
+    console.log(`Server running on http://localhost:${port}/ (bound to ${host})`);
     startMarketAutomationDaemon();
   });
 }
