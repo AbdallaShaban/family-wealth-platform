@@ -12,7 +12,7 @@ import { serveStatic } from "./vite";
 import { handleScheduledMarketRefresh } from "../marketRefreshHandler";
 import { startMarketAutomationDaemon } from "../marketScheduler";
 import { sql } from "drizzle-orm";
-import { getDb } from "../db";
+import { ensurePasswordHashColumn, getDb } from "../db";
 import { validateProductionJwtSecret } from "../auditorTokenService";
 
 const operationalMetrics = { startedAt: Date.now(), requests: 0, responses5xx: 0, totalResponseMs: 0, lastRequestAt: null as number | null };
@@ -38,6 +38,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 
 async function startServer() {
   validateProductionJwtSecret();
+  ensurePasswordHashColumn().catch(err => console.warn("[Startup] ensurePasswordHashColumn warning:", err));
   const app = express();
   app.set("trust proxy", 1);
   const server = createServer(app);

@@ -1,7 +1,8 @@
+import { randomUUID } from "node:crypto";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { InsertUser, platformAdminInvitations, platformAuditEvents, platformOwnership, users } from "../drizzle/schema";
+import { InsertUser, User, platformAdminInvitations, platformAuditEvents, platformOwnership, users } from "../drizzle/schema";
 import { claimInitialPlatformOwner, isEligibleInitialPlatformOwner, verifyPlatformAdminInvitationAfterGoogleLogin } from "./platformOwnership";
 
 export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
@@ -63,7 +64,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     };
     const updateSet: Record<string, unknown> = {};
 
-    const textFields = ["name", "email", "loginMethod"] as const;
+    const textFields = ["name", "email", "loginMethod", "passwordHash"] as const;
     type TextField = (typeof textFields)[number];
 
     const assignNullable = (field: TextField) => {
@@ -153,4 +154,72 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user by email: database not available");
+    return undefined;
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const result = await db.select().from(users).where(eq(users.email, normalized)).limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createUserWithPassword(params: {
+  email: string;
+  passwordHash: string;
+  name: string;
+}): Promise<User> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database is not available");
+  }
+
+  const normalizedEmail = params.email.trim().toLowerCase();
+  const existingCount = await db.select({ count: sql<number>`count(*)` }).from(users);
+  const isFirstUser = Number(existingCount[0]?.count ?? 0) === 0;
+  const openId = `local|${randomUUID()}`;
+
+  const now = new Date();
+  await db.insert(users).values({
+    openId,
+    email: normalizedEmail,
+    name: params.name.trim(),
+    passwordHash: params.passwordHash,
+    loginMethod: "local",
+    role: isFirstUser ? "admin" : "user",
+    createdAt: now,
+    updatedAt: now,
+    lastSignedIn: now,
+  });
+
+  const [created] = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  if (!created) {
+    throw new Error("Failed to retrieve created user");
+  }
+
+  return created;
+}
+
+export async function ensurePasswordHashColumn(): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    const [cols]: any = await db.execute(sql`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_NAME = 'users' AND COLUMN_NAME = 'passwordHash'
+      AND TABLE_SCHEMA = DATABASE()
+    `);
+    const rows = Array.isArray(cols) ? cols : (cols?.rows || []);
+    if (!rows || rows.length === 0) {
+      await db.execute(sql`ALTER TABLE users ADD COLUMN passwordHash VARCHAR(255) NULL`);
+      console.log("[Database] Schema check: passwordHash column ensured in users table");
+    }
+  } catch (err) {
+    // Non-fatal if column already exists or in-memory DB
+    console.warn("[Database] ensurePasswordHashColumn notice:", err instanceof Error ? err.message : String(err));
+  }
+}
+
