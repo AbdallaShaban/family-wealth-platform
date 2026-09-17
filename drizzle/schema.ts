@@ -619,6 +619,7 @@ export const allocationTargets = mysqlTable(
     updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
   },
   table => ({
+    workspaceIndex: index("allocation_targets_workspace_idx").on(table.workspaceId),
     workspaceProfileAssetClassUnique: uniqueIndex("allocation_workspace_profile_asset_class_unique").on(table.workspaceId, table.profileId, table.assetClass),
   })
 );

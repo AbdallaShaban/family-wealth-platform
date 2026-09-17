@@ -9,6 +9,7 @@ export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
   const connectionLimit = env.DB_CONNECTION_LIMIT ? parseInt(env.DB_CONNECTION_LIMIT, 10) : 10;
   const maxIdle = env.DB_MAX_IDLE ? parseInt(env.DB_MAX_IDLE, 10) : 10;
   const idleTimeout = env.DB_IDLE_TIMEOUT_MS ? parseInt(env.DB_IDLE_TIMEOUT_MS, 10) : 60000;
+  const isTiDB = Boolean(env.DATABASE_URL && env.DATABASE_URL.includes("tidbcloud.com"));
 
   return {
     uri: env.DATABASE_URL,
@@ -17,6 +18,9 @@ export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
     idleTimeout: Number.isFinite(idleTimeout) && idleTimeout > 0 ? idleTimeout : 60000,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
+    ...(isTiDB && !env.DATABASE_URL?.includes("ssl=")
+      ? { ssl: { minVersion: "TLSv1.2", rejectUnauthorized: true } }
+      : {}),
   };
 }
 
