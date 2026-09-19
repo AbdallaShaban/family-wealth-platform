@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -6,7 +6,7 @@ import { z } from "zod";
 import { ENV } from "./_core/env";
 import { accounts, allocationTargets, approvalDecisions, approvalPolicies, approvalRequests, auditEvents, bankStatementImports, bankStatementRows, budgetTemplateLines, budgetTemplates, budgets, cashFlowCategories, emergencyFundPlans, feeTaxRules, financialEvents, financialGoals, financialPeriods, financialProfiles, fxRates, insuranceClaims, insurancePolicies, insurancePremiumPayments, instruments, investmentLots, corporateActions, journalEntries, journalLines, lotMatches, lotTransfers, marketEmailPreferences, memberships, officialValuationSnapshots, personalIous, planningScenarios, positions, priceQuotes, recurringRules, researchNotes, retirementPlans, riskProfiles, specialAssets, specialAssetValuations, users, valuationProvenance, valuationSnapshots, vaultDocuments, watchlistItems, workspaceInvitations, workspaces, zakatAssessments } from "../drizzle/schema";
 import { assertRole, ensurePersonalFamilyContext, listAccessibleWorkspaces, setActiveFamilyWorkspace, type FamilyContext } from "./familyAccess";
-import { createDebt, createFamilyAccount, postCashEvent, postDebtPayment, postImportedCashBatch, postPositionTransfer, postStockSplit, postTrade, postTransfer, reverseImportedCashBatch, revalueAssetAccount } from "./familyLedger";
+import { createDebt, createFamilyAccount, postCashEvent, postDebtPayment, postImportedCashBatch, postPositionTransfer, postStockSplit, postTrade, postTransfer, reverseImportedCashBatch, revalueAssetAccount, reverseFinancialEvent } from "./familyLedger";
 import { getCashFlowHistory, getCashFlowSummary, getDashboardMarketOverview, getDashboardSummary, getEmergencyFundSummary, getMarketDataQuality, getRiskAllocationSummary, listAccountSnapshots, listDebtSummaries, listPortfolioPositions, listRecentEvents } from "./familyRead";
 import { getSmtpConfiguration } from "./mailer";
 import { getDb } from "./db";
@@ -649,6 +649,232 @@ export const familyRouter = router({
           });
         }
       }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive("معرف الأداة مطلوب"),
+        name: z.string().trim().min(2, "اسم الأداة يجب أن لا يقل عن حرفين").max(200),
+        symbol: z.string().trim().max(48).optional().nullable(),
+        assetType: z.string().trim().min(1, "نوع الفئة مطلوب"),
+        subCategory: z.string().trim().max(64).optional().nullable(),
+        sector: z.string().trim().max(100).optional().nullable(),
+        currency: currency.optional(),
+        isin: z.string().trim().max(32).optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const family = await familyContext(ctx.user);
+          assertRole(family, "editor");
+          const db = await getDb();
+          if (!db) throw notAvailable();
+
+          const [existing] = await db
+            .select()
+            .from(instruments)
+            .where(and(eq(instruments.id, input.id), eq(instruments.workspaceId, family.workspace.id)))
+            .limit(1);
+
+          if (!existing) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "الأداة المالية غير موجودة.",
+            });
+          }
+
+          const canonicalAssetType = normalizeAssetType(input.assetType);
+          const cleanSymbol = input.symbol?.trim() ? input.symbol.trim().toUpperCase() : null;
+
+          if (cleanSymbol) {
+            const [conflict] = await db
+              .select({ id: instruments.id, name: instruments.name })
+              .from(instruments)
+              .where(and(
+                eq(instruments.workspaceId, family.workspace.id),
+                eq(instruments.symbol, cleanSymbol),
+                sql`${instruments.id} != ${input.id}`
+              ))
+              .limit(1);
+            if (conflict) {
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: `الأداة المالية بالرمز (${cleanSymbol}) مسجلة مسبقًا باسم "${conflict.name}".`,
+              });
+            }
+          }
+
+          const now = Date.now();
+          const nextCurrency = input.currency ? input.currency.toUpperCase() : existing.currency;
+
+          await db
+            .update(instruments)
+            .set({
+              name: input.name.trim(),
+              symbol: cleanSymbol,
+              assetType: canonicalAssetType,
+              subCategory: input.subCategory?.trim() || null,
+              sector: input.sector?.trim() || null,
+              currency: nextCurrency,
+              isin: input.isin?.trim() ? input.isin.trim().toUpperCase() : null,
+              updatedAt: now,
+            })
+            .where(eq(instruments.id, input.id));
+
+          await db.insert(auditEvents).values({
+            workspaceId: family.workspace.id,
+            actorUserId: ctx.user.id,
+            action: "instrument.updated",
+            targetType: "instrument",
+            targetId: String(input.id),
+            beforeState: {
+              name: existing.name,
+              symbol: existing.symbol,
+              assetType: existing.assetType,
+              subCategory: existing.subCategory,
+              sector: existing.sector,
+              currency: existing.currency,
+            },
+            afterState: {
+              name: input.name.trim(),
+              symbol: cleanSymbol,
+              assetType: canonicalAssetType,
+              subCategory: input.subCategory?.trim() || null,
+              sector: input.sector?.trim() || null,
+              currency: nextCurrency,
+            },
+            requestId: crypto.randomUUID(),
+            occurredAt: now,
+          });
+
+          return { id: input.id, name: input.name.trim(), symbol: cleanSymbol, assetType: canonicalAssetType };
+        } catch (err) {
+          if (err instanceof TRPCError) throw err;
+          console.error("[Instruments.update] Error:", err);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: err instanceof Error ? err.message : "فشل تحديث الأداة الاستثمارية.",
+          });
+        }
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive("معرف الأداة مطلوب"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const family = await familyContext(ctx.user);
+          assertRole(family, "editor");
+          const db = await getDb();
+          if (!db) throw notAvailable();
+
+          const [existing] = await db
+            .select()
+            .from(instruments)
+            .where(and(eq(instruments.id, input.id), eq(instruments.workspaceId, family.workspace.id)))
+            .limit(1);
+
+          if (!existing) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "الأداة المالية غير موجودة.",
+            });
+          }
+
+          // Safe check: Active holdings in positions
+          const [activePos] = await db
+            .select({ id: positions.id, quantity: positions.quantity })
+            .from(positions)
+            .where(and(
+              eq(positions.workspaceId, family.workspace.id),
+              eq(positions.instrumentId, input.id),
+              gt(positions.quantity, "0")
+            ))
+            .limit(1);
+
+          if (activePos && new Decimal(activePos.quantity).gt(0)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "لا يمكن حذف هذه الأداة المالية لأنها تمتلك رصيد حيازات نشط في المحفظة.",
+            });
+          }
+
+          // Safe check: Ledger transactions / financial events
+          const [linkedEvent] = await db
+            .select({ id: financialEvents.id })
+            .from(financialEvents)
+            .where(and(
+              eq(financialEvents.workspaceId, family.workspace.id),
+              eq(financialEvents.instrumentId, input.id)
+            ))
+            .limit(1);
+
+          if (linkedEvent) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "لا يمكن حذف هذه الأداة المالية لوجود قيود محاسبية وعمليات مالية مسجلة عليها في دفتر الأستاذ.",
+            });
+          }
+
+          // Safe check: Investment lots
+          const [linkedLot] = await db
+            .select({ id: investmentLots.id })
+            .from(investmentLots)
+            .where(and(
+              eq(investmentLots.workspaceId, family.workspace.id),
+              eq(investmentLots.instrumentId, input.id)
+            ))
+            .limit(1);
+
+          if (linkedLot) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "لا يمكن حذف هذه الأداة المالية لوجود سجلات تخصيص Lots مرتبطة بها.",
+            });
+          }
+
+          // Clean up dependent quotes, watchlists, zero-positions
+          await db.delete(priceQuotes).where(and(
+            eq(priceQuotes.workspaceId, family.workspace.id),
+            eq(priceQuotes.instrumentId, input.id)
+          ));
+          await db.delete(watchlistItems).where(and(
+            eq(watchlistItems.workspaceId, family.workspace.id),
+            eq(watchlistItems.instrumentId, input.id)
+          ));
+          await db.delete(positions).where(and(
+            eq(positions.workspaceId, family.workspace.id),
+            eq(positions.instrumentId, input.id)
+          ));
+
+          await db.delete(instruments).where(eq(instruments.id, input.id));
+
+          const now = Date.now();
+          await db.insert(auditEvents).values({
+            workspaceId: family.workspace.id,
+            actorUserId: ctx.user.id,
+            action: "instrument.deleted",
+            targetType: "instrument",
+            targetId: String(input.id),
+            beforeState: {
+              name: existing.name,
+              symbol: existing.symbol,
+              assetType: existing.assetType,
+            },
+            afterState: null,
+            requestId: crypto.randomUUID(),
+            occurredAt: now,
+          });
+
+          return { success: true, id: input.id };
+        } catch (err) {
+          if (err instanceof TRPCError) throw err;
+          console.error("[Instruments.delete] Error:", err);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: err instanceof Error ? err.message : "فشل حذف الأداة الاستثمارية.",
+          });
+        }
+      }),
   }),
 
   portfolio: router({
@@ -760,6 +986,139 @@ export const familyRouter = router({
       }).from(lotMatches).where(eq(lotMatches.workspaceId, family.workspace.id));
       return row ?? { costBasis: "0", grossProceeds: "0", fees: "0", taxes: "0", realizedPnl: "0" };
     }),
+  }),
+
+  investments: router({
+    transactions: protectedProcedure
+      .input(z.object({
+        limit: z.number().int().min(1).max(200).default(50),
+        instrumentId: z.number().int().positive().optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const filters = [
+          eq(financialEvents.workspaceId, family.workspace.id),
+          sql`${financialEvents.eventType} IN ('buy', 'sell')`,
+        ];
+        if (input?.instrumentId) {
+          filters.push(eq(financialEvents.instrumentId, input.instrumentId));
+        }
+        return db
+          .select({
+            id: financialEvents.id,
+            eventType: financialEvents.eventType,
+            status: financialEvents.status,
+            occurredAt: financialEvents.occurredAt,
+            currency: financialEvents.currency,
+            grossAmount: financialEvents.grossAmount,
+            feeAmount: financialEvents.feeAmount,
+            taxAmount: financialEvents.taxAmount,
+            quantity: financialEvents.quantity,
+            unitPrice: financialEvents.unitPrice,
+            memo: financialEvents.memo,
+            primaryAccountId: financialEvents.primaryAccountId,
+            counterAccountId: financialEvents.counterAccountId,
+            instrumentId: financialEvents.instrumentId,
+          })
+          .from(financialEvents)
+          .where(and(...filters))
+          .orderBy(desc(financialEvents.occurredAt), desc(financialEvents.id))
+          .limit(input?.limit ?? 50);
+      }),
+
+    deleteTransaction: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive("معرف العملية مطلوب"),
+        reason: z.string().trim().max(500).optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        return reverseFinancialEvent({
+          context: family,
+          actorUserId: ctx.user.id,
+          eventId: input.id,
+          reason: input.reason ?? null,
+        });
+      }),
+
+    updateTransaction: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive("معرف العملية مطلوب"),
+        accountId: z.number().int().positive().optional(),
+        quantity: money,
+        unitPrice: money,
+        feeAmount: money.optional().nullable(),
+        taxAmount: money.optional().nullable(),
+        occurredAt,
+        memo: z.string().trim().max(2000).optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const [origEvent] = await db
+          .select()
+          .from(financialEvents)
+          .where(and(
+            eq(financialEvents.id, input.id),
+            eq(financialEvents.workspaceId, family.workspace.id),
+            eq(financialEvents.status, "posted")
+          ))
+          .limit(1);
+
+        if (!origEvent) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "العملية الاستثمارية غير موجودة أو تم إلغاؤها مسبقًا.",
+          });
+        }
+
+        if (!["buy", "sell"].includes(origEvent.eventType)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "تعديل الصفقات متاح لعمليات الشراء والبيع الاستثمارية فقط.",
+          });
+        }
+
+        const targetAccountId = input.accountId ?? origEvent.primaryAccountId;
+        if (!targetAccountId || !origEvent.instrumentId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "بيانات الحساب أو الأداة المالية غير مكتملة في العملية الأصلية.",
+          });
+        }
+
+        // 1. Reverse original event synchronously (restores lots, inverts GL entries)
+        await reverseFinancialEvent({
+          context: family,
+          actorUserId: ctx.user.id,
+          eventId: input.id,
+          reason: `تعديل واستبدال الصفقة #${input.id}`,
+        });
+
+        // 2. Post replacement trade with updated parameters
+        const newEvent = await postTrade({
+          context: family,
+          actorUserId: ctx.user.id,
+          side: origEvent.eventType as "buy" | "sell",
+          accountId: targetAccountId,
+          instrumentId: origEvent.instrumentId,
+          quantity: input.quantity,
+          unitPrice: input.unitPrice,
+          feeAmount: input.feeAmount,
+          taxAmount: input.taxAmount,
+          occurredAt: input.occurredAt,
+          memo: input.memo !== undefined ? input.memo : origEvent.memo,
+          idempotencyKey: `mod-${input.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        });
+
+        return { success: true, originalId: input.id, newEvent };
+      }),
   }),
 
   goals: router({
@@ -1566,7 +1925,99 @@ export const familyRouter = router({
   }),
 
   ledger: router({
-    recent: protectedProcedure.query(async ({ ctx }) => listRecentEvents(await familyContext(ctx.user))),
+    recent: protectedProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).optional() }).optional())
+      .query(async ({ ctx, input }) => listRecentEvents(await familyContext(ctx.user), input?.limit ?? 50)),
+    deleteTransaction: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive("معرف العملية مطلوب"),
+        reason: z.string().trim().max(500).optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        return reverseFinancialEvent({
+          context: family,
+          actorUserId: ctx.user.id,
+          eventId: input.id,
+          reason: input.reason ?? null,
+        });
+      }),
+    updateTransaction: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive("معرف العملية مطلوب"),
+        accountId: z.number().int().positive().optional(),
+        quantity: money,
+        unitPrice: money,
+        feeAmount: money.optional().nullable(),
+        taxAmount: money.optional().nullable(),
+        occurredAt,
+        memo: z.string().trim().max(2000).optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const [origEvent] = await db
+          .select()
+          .from(financialEvents)
+          .where(and(
+            eq(financialEvents.id, input.id),
+            eq(financialEvents.workspaceId, family.workspace.id),
+            eq(financialEvents.status, "posted")
+          ))
+          .limit(1);
+
+        if (!origEvent) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "العملية غير موجودة أو تم إلغاؤها مسبقًا.",
+          });
+        }
+
+        if (!["buy", "sell"].includes(origEvent.eventType)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "تعديل الصفقات متاح لعمليات الشراء والبيع الاستثمارية فقط.",
+          });
+        }
+
+        const targetAccountId = input.accountId ?? origEvent.primaryAccountId;
+        if (!targetAccountId || !origEvent.instrumentId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "بيانات الحساب أو الأداة المالية غير مكتملة في العملية الأصلية.",
+          });
+        }
+
+        // 1. Reverse original event synchronously (restores lots, inverts GL entries)
+        await reverseFinancialEvent({
+          context: family,
+          actorUserId: ctx.user.id,
+          eventId: input.id,
+          reason: `تعديل واستبدال الصفقة #${input.id}`,
+        });
+
+        // 2. Post replacement trade with updated parameters
+        const newEvent = await postTrade({
+          context: family,
+          actorUserId: ctx.user.id,
+          side: origEvent.eventType as "buy" | "sell",
+          accountId: targetAccountId,
+          instrumentId: origEvent.instrumentId,
+          quantity: input.quantity,
+          unitPrice: input.unitPrice,
+          feeAmount: input.feeAmount,
+          taxAmount: input.taxAmount,
+          occurredAt: input.occurredAt,
+          memo: input.memo !== undefined ? input.memo : origEvent.memo,
+          idempotencyKey: `mod-${input.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        });
+
+        return { success: true, originalId: input.id, newEvent };
+      }),
     postCash: protectedProcedure
       .input(z.object({ eventType: z.enum(["opening_balance", "deposit", "withdrawal", "income", "expense"]), accountId: z.number().int().positive(), amount: money, currency, occurredAt, categoryId: z.number().int().positive().optional().nullable(), memo: z.string().trim().max(2_000).optional().nullable(), idempotencyKey }))
       .mutation(async ({ ctx, input }) => {

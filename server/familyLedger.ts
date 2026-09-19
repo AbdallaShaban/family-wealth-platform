@@ -1294,3 +1294,315 @@ export async function postTrade(args: {
     return { ...event, realizedPnl: lotAccounting.realizedPnl.toFixed(8), matchedLots: lotAccounting.matches.length };
   });
 }
+
+export async function recomputePositionFromLots(tx: any, workspaceId: number, accountId: number, instrumentId: number) {
+  const openLots = await tx
+    .select()
+    .from(investmentLots)
+    .where(and(
+      eq(investmentLots.workspaceId, workspaceId),
+      eq(investmentLots.accountId, accountId),
+      eq(investmentLots.instrumentId, instrumentId),
+      gt(investmentLots.remainingQuantity, "0")
+    ));
+
+  let totalQty = new Decimal(0);
+  let totalCost = new Decimal(0);
+  let costCurrency = "EGP";
+
+  for (const lot of openLots) {
+    const qty = new Decimal(lot.remainingQuantity);
+    totalQty = totalQty.plus(qty);
+    totalCost = totalCost.plus(qty.mul(new Decimal(lot.unitCost)));
+    costCurrency = lot.costCurrency;
+  }
+
+  const now = Date.now();
+  const averageCost = totalQty.gt(0) ? totalCost.div(totalQty) : new Decimal(0);
+
+  await tx
+    .insert(positions)
+    .values({
+      workspaceId,
+      accountId,
+      instrumentId,
+      quantity: totalQty.toFixed(8),
+      averageCost: totalQty.gt(0) ? averageCost.toFixed(8) : "0",
+      costCurrency,
+      updatedAt: now,
+    })
+    .onDuplicateKeyUpdate({
+      set: {
+        quantity: totalQty.toFixed(8),
+        averageCost: totalQty.gt(0) ? averageCost.toFixed(8) : "0",
+        updatedAt: now,
+      },
+    });
+}
+
+export async function reverseFinancialEvent(args: {
+  context: FamilyContext;
+  actorUserId: number;
+  eventId: number;
+  reason?: string | null;
+  tx?: any;
+}) {
+  const run = async (tx: any) => {
+    // 1. Lock and load the event
+    await tx.execute(sql`SELECT id FROM ${financialEvents} WHERE ${financialEvents.id} = ${args.eventId} AND ${financialEvents.workspaceId} = ${args.context.workspace.id} FOR UPDATE`);
+    const [event] = await tx
+      .select()
+      .from(financialEvents)
+      .where(and(
+        eq(financialEvents.id, args.eventId),
+        eq(financialEvents.workspaceId, args.context.workspace.id),
+        eq(financialEvents.status, "posted")
+      ))
+      .limit(1);
+
+    if (!event) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "العملية المالية غير موجودة أو تم عكسها/إلغاؤها مسبقًا.",
+      });
+    }
+
+    // 2. Fetch original journal entry
+    const [originalEntry] = await tx
+      .select()
+      .from(journalEntries)
+      .where(and(
+        eq(journalEntries.eventId, event.id),
+        eq(journalEntries.workspaceId, args.context.workspace.id),
+        eq(journalEntries.status, "posted")
+      ))
+      .limit(1);
+
+    if (!originalEntry) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "تعذر العثور على قيد اليومية المرتبط بالعملية.",
+      });
+    }
+
+    // Check if already reversed
+    const [priorReversal] = await tx
+      .select({ id: journalEntries.id })
+      .from(journalEntries)
+      .where(and(
+        eq(journalEntries.workspaceId, args.context.workspace.id),
+        eq(journalEntries.reversalOfEntryId, originalEntry.id)
+      ))
+      .limit(1);
+
+    if (priorReversal) {
+      throw invalid("تم عكس هذا القيد مسبقًا.");
+    }
+
+    const lines = await tx
+      .select()
+      .from(journalLines)
+      .where(and(
+        eq(journalLines.entryId, originalEntry.id),
+        eq(journalLines.workspaceId, args.context.workspace.id)
+      ));
+
+    if (!lines.length) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "لا يحتوي القيد الأصلي على أسطر محاسبية قابلة للعكس.",
+      });
+    }
+
+    const now = Date.now();
+
+    // 3. Investment specific handling
+    if (event.eventType === "buy" && event.instrumentId && event.primaryAccountId) {
+      // Find the lot created by this buy
+      const lotsCreated = await tx
+        .select()
+        .from(investmentLots)
+        .where(and(
+          eq(investmentLots.workspaceId, args.context.workspace.id),
+          eq(investmentLots.acquisitionEventId, event.id)
+        ));
+
+      for (const lot of lotsCreated) {
+        // Check if lot was consumed in any subsequent sell or transfer
+        const matchesCount = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(lotMatches)
+          .where(and(
+            eq(lotMatches.workspaceId, args.context.workspace.id),
+            eq(lotMatches.lotId, lot.id)
+          ));
+        const numMatches = Number(matchesCount[0]?.count ?? 0);
+        if (numMatches > 0 || new Decimal(lot.remainingQuantity).lt(new Decimal(lot.originalQuantity))) {
+          throw invalid("لا يمكن حذف أو تعديل عملية الشراء لأن جزءاً من الكمية تم بيعه في صفقات لاحقة. يرجى حذف صفقات البيع المرتبطة أولاً.");
+        }
+        // If safe, delete the lot
+        await tx.delete(investmentLots).where(eq(investmentLots.id, lot.id));
+      }
+
+      // Recompute position from remaining open lots
+      await recomputePositionFromLots(tx, args.context.workspace.id, event.primaryAccountId, event.instrumentId);
+    } else if (event.eventType === "sell" && event.instrumentId && event.primaryAccountId) {
+      // Find matches where sellEventId = event.id
+      const matches = await tx
+        .select()
+        .from(lotMatches)
+        .where(and(
+          eq(lotMatches.workspaceId, args.context.workspace.id),
+          eq(lotMatches.sellEventId, event.id)
+        ));
+
+      for (const match of matches) {
+        // Restore remainingQuantity on the lot
+        const [lot] = await tx
+          .select()
+          .from(investmentLots)
+          .where(eq(investmentLots.id, match.lotId))
+          .limit(1);
+
+        if (lot) {
+          const restoredQty = new Decimal(lot.remainingQuantity).plus(new Decimal(match.quantity));
+          await tx
+            .update(investmentLots)
+            .set({
+              remainingQuantity: restoredQty.toFixed(8),
+              status: "open",
+              updatedAt: now,
+            })
+            .where(eq(investmentLots.id, lot.id));
+        }
+      }
+
+      // Delete the lotMatches
+      await tx
+        .delete(lotMatches)
+        .where(and(
+          eq(lotMatches.workspaceId, args.context.workspace.id),
+          eq(lotMatches.sellEventId, event.id)
+        ));
+
+      // Recompute position from restored lots
+      await recomputePositionFromLots(tx, args.context.workspace.id, event.primaryAccountId, event.instrumentId);
+    } else if (event.eventType === "debt_payment") {
+      const [dp] = await tx
+        .select()
+        .from(debtPayments)
+        .where(and(
+          eq(debtPayments.financialEventId, event.id),
+          eq(debtPayments.workspaceId, args.context.workspace.id)
+        ))
+        .limit(1);
+      if (dp) {
+        await tx.delete(debtPayments).where(eq(debtPayments.id, dp.id));
+        await tx.update(debts).set({ status: "active", updatedAt: now }).where(eq(debts.id, dp.debtId));
+      }
+    }
+
+    // 4. Synchronous Double-Entry Reversal in General Ledger
+    const reversalEventResult = await tx.insert(financialEvents).values({
+      workspaceId: args.context.workspace.id,
+      profileId: event.profileId,
+      primaryAccountId: event.counterAccountId,
+      counterAccountId: event.primaryAccountId,
+      instrumentId: event.instrumentId,
+      categoryId: event.categoryId,
+      eventType: "reversal",
+      status: "posted",
+      occurredAt: now,
+      currency: event.currency,
+      grossAmount: event.grossAmount,
+      feeAmount: event.feeAmount,
+      taxAmount: event.taxAmount,
+      quantity: event.quantity,
+      unitPrice: event.unitPrice,
+      externalRef: `REV-${event.id}`,
+      idempotencyKey: `rev-${event.id}-${now}-${Math.random().toString(36).slice(2, 8)}`,
+      source: "manual",
+      memo: `عكس عملية #${event.id}: ${args.reason || event.memo || event.eventType}`,
+      createdByUserId: args.actorUserId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    const reversalEventId = Number(reversalEventResult[0].insertId);
+
+    const entryResult = await tx.insert(journalEntries).values({
+      workspaceId: args.context.workspace.id,
+      eventId: reversalEventId,
+      status: "posted",
+      postedAt: now,
+      reversalOfEntryId: originalEntry.id,
+      createdAt: now,
+    });
+    const reversalEntryId = Number(entryResult[0].insertId);
+
+    // Invert debits and credits
+    await tx.insert(journalLines).values(lines.map((line: any) => ({
+      workspaceId: args.context.workspace.id,
+      entryId: reversalEntryId,
+      accountId: line.accountId,
+      direction: (line.direction === "debit" ? "credit" : "debit") as "credit" | "debit",
+      amount: line.amount,
+      currency: line.currency,
+      fxRateToBase: line.fxRateToBase,
+      baseAmount: line.baseAmount,
+      createdAt: now,
+    })));
+
+    // 5. Mark original event as void
+    await tx
+      .update(financialEvents)
+      .set({
+        status: "void",
+        updatedAt: now,
+      })
+      .where(eq(financialEvents.id, event.id));
+
+    // 6. Audit Event
+    await tx.insert(auditEvents).values({
+      workspaceId: args.context.workspace.id,
+      actorUserId: args.actorUserId,
+      action: "financial_event.voided_and_reversed",
+      targetType: "financial_event",
+      targetId: String(event.id),
+      beforeState: {
+        eventId: event.id,
+        eventType: event.eventType,
+        grossAmount: event.grossAmount,
+        quantity: event.quantity,
+        status: "posted",
+      },
+      afterState: {
+        status: "void",
+        reversalEventId,
+        reversalEntryId,
+      },
+      requestId: crypto.randomUUID(),
+      occurredAt: now,
+    });
+
+    // 7. Invalidate relevant read-model caches
+    invalidateReadModelCache(`wealth-health:${args.context.workspace.id}:`);
+    invalidateReadModelCache(`performance:${args.context.workspace.id}:`);
+    invalidateReadModelCache(`stress-testing:${args.context.workspace.id}:`);
+    invalidateReadModelCache(`consolidation:`);
+
+    return {
+      success: true,
+      voidedEventId: event.id,
+      reversalEventId,
+    };
+  };
+
+  if (args.tx) {
+    return run(args.tx);
+  }
+
+  const db = await getDb();
+  if (!db) throw unavailable();
+  return db.transaction(run);
+}
+

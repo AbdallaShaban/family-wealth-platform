@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/financialDisplay";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { trpc } from "@/lib/trpc";
 import {
   ArrowDownLeft,
@@ -40,6 +41,8 @@ import {
   TrendingDown,
   TrendingUp,
   Wallet,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -388,8 +391,87 @@ export default function TransactionsHubPage() {
     onError: err => toast.error(err.message || "تعذر سداد الدين."),
   });
 
+  const access = trpc.family.bootstrap.useQuery();
+  const canEdit = ["owner", "advisor", "editor"].includes(access.data?.membership.role || "viewer");
+
+  // Delete Transaction State
+  const [deleteTransactionOpen, setDeleteTransactionOpen] = useState(false);
+  const [selectedTransactionForDelete, setSelectedTransactionForDelete] = useState<any | null>(null);
+
+  // Edit Trade State
+  const [editTradeModalOpen, setEditTradeModalOpen] = useState(false);
+  const [selectedTradeForEdit, setSelectedTradeForEdit] = useState<any | null>(null);
+  const [editTradeDate, setEditTradeDate] = useState("");
+  const [editTradeQuantity, setEditTradeQuantity] = useState("");
+  const [editTradeUnitPrice, setEditTradeUnitPrice] = useState("");
+  const [editTradeAccountId, setEditTradeAccountId] = useState("");
+  const [editTradeFeeAmount, setEditTradeFeeAmount] = useState("");
+  const [editTradeTaxAmount, setEditTradeTaxAmount] = useState("");
+  const [editTradeMemo, setEditTradeMemo] = useState("");
+
+  const handleOpenEditTrade = (event: any) => {
+    setSelectedTradeForEdit(event);
+    const dateObj = new Date(event.occurredAt);
+    const localIso = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    setEditTradeDate(localIso);
+    setEditTradeQuantity(event.quantity ? String(event.quantity) : "");
+    setEditTradeUnitPrice(event.unitPrice ? String(event.unitPrice) : "");
+    setEditTradeAccountId(event.primaryAccountId ? String(event.primaryAccountId) : "");
+    setEditTradeFeeAmount(event.feeAmount ? String(event.feeAmount) : "");
+    setEditTradeTaxAmount(event.taxAmount ? String(event.taxAmount) : "");
+    setEditTradeMemo(event.memo || "");
+    setEditTradeModalOpen(true);
+  };
+
+  const handleOpenDelete = (event: any) => {
+    setSelectedTransactionForDelete(event);
+    setDeleteTransactionOpen(true);
+  };
+
+  const deleteTransactionMutation = trpc.family.ledger.deleteTransaction.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف المعاملة وعكس قيودها في دفتر الأستاذ بنجاح.");
+      setDeleteTransactionOpen(false);
+      invalidateAll();
+    },
+    onError: (err) => {
+      setDeleteTransactionOpen(false);
+      toast.error(err.message || "تعذر إلغاء أو حذف المعاملة.");
+    },
+  });
+
+  const updateTradeMutation = trpc.family.ledger.updateTransaction.useMutation({
+    onSuccess: () => {
+      toast.success("تم تعديل الصفقة وعكس القيود السابقة في دفتر الأستاذ بنجاح.");
+      setEditTradeModalOpen(false);
+      invalidateAll();
+    },
+    onError: (err) => toast.error(err.message || "فشل تعديل الصفقة."),
+  });
+
+  const handleSaveEditTrade = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTradeForEdit) return;
+    const occurredAtMs = editTradeDate ? new Date(editTradeDate).getTime() : selectedTradeForEdit.occurredAt;
+    updateTradeMutation.mutate({
+      id: selectedTradeForEdit.id,
+      accountId: editTradeAccountId ? Number(editTradeAccountId) : undefined,
+      quantity: editTradeQuantity,
+      unitPrice: editTradeUnitPrice,
+      feeAmount: editTradeFeeAmount || null,
+      taxAmount: editTradeTaxAmount || null,
+      occurredAt: occurredAtMs,
+      memo: editTradeMemo || null,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedTransactionForDelete) return;
+    deleteTransactionMutation.mutate({ id: selectedTransactionForDelete.id });
+  };
+
   const isPending =
-    postCash.isPending || postTransfer.isPending || postTrade.isPending || postDebtPayment.isPending;
+    postCash.isPending || postTransfer.isPending || postTrade.isPending || postDebtPayment.isPending || deleteTransactionMutation.isPending || updateTradeMutation.isPending;
 
   // Selected entities for dialogs
   const selectedAccount = (accounts.data ?? []).find(a => String(a.id) === primaryAccountId);
@@ -872,7 +954,8 @@ export default function TransactionsHubPage() {
                       <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">التاريخ والوقت</th>
                       <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">البيان والملاحظات</th>
                       <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">المبلغ الإجمالي</th>
-                      <th className="py-3 px-4 pl-5 font-bold text-slate-800 dark:text-slate-200">حالة القيد</th>
+                      <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">حالة القيد</th>
+                      <th className="py-3 px-4 pl-5 font-bold text-slate-800 dark:text-slate-200 text-center">الإجراءات</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-[#0B0F17] divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -887,6 +970,8 @@ export default function TransactionsHubPage() {
                       const Icon = meta.icon;
                       const formattedAmount = formatMoney(event.grossAmount, event.currency, 2);
                       const accountInfo = event.primaryAccountId ? accountMap.get(event.primaryAccountId) : null;
+                      const isTrade = event.eventType === "buy" || event.eventType === "sell";
+                      const isVoid = event.status === "void";
 
                       return (
                         <tr
@@ -947,17 +1032,52 @@ export default function TransactionsHubPage() {
                           </td>
 
                           {/* Status Badge */}
-                          <td className="py-3 px-4 pl-5">
+                          <td className="py-3 px-4">
                             {event.status === "posted" ? (
                               <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-950 border border-emerald-300 font-semibold text-xs px-2.5 py-1 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block ml-1.5 shrink-0" />
                                 <span>مرحّل</span>
+                              </span>
+                            ) : event.status === "void" ? (
+                              <span className="inline-flex items-center rounded-full bg-rose-50 text-rose-950 border border-rose-300 font-semibold text-xs px-2.5 py-1 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60 whitespace-nowrap">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400 inline-block ml-1.5 shrink-0" />
+                                <span>ملغاة (معكوسة)</span>
                               </span>
                             ) : (
                               <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-950 border border-amber-300 font-semibold text-xs px-2.5 py-1 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60 whitespace-nowrap">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 inline-block ml-1.5 shrink-0" />
                                 <span>معلق</span>
                               </span>
+                            )}
+                          </td>
+
+                          {/* Actions Column */}
+                          <td className="py-3 px-4 pl-5 text-center">
+                            {canEdit && !isVoid ? (
+                              <div className="flex items-center justify-center gap-1.5">
+                                {isTrade && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleOpenEditTrade(event)}
+                                    className="h-8 w-8 p-0 rounded-lg text-slate-600 hover:text-sky-600 hover:bg-sky-50 dark:text-slate-400 dark:hover:text-sky-400 dark:hover:bg-sky-950/50"
+                                    title="تعديل الصفقة"
+                                  >
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenDelete(event)}
+                                  className="h-8 w-8 p-0 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/50"
+                                  title="حذف / إلغاء القيد"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-xs">—</span>
                             )}
                           </td>
                         </tr>
@@ -1599,6 +1719,135 @@ export default function TransactionsHubPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Trade Modal */}
+        <Dialog open={editTradeModalOpen} onOpenChange={setEditTradeModalOpen}>
+          <DialogContent className="max-w-lg w-full bg-white text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
+                تعديل بيانات الصفقة #{selectedTradeForEdit?.id}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+                سيتم عكس القيد المحاسبي وحسابات FIFO السابقة تلقائياً وإعادة تسجيل الصفقة بالقيم المعدلة لضمان توازن دفتر الأستاذ بنسبة 100%.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSaveEditTrade} className="grid gap-3.5 mt-2">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label className="text-xs font-semibold">حساب التسوية</Label>
+                  <Select value={editTradeAccountId} onValueChange={setEditTradeAccountId}>
+                    <SelectTrigger className="rounded-xl text-sm">
+                      <SelectValue placeholder="اختر الحساب" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white dark:bg-[#0B0F17]">
+                      {(accounts.data ?? []).map((acc) => (
+                        <SelectItem key={acc.id} value={String(acc.id)}>
+                          {acc.name} ({acc.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs font-semibold">التاريخ والوقت</Label>
+                  <Input
+                    type="datetime-local"
+                    value={editTradeDate}
+                    onChange={(e) => setEditTradeDate(e.target.value)}
+                    required
+                    className="rounded-xl text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label className="text-xs font-semibold">الكمية</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={editTradeQuantity}
+                    onChange={(e) => setEditTradeQuantity(e.target.value)}
+                    required
+                    className="rounded-xl text-sm font-mono"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs font-semibold">سعر الوحدة</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={editTradeUnitPrice}
+                    onChange={(e) => setEditTradeUnitPrice(e.target.value)}
+                    required
+                    className="rounded-xl text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <Label className="text-xs font-semibold">الرسوم (اختياري)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={editTradeFeeAmount}
+                    onChange={(e) => setEditTradeFeeAmount(e.target.value)}
+                    className="rounded-xl text-sm font-mono"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label className="text-xs font-semibold">الضرائب (اختياري)</Label>
+                  <Input
+                    inputMode="decimal"
+                    value={editTradeTaxAmount}
+                    onChange={(e) => setEditTradeTaxAmount(e.target.value)}
+                    className="rounded-xl text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-1.5">
+                <Label className="text-xs font-semibold">ملاحظات / بيان العملية</Label>
+                <Textarea
+                  value={editTradeMemo}
+                  onChange={(e) => setEditTradeMemo(e.target.value)}
+                  maxLength={2000}
+                  className="rounded-xl text-sm"
+                />
+              </div>
+
+              <DialogFooter className="mt-3 gap-2 flex-row-reverse">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditTradeModalOpen(false)}
+                  className="rounded-xl text-xs"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={updateTradeMutation.isPending}
+                  className="rounded-xl text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
+                >
+                  {updateTradeMutation.isPending && <Loader2 className="ml-2 size-3.5 animate-spin" />}
+                  حفظ التعديلات وعكس القيود
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Transaction ConfirmDialog */}
+        <ConfirmDialog
+          open={deleteTransactionOpen}
+          onOpenChange={setDeleteTransactionOpen}
+          title="إلغاء وحذف المعاملة المحاسبية"
+          description={`هل أنت متأكد من حذف العملية #${selectedTransactionForDelete?.id} (${selectedTransactionForDelete?.memo || selectedTransactionForDelete?.eventType || ""})؟ سيتم إلغاء العملية وعكس قيود اليومية المحاسبية واستعادة أرصدة الحسابات وسجلات FIFO آلياً.`}
+          confirmText={deleteTransactionMutation.isPending ? "جارٍ الحذف والعكس..." : "تأكيد الحذف والعكس"}
+          cancelText="إلغاء"
+          variant="destructive"
+          isLoading={deleteTransactionMutation.isPending}
+          onConfirm={handleConfirmDelete}
+        />
       </div>
     </DashboardLayout>
   );
