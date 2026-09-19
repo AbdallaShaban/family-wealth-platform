@@ -52,13 +52,34 @@ import { invalidateReadModelCache } from "./readModelCache";
 
 const currency = z.string().trim().regex(/^[A-Za-z]{3}$/, "أدخل رمز عملة ISO من ثلاثة أحرف.");
 const idempotencyKey = z.string().trim().min(16).max(160);
-const occurredAt = z
-  .number()
-  .int()
-  .positive()
-  .refine(val => val <= Date.now() + 5 * 60 * 1000, {
-    message: "لا يمكن تسجيل عملية في المستقبل.",
-  });
+const occurredAt = z.union([
+  z.number().int().positive(),
+  z.string().transform((val, ctx) => {
+    const d = new Date(val.length === 10 ? `${val}T12:00:00Z` : val);
+    if (isNaN(d.getTime())) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "تاريخ غير صالح." });
+      return z.NEVER;
+    }
+    return d.getTime();
+  }),
+  z.date().transform(d => d.getTime()),
+]);
+
+function parseTradeTimestamp(input: { date?: string | Date | null; occurredAt?: number | string | Date | null }): number {
+  if (input.date) {
+    if (input.date instanceof Date) return input.date.getTime();
+    const d = new Date(input.date.length === 10 ? `${input.date}T12:00:00Z` : input.date);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+  if (input.occurredAt !== undefined && input.occurredAt !== null) {
+    if (typeof input.occurredAt === "number") return input.occurredAt;
+    if (input.occurredAt instanceof Date) return input.occurredAt.getTime();
+    const d = new Date(input.occurredAt.length === 10 ? `${input.occurredAt}T12:00:00Z` : input.occurredAt);
+    if (!isNaN(d.getTime())) return d.getTime();
+  }
+  return Date.now();
+}
+
 const money = z.string().trim().min(1).max(64);
 const approvalActionType = z.enum(approvalActionTypes);
 const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -1149,7 +1170,8 @@ export const familyRouter = router({
         unitPrice: money,
         feeAmount: money.optional().nullable(),
         taxAmount: money.optional().nullable(),
-        occurredAt,
+        occurredAt: occurredAt.optional(),
+        date: z.string().or(z.date()).optional().nullable(),
         memo: z.string().trim().max(2000).optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -1199,6 +1221,7 @@ export const familyRouter = router({
         });
 
         // 2. Post replacement trade with updated parameters
+        const resolvedOccurredAt = parseTradeTimestamp({ date: input.date, occurredAt: input.occurredAt ?? origEvent.occurredAt });
         const newEvent = await postTrade({
           context: family,
           actorUserId: ctx.user.id,
@@ -1209,12 +1232,43 @@ export const familyRouter = router({
           unitPrice: input.unitPrice,
           feeAmount: input.feeAmount,
           taxAmount: input.taxAmount,
-          occurredAt: input.occurredAt,
+          occurredAt: resolvedOccurredAt,
           memo: input.memo !== undefined ? input.memo : origEvent.memo,
           idempotencyKey: `mod-${input.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         });
 
         return { success: true, originalId: input.id, newEvent };
+      }),
+
+    recordTrade: protectedProcedure
+      .input(z.object({
+        side: z.enum(["buy", "sell"]),
+        accountId: z.number().int().positive(),
+        instrumentId: z.number().int().positive(),
+        quantity: money,
+        unitPrice: money,
+        feeAmount: money.optional().nullable(),
+        taxAmount: money.optional().nullable(),
+        feeRuleId: z.number().int().positive().optional().nullable(),
+        taxRuleId: z.number().int().positive().optional().nullable(),
+        occurredAt: occurredAt.optional(),
+        date: z.string().or(z.date()).optional().nullable(),
+        memo: z.string().trim().max(2_000).optional().nullable(),
+        idempotencyKey,
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [instrument] = await db.select({ id: instruments.id, currency: instruments.currency }).from(instruments).where(and(eq(instruments.id, input.instrumentId), eq(instruments.workspaceId, family.workspace.id))).limit(1);
+        if (!instrument) throw new TRPCError({ code: "NOT_FOUND", message: "الأداة الاستثمارية غير موجودة ضمن مساحة FAMILY الحالية." });
+        const resolvedOccurredAt = parseTradeTimestamp(input);
+        const grossAmount = parsePositiveAmount(input.quantity, "الكمية").mul(parsePositiveAmount(input.unitPrice, "سعر الوحدة"));
+        const frozen = await createFrozenApprovalRequest({ db, workspaceId: family.workspace.id, actorUserId: ctx.user.id, actionType: "trade", amount: grossAmount.toFixed(6), currency: instrument.currency, payload: { ...input, occurredAt: resolvedOccurredAt, currency: instrument.currency, grossAmount: grossAmount.toFixed(6) } });
+        if (frozen) return { approvalRequired: true as const, approvalRequestId: frozen.id, duplicate: frozen.duplicate };
+        const event = await postTrade({ context: family, actorUserId: ctx.user.id, ...input, occurredAt: resolvedOccurredAt });
+        return { approvalRequired: false as const, event };
       }),
   }),
 
@@ -2048,7 +2102,8 @@ export const familyRouter = router({
         unitPrice: money,
         feeAmount: money.optional().nullable(),
         taxAmount: money.optional().nullable(),
-        occurredAt,
+        occurredAt: occurredAt.optional(),
+        date: z.string().or(z.date()).optional().nullable(),
         memo: z.string().trim().max(2000).optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -2098,6 +2153,7 @@ export const familyRouter = router({
         });
 
         // 2. Post replacement trade with updated parameters
+        const resolvedOccurredAt = parseTradeTimestamp({ date: input.date, occurredAt: input.occurredAt ?? origEvent.occurredAt });
         const newEvent = await postTrade({
           context: family,
           actorUserId: ctx.user.id,
@@ -2108,7 +2164,7 @@ export const familyRouter = router({
           unitPrice: input.unitPrice,
           feeAmount: input.feeAmount,
           taxAmount: input.taxAmount,
-          occurredAt: input.occurredAt,
+          occurredAt: resolvedOccurredAt,
           memo: input.memo !== undefined ? input.memo : origEvent.memo,
           idempotencyKey: `mod-${input.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         });
@@ -2250,7 +2306,21 @@ export const familyRouter = router({
         return { approvalRequired: false as const, event };
       }),
     trade: protectedProcedure
-      .input(z.object({ side: z.enum(["buy", "sell"]), accountId: z.number().int().positive(), instrumentId: z.number().int().positive(), quantity: money, unitPrice: money, feeAmount: money.optional().nullable(), taxAmount: money.optional().nullable(), feeRuleId: z.number().int().positive().optional().nullable(), taxRuleId: z.number().int().positive().optional().nullable(), occurredAt, memo: z.string().trim().max(2_000).optional().nullable(), idempotencyKey }))
+      .input(z.object({
+        side: z.enum(["buy", "sell"]),
+        accountId: z.number().int().positive(),
+        instrumentId: z.number().int().positive(),
+        quantity: money,
+        unitPrice: money,
+        feeAmount: money.optional().nullable(),
+        taxAmount: money.optional().nullable(),
+        feeRuleId: z.number().int().positive().optional().nullable(),
+        taxRuleId: z.number().int().positive().optional().nullable(),
+        occurredAt: occurredAt.optional(),
+        date: z.string().or(z.date()).optional().nullable(),
+        memo: z.string().trim().max(2_000).optional().nullable(),
+        idempotencyKey,
+      }))
       .mutation(async ({ ctx, input }) => {
         const family = await familyContext(ctx.user);
         assertRole(family, "editor");
@@ -2258,10 +2328,41 @@ export const familyRouter = router({
         if (!db) throw notAvailable();
         const [instrument] = await db.select({ id: instruments.id, currency: instruments.currency }).from(instruments).where(and(eq(instruments.id, input.instrumentId), eq(instruments.workspaceId, family.workspace.id))).limit(1);
         if (!instrument) throw new TRPCError({ code: "NOT_FOUND", message: "الأداة الاستثمارية غير موجودة ضمن مساحة FAMILY الحالية." });
+        const resolvedOccurredAt = parseTradeTimestamp(input);
         const grossAmount = parsePositiveAmount(input.quantity, "الكمية").mul(parsePositiveAmount(input.unitPrice, "سعر الوحدة"));
-        const frozen = await createFrozenApprovalRequest({ db, workspaceId: family.workspace.id, actorUserId: ctx.user.id, actionType: "trade", amount: grossAmount.toFixed(6), currency: instrument.currency, payload: { ...input, currency: instrument.currency, grossAmount: grossAmount.toFixed(6) } });
+        const frozen = await createFrozenApprovalRequest({ db, workspaceId: family.workspace.id, actorUserId: ctx.user.id, actionType: "trade", amount: grossAmount.toFixed(6), currency: instrument.currency, payload: { ...input, occurredAt: resolvedOccurredAt, currency: instrument.currency, grossAmount: grossAmount.toFixed(6) } });
         if (frozen) return { approvalRequired: true as const, approvalRequestId: frozen.id, duplicate: frozen.duplicate };
-        const event = await postTrade({ context: family, actorUserId: ctx.user.id, ...input });
+        const event = await postTrade({ context: family, actorUserId: ctx.user.id, ...input, occurredAt: resolvedOccurredAt });
+        return { approvalRequired: false as const, event };
+      }),
+    recordTrade: protectedProcedure
+      .input(z.object({
+        side: z.enum(["buy", "sell"]),
+        accountId: z.number().int().positive(),
+        instrumentId: z.number().int().positive(),
+        quantity: money,
+        unitPrice: money,
+        feeAmount: money.optional().nullable(),
+        taxAmount: money.optional().nullable(),
+        feeRuleId: z.number().int().positive().optional().nullable(),
+        taxRuleId: z.number().int().positive().optional().nullable(),
+        occurredAt: occurredAt.optional(),
+        date: z.string().or(z.date()).optional().nullable(),
+        memo: z.string().trim().max(2_000).optional().nullable(),
+        idempotencyKey,
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        const [instrument] = await db.select({ id: instruments.id, currency: instruments.currency }).from(instruments).where(and(eq(instruments.id, input.instrumentId), eq(instruments.workspaceId, family.workspace.id))).limit(1);
+        if (!instrument) throw new TRPCError({ code: "NOT_FOUND", message: "الأداة الاستثمارية غير موجودة ضمن مساحة FAMILY الحالية." });
+        const resolvedOccurredAt = parseTradeTimestamp(input);
+        const grossAmount = parsePositiveAmount(input.quantity, "الكمية").mul(parsePositiveAmount(input.unitPrice, "سعر الوحدة"));
+        const frozen = await createFrozenApprovalRequest({ db, workspaceId: family.workspace.id, actorUserId: ctx.user.id, actionType: "trade", amount: grossAmount.toFixed(6), currency: instrument.currency, payload: { ...input, occurredAt: resolvedOccurredAt, currency: instrument.currency, grossAmount: grossAmount.toFixed(6) } });
+        if (frozen) return { approvalRequired: true as const, approvalRequestId: frozen.id, duplicate: frozen.duplicate };
+        const event = await postTrade({ context: family, actorUserId: ctx.user.id, ...input, occurredAt: resolvedOccurredAt });
         return { approvalRequired: false as const, event };
       }),
     postDividend: protectedProcedure

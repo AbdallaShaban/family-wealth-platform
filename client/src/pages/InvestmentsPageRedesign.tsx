@@ -219,6 +219,7 @@ export default function InvestmentsPageRedesign() {
 
   // Trade Record State
   const [side, setSide] = useState<"buy" | "sell">("buy");
+  const [transactionDate, setTransactionDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [tradeAccountId, setTradeAccountId] = useState("");
   const [tradeInstrumentId, setTradeInstrumentId] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -399,6 +400,7 @@ export default function InvestmentsPageRedesign() {
   const trade = trpc.family.ledger.trade.useMutation({
     onSuccess: () => {
       toast.success("تم نشر الصفقة وتحديث الحيازة ومتوسط التكلفة وسجلات FIFO في معاملة واحدة.");
+      setTransactionDate(new Date().toISOString().split("T")[0]);
       setQuantity("");
       setUnitPrice("");
       setFeeAmount("");
@@ -455,6 +457,8 @@ export default function InvestmentsPageRedesign() {
 
   const executeConfirmedTrade = () => {
     if (!selectedAccount || !selectedInstrument) return;
+    const dateObj = new Date(transactionDate + "T12:00:00Z");
+    const occurredAtMs = isNaN(dateObj.getTime()) ? Date.now() : dateObj.getTime();
     trade.mutate({
       side,
       accountId: selectedAccount.id,
@@ -463,7 +467,8 @@ export default function InvestmentsPageRedesign() {
       unitPrice,
       feeAmount: feeAmount || null,
       taxAmount: taxAmount || null,
-      occurredAt: Date.now(),
+      occurredAt: occurredAtMs,
+      date: transactionDate,
       memo: memo || null,
       idempotencyKey: crypto.randomUUID(),
     });
@@ -959,7 +964,7 @@ export default function InvestmentsPageRedesign() {
                     <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تجهيز نموذج الصفقة…</p>
                   ) : tradeAccounts.length && instruments.data?.length ? (
                     <form onSubmit={submitTrade} className="grid gap-4">
-                      <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <div className="grid gap-2">
                           <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">نوع الصفقة</Label>
                           <Select value={side} onValueChange={(v) => setSide(v as "buy" | "sell")}>
@@ -971,6 +976,17 @@ export default function InvestmentsPageRedesign() {
                               <SelectItem value="sell">بيع</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="trade-date" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">تاريخ العملية</Label>
+                          <Input
+                            id="trade-date"
+                            type="date"
+                            value={transactionDate}
+                            onChange={(e) => setTransactionDate(e.target.value)}
+                            required
+                            className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2 px-3 h-auto font-mono text-right"
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">حساب التسوية</Label>
@@ -1468,7 +1484,7 @@ export default function InvestmentsPageRedesign() {
           open={confirmTradeOpen}
           onOpenChange={setConfirmTradeOpen}
           title={`تأكيد تسجيل صفقة ${side === "buy" ? "شراء" : "بيع"}`}
-          description={`أنت على وشك تسجيل صفقة ${side === "buy" ? "شراء" : "بيع"} لـ ${quantity} وحدة من أداة "${selectedInstrument?.name}" عبر حساب "${selectedAccount?.name}". سيتم قيد العملية في دفتر الأستاذ وتحديث متوسط التكلفة والحيازات وحزم FIFO.`}
+          description={`أنت على وشك تسجيل صفقة ${side === "buy" ? "شراء" : "بيع"} لـ ${quantity} وحدة من أداة "${selectedInstrument?.name}" عبر حساب "${selectedAccount?.name}" بتاريخ ${transactionDate}. سيتم قيد العملية في دفتر الأستاذ وتحديث متوسط التكلفة والحيازات وحزم FIFO.`}
           confirmText={`تأكيد تسجيل صفقة الـ ${side === "buy" ? "شراء" : "بيع"}`}
           cancelText="إلغاء والعودة"
           isLoading={trade.isPending}

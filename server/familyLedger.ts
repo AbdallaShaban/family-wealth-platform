@@ -341,7 +341,7 @@ async function createPostedEvent(tx: any, args: {
     workspaceId: args.context.workspace.id,
     eventId,
     status: "posted",
-    postedAt: now,
+    postedAt: args.occurredAt ?? now,
     reversalOfEntryId: null,
     createdAt: now,
   });
