@@ -110,7 +110,10 @@ class SDKServer {
   async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
     // 1. Prefer the session cookie (regular login).
     const cookies = this.parseCookies(req.headers.cookie);
-    let sessionToken = cookies.get(COOKIE_NAME);
+    let sessionToken =
+      cookies.get(COOKIE_NAME) ||
+      cookies.get("family_session_token") ||
+      cookies.get("session_token");
 
     // 2. Fallback to the Authorization header (e.g. Bearer token).
     if (!sessionToken) {

@@ -14,6 +14,7 @@ import { performanceRouter } from "./performanceRouter";
 import { stressTestingRouter } from "./stressTestingRouter";
 import { consolidationRouter } from "./consolidationRouter";
 import { swingTradingRouter } from "./swingTradingRouter";
+import { quantRouter } from "./quantRouter";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -157,6 +158,7 @@ export const appRouter = router({
   stressTesting: stressTestingRouter,
   consolidation: consolidationRouter,
   swingTrading: swingTradingRouter,
+  quant: quantRouter,
 });
 
 export type AppRouter = typeof appRouter;

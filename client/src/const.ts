@@ -5,5 +5,5 @@ export { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
  * Directs browser to the authoritative server-side endpoint (/api/oauth/login).
  */
 export const startLogin = () => {
-  window.location.href = "/api/oauth/login";
+  window.location.href = "/login";
 };

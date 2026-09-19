@@ -31,6 +31,7 @@ const AuditorPortalPage = lazy(() => import("./pages/AuditorPortalPage"));
 const TransactionsHubPage = lazy(() => import("./pages/TransactionsHubPage"));
 const FxManagementPage = lazy(() => import("./pages/FxManagementPage"));
 const SwingTradingPage = lazy(() => import("./pages/SwingTradingPage"));
+const QuantitativeHubPage = lazy(() => import("./pages/QuantitativeHubPage"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -39,6 +40,10 @@ function Router() {
       <Route path={"/"} component={FamilyHomeGate} />
       <Route path={"/login"} component={LoginPage} />
       <Route path={"/auth"} component={LoginPage} />
+      <Route path={"/quant"} component={QuantitativeHubPage} />
+      <Route path={"/intelligence"} component={QuantitativeHubPage} />
+      <Route path={"/advisory"} component={QuantitativeHubPage} />
+      <Route path={"/family/quant"} component={QuantitativeHubPage} />
       <Route path={"/trading/swing"} component={SwingTradingPage} />
       <Route path={"/family/trading/swing"} component={SwingTradingPage} />
       <Route path={"/swing"} component={SwingTradingPage} />

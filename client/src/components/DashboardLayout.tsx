@@ -97,6 +97,7 @@ const navigationGroups: NavigationGroup[] = [
     label: "التحليل والاستراتيجية",
     icon: TrendingUp,
     items: [
+      { icon: Sparkles, label: "الاستخبارات الكمية والذهب", path: "/quant", minimumRole: "viewer" },
       { icon: TrendingUp, label: "الأداء الاستثماري", path: "/performance", minimumRole: "viewer" },
       { icon: BarChart3, label: "تداول السوينج والمستشار", path: "/trading/swing", minimumRole: "viewer" },
       { icon: ArrowLeftRight, label: "المخاطر والتخصيص", path: "/risk", minimumRole: "viewer" },

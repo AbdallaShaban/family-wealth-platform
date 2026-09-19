@@ -10,6 +10,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic } from "./vite";
 import { handleScheduledMarketRefresh } from "../marketRefreshHandler";
+import { handleCreateAccount, handleListAccounts } from "../accountsHandler";
 import { startMarketAutomationDaemon } from "../marketScheduler";
 import { sql } from "drizzle-orm";
 import { ensurePasswordHashColumn, getDb } from "../db";
@@ -76,6 +77,8 @@ async function startServer() {
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   app.post("/api/scheduled/market-refresh", handleScheduledMarketRefresh);
+  app.post("/api/accounts", handleCreateAccount);
+  app.get("/api/accounts", handleListAccounts);
   // tRPC API
   app.use(
     "/api/trpc",
