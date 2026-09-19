@@ -206,6 +206,21 @@ async function createFrozenApprovalRequest(args: {
   return { id, duplicate: false };
 }
 
+function normalizeAssetType(val: unknown): "equity" | "fund" | "bond" | "gold" | "real_estate" | "cash_equivalent" | "other" {
+  if (typeof val !== "string") return "other";
+  const cleaned = val.trim().toLowerCase();
+  if (["equity", "fund", "bond", "gold", "real_estate", "cash_equivalent", "other"].includes(cleaned)) {
+    return cleaned as "equity" | "fund" | "bond" | "gold" | "real_estate" | "cash_equivalent" | "other";
+  }
+  if (["stock", "stocks", "shares", "سهم", "أسهم", "سهم مدرج"].includes(cleaned)) return "equity";
+  if (["funds", "etf", "mutual_fund", "صندوق", "صناديق", "صندوق استثمار"].includes(cleaned)) return "fund";
+  if (["bonds", "sukuk", "treasury", "سند", "سندات", "صكوك", "أذون"].includes(cleaned)) return "bond";
+  if (["bullion", "metals", "ذهب", "معادن", "ذهب عيني"].includes(cleaned)) return "gold";
+  if (["realestate", "property", "reit", "عقار", "عقارات", "أصول عقارية"].includes(cleaned)) return "real_estate";
+  if (["cash", "money_market", "نقد", "كاش", "ما يعادل النقد", "سيولة"].includes(cleaned)) return "cash_equivalent";
+  return "other";
+}
+
 export const familyRouter = router({
   bootstrap: protectedProcedure.query(async ({ ctx }) => {
     const family = await familyContext(ctx.user);
@@ -559,31 +574,80 @@ export const familyRouter = router({
     }),
     create: protectedProcedure
       .input(z.object({
-        name: z.string().trim().min(2).max(200),
+        name: z.string().trim().min(2, "اسم الأداة يجب أن لا يقل عن حرفين").max(200),
         symbol: z.string().trim().max(48).optional().nullable(),
-        assetType: z.enum(["equity", "fund", "bond", "gold", "real_estate", "cash_equivalent", "other"]),
+        assetType: z.string().trim().min(1, "نوع الفئة مطلوب"),
+        subCategory: z.string().trim().max(64).optional().nullable(),
+        sector: z.string().trim().max(100).optional().nullable(),
         currency,
         isin: z.string().trim().max(32).optional().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const family = await familyContext(ctx.user);
-        assertRole(family, "advisor");
-        const db = await getDb();
-        if (!db) throw notAvailable();
-        const now = Date.now();
-        const result = await db.insert(instruments).values({
-          workspaceId: family.workspace.id,
-          name: input.name,
-          symbol: input.symbol?.toUpperCase() || null,
-          assetType: input.assetType,
-          currency: input.currency.toUpperCase(),
-          isin: input.isin?.toUpperCase() || null,
-          createdAt: now,
-          updatedAt: now,
-        });
-        const id = Number(result[0].insertId);
-        await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "instrument.created", targetType: "instrument", targetId: String(id), beforeState: null, afterState: { name: input.name, symbol: input.symbol?.toUpperCase() || null }, requestId: crypto.randomUUID(), occurredAt: now });
-        return { id };
+        try {
+          const family = await familyContext(ctx.user);
+          assertRole(family, "editor");
+          const db = await getDb();
+          if (!db) throw notAvailable();
+
+          const canonicalAssetType = normalizeAssetType(input.assetType);
+          const cleanSymbol = input.symbol?.trim() ? input.symbol.trim().toUpperCase() : null;
+
+          if (cleanSymbol) {
+            const [existing] = await db
+              .select({ id: instruments.id, name: instruments.name })
+              .from(instruments)
+              .where(and(eq(instruments.workspaceId, family.workspace.id), eq(instruments.symbol, cleanSymbol)))
+              .limit(1);
+            if (existing) {
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: `الأداة المالية بالرمز (${cleanSymbol}) مسجلة مسبقًا باسم "${existing.name}".`,
+              });
+            }
+          }
+
+          const now = Date.now();
+          const result = await db.insert(instruments).values({
+            workspaceId: family.workspace.id,
+            name: input.name.trim(),
+            symbol: cleanSymbol,
+            assetType: canonicalAssetType,
+            subCategory: input.subCategory?.trim() || null,
+            sector: input.sector?.trim() || null,
+            currency: input.currency.toUpperCase(),
+            isin: input.isin?.trim() ? input.isin.trim().toUpperCase() : null,
+            createdAt: now,
+            updatedAt: now,
+          });
+
+          const id = Number(result[0].insertId);
+          await db.insert(auditEvents).values({
+            workspaceId: family.workspace.id,
+            actorUserId: ctx.user.id,
+            action: "instrument.created",
+            targetType: "instrument",
+            targetId: String(id),
+            beforeState: null,
+            afterState: {
+              name: input.name.trim(),
+              symbol: cleanSymbol,
+              assetType: canonicalAssetType,
+              subCategory: input.subCategory?.trim() || null,
+              sector: input.sector?.trim() || null,
+            },
+            requestId: crypto.randomUUID(),
+            occurredAt: now,
+          });
+
+          return { id, name: input.name.trim(), symbol: cleanSymbol, assetType: canonicalAssetType };
+        } catch (err) {
+          if (err instanceof TRPCError) throw err;
+          console.error("[Instruments.create] Error creating instrument:", err);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: err instanceof Error ? `فشل حفظ الأداة: ${err.message}` : "فشل حفظ الأداة الاستثمارية في قاعدة البيانات.",
+          });
+        }
       }),
   }),
 

@@ -44,6 +44,59 @@ const assetTypeLabel: Record<AssetType, string> = {
   cash_equivalent: "ما يعادل النقد",
   other: "أخرى",
 };
+
+const subCategoriesByAssetType: Record<AssetType, Array<{ value: string; label: string }>> = {
+  fund: [
+    { value: "MONEY_MARKET_FUND", label: "صندوق نقد يومي (سيولة)" },
+    { value: "EQUITY_FUND", label: "صندوق أسهم" },
+    { value: "GOLD_FUND", label: "صندوق ذهب (مثل AZG)" },
+    { value: "BALANCED_FUND", label: "صندوق متوازن" },
+    { value: "REAL_ESTATE_FUND", label: "صندوق استثمار عقاري" },
+    { value: "OTHER", label: "صندوق آخر" },
+  ],
+  equity: [
+    { value: "DIRECT_EQUITY", label: "أسهم مدرجة مباشرة (EGX)" },
+    { value: "OTHER", label: "أخرى" },
+  ],
+  gold: [
+    { value: "PHYSICAL_GOLD", label: "ذهب عيني / كسر" },
+    { value: "GOLD_BARS", label: "سبائك معتمدة (عيار 24)" },
+    { value: "GOLD_COINS", label: "جنيهات ذهب (عيار 21)" },
+    { value: "OTHER", label: "أخرى" },
+  ],
+  real_estate: [
+    { value: "RESIDENTIAL_REAL_ESTATE", label: "عقار سكني" },
+    { value: "COMMERCIAL_REAL_ESTATE", label: "عقار تجاري / إداري" },
+    { value: "OTHER", label: "أخرى" },
+  ],
+  bond: [
+    { value: "GOVERNMENT_BOND", label: "سندات حكومية وأذون خزانة" },
+    { value: "CORPORATE_BOND", label: "سندات توريق وشركات" },
+    { value: "OTHER", label: "أخرى" },
+  ],
+  cash_equivalent: [
+    { value: "TREASURY_BILLS", label: "أذون خزانة قصيرة الأجل" },
+    { value: "CERTIFICATE_OF_DEPOSIT", label: "شهادات ادخار بنكية" },
+    { value: "OTHER", label: "أخرى" },
+  ],
+  other: [
+    { value: "OTHER", label: "عام / غير مصنف" },
+  ],
+};
+
+const egxSectors = [
+  { value: "Financial Services & Banks", label: "البنوك والخدمات المالية غير المصرفية" },
+  { value: "Real Estate & Development", label: "العقارات والتطوير العقاري" },
+  { value: "Healthcare & Pharma", label: "الرعاية الصحية والأدوية" },
+  { value: "Construction & Building Materials", label: "البناء ومواد التشييد" },
+  { value: "Food & Beverage", label: "الأغذية والمشروبات والتبغ" },
+  { value: "Telecom & Tech", label: "الاتصالات والإعلام والتكنولوجيا" },
+  { value: "Industrial & Textiles", label: "الصناعة والسلع المعمرة والمنسوجات" },
+  { value: "Energy & Basic Materials", label: "الموارد الأساسية والبتروكيماويات" },
+  { value: "Tourism & Entertainment", label: "السياحة والترفيه" },
+  { value: "OTHER", label: "قطاع آخر / غير مصنف" },
+];
+
 const errorText = (error: unknown) => (error instanceof Error ? error.message : "تعذر إكمال العملية الآن.");
 
 export default function InvestmentsPageRedesign() {
@@ -72,6 +125,16 @@ export default function InvestmentsPageRedesign() {
   const [symbol, setSymbol] = useState("");
   const [currency, setCurrency] = useState("EGP");
   const [assetType, setAssetType] = useState<AssetType>("equity");
+  const [subCategory, setSubCategory] = useState("DIRECT_EQUITY");
+  const [sector, setSector] = useState("Financial Services & Banks");
+
+  const showSector = assetType === "equity" || (assetType === "fund" && subCategory === "EQUITY_FUND");
+
+  const handleAssetTypeChange = (newType: AssetType) => {
+    setAssetType(newType);
+    const available = subCategoriesByAssetType[newType] || [];
+    setSubCategory(available.length > 0 ? available[0].value : "OTHER");
+  };
 
   // Trade Record State
   const [side, setSide] = useState<"buy" | "sell">("buy");
@@ -104,9 +167,13 @@ export default function InvestmentsPageRedesign() {
       toast.success("تمت إضافة الأداة الاستثمارية بنجاح.");
       setName("");
       setSymbol("");
+      setSubCategory("DIRECT_EQUITY");
+      setSector("Financial Services & Banks");
       void utils.family.instruments.list.invalidate();
     },
-    onError: (error) => toast.error(errorText(error)),
+    onError: (error) => {
+      toast.error(error.message || "فشل حفظ الأداة الاستثمارية.");
+    },
   });
 
   const recordQuote = trpc.family.prices.recordManual.useMutation({
@@ -155,7 +222,18 @@ export default function InvestmentsPageRedesign() {
 
   const submitInstrument = (event: React.FormEvent) => {
     event.preventDefault();
-    createInstrument.mutate({ name, symbol: symbol || null, currency, assetType, isin: null });
+    if (!name.trim()) {
+      return toast.error("يرجى إدخال اسم الأداة الاستثمارية.");
+    }
+    createInstrument.mutate({
+      name: name.trim(),
+      symbol: symbol.trim() || null,
+      currency: currency.trim() || "EGP",
+      assetType,
+      subCategory: subCategory || null,
+      sector: showSector ? sector : null,
+      isin: null,
+    });
   };
 
   const submitTrade = (event: React.FormEvent) => {
@@ -491,26 +569,59 @@ export default function InvestmentsPageRedesign() {
                         />
                       </div>
                     </div>
-                    <div className="grid gap-2">
-                      <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الفئة</Label>
-                      <Select value={assetType} onValueChange={(val) => setAssetType(val as AssetType)} disabled={!canAdvise}>
-                        <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
-                          <SelectValue placeholder="اختر الفئة" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
-                          {Object.entries(assetTypeLabel).map(([val, lbl]) => (
-                            <SelectItem key={val} value={val}>{lbl}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">الفئة الرئيسية (Asset Class)</Label>
+                        <Select value={assetType} onValueChange={(val) => handleAssetTypeChange(val as AssetType)} disabled={!canEdit}>
+                          <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                            <SelectValue placeholder="اختر الفئة" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
+                            {Object.entries(assetTypeLabel).map(([val, lbl]) => (
+                              <SelectItem key={val} value={val}>{lbl}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">التصنيف الفرعي (Sub-Category)</Label>
+                        <Select value={subCategory} onValueChange={setSubCategory} disabled={!canEdit}>
+                          <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                            <SelectValue placeholder="اختر التصنيف الفرعي" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
+                            {(subCategoriesByAssetType[assetType] || []).map((sub) => (
+                              <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
+
+                    {showSector && (
+                      <div className="grid gap-2">
+                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">القطاع الاقتصادي (Sector)</Label>
+                        <Select value={sector} onValueChange={setSector} disabled={!canEdit}>
+                          <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
+                            <SelectValue placeholder="اختر القطاع" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
+                            {egxSectors.map((sec) => (
+                              <SelectItem key={sec.value} value={sec.value}>{sec.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <Button
                       type="submit"
-                      disabled={!canAdvise || createInstrument.isPending}
+                      disabled={!canEdit || createInstrument.isPending}
                       className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                       {createInstrument.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
-                      {canAdvise ? "حفظ الأداة" : "تتطلب صلاحية مستشار"}
+                      {canEdit ? "حفظ الأداة" : "تتطلب صلاحية محرر أو مستشار"}
                     </Button>
                   </form>
                 </CardContent>
@@ -534,12 +645,13 @@ export default function InvestmentsPageRedesign() {
                     </div>
                   ) : instruments.data?.length ? (
                     <div className="overflow-x-auto">
-                      <table className="w-full min-w-[520px] text-right text-sm">
+                      <table className="w-full min-w-[560px] text-right text-sm">
                         <thead>
                           <tr className="border-b border-slate-200 dark:border-slate-800">
                             <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الاسم</th>
                             <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الرمز</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الفئة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الفئة والتصنيف</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">القطاع</th>
                             <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">العملة</th>
                           </tr>
                         </thead>
@@ -559,9 +671,25 @@ export default function InvestmentsPageRedesign() {
                                 )}
                               </td>
                               <td className="py-3.5 px-4">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
-                                  {assetTypeLabel[item.assetType as AssetType] || item.assetType}
-                                </span>
+                                <div className="flex flex-col gap-1">
+                                  <span className="inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60">
+                                    {assetTypeLabel[item.assetType as AssetType] || item.assetType}
+                                  </span>
+                                  {item.subCategory && (
+                                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                      {subCategoriesByAssetType[item.assetType as AssetType]?.find(s => s.value === item.subCategory)?.label || item.subCategory}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {item.sector ? (
+                                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                                    {egxSectors.find(s => s.value === item.sector)?.label || item.sector}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
+                                )}
                               </td>
                               <td className="py-3.5 px-4">
                                 <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-200/60 dark:border-slate-700/60">
