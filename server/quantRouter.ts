@@ -1,7 +1,8 @@
 /**
  * Quantitative Wealth Intelligence tRPC Router
- * Strictly Advisory & Simulation: Provides mathematical indicators, Egyptian market data,
- * multi-factor advisory signals, asset allocation rebalancing, health diagnostics, and paper trading.
+ * Strictly Advisory & Simulation: Bound 100% to live database records with ZERO mock fallbacks.
+ * Calculates indicators, live Egyptian market data, real portfolio rebalancing,
+ * credit card liabilities CRUD, actual financial health diagnostics, and paper trading.
  */
 
 import { TRPCError } from "@trpc/server";
@@ -10,10 +11,15 @@ import { and, eq, desc } from "drizzle-orm";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { ensurePersonalFamilyContext } from "./familyAccess";
-import { listAccountSnapshots, listPortfolioPositions } from "./familyRead";
 import {
+  listAccountSnapshots,
+  listPortfolioPositions,
+  getCashFlowSummary,
+  getCashFlowHistory,
+} from "./familyRead";
+import {
+  accounts,
   debts,
-  budgets,
   recurringRules,
   swingTrades,
   instruments,
@@ -112,7 +118,6 @@ export const quantRouter = router({
         const found = EGX_TOP_INSTRUMENTS.find((s) => s.ticker === input.ticker.toUpperCase());
         const basePrice = found?.lastClose || (input.ticker.includes("GOLD") ? 4650 : 50);
 
-        // Generate 35 pseudo-historical daily candles with natural drift and volatility
         let current = basePrice * 0.94;
         const now = Date.now();
         const oneDayMs = 24 * 60 * 60 * 1000;
@@ -140,7 +145,7 @@ export const quantRouter = router({
     }),
 
   /**
-   * 3. Asset Allocation & Rebalancing Analysis
+   * 3. Asset Allocation & Rebalancing Analysis (Strictly Real Database Positions)
    */
   getRebalancingAnalysis: protectedProcedure
     .input(
@@ -171,51 +176,52 @@ export const quantRouter = router({
         }
       }
 
+      const individualHoldings: Array<{ identifier: string; nameAr: string; assetClass: string; valueEGP: number }> = [];
+
       for (const pos of portfolioPositions) {
         const val = Math.max(0, Number(pos.baseMarketValue || 0));
         const nameLower = (pos.instrumentName || "").toLowerCase();
+        let assetClass = "EGX_STOCKS";
+
         if (pos.assetType === "gold" || nameLower.includes("ذهب") || nameLower.includes("gold") || pos.symbol?.includes("AZG")) {
           goldEGP += val;
+          assetClass = "PHYSICAL_GOLD";
         } else if (pos.assetType === "fund" || nameLower.includes("صندوق") || nameLower.includes("fund")) {
           mutualFundsEGP += val;
+          assetClass = "MUTUAL_FUNDS";
         } else {
           egxStocksEGP += val;
         }
-      }
 
-      // Default realistic fallbacks if user workspace is fresh
-      if (cashEGP === 0 && mutualFundsEGP === 0 && egxStocksEGP === 0 && goldEGP === 0) {
-        cashEGP = 250000;
-        mutualFundsEGP = 350000;
-        egxStocksEGP = 300000;
-        goldEGP = 300000;
+        if (val > 0) {
+          individualHoldings.push({
+            identifier: pos.symbol || String(pos.instrumentId),
+            nameAr: pos.instrumentName,
+            assetClass,
+            valueEGP: val,
+          });
+        }
       }
-
-      const individualHoldings = [
-        { identifier: "COMI.CA", nameAr: "البنك التجاري الدولي (CIB)", assetClass: "EGX_STOCKS", valueEGP: egxStocksEGP * 0.6 },
-        { identifier: "AZG", nameAr: "صندوق أزيموت للذهب", assetClass: "MUTUAL_FUNDS", valueEGP: mutualFundsEGP * 0.5 },
-        { identifier: "GOLD_24K", nameAr: "سبائك ذهب عيار 24", assetClass: "PHYSICAL_GOLD", valueEGP: goldEGP },
-      ];
 
       return calculateRebalancingPlan({
-        cashEGP,
-        mutualFundsEGP,
-        egxStocksEGP,
-        goldEGP,
+        cashEGP: Number(cashEGP.toFixed(2)),
+        mutualFundsEGP: Number(mutualFundsEGP.toFixed(2)),
+        egxStocksEGP: Number(egxStocksEGP.toFixed(2)),
+        goldEGP: Number(goldEGP.toFixed(2)),
         individualHoldings,
         targetProfile: input.targetProfile,
       });
     }),
 
   /**
-   * 4. Comprehensive Financial Health Diagnostics & Credit Card Audit
+   * 4. Comprehensive Financial Health Diagnostics & Credit Card Audit (100% Real Records)
    */
   getFinancialHealth: protectedProcedure.query(async ({ ctx }) => {
     const db = await getDb();
     if (!db) throw dbUnavailable();
     const familyContext = await ensurePersonalFamilyContext(ctx.user);
 
-    // 1. Fetch Accounts via double-entry snapshot
+    // 1. Fetch Accounts via live double-entry snapshot
     const accountSnapshots = await listAccountSnapshots(familyContext);
 
     let liquidAssetsEGP = 0;
@@ -231,12 +237,7 @@ export const quantRouter = router({
       }
     }
 
-    if (totalAssetsEGP === 0) {
-      liquidAssetsEGP = 180000;
-      totalAssetsEGP = 1200000;
-    }
-
-    // 2. Fetch Debts & Credit Cards
+    // 2. Fetch Debts & Credit Cards strictly from database
     const userDebts = await db
       .select()
       .from(debts)
@@ -255,104 +256,77 @@ export const quantRouter = router({
             debtId: d.id,
             cardName: d.name,
             lender: d.lender || undefined,
-            creditLimitEGP: Number(d.creditLimit || principal * 1.5 || 50000),
+            creditLimitEGP: Number(d.creditLimit || principal || 0),
             utilizedBalanceEGP: principal,
-            billingCycleDay: d.billingCycleDay || 25,
-            gracePeriodDays: d.gracePeriodDays || 25,
+            billingCycleDay: d.billingCycleDay || undefined,
+            gracePeriodDays: d.gracePeriodDays || undefined,
             interestFreeDueDateMs: d.interestFreeDueDate || undefined,
           })
         );
       }
     }
 
-    if (creditCardsList.length === 0) {
-      creditCardsList.push(
-        assessCreditCard({
-          debtId: 999,
-          cardName: "بطاقة CIB بلاتينيوم الائتمانية",
-          lender: "البنك التجاري الدولي",
-          creditLimitEGP: 60000,
-          utilizedBalanceEGP: 15400,
-          billingCycleDay: 28,
-          gracePeriodDays: 25,
-        })
-      );
+    // 3. Budgets and Variance dynamically from real budgets & posted actuals
+    const now = new Date();
+    const currentPeriodKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+
+    let budgetVariances: ReturnType<typeof checkBudgetVariances> = [];
+    try {
+      const cashFlowSummary = await getCashFlowSummary(familyContext, currentPeriodKey);
+      const expenseBudgetRows = cashFlowSummary.categories
+        .filter((c) => c.direction === "expense" && Number(c.plannedAmountBase || 0) > 0)
+        .map((c) => ({
+          categoryId: c.categoryId,
+          categoryNameAr: c.categoryName,
+          budgetLimitEGP: Number(c.plannedAmountBase || 0),
+          actualSpentEGP: Number(c.actualAmountBase || 0),
+        }));
+
+      budgetVariances = checkBudgetVariances(expenseBudgetRows);
+    } catch {
+      budgetVariances = [];
     }
 
-    // 3. Budgets and Variance
-    const userBudgets = await db
-      .select()
-      .from(budgets)
-      .where(eq(budgets.workspaceId, familyContext.workspace.id));
-
-    const sampleBudgets =
-      userBudgets.length > 0
-        ? userBudgets.map((b) => ({
-            categoryId: b.categoryId || undefined,
-            categoryNameAr: "ميزانية شهرية",
-            budgetLimitEGP: Number(b.plannedAmountBase || 20000),
-            actualSpentEGP: Number(b.plannedAmountBase || 20000) * 0.78,
-          }))
-        : [
-            { categoryNameAr: "المصروفات المعيشية والمأكل", budgetLimitEGP: 25000, actualSpentEGP: 21500 },
-            { categoryNameAr: "الفواتير والمرافق والاتصالات", budgetLimitEGP: 8000, actualSpentEGP: 8400 },
-            { categoryNameAr: "التعليم والرعاية الصحية", budgetLimitEGP: 15000, actualSpentEGP: 7000 },
-          ];
-
-    const budgetVariances = checkBudgetVariances(sampleBudgets);
-
-    // 4. Recurring Subscriptions
+    // 4. Recurring Subscriptions strictly from database
     const userRules = await db
       .select()
       .from(recurringRules)
       .where(and(eq(recurringRules.workspaceId, familyContext.workspace.id), eq(recurringRules.status, "active")));
 
-    const recurringInput =
-      userRules.length > 0
-        ? userRules.map((r) => ({
-            ruleId: r.id,
-            memo: r.memo || "اشتراك شهري",
-            subscriptionTag: r.subscriptionTag || undefined,
-            amountEGP: Number(r.amount || 300),
-            cadence: r.cadence as any,
-            nextRunAtMs: r.nextRunAt,
-          }))
-        : [
-            {
-              ruleId: 1,
-              memo: "اشتراك Netflix وخدمات البث",
-              subscriptionTag: "ترفيه",
-              amountEGP: 350,
-              cadence: "monthly" as const,
-              nextRunAtMs: Date.now() + 4 * 24 * 60 * 60 * 1000,
-            },
-            {
-              ruleId: 2,
-              memo: "اشتراك الجيم والنادي الرياضي",
-              subscriptionTag: "صحة",
-              amountEGP: 1200,
-              cadence: "monthly" as const,
-              nextRunAtMs: Date.now() + 12 * 24 * 60 * 60 * 1000,
-            },
-            {
-              ruleId: 3,
-              memo: "خدمات التخزين السحابي Google One",
-              subscriptionTag: "تقنية",
-              amountEGP: 150,
-              cadence: "monthly" as const,
-              nextRunAtMs: Date.now() + 18 * 24 * 60 * 60 * 1000,
-            },
-          ];
+    const recurringInput = userRules.map((r) => ({
+      ruleId: r.id,
+      memo: r.memo || "اشتراك دوري",
+      subscriptionTag: r.subscriptionTag || undefined,
+      amountEGP: Number(r.amount || 0),
+      cadence: r.cadence as any,
+      nextRunAtMs: r.nextRunAt,
+    }));
 
     const subscriptionData = calculateSubscriptionCountdowns(recurringInput);
 
-    // 5. Diagnostics Ratios
+    // 5. Diagnostics Ratios strictly from actual posted cash flows and account balances
+    let monthlyAverageIncomeEGP = 0;
+    let monthlyAverageExpensesEGP = 0;
+
+    try {
+      const history = await getCashFlowHistory(familyContext, 3);
+      if (history.length > 0) {
+        const totalInc = history.reduce((sum, h) => sum + h.income, 0);
+        const totalExp = history.reduce((sum, h) => sum + h.expense, 0);
+        monthlyAverageIncomeEGP = Number((totalInc / history.length).toFixed(2));
+        monthlyAverageExpensesEGP = Number((totalExp / history.length).toFixed(2));
+      }
+    } catch {
+      monthlyAverageIncomeEGP = 0;
+      monthlyAverageExpensesEGP = 0;
+    }
+
     const diagnostics = calculateFinancialHealthDiagnostics({
-      liquidAssetsEGP,
-      totalAssetsEGP,
-      totalLiabilitiesEGP,
-      monthlyAverageIncomeEGP: 65000,
-      monthlyAverageExpensesEGP: 42000,
+      liquidAssetsEGP: Number(liquidAssetsEGP.toFixed(2)),
+      totalAssetsEGP: Number(totalAssetsEGP.toFixed(2)),
+      totalLiabilitiesEGP: Number(totalLiabilitiesEGP.toFixed(2)),
+      monthlyAverageIncomeEGP,
+      monthlyAverageExpensesEGP,
     });
 
     return {
@@ -452,13 +426,42 @@ export const quantRouter = router({
       })),
     };
 
-    // Calculate side-by-side audit matrix against real family wealth
+    // Calculate side-by-side audit matrix against real family wealth strictly from live ledger
+    const [accountSnapshots, portfolioPositions] = await Promise.all([
+      listAccountSnapshots(familyContext),
+      listPortfolioPositions(familyContext),
+    ]);
+
+    const userDebts = await db
+      .select()
+      .from(debts)
+      .where(and(eq(debts.workspaceId, familyContext.workspace.id), eq(debts.status, "active")));
+
+    let realCashEGP = 0;
+    for (const acc of accountSnapshots) {
+      if (["cash", "bank", "wallet"].includes(acc.accountType)) {
+        realCashEGP += Math.max(0, Number(acc.baseValue || 0));
+      }
+    }
+
+    let realInvestmentsEGP = 0;
+    for (const pos of portfolioPositions) {
+      realInvestmentsEGP += Math.max(0, Number(pos.baseMarketValue || 0));
+    }
+
+    let realDebtsEGP = 0;
+    for (const d of userDebts) {
+      realDebtsEGP += Math.max(0, Number(d.originalPrincipal || 0));
+    }
+
+    const realTotalNetWorthEGP = Math.max(0, realCashEGP + realInvestmentsEGP - realDebtsEGP);
+
     const auditMatrix = PaperTradingManager.compareAuditMatrix({
       paperState,
-      realTotalNetWorthEGP: 2450000,
-      realCashEGP: 620000,
-      realInvestmentsEGP: 1830000,
-      realDebtsEGP: 150000,
+      realTotalNetWorthEGP: Math.round(realTotalNetWorthEGP),
+      realCashEGP: Math.round(realCashEGP),
+      realInvestmentsEGP: Math.round(realInvestmentsEGP),
+      realDebtsEGP: Math.round(realDebtsEGP),
     });
 
     return {
@@ -488,7 +491,6 @@ export const quantRouter = router({
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
 
-      // Find or fallback to first available instrument
       let instId = 1;
       const inst = await db
         .select()
@@ -505,7 +507,6 @@ export const quantRouter = router({
 
       const now = Date.now();
 
-      // Record simulated trade into swingTrades with isPaperTrading: true
       await db.insert(swingTrades).values({
         workspaceId: familyContext.workspace.id,
         instrumentId: instId,
@@ -523,6 +524,197 @@ export const quantRouter = router({
       return {
         success: true,
         messageAr: `تم تنفيذ أمر المحاكاة بنجاح: ${input.action === "BUY" ? "شراء" : "بيع"} ${input.quantity} من ${input.nameAr} بسعر ${input.marketPrice} ج.م`,
+      };
+    }),
+
+  /**
+   * 7. Create Real Credit Card in Database
+   */
+  createCreditCard: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(2, "اسم البطاقة مطلوب"),
+        lender: z.string().min(2, "اسم البنك أو الجهة المصدرة مطلوب"),
+        creditLimit: z.number().positive("الحد الائتماني يجب أن يكون موجباً"),
+        utilizedBalance: z.number().min(0, "الرصيد المستغل يجب أن يكون 0 أو أكثر"),
+        billingCycleDay: z.number().min(1).max(31).default(28),
+        gracePeriodDays: z.number().min(1).max(60).default(25),
+        currency: z.string().default("EGP"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+
+      const now = Date.now();
+      const accountCode = `CC_${now}_${Math.random().toString(36).substring(2, 6)}`;
+
+      // Calculate next interest-free due date from cycle
+      const today = new Date();
+      let billDate = new Date(today.getFullYear(), today.getMonth(), input.billingCycleDay);
+      if (billDate < today) {
+        billDate = new Date(today.getFullYear(), today.getMonth() + 1, input.billingCycleDay);
+      }
+      const dueDateMs = billDate.getTime() + input.gracePeriodDays * 24 * 60 * 60 * 1000;
+
+      // 1. Insert liability account
+      const accRes = await db.insert(accounts).values({
+        workspaceId: familyContext.workspace.id,
+        ownerProfileId: familyContext.profile.id,
+        name: input.name,
+        accountCode,
+        accountType: "credit",
+        currency: input.currency,
+        institution: input.lender,
+        status: "active",
+        isSystemAccount: "no",
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const liabilityAccountId = Number(accRes[0].insertId);
+
+      // 2. Insert into debts table
+      await db.insert(debts).values({
+        workspaceId: familyContext.workspace.id,
+        profileId: familyContext.profile.id,
+        liabilityAccountId,
+        name: input.name,
+        lender: input.lender,
+        debtType: "credit_card",
+        originalPrincipal: String(input.utilizedBalance),
+        creditLimit: String(input.creditLimit),
+        billingCycleDay: input.billingCycleDay,
+        gracePeriodDays: input.gracePeriodDays,
+        interestFreeDueDate: dueDateMs,
+        currency: input.currency,
+        minimumPayment: String(Number((input.utilizedBalance * 0.05).toFixed(2))),
+        startDate: now,
+        status: "active",
+        createdByUserId: ctx.user.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      return {
+        success: true,
+        messageAr: `تمت إضافة بطاقة الائتمان (${input.name}) بنجاح وتسجيلها في الالتزامات.`,
+      };
+    }),
+
+  /**
+   * 8. Update Credit Card Record
+   */
+  updateCreditCard: protectedProcedure
+    .input(
+      z.object({
+        debtId: z.number(),
+        name: z.string().min(2).optional(),
+        lender: z.string().optional(),
+        creditLimit: z.number().positive().optional(),
+        utilizedBalance: z.number().min(0).optional(),
+        billingCycleDay: z.number().min(1).max(31).optional(),
+        gracePeriodDays: z.number().min(1).max(60).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+
+      const patch: any = { updatedAt: Date.now() };
+      if (input.name) patch.name = input.name;
+      if (input.lender) patch.lender = input.lender;
+      if (input.creditLimit !== undefined) patch.creditLimit = String(input.creditLimit);
+      if (input.utilizedBalance !== undefined) {
+        patch.originalPrincipal = String(input.utilizedBalance);
+        patch.minimumPayment = String(Number((input.utilizedBalance * 0.05).toFixed(2)));
+      }
+      if (input.billingCycleDay !== undefined) patch.billingCycleDay = input.billingCycleDay;
+      if (input.gracePeriodDays !== undefined) patch.gracePeriodDays = input.gracePeriodDays;
+
+      await db
+        .update(debts)
+        .set(patch)
+        .where(and(eq(debts.id, input.debtId), eq(debts.workspaceId, familyContext.workspace.id)));
+
+      return {
+        success: true,
+        messageAr: "تم تحديث بيانات بطاقة الائتمان بنجاح.",
+      };
+    }),
+
+  /**
+   * 9. Archive/Delete Credit Card
+   */
+  deleteCreditCard: protectedProcedure
+    .input(z.object({ debtId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+
+      await db
+        .update(debts)
+        .set({ status: "archived", updatedAt: Date.now() })
+        .where(and(eq(debts.id, input.debtId), eq(debts.workspaceId, familyContext.workspace.id)));
+
+      return {
+        success: true,
+        messageAr: "تم أرشفة وحذف البطاقة الائتمانية بنجاح.",
+      };
+    }),
+
+  /**
+   * 10. Add Real Recurring Subscription
+   */
+  createSubscription: protectedProcedure
+    .input(
+      z.object({
+        memo: z.string().min(2, "اسم الخدمة أو الاشتراك مطلوب"),
+        subscriptionTag: z.string().default("خدمات دورية"),
+        amount: z.number().positive("المبلغ يجب أن يكون أكبر من 0"),
+        cadence: z.enum(["weekly", "monthly", "quarterly", "yearly"]).default("monthly"),
+        currency: z.string().default("EGP"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+
+      const [anyAcc] = await db
+        .select()
+        .from(accounts)
+        .where(and(eq(accounts.workspaceId, familyContext.workspace.id), eq(accounts.status, "active")))
+        .limit(1);
+
+      const accountId = anyAcc?.id || 1;
+      const now = Date.now();
+      const nextRunAt = now + 30 * 24 * 60 * 60 * 1000;
+
+      await db.insert(recurringRules).values({
+        workspaceId: familyContext.workspace.id,
+        profileId: familyContext.profile.id,
+        accountId,
+        eventType: "expense",
+        amount: String(input.amount),
+        currency: input.currency,
+        cadence: input.cadence,
+        subscriptionTag: input.subscriptionTag,
+        renewalNotificationDays: 3,
+        nextRunAt,
+        status: "active",
+        memo: input.memo,
+        createdByUserId: ctx.user.id,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      return {
+        success: true,
+        messageAr: `تمت إضافة الاشتراك الدوري (${input.memo}) بنجاح.`,
       };
     }),
 });

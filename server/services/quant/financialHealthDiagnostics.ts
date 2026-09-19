@@ -143,27 +143,45 @@ export function calculateFinancialHealthDiagnostics(params: {
     monthlyAverageExpensesEGP = 0,
   } = params;
 
-  const monthlyExpSafe = Math.max(1, monthlyAverageExpensesEGP);
-  const emergencyRunwayMonths = Number((liquidAssetsEGP / monthlyExpSafe).toFixed(1));
-  const liquidityRatio = Number((liquidAssetsEGP / monthlyExpSafe).toFixed(2));
+  // Handle completely uninitialized or zero records
+  if (totalAssetsEGP === 0 && liquidAssetsEGP === 0 && totalLiabilitiesEGP === 0 && monthlyAverageIncomeEGP === 0 && monthlyAverageExpensesEGP === 0) {
+    return {
+      liquidityRatio: 0,
+      liquidityMonthsDescriptionAr: "لا توجد أصول أو تدفقات نقدية مسجلة حتى الآن لحساب مؤشر الطوارئ.",
+      savingsRatePercent: 0,
+      debtToAssetPercent: 0,
+      emergencyRunwayMonths: 0,
+      overallScore: 50,
+      healthRatingAr: "مقبول",
+      strengthsAr: [],
+      vulnerabilitiesAr: ["لم تسجل حسابات أو عمليات مالية بعد لحساب المؤشرات بدقة."],
+    };
+  }
 
-  let liquidityMonthsDescriptionAr = `${emergencyRunwayMonths} أشهر من المصروفات المعيشية مغطاة بسيولة فورية`;
-  if (emergencyRunwayMonths >= 6) {
+  const monthlyExpSafe = monthlyAverageExpensesEGP > 0 ? monthlyAverageExpensesEGP : 0;
+  const emergencyRunwayMonths = monthlyExpSafe > 0 ? Number((liquidAssetsEGP / monthlyExpSafe).toFixed(1)) : (liquidAssetsEGP > 0 ? 12 : 0);
+  const liquidityRatio = monthlyExpSafe > 0 ? Number((liquidAssetsEGP / monthlyExpSafe).toFixed(2)) : (liquidAssetsEGP > 0 ? 1 : 0);
+
+  let liquidityMonthsDescriptionAr = monthlyExpSafe > 0
+    ? `${emergencyRunwayMonths} أشهر من المصروفات المعيشية مغطاة بسيولة فورية`
+    : liquidAssetsEGP > 0
+    ? "توجد سيولة نقدية متاحة ولكن لم تسجل مصروفات شهرية بعد لتحديد مدة التغطية."
+    : "لا توجد سيولة طوارئ نقدية مسجلة حالياً.";
+
+  if (emergencyRunwayMonths >= 6 && monthlyExpSafe > 0) {
     liquidityMonthsDescriptionAr += " (احتياطي طوارئ قوي ومثالي).";
-  } else if (emergencyRunwayMonths >= 3) {
+  } else if (emergencyRunwayMonths >= 3 && monthlyExpSafe > 0) {
     liquidityMonthsDescriptionAr += " (احتياطي طوارئ كافٍ ومستقر).";
-  } else {
+  } else if (monthlyExpSafe > 0) {
     liquidityMonthsDescriptionAr += " (احتياطي طوارئ منخفض؛ يوصى برفع السيولة لتغطية 3 إلى 6 أشهر).";
   }
 
   // Savings rate
-  const monthlyIncSafe = Math.max(1, monthlyAverageIncomeEGP);
   const monthlySavings = monthlyAverageIncomeEGP - monthlyAverageExpensesEGP;
-  const savingsRatePercent = Number(((monthlySavings / monthlyIncSafe) * 100).toFixed(1));
+  const savingsRatePercent = monthlyAverageIncomeEGP > 0 ? Number(((monthlySavings / monthlyAverageIncomeEGP) * 100).toFixed(1)) : 0;
 
   // Debt to Asset
-  const totalAssetsSafe = Math.max(1, totalAssetsEGP);
-  const debtToAssetPercent = Number(((totalLiabilitiesEGP / totalAssetsSafe) * 100).toFixed(1));
+  const debtToAssetPercent = totalAssetsEGP > 0 ? Number(((totalLiabilitiesEGP / totalAssetsEGP) * 100).toFixed(1)) : 0;
 
   // Diagnostic Scoring (0 - 100)
   let score = 50;
