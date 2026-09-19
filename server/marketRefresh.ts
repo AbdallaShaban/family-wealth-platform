@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { accounts, fxRates, instruments, priceQuotes, valuationProvenance, valuationSnapshots, workspaces } from "../drizzle/schema";
 import { getDb } from "./db";
-import { fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
+import { fetchEgxOrYahooQuote, fetchYahooFxQuote } from "./marketData";
 import { buildFxProvenance, buildInstrumentSnapshot, buildMarketProvenance } from "./valuationProvenance";
 import { invalidateReadModelCache } from "./readModelCache";
 
@@ -38,7 +38,7 @@ export async function refreshYahooMarketData() : Promise<MarketRefreshResult> {
     for (const instrument of activeInstruments) {
       if (!instrument.symbol) { result.skipped += 1; continue; }
       try {
-        const quote = await fetchYahooQuote(instrument.symbol);
+        const quote = await fetchEgxOrYahooQuote(instrument.symbol, instrument.currency);
         if (quote.currency !== instrument.currency) throw new Error("عملة المصدر لا تطابق عملة الأداة المسجلة.");
         if (await hasQuote(db, instrument.id, quote.asOf)) { result.skipped += 1; continue; }
         const capturedAt = Date.now();

@@ -26,7 +26,7 @@ type PeriodKey = "mtd" | "qtd" | "ytd" | "1y" | "3y" | "5y" | "inception";
 
 export default function PerformancePage() {
   const [period, setPeriod] = useState<PeriodKey>("ytd");
-  const [benchmark, setBenchmark] = useState<string>("SP500");
+  const [benchmark, setBenchmark] = useState<string>("EGX30");
   const [riskFreeRate, setRiskFreeRate] = useState<string>("0.0000");
 
   const utils = trpc.useUtils();
@@ -131,7 +131,7 @@ export default function PerformancePage() {
                     <option key={b.symbol} value={b.symbol}>
                       {b.name} ({b.symbol})
                     </option>
-                  )) || <option value="SP500">S&P 500</option>}
+                  )) || <option value="EGX30">مؤشر البورصة المصرية الرئيسي (EGX30)</option>}
                 </select>
               </div>
             </div>

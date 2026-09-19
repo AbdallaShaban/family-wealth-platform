@@ -23,7 +23,7 @@ import { buildImportRows, detectDuplicate, parseCsv, sha256, validateColumnMappi
 import { canPostImportedRow, shouldKeepImportInReview } from "./bankImportWorkflow";
 import { projectScenario } from "./scenarioMath";
 import { approvalActionTypes, isApprovalExecutable, requiresApproval, type ApprovalActionType } from "./approvalWorkflowMath";
-import { calculateGold24kGramEgp, fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
+import { BENCHMARK_SYMBOLS, calculateGold24kGramEgp, fetchEgxOrYahooQuote, fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
 import { calculateZakat } from "./zakatMath";
 import { storageGetSignedUrl, storagePut } from "./storage";
 import { decryptVaultValue, encryptVaultValue } from "./vaultCrypto";
@@ -1270,6 +1270,150 @@ export const familyRouter = router({
         const event = await postTrade({ context: family, actorUserId: ctx.user.id, ...input, occurredAt: resolvedOccurredAt });
         return { approvalRequired: false as const, event };
       }),
+
+    syncMarketPrices: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const instRows = await db
+          .select()
+          .from(instruments)
+          .where(
+            and(
+              eq(instruments.workspaceId, family.workspace.id),
+              sql`${instruments.symbol} IS NOT NULL AND ${instruments.symbol} != ''`
+            )
+          );
+
+        let updatedCount = 0;
+        let skippedCount = 0;
+        const failed: Array<{ symbol: string; reason: string }> = [];
+        const updatedList: Array<{ id: number; symbol: string; name: string; price: string; currency: string }> = [];
+        const now = Date.now();
+
+        for (const inst of instRows) {
+          if (!inst.symbol) {
+            skippedCount++;
+            continue;
+          }
+          try {
+            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency);
+            const insertResult = await db.insert(priceQuotes).values({
+              workspaceId: family.workspace.id,
+              instrumentId: inst.id,
+              price: quote.price,
+              currency: quote.currency,
+              source: quote.source,
+              quoteStatus: quote.quoteStatus,
+              asOf: quote.asOf,
+              createdAt: now,
+            });
+            const quoteId = Number(insertResult[0].insertId);
+            const provResult = await db.insert(valuationProvenance).values(
+              buildMarketProvenance({
+                workspaceId: family.workspace.id,
+                provider: "yahoo-finance-egx",
+                source: quote.source,
+                rawSymbol: inst.symbol,
+                fetchedAt: now,
+                asOf: quote.asOf,
+                status: quote.quoteStatus,
+                metadata: { instrumentId: inst.id, quoteId, resolvedSymbol: quote.resolvedSymbol },
+              })
+            );
+            await db.insert(valuationSnapshots).values(
+              buildInstrumentSnapshot({
+                workspaceId: family.workspace.id,
+                instrumentId: inst.id,
+                provenanceId: Number(provResult[0].insertId),
+                quoteId,
+                price: quote.price,
+                currency: quote.currency,
+                baseCurrency: family.workspace.baseCurrency,
+                status: quote.quoteStatus,
+                asOf: quote.asOf,
+                capturedAt: now,
+              })
+            );
+            await db.update(instruments).set({ updatedAt: now }).where(eq(instruments.id, inst.id));
+
+            updatedCount++;
+            updatedList.push({
+              id: inst.id,
+              symbol: inst.symbol,
+              name: inst.name,
+              price: quote.price,
+              currency: quote.currency,
+            });
+          } catch (err: any) {
+            failed.push({ symbol: inst.symbol, reason: err?.message || "فشل مزود السوق" });
+          }
+        }
+
+        // Sync / track Egyptian benchmark indices (EGX30, EGX33, EGX70)
+        const benchmarkKeys = ["EGX30", "EGX33", "EGX70"];
+        for (const bmkKey of benchmarkKeys) {
+          try {
+            let [bmkInst] = await db
+              .select()
+              .from(instruments)
+              .where(
+                and(
+                  eq(instruments.workspaceId, family.workspace.id),
+                  eq(instruments.symbol, bmkKey)
+                )
+              )
+              .limit(1);
+
+            const bmkInfo = BENCHMARK_SYMBOLS[bmkKey];
+            if (!bmkInst && bmkInfo) {
+              const created = await db.insert(instruments).values({
+                workspaceId: family.workspace.id,
+                name: bmkInfo.name,
+                symbol: bmkKey,
+                assetType: "fund",
+                subCategory: "مؤشر سوقي",
+                sector: "مؤشرات السوق",
+                currency: bmkInfo.currency,
+                isin: null,
+                createdAt: now,
+                updatedAt: now,
+              });
+              const newId = Number(created[0].insertId);
+              bmkInst = { id: newId, symbol: bmkKey, currency: bmkInfo.currency, name: bmkInfo.name } as any;
+            }
+
+            if (bmkInst) {
+              const bmkQuote = await fetchEgxOrYahooQuote(bmkKey, bmkInst.currency);
+              await db.insert(priceQuotes).values({
+                workspaceId: family.workspace.id,
+                instrumentId: bmkInst.id,
+                price: bmkQuote.price,
+                currency: bmkQuote.currency,
+                source: "yahoo_finance_benchmark",
+                quoteStatus: "delayed",
+                asOf: bmkQuote.asOf,
+                createdAt: now,
+              });
+            }
+          } catch {}
+        }
+
+        invalidateReadModelCache(`wealth-health:score:${family.workspace.id}`);
+        invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
+
+        return {
+          success: true,
+          updatedCount,
+          skippedCount,
+          failedCount: failed.length,
+          failed,
+          updatedList,
+        };
+      }),
   }),
 
   goals: router({
@@ -1738,8 +1882,8 @@ export const familyRouter = router({
         if (!instrument) throw new TRPCError({ code: "NOT_FOUND", message: "الأداة الاستثمارية غير موجودة ضمن مساحة FAMILY الحالية." });
         if (!["equity", "fund", "gold"].includes(instrument.assetType) || !instrument.symbol) throw new TRPCError({ code: "BAD_REQUEST", message: "تحديث Yahoo يتطلب سهماً أو صندوقاً أو أداة ذهب لها رمز سوقي." });
         let quote;
-        try { quote = await fetchYahooQuote(instrument.symbol); } catch { throw new TRPCError({ code: "BAD_GATEWAY", message: "تعذر الحصول على سعر صالح من Yahoo Finance الآن. استخدم تسجيلاً يدويًا أو حاول لاحقًا." }); }
-        if (quote.currency !== instrument.currency) throw new TRPCError({ code: "BAD_GATEWAY", message: "عملة سعر Yahoo لا تطابق عملة الأداة المسجلة؛ راجع رمز السوق أو سجّل سعراً يدويًا." });
+        try { quote = await fetchEgxOrYahooQuote(instrument.symbol, instrument.currency); } catch { throw new TRPCError({ code: "BAD_GATEWAY", message: "تعذر الحصول على سعر صالح من السوق أو البورصة المصرية الآن. استخدم تسجيلاً يدويًا أو حاول لاحقًا." }); }
+        if (quote.currency !== instrument.currency) throw new TRPCError({ code: "BAD_GATEWAY", message: "عملة سعر السوق لا تطابق عملة الأداة المسجلة؛ راجع رمز السوق أو سجّل سعراً يدويًا." });
         const now = Date.now();
         const result = await db.insert(priceQuotes).values({ workspaceId: family.workspace.id, instrumentId: instrument.id, price: quote.price, currency: quote.currency, source: quote.source, quoteStatus: quote.quoteStatus, asOf: quote.asOf, createdAt: now });
         const id = Number(result[0].insertId);
@@ -1749,6 +1893,149 @@ export const familyRouter = router({
         invalidateReadModelCache(`wealth-health:score:${family.workspace.id}`);
         invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
         return { id, instrumentId: instrument.id, ...quote };
+      }),
+    syncMarketPrices: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const instRows = await db
+          .select()
+          .from(instruments)
+          .where(
+            and(
+              eq(instruments.workspaceId, family.workspace.id),
+              sql`${instruments.symbol} IS NOT NULL AND ${instruments.symbol} != ''`
+            )
+          );
+
+        let updatedCount = 0;
+        let skippedCount = 0;
+        const failed: Array<{ symbol: string; reason: string }> = [];
+        const updatedList: Array<{ id: number; symbol: string; name: string; price: string; currency: string }> = [];
+        const now = Date.now();
+
+        for (const inst of instRows) {
+          if (!inst.symbol) {
+            skippedCount++;
+            continue;
+          }
+          try {
+            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency);
+            const insertResult = await db.insert(priceQuotes).values({
+              workspaceId: family.workspace.id,
+              instrumentId: inst.id,
+              price: quote.price,
+              currency: quote.currency,
+              source: quote.source,
+              quoteStatus: quote.quoteStatus,
+              asOf: quote.asOf,
+              createdAt: now,
+            });
+            const quoteId = Number(insertResult[0].insertId);
+            const provResult = await db.insert(valuationProvenance).values(
+              buildMarketProvenance({
+                workspaceId: family.workspace.id,
+                provider: "yahoo-finance-egx",
+                source: quote.source,
+                rawSymbol: inst.symbol,
+                fetchedAt: now,
+                asOf: quote.asOf,
+                status: quote.quoteStatus,
+                metadata: { instrumentId: inst.id, quoteId, resolvedSymbol: quote.resolvedSymbol },
+              })
+            );
+            await db.insert(valuationSnapshots).values(
+              buildInstrumentSnapshot({
+                workspaceId: family.workspace.id,
+                instrumentId: inst.id,
+                provenanceId: Number(provResult[0].insertId),
+                quoteId,
+                price: quote.price,
+                currency: quote.currency,
+                baseCurrency: family.workspace.baseCurrency,
+                status: quote.quoteStatus,
+                asOf: quote.asOf,
+                capturedAt: now,
+              })
+            );
+            await db.update(instruments).set({ updatedAt: now }).where(eq(instruments.id, inst.id));
+
+            updatedCount++;
+            updatedList.push({
+              id: inst.id,
+              symbol: inst.symbol,
+              name: inst.name,
+              price: quote.price,
+              currency: quote.currency,
+            });
+          } catch (err: any) {
+            failed.push({ symbol: inst.symbol, reason: err?.message || "فشل مزود السوق" });
+          }
+        }
+
+        // Benchmark indices
+        const benchmarkKeys = ["EGX30", "EGX33", "EGX70"];
+        for (const bmkKey of benchmarkKeys) {
+          try {
+            let [bmkInst] = await db
+              .select()
+              .from(instruments)
+              .where(
+                and(
+                  eq(instruments.workspaceId, family.workspace.id),
+                  eq(instruments.symbol, bmkKey)
+                )
+              )
+              .limit(1);
+
+            const bmkInfo = BENCHMARK_SYMBOLS[bmkKey];
+            if (!bmkInst && bmkInfo) {
+              const created = await db.insert(instruments).values({
+                workspaceId: family.workspace.id,
+                name: bmkInfo.name,
+                symbol: bmkKey,
+                assetType: "fund",
+                subCategory: "مؤشر سوقي",
+                sector: "مؤشرات السوق",
+                currency: bmkInfo.currency,
+                isin: null,
+                createdAt: now,
+                updatedAt: now,
+              });
+              const newId = Number(created[0].insertId);
+              bmkInst = { id: newId, symbol: bmkKey, currency: bmkInfo.currency, name: bmkInfo.name } as any;
+            }
+
+            if (bmkInst) {
+              const bmkQuote = await fetchEgxOrYahooQuote(bmkKey, bmkInst.currency);
+              await db.insert(priceQuotes).values({
+                workspaceId: family.workspace.id,
+                instrumentId: bmkInst.id,
+                price: bmkQuote.price,
+                currency: bmkQuote.currency,
+                source: "yahoo_finance_benchmark",
+                quoteStatus: "delayed",
+                asOf: bmkQuote.asOf,
+                createdAt: now,
+              });
+            }
+          } catch {}
+        }
+
+        invalidateReadModelCache(`wealth-health:score:${family.workspace.id}`);
+        invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
+
+        return {
+          success: true,
+          updatedCount,
+          skippedCount,
+          failedCount: failed.length,
+          failed,
+          updatedList,
+        };
       }),
   }),
 

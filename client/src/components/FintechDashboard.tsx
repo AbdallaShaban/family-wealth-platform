@@ -114,7 +114,7 @@ function AnimatedMoney({ value, currency }: { value: number | string; currency: 
 
   return (
     <span className="tabular-nums" dir="ltr">
-      <SensitiveValue>{formatMoney(display, currency, 0)}</SensitiveValue>
+      <SensitiveValue>{formatMoney(display, currency, 2)}</SensitiveValue>
     </span>
   );
 }
@@ -587,13 +587,13 @@ export default function FintechDashboard() {
                   <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
                     <span>سيولة حرة:</span>
                     <b className="font-mono text-emerald-600 dark:text-emerald-400">
-                      {formatMoney(live.freeLiquidityBase ?? liquidBalance, currency, 0)}
+                      {formatMoney(live.freeLiquidityBase ?? liquidBalance, currency, 2)}
                     </b>
                   </div>
                   <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 text-[10.5px]">
                     <span>معلّق تسوية T+2:</span>
                     <b className="font-mono text-amber-600 dark:text-amber-400">
-                      {formatMoney(live.unsettledCashBase, currency, 0)}
+                      {formatMoney(live.unsettledCashBase, currency, 2)}
                     </b>
                   </div>
                 </div>
@@ -612,7 +612,7 @@ export default function FintechDashboard() {
             detail={
               <>
                 <span>ربح غير محقق </span>
-                <SensitiveValue>{formatMoney(pnl, currency, 0)}</SensitiveValue>
+                <SensitiveValue>{formatMoney(pnl, currency, 2)}</SensitiveValue>
               </>
             }
             accent="sky"

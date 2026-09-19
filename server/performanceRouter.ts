@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import Decimal from "decimal.js";
@@ -16,6 +16,7 @@ import {
   priceQuotes,
   fxRates,
 } from "../drizzle/schema";
+import { BENCHMARK_SYMBOLS, fetchEgxOrYahooQuote } from "./marketData";
 import {
   toDec,
   safeDiv,
@@ -436,19 +437,42 @@ export const performanceRouter = router({
           });
 
           if (input.benchmark && input.benchmark !== "NONE") {
-            const [bmkInst] = await db
+            const bmkKey = input.benchmark.toUpperCase();
+            const bmkInfo = BENCHMARK_SYMBOLS[bmkKey];
+            const candidateSymbols = bmkInfo ? [bmkKey, bmkInfo.yahooSymbol] : [bmkKey];
+
+            let [bmkInst] = await db
               .select()
               .from(instruments)
               .where(
                 and(
                   eq(instruments.workspaceId, workspaceId),
-                  eq(instruments.symbol, input.benchmark.toUpperCase())
+                  inArray(instruments.symbol, candidateSymbols)
                 )
               )
               .limit(1);
 
+            if (!bmkInst && bmkInfo) {
+              try {
+                const created = await db.insert(instruments).values({
+                  workspaceId,
+                  name: bmkInfo.name,
+                  symbol: bmkKey,
+                  assetType: "fund",
+                  subCategory: "مؤشر سوقي",
+                  sector: "مؤشرات السوق",
+                  currency: bmkInfo.currency,
+                  isin: null,
+                  createdAt: now,
+                  updatedAt: now,
+                });
+                const newId = Number(created[0].insertId);
+                bmkInst = { id: newId, symbol: bmkKey, currency: bmkInfo.currency, name: bmkInfo.name } as any;
+              } catch {}
+            }
+
             if (bmkInst) {
-              const bmkQuotes = await db
+              let bmkQuotes = await db
                 .select()
                 .from(priceQuotes)
                 .where(
@@ -460,6 +484,23 @@ export const performanceRouter = router({
                   )
                 )
                 .orderBy(priceQuotes.asOf);
+
+              if (bmkQuotes.length === 0) {
+                try {
+                  const fetched = await fetchEgxOrYahooQuote(bmkKey, bmkInst.currency);
+                  await db.insert(priceQuotes).values({
+                    workspaceId,
+                    instrumentId: bmkInst.id,
+                    price: fetched.price,
+                    currency: fetched.currency,
+                    source: "yahoo_finance_benchmark",
+                    quoteStatus: "delayed",
+                    asOf: fetched.asOf,
+                    createdAt: now,
+                  });
+                  bmkQuotes = [{ asOf: fetched.asOf, price: fetched.price } as any];
+                } catch {}
+              }
 
               benchmarkResult = calculateBenchmarkComparison({
                 benchmarkSymbol: input.benchmark,
@@ -524,7 +565,15 @@ export const performanceRouter = router({
     const db = await getDb();
     if (!db) throw notAvailable();
 
-    const standardSymbols = ["SP500", "MSCI_WORLD", "TASI", "GOLD_USD"];
+    const standardSymbols = [
+      "EGX30",
+      "EGX33",
+      "EGX70",
+      "SP500",
+      "MSCI_WORLD",
+      "TASI",
+      "GOLD_USD",
+    ];
     const foundInstruments = await db
       .select({
         id: instruments.id,
@@ -540,19 +589,13 @@ export const performanceRouter = router({
         .filter((s) => s.length > 0)
     );
 
-    return standardSymbols.map((sym) => ({
-      symbol: sym,
-      name:
-        sym === "SP500"
-          ? "مؤشر S&P 500 الأمريكي"
-          : sym === "MSCI_WORLD"
-          ? "مؤشر مورغان ستانلي العالمي MSCI World"
-          : sym === "TASI"
-          ? "مؤشر السوق السعودي تاسي TASI"
-          : sym === "GOLD_USD"
-          ? "مؤشر الذهب العالمي (دولار/أونصة)"
-          : sym,
-      availableInWorkspace: symbolSet.has(sym),
-    }));
+    return standardSymbols.map((sym) => {
+      const bmk = BENCHMARK_SYMBOLS[sym];
+      return {
+        symbol: sym,
+        name: bmk ? bmk.name : sym,
+        availableInWorkspace: symbolSet.has(sym) || (bmk ? symbolSet.has(bmk.yahooSymbol) : false),
+      };
+    });
   }),
 });

@@ -37,6 +37,7 @@ import {
   BarChart3,
   Pencil,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -348,6 +349,36 @@ export default function InvestmentsPageRedesign() {
     },
   });
 
+  const recordQuote = trpc.family.prices.recordManual.useMutation({
+    onSuccess: () => {
+      toast.success("تم حفظ السعر السوقي وتحديث القيمة السوقية للمركز.");
+      setQuotePrice("");
+      setQuoteInstrumentId("");
+      void utils.family.portfolio.list.invalidate();
+      void utils.family.dashboard.invalidate();
+    },
+    onError: (error) => {
+      toast.error(errorText(error));
+    },
+  });
+
+  const syncMarketPrices = trpc.family.investments.syncMarketPrices.useMutation({
+    onSuccess: (data) => {
+      toast.success(
+        data.updatedCount > 0
+          ? `تم تحديث أسعار ${data.updatedCount} أداة بنجاح من البورصة المصرية والأسواق.`
+          : "تم فحص أسعار السوق؛ جميع الأدوات مسجلة بأحدث الأسعار."
+      );
+      void utils.family.portfolio.list.invalidate();
+      void utils.family.instruments.list.invalidate();
+      void utils.family.dashboard.invalidate();
+      void utils.performance.getPerformanceSummary.invalidate();
+    },
+    onError: (error) => {
+      toast.error(errorText(error));
+    },
+  });
+
   const handleSaveEditInstrument = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInstrumentForAction) return;
@@ -386,16 +417,6 @@ export default function InvestmentsPageRedesign() {
     if (!selectedTradeForAction) return;
     deleteTradeMutation.mutate({ id: selectedTradeForAction.id });
   };
-
-  const recordQuote = trpc.family.prices.recordManual.useMutation({
-    onSuccess: () => {
-      toast.success("تم حفظ سعر السوق اليدوي مع مصدره وتاريخه.");
-      setQuotePrice("");
-      void utils.family.portfolio.list.invalidate();
-      void utils.family.dashboard.invalidate();
-    },
-    onError: (error) => toast.error(errorText(error)),
-  });
 
   const trade = trpc.family.ledger.trade.useMutation({
     onSuccess: () => {
@@ -494,6 +515,16 @@ export default function InvestmentsPageRedesign() {
           badge={{ text: "محافظ وأصول استثمارية مدققة", variant: "institutional" }}
           actions={
             <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={syncMarketPrices.isPending}
+                onClick={() => syncMarketPrices.mutate()}
+                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all flex items-center gap-1.5"
+              >
+                <RefreshCw className={`size-3.5 ${syncMarketPrices.isPending ? "animate-spin text-emerald-600 dark:text-emerald-400" : ""}`} />
+                {syncMarketPrices.isPending ? "جارٍ التحديث…" : "تحديث الأسعار"}
+              </Button>
               <Button
                 size="sm"
                 onClick={() => setActiveTab("trades")}
@@ -658,28 +689,42 @@ export default function InvestmentsPageRedesign() {
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-800">
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الأداة</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الرمز (Ticker)</th>
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الكمية</th>
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">متوسط التكلفة</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">سعر السوق</th>
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">القيمة السوقية</th>
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">حالة السعر</th>
-                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">إجراء</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-left">إجراء</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {holdings.map((pos) => (
                         <tr key={pos.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 text-right">
                             <strong className="text-slate-900 dark:text-slate-100 font-bold text-sm block">{pos.instrumentName}</strong>
-                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-mono">{pos.symbol || "بدون رمز"} · {pos.currency}</p>
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{pos.currency}</p>
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">{pos.quantity}</td>
-                          <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white tabular-nums">
+                          <td className="py-3.5 px-4 text-right">
+                            {pos.symbol ? (
+                              <span className="font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs border border-slate-200/60 dark:border-slate-700/60">
+                                {pos.symbol}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums text-right">{pos.quantity}</td>
+                          <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white tabular-nums text-right">
                             <SensitiveValue>{formatMoney(pos.averageCost, pos.costCurrency, 2)}</SensitiveValue>
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                          <td className="py-3.5 px-4 font-mono font-semibold text-slate-900 dark:text-white tabular-nums text-right">
+                            <SensitiveValue>{pos.marketPrice ? formatMoney(pos.marketPrice, pos.currency, 2) : "—"}</SensitiveValue>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums text-right">
                             <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-4 text-right">
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
                               pos.quoteStatus === "unavailable"
                                 ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40"
@@ -688,19 +733,21 @@ export default function InvestmentsPageRedesign() {
                               {pos.quoteStatus === "unavailable" ? "يتطلب سعرًا" : "متاح"}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setTradeInstrumentId(String(pos.instrumentId));
-                                setSide("sell");
-                                setActiveTab("trades");
-                              }}
-                              className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all"
-                            >
-                              تداول
-                            </Button>
+                          <td className="py-3.5 px-4 text-left">
+                            <div className="flex items-center justify-end">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setTradeInstrumentId(String(pos.instrumentId));
+                                  setSide("sell");
+                                  setActiveTab("trades");
+                                }}
+                                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all"
+                              >
+                                تداول
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -905,7 +952,7 @@ export default function InvestmentsPageRedesign() {
                                 </span>
                               </td>
                               <td className="py-3.5 px-4 text-left">
-                                <div className="flex items-center gap-1 justify-start">
+                                <div className="flex items-center gap-1.5 justify-end">
                                   <Button
                                     variant="ghost"
                                     size="icon"

@@ -105,20 +105,87 @@ export function calculateGold24kGramEgp(args: {
   };
 }
 
-export function normalizeYahooQuote(raw: Awaited<ReturnType<YahooQuoteClient["quote"]>>): MarketQuote {
+export const BENCHMARK_SYMBOLS: Record<string, { yahooSymbol: string; name: string; currency: string }> = {
+  EGX30: { yahooSymbol: "^CASE30", name: "مؤشر البورصة المصرية الرئيسي (EGX30)", currency: "EGP" },
+  "^CASE30": { yahooSymbol: "^CASE30", name: "مؤشر البورصة المصرية الرئيسي (EGX30)", currency: "EGP" },
+  EGX33: { yahooSymbol: "^SHARIAH.CA", name: "مؤشر الشريعة الإسلامي (EGX33 Shariah)", currency: "EGP" },
+  "^SHARIAH.CA": { yahooSymbol: "^SHARIAH.CA", name: "مؤشر الشريعة الإسلامي (EGX33 Shariah)", currency: "EGP" },
+  EGX70: { yahooSymbol: "^EGX70EWI.CA", name: "مؤشر الشركات المتوسطة والصغيرة (EGX70 EWI)", currency: "EGP" },
+  "^EGX70EWI.CA": { yahooSymbol: "^EGX70EWI.CA", name: "مؤشر الشركات المتوسطة والصغيرة (EGX70 EWI)", currency: "EGP" },
+  SP500: { yahooSymbol: "^GSPC", name: "مؤشر S&P 500 الأمريكي", currency: "USD" },
+  "^GSPC": { yahooSymbol: "^GSPC", name: "مؤشر S&P 500 الأمريكي", currency: "USD" },
+  MSCI_WORLD: { yahooSymbol: "URTH", name: "مؤشر مورغان ستانلي العالمي MSCI World", currency: "USD" },
+  TASI: { yahooSymbol: "^TASI.SR", name: "مؤشر السوق السعودي تاسي TASI", currency: "SAR" },
+  GOLD_USD: { yahooSymbol: "GC=F", name: "مؤشر الذهب العالمي (دولار/أونصة)", currency: "USD" },
+};
+
+export function normalizeYahooQuote(raw: Awaited<ReturnType<YahooQuoteClient["quote"]>>, fallbackCurrency?: string): MarketQuote {
   const price = raw.regularMarketPrice;
-  const currency = raw.currency?.trim().toUpperCase();
-  const asOf = toTimestamp(raw.regularMarketTime);
+  const rawCurrency = raw.currency?.trim().toUpperCase();
+  const currency = rawCurrency || (fallbackCurrency?.trim().toUpperCase() ?? "");
+  const asOf = toTimestamp(raw.regularMarketTime) || Date.now();
   if (!Number.isFinite(price) || (price ?? 0) <= 0) throw new Error("Yahoo Finance لم يعد سعراً سوقياً صالحاً.");
   if (!currency || !/^[A-Z]{3}$/.test(currency)) throw new Error("Yahoo Finance لم يعد رمز عملة صالحاً.");
   if (!Number.isFinite(asOf) || asOf <= 0) throw new Error("Yahoo Finance لم يعد طابعاً زمنياً صالحاً.");
   return { price: price!.toFixed(8), currency, asOf, source: "Yahoo Finance via yahoo-finance2", quoteStatus: "delayed" };
 }
 
-export async function fetchYahooQuote(symbol: string, client: YahooQuoteClient = new YahooFinance()) {
+export async function fetchYahooQuote(symbol: string, client: YahooQuoteClient = new YahooFinance(), fallbackCurrency?: string) {
   const normalizedSymbol = symbol.trim().toUpperCase();
   if (!normalizedSymbol || normalizedSymbol.length > 48) throw new Error("رمز الأداة الاستثمارية غير صالح للتحديث.");
-  return normalizeYahooQuote(await client.quote(normalizedSymbol));
+  return normalizeYahooQuote(await client.quote(normalizedSymbol), fallbackCurrency);
+}
+
+/**
+ * Enhanced live quote fetcher supporting Egyptian Exchange (EGX) tickers (.CA),
+ * benchmark index symbols (^CASE30, ^SHARIAH.CA, ^EGX70EWI.CA), and global equities.
+ */
+export async function fetchEgxOrYahooQuote(
+  symbol: string,
+  instrumentCurrency = "EGP",
+  client: YahooQuoteClient = new YahooFinance()
+): Promise<MarketQuote & { resolvedSymbol: string }> {
+  const normalizedSymbol = symbol.trim().toUpperCase();
+  if (!normalizedSymbol) throw new Error("رمز الأداة الاستثمارية غير صالح.");
+
+  // 1. Benchmark index match
+  if (BENCHMARK_SYMBOLS[normalizedSymbol]) {
+    const bmk = BENCHMARK_SYMBOLS[normalizedSymbol];
+    const raw = await client.quote(bmk.yahooSymbol);
+    const norm = normalizeYahooQuote(raw, bmk.currency);
+    return { ...norm, resolvedSymbol: bmk.yahooSymbol };
+  }
+
+  // 2. Build candidate list (for EGX stocks, try .CA first then naked ticker)
+  const candidates: string[] = [];
+  if (instrumentCurrency === "EGP") {
+    if (normalizedSymbol.endsWith(".CA")) {
+      candidates.push(normalizedSymbol);
+      candidates.push(normalizedSymbol.replace(/\.CA$/, ""));
+    } else if (!normalizedSymbol.includes(".") && !normalizedSymbol.startsWith("^")) {
+      candidates.push(`${normalizedSymbol}.CA`);
+      candidates.push(normalizedSymbol);
+    } else {
+      candidates.push(normalizedSymbol);
+    }
+  } else {
+    candidates.push(normalizedSymbol);
+  }
+
+  let lastError: Error | null = null;
+  for (const cand of candidates) {
+    try {
+      const raw = await client.quote(cand);
+      if (raw && Number(raw.regularMarketPrice) > 0) {
+        const norm = normalizeYahooQuote(raw, instrumentCurrency);
+        return { ...norm, resolvedSymbol: cand };
+      }
+    } catch (err: any) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
+  }
+
+  throw lastError || new Error(`تعذر الحصول على سعر للأداة ${symbol} من السوق.`);
 }
 
 export function yahooFxSymbol(fromCurrency: string, toCurrency: string) {
@@ -143,3 +210,4 @@ export async function fetchYahooFxQuote(
   }
   return { ...quote, fromCurrency: fromCurrency.trim().toUpperCase(), toCurrency: expectedCurrency, symbol };
 }
+
