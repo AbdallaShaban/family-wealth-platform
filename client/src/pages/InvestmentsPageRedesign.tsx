@@ -43,69 +43,112 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { formatMoney } from "@/lib/financialDisplay";
+import CreatableCombobox from "@/components/CreatableCombobox";
 
 type AssetType = "equity" | "fund" | "bond" | "gold" | "real_estate" | "cash_equivalent" | "other";
 const assetTypeLabel: Record<AssetType, string> = {
-  equity: "سهم",
-  fund: "صندوق",
-  bond: "سند",
-  gold: "ذهب",
-  real_estate: "عقار",
-  cash_equivalent: "ما يعادل النقد",
+  equity: "أسهم",
+  fund: "صناديق استثمار",
+  bond: "سندات وصكوك",
+  gold: "ذهب ومعادن ثمينة",
+  real_estate: "أصول عقارية",
+  cash_equivalent: "أشباه النقد والسيولة",
   other: "أخرى",
 };
 
-const subCategoriesByAssetType: Record<AssetType, Array<{ value: string; label: string }>> = {
-  fund: [
-    { value: "MONEY_MARKET_FUND", label: "صندوق نقد يومي (سيولة)" },
-    { value: "EQUITY_FUND", label: "صندوق أسهم" },
-    { value: "GOLD_FUND", label: "صندوق ذهب (مثل AZG)" },
-    { value: "BALANCED_FUND", label: "صندوق متوازن" },
-    { value: "REAL_ESTATE_FUND", label: "صندوق استثمار عقاري" },
-    { value: "OTHER", label: "صندوق آخر" },
-  ],
+const subCategoriesByAssetType: Record<AssetType, string[]> = {
   equity: [
-    { value: "DIRECT_EQUITY", label: "أسهم مدرجة مباشرة (EGX)" },
-    { value: "OTHER", label: "أخرى" },
+    "أسهم مدرجة مباشرة",
+    "أسهم شركات خاصة",
+    "وثائق حقوق أولوية",
+    "أخرى",
+  ],
+  fund: [
+    "صندوق نقد يومي (سيولة)",
+    "صندوق أسهم",
+    "صندوق ذهب",
+    "صندوق استثمار متوازن",
+    "صندوق استثمار عقاري",
+    "صندوق مؤشرات متداولة (ETF)",
+    "أخرى",
   ],
   gold: [
-    { value: "PHYSICAL_GOLD", label: "ذهب عيني / كسر" },
-    { value: "GOLD_BARS", label: "سبائك معتمدة (عيار 24)" },
-    { value: "GOLD_COINS", label: "جنيهات ذهب (عيار 21)" },
-    { value: "OTHER", label: "أخرى" },
+    "سبائك معتمدة (عيار 24)",
+    "جنيهات ذهب (عيار 21)",
+    "ذهب عيني / كسر",
+    "فضة ومعادن ثمينة",
+    "أخرى",
   ],
   real_estate: [
-    { value: "RESIDENTIAL_REAL_ESTATE", label: "عقار سكني" },
-    { value: "COMMERCIAL_REAL_ESTATE", label: "عقار تجاري / إداري" },
-    { value: "OTHER", label: "أخرى" },
+    "عقار سكني",
+    "عقار تجاري / إداري",
+    "أراضي استثمارية",
+    "أخرى",
   ],
   bond: [
-    { value: "GOVERNMENT_BOND", label: "سندات حكومية وأذون خزانة" },
-    { value: "CORPORATE_BOND", label: "سندات توريق وشركات" },
-    { value: "OTHER", label: "أخرى" },
+    "سندات حكومية وأذون خزانة",
+    "سندات توريق وشركات",
+    "صكوك تمويلية",
+    "أخرى",
   ],
   cash_equivalent: [
-    { value: "TREASURY_BILLS", label: "أذون خزانة قصيرة الأجل" },
-    { value: "CERTIFICATE_OF_DEPOSIT", label: "شهادات ادخار بنكية" },
-    { value: "OTHER", label: "أخرى" },
+    "أذون خزانة قصيرة الأجل",
+    "شهادات ادخار بنكية",
+    "ودائع لأجل",
+    "أخرى",
   ],
   other: [
-    { value: "OTHER", label: "عام / غير مصنف" },
+    "عام / غير مصنف",
   ],
 };
 
-const egxSectors = [
-  { value: "Financial Services & Banks", label: "البنوك والخدمات المالية غير المصرفية" },
-  { value: "Real Estate & Development", label: "العقارات والتطوير العقاري" },
-  { value: "Healthcare & Pharma", label: "الرعاية الصحية والأدوية" },
-  { value: "Construction & Building Materials", label: "البناء ومواد التشييد" },
-  { value: "Food & Beverage", label: "الأغذية والمشروبات والتبغ" },
-  { value: "Telecom & Tech", label: "الاتصالات والإعلام والتكنولوجيا" },
-  { value: "Industrial & Textiles", label: "الصناعة والسلع المعمرة والمنسوجات" },
-  { value: "Energy & Basic Materials", label: "الموارد الأساسية والبتروكيماويات" },
-  { value: "Tourism & Entertainment", label: "السياحة والترفيه" },
-  { value: "OTHER", label: "قطاع آخر / غير مصنف" },
+const egxSectors: string[] = [
+  "البنوك والخدمات المالية غير المصرفية",
+  "العقارات والتطوير العقاري",
+  "الرعاية الصحية والأدوية",
+  "البناء ومواد التشييد",
+  "الأغذية والمشروبات والتبغ",
+  "الاتصالات والإعلام والتكنولوجيا",
+  "الصناعة والسلع المعمرة والمنسوجات",
+  "الموارد الأساسية والبتروكيماويات",
+  "السياحة والفنادق والترفيه",
+  "الخدمات والنقل والشحن",
+  "الطاقة المتجددة والمرافق",
+  "قطاع آخر / غير مصنف",
 ];
+
+const legacyLabelMap: Record<string, string> = {
+  "DIRECT_EQUITY": "أسهم مدرجة مباشرة",
+  "MONEY_MARKET_FUND": "صندوق نقد يومي (سيولة)",
+  "EQUITY_FUND": "صندوق أسهم",
+  "GOLD_FUND": "صندوق ذهب",
+  "BALANCED_FUND": "صندوق متوازن",
+  "REAL_ESTATE_FUND": "صندوق استثمار عقاري",
+  "PHYSICAL_GOLD": "ذهب عيني / كسر",
+  "GOLD_BARS": "سبائك معتمدة (عيار 24)",
+  "GOLD_COINS": "جنيهات ذهب (عيار 21)",
+  "RESIDENTIAL_REAL_ESTATE": "عقار سكني",
+  "COMMERCIAL_REAL_ESTATE": "عقار تجاري / إداري",
+  "GOVERNMENT_BOND": "سندات حكومية وأذون خزانة",
+  "CORPORATE_BOND": "سندات توريق وشركات",
+  "TREASURY_BILLS": "أذون خزانة قصيرة الأجل",
+  "CERTIFICATE_OF_DEPOSIT": "شهادات ادخار بنكية",
+  "Financial Services & Banks": "البنوك والخدمات المالية غير المصرفية",
+  "Real Estate & Development": "العقارات والتطوير العقاري",
+  "Healthcare & Pharma": "الرعاية الصحية والأدوية",
+  "Construction & Building Materials": "البناء ومواد التشييد",
+  "Food & Beverage": "الأغذية والمشروبات والتبغ",
+  "Telecom & Tech": "الاتصالات والإعلام والتكنولوجيا",
+  "Industrial & Textiles": "الصناعة والسلع المعمرة والمنسوجات",
+  "Energy & Basic Materials": "الموارد الأساسية والبتروكيماويات",
+  "Tourism & Entertainment": "السياحة والترفيه",
+  "OTHER": "أخرى",
+};
+
+const formatTaxonomyLabel = (val?: string | null): string => {
+  if (!val) return "—";
+  return legacyLabelMap[val] || val;
+};
 
 const errorText = (error: unknown) => (error instanceof Error ? error.message : "تعذر إكمال العملية الآن.");
 
@@ -136,15 +179,15 @@ export default function InvestmentsPageRedesign() {
   const [symbol, setSymbol] = useState("");
   const [currency, setCurrency] = useState("EGP");
   const [assetType, setAssetType] = useState<AssetType>("equity");
-  const [subCategory, setSubCategory] = useState("DIRECT_EQUITY");
-  const [sector, setSector] = useState("Financial Services & Banks");
+  const [subCategory, setSubCategory] = useState("أسهم مدرجة مباشرة");
+  const [sector, setSector] = useState("البنوك والخدمات المالية غير المصرفية");
 
-  const showSector = assetType === "equity" || (assetType === "fund" && subCategory === "EQUITY_FUND");
+  const showSector = assetType === "equity" || (assetType === "fund" && (subCategory === "صندوق أسهم" || subCategory === "EQUITY_FUND"));
 
   const handleAssetTypeChange = (newType: AssetType) => {
     setAssetType(newType);
     const available = subCategoriesByAssetType[newType] || [];
-    setSubCategory(available.length > 0 ? available[0].value : "OTHER");
+    setSubCategory(available[0] ?? "أخرى");
   };
 
   // Instrument Edit & Delete State
@@ -155,8 +198,8 @@ export default function InvestmentsPageRedesign() {
   const [editName, setEditName] = useState("");
   const [editSymbol, setEditSymbol] = useState("");
   const [editAssetType, setEditAssetType] = useState<AssetType>("equity");
-  const [editSubCategory, setEditSubCategory] = useState("DIRECT_EQUITY");
-  const [editSector, setEditSector] = useState("Financial Services & Banks");
+  const [editSubCategory, setEditSubCategory] = useState("أسهم مدرجة مباشرة");
+  const [editSector, setEditSector] = useState("البنوك والخدمات المالية غير المصرفية");
 
   const handleOpenEditInstrument = (inst: any) => {
     setSelectedInstrumentForAction(inst);
@@ -164,8 +207,8 @@ export default function InvestmentsPageRedesign() {
     setEditSymbol(inst.symbol || "");
     const aType = (inst.assetType || "equity") as AssetType;
     setEditAssetType(aType);
-    setEditSubCategory(inst.subCategory || "");
-    setEditSector(inst.sector || "");
+    setEditSubCategory(formatTaxonomyLabel(inst.subCategory));
+    setEditSector(formatTaxonomyLabel(inst.sector));
     setEditInstrumentModalOpen(true);
   };
 
@@ -237,8 +280,8 @@ export default function InvestmentsPageRedesign() {
       toast.success("تمت إضافة الأداة الاستثمارية بنجاح.");
       setName("");
       setSymbol("");
-      setSubCategory("DIRECT_EQUITY");
-      setSector("Financial Services & Banks");
+      setSubCategory("أسهم مدرجة مباشرة");
+      setSector("البنوك والخدمات المالية غير المصرفية");
       void utils.family.instruments.list.invalidate();
     },
     onError: (error) => {
@@ -753,47 +796,29 @@ export default function InvestmentsPageRedesign() {
                       </div>
 
                       <div className="grid gap-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="instrument-subcategory" className="text-slate-800 dark:text-slate-200 font-bold text-xs">التصنيف الفرعي (Sub-Category)</Label>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب بحرية</span>
-                        </div>
-                        <Input
+                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">التصنيف الفرعي</Label>
+                        <CreatableCombobox
                           id="instrument-subcategory"
-                          list="add-subcategories-list"
                           value={subCategory}
-                          onChange={(e) => setSubCategory(e.target.value)}
+                          onChange={setSubCategory}
+                          options={subCategoriesByAssetType[assetType] || []}
+                          placeholder="اختر التصنيف الفرعي أو اكتب مخصصاً..."
                           disabled={!canEdit}
-                          placeholder="اختر من المقترحات أو اكتب تصنيفاً مخصصاً..."
-                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto"
                         />
-                        <datalist id="add-subcategories-list">
-                          {(subCategoriesByAssetType[assetType] || []).map((sub) => (
-                            <option key={sub.value} value={sub.value}>{sub.label}</option>
-                          ))}
-                        </datalist>
                       </div>
                     </div>
 
                     {showSector && (
                       <div className="grid gap-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="instrument-sector" className="text-slate-800 dark:text-slate-200 font-bold text-xs">القطاع الاقتصادي (Sector)</Label>
-                          <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب قطاعاً مخصصاً</span>
-                        </div>
-                        <Input
+                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">القطاع الاقتصادي</Label>
+                        <CreatableCombobox
                           id="instrument-sector"
-                          list="add-sectors-list"
                           value={sector}
-                          onChange={(e) => setSector(e.target.value)}
+                          onChange={setSector}
+                          options={egxSectors}
+                          placeholder="اختر القطاع أو اكتب قطاعاً جديداً..."
                           disabled={!canEdit}
-                          placeholder="اختر من القطاعات أو اكتب قطاعاً جديداً..."
-                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto"
                         />
-                        <datalist id="add-sectors-list">
-                          {egxSectors.map((sec) => (
-                            <option key={sec.value} value={sec.value}>{sec.label}</option>
-                          ))}
-                        </datalist>
                       </div>
                     )}
 
@@ -829,22 +854,23 @@ export default function InvestmentsPageRedesign() {
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[560px] text-right text-sm">
                         <thead>
-                          <tr className="border-b border-slate-200 dark:border-slate-800">
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الاسم</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الرمز</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الفئة والتصنيف</th>
+                          <tr className="border-b border-slate-200/90 dark:border-slate-800">
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">اسم الأداة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الرمز (Ticker)</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الفئة الأساسية</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">التصنيف الفرعي</th>
                             <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">القطاع</th>
                             <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">العملة</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-left">الإجراءات</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-left w-24">الإجراءات</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                           {instruments.data.map((item) => (
                             <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                              <td className="py-3.5 px-4">
+                              <td className="py-3.5 px-4 text-right">
                                 <span className="text-slate-900 dark:text-white font-bold text-sm block">{item.name}</span>
                               </td>
-                              <td className="py-3.5 px-4">
+                              <td className="py-3.5 px-4 text-right">
                                 {item.symbol ? (
                                   <span className="font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs border border-slate-200/60 dark:border-slate-700/60">
                                     {item.symbol}
@@ -853,53 +879,49 @@ export default function InvestmentsPageRedesign() {
                                   <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
                                 )}
                               </td>
-                              <td className="py-3.5 px-4">
-                                <div className="flex flex-col gap-1">
-                                  <span className="inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60">
-                                    {assetTypeLabel[item.assetType as AssetType] || item.assetType}
-                                  </span>
-                                  {item.subCategory && (
-                                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                                      {subCategoriesByAssetType[item.assetType as AssetType]?.find(s => s.value === item.subCategory || s.label === item.subCategory)?.label || item.subCategory}
-                                    </span>
-                                  )}
-                                </div>
+                              <td className="py-3.5 px-4 text-right">
+                                <span className="inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60">
+                                  {assetTypeLabel[item.assetType as AssetType] || item.assetType}
+                                </span>
                               </td>
-                              <td className="py-3.5 px-4">
-                                {item.sector ? (
-                                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                    {egxSectors.find(s => s.value === item.sector || s.label === item.sector)?.label || item.sector}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
-                                )}
+                              <td className="py-3.5 px-4 text-right">
+                                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                                  {formatTaxonomyLabel(item.subCategory)}
+                                </span>
                               </td>
-                              <td className="py-3.5 px-4">
+                              <td className="py-3.5 px-4 text-right">
+                                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                                  {formatTaxonomyLabel(item.sector)}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
                                 <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-200/60 dark:border-slate-700/60">
                                   {item.currency}
                                 </span>
                               </td>
                               <td className="py-3.5 px-4 text-left">
-                                <div className="flex items-center gap-1.5 justify-end">
+                                <div className="flex items-center gap-1 justify-start">
                                   <Button
                                     variant="ghost"
-                                    size="sm"
+                                    size="icon"
                                     disabled={!canEdit}
                                     onClick={() => handleOpenEditInstrument(item)}
-                                    className="h-8 px-2.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg gap-1"
+                                    title="تعديل الأداة المالية"
+                                    aria-label="تعديل الأداة المالية"
+                                    className="size-8 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
                                   >
                                     <Pencil className="size-3.5" />
-                                    <span>تعديل</span>
                                   </Button>
                                   <Button
                                     variant="ghost"
-                                    size="sm"
+                                    size="icon"
                                     disabled={!canEdit}
                                     onClick={() => handleOpenDeleteInstrument(item)}
-                                    className="h-8 px-2.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30 rounded-lg gap-1"
+                                    title="حذف الأداة المالية"
+                                    aria-label="حذف الأداة المالية"
+                                    className="size-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-500 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors"
                                   >
                                     <Trash2 className="size-3.5" />
-                                    <span>حذف</span>
                                   </Button>
                                 </div>
                               </td>
@@ -1455,47 +1477,53 @@ export default function InvestmentsPageRedesign() {
 
         {/* Edit Instrument Dialog */}
         <Dialog open={editInstrumentModalOpen} onOpenChange={setEditInstrumentModalOpen}>
-          <DialogContent className="max-w-md w-full bg-white text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">تعديل بيانات الأداة الاستثمارية</DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-                تعديل الاسم والرمز والفئة والتصنيف والقطاع للأداة.
+          <DialogContent className="max-w-md w-full bg-white text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 border border-slate-200/90 dark:border-slate-800 shadow-2xl rounded-2xl p-6" dir="rtl">
+            <DialogHeader className="space-y-1 text-right">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-900/50">
+                  <Landmark className="size-4" />
+                </div>
+                <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">تعديل بيانات الأداة الاستثمارية</DialogTitle>
+              </div>
+              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mr-10">
+                تحديث الاسم، الرمز، والتصنيفات للأداة المالية
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSaveEditInstrument} className="grid gap-3.5 mt-2">
               <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold">اسم الأداة</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">اسم الأداة</Label>
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   required
-                  className="rounded-xl text-sm"
+                  placeholder="مثال: البنك التجاري الدولي"
+                  className="rounded-xl text-sm border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold">رمز التداول (Ticker)</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">رمز التداول (Ticker)</Label>
                 <Input
                   value={editSymbol}
                   onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
-                  placeholder="EGX Ticker..."
-                  className="rounded-xl text-sm font-mono"
+                  placeholder="مثال: COMI"
+                  className="rounded-xl text-sm font-mono border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold">الفئة الأساسية</Label>
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">الفئة الأساسية</Label>
                 <Select
                   value={editAssetType}
                   onValueChange={(val) => {
                     const nextType = val as AssetType;
                     setEditAssetType(nextType);
                     const avail = subCategoriesByAssetType[nextType] || [];
-                    setEditSubCategory(avail.length > 0 ? avail[0].value : "OTHER");
+                    setEditSubCategory(avail[0] ?? "أخرى");
                   }}
                 >
-                  <SelectTrigger className="rounded-xl text-sm">
+                  <SelectTrigger className="rounded-xl text-sm border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-[#0B0F17]">
+                  <SelectContent className="bg-white dark:bg-[#0B0F17] border-slate-200 dark:border-slate-800">
                     {Object.entries(assetTypeLabel).map(([k, v]) => (
                       <SelectItem key={k} value={k}>{v}</SelectItem>
                     ))}
@@ -1503,42 +1531,24 @@ export default function InvestmentsPageRedesign() {
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="edit-instrument-subcategory" className="text-xs font-semibold">التصنيف الفرعي</Label>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب مخصص</span>
-                </div>
-                <Input
+                <Label htmlFor="edit-instrument-subcategory" className="text-xs font-semibold">التصنيف الفرعي</Label>
+                <CreatableCombobox
                   id="edit-instrument-subcategory"
-                  list="edit-subcategories-list"
                   value={editSubCategory}
-                  onChange={(e) => setEditSubCategory(e.target.value)}
-                  placeholder="اختر أو اكتب تصنيفاً فرعياً مخصصاً..."
-                  className="rounded-xl text-sm"
+                  onChange={setEditSubCategory}
+                  options={subCategoriesByAssetType[editAssetType] || []}
+                  placeholder="اختر التصنيف الفرعي أو اكتب مخصصاً..."
                 />
-                <datalist id="edit-subcategories-list">
-                  {(subCategoriesByAssetType[editAssetType] || []).map((sc) => (
-                    <option key={sc.value} value={sc.value}>{sc.label}</option>
-                  ))}
-                </datalist>
               </div>
               <div className="grid gap-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="edit-instrument-sector" className="text-xs font-semibold">القطاع</Label>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب مخصص</span>
-                </div>
-                <Input
+                <Label htmlFor="edit-instrument-sector" className="text-xs font-semibold">القطاع</Label>
+                <CreatableCombobox
                   id="edit-instrument-sector"
-                  list="edit-sectors-list"
                   value={editSector}
-                  onChange={(e) => setEditSector(e.target.value)}
-                  placeholder="اختر أو اكتب قطاعاً مخصصاً..."
-                  className="rounded-xl text-sm"
+                  onChange={setEditSector}
+                  options={egxSectors}
+                  placeholder="اختر القطاع أو اكتب مخصصاً..."
                 />
-                <datalist id="edit-sectors-list">
-                  {egxSectors.map((sec) => (
-                    <option key={sec.value} value={sec.value}>{sec.label}</option>
-                  ))}
-                </datalist>
               </div>
               <DialogFooter className="mt-3 gap-2 flex-row-reverse">
                 <Button
