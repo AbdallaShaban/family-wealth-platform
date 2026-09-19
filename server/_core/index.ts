@@ -39,7 +39,11 @@ async function findAvailablePort(startPort: number = 3000, host: string = "0.0.0
 
 async function startServer() {
   validateProductionJwtSecret();
-  ensurePasswordHashColumn().catch(err => console.warn("[Startup] ensurePasswordHashColumn warning:", err));
+  try {
+    await ensurePasswordHashColumn();
+  } catch (err) {
+    console.warn("[Startup] ensurePasswordHashColumn warning:", err);
+  }
   const app = express();
   app.set("trust proxy", 1);
 
