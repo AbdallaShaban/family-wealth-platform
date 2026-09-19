@@ -164,8 +164,8 @@ export default function InvestmentsPageRedesign() {
     setEditSymbol(inst.symbol || "");
     const aType = (inst.assetType || "equity") as AssetType;
     setEditAssetType(aType);
-    setEditSubCategory(inst.subCategory || (subCategoriesByAssetType[aType]?.[0]?.value ?? "OTHER"));
-    setEditSector(inst.sector || "Financial Services & Banks");
+    setEditSubCategory(inst.subCategory || "");
+    setEditSector(inst.sector || "");
     setEditInstrumentModalOpen(true);
   };
 
@@ -312,8 +312,8 @@ export default function InvestmentsPageRedesign() {
       name: editName,
       symbol: editSymbol.trim() ? editSymbol.trim() : null,
       assetType: editAssetType,
-      subCategory: editSubCategory,
-      sector: editSector,
+      subCategory: editSubCategory.trim() ? editSubCategory.trim() : null,
+      sector: editSector.trim() ? editSector.trim() : null,
     });
   };
 
@@ -753,33 +753,47 @@ export default function InvestmentsPageRedesign() {
                       </div>
 
                       <div className="grid gap-2">
-                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">التصنيف الفرعي (Sub-Category)</Label>
-                        <Select value={subCategory} onValueChange={setSubCategory} disabled={!canEdit}>
-                          <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
-                            <SelectValue placeholder="اختر التصنيف الفرعي" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
-                            {(subCategoriesByAssetType[assetType] || []).map((sub) => (
-                              <SelectItem key={sub.value} value={sub.value}>{sub.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="instrument-subcategory" className="text-slate-800 dark:text-slate-200 font-bold text-xs">التصنيف الفرعي (Sub-Category)</Label>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب بحرية</span>
+                        </div>
+                        <Input
+                          id="instrument-subcategory"
+                          list="add-subcategories-list"
+                          value={subCategory}
+                          onChange={(e) => setSubCategory(e.target.value)}
+                          disabled={!canEdit}
+                          placeholder="اختر من المقترحات أو اكتب تصنيفاً مخصصاً..."
+                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto"
+                        />
+                        <datalist id="add-subcategories-list">
+                          {(subCategoriesByAssetType[assetType] || []).map((sub) => (
+                            <option key={sub.value} value={sub.value}>{sub.label}</option>
+                          ))}
+                        </datalist>
                       </div>
                     </div>
 
                     {showSector && (
                       <div className="grid gap-2">
-                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">القطاع الاقتصادي (Sector)</Label>
-                        <Select value={sector} onValueChange={setSector} disabled={!canEdit}>
-                          <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
-                            <SelectValue placeholder="اختر القطاع" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
-                            {egxSectors.map((sec) => (
-                              <SelectItem key={sec.value} value={sec.value}>{sec.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="instrument-sector" className="text-slate-800 dark:text-slate-200 font-bold text-xs">القطاع الاقتصادي (Sector)</Label>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب قطاعاً مخصصاً</span>
+                        </div>
+                        <Input
+                          id="instrument-sector"
+                          list="add-sectors-list"
+                          value={sector}
+                          onChange={(e) => setSector(e.target.value)}
+                          disabled={!canEdit}
+                          placeholder="اختر من القطاعات أو اكتب قطاعاً جديداً..."
+                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto"
+                        />
+                        <datalist id="add-sectors-list">
+                          {egxSectors.map((sec) => (
+                            <option key={sec.value} value={sec.value}>{sec.label}</option>
+                          ))}
+                        </datalist>
                       </div>
                     )}
 
@@ -1489,30 +1503,42 @@ export default function InvestmentsPageRedesign() {
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold">التصنيف الفرعي</Label>
-                <Select value={editSubCategory} onValueChange={setEditSubCategory}>
-                  <SelectTrigger className="rounded-xl text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-[#0B0F17]">
-                    {(subCategoriesByAssetType[editAssetType] || []).map((sc) => (
-                      <SelectItem key={sc.value} value={sc.value}>{sc.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-instrument-subcategory" className="text-xs font-semibold">التصنيف الفرعي</Label>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب مخصص</span>
+                </div>
+                <Input
+                  id="edit-instrument-subcategory"
+                  list="edit-subcategories-list"
+                  value={editSubCategory}
+                  onChange={(e) => setEditSubCategory(e.target.value)}
+                  placeholder="اختر أو اكتب تصنيفاً فرعياً مخصصاً..."
+                  className="rounded-xl text-sm"
+                />
+                <datalist id="edit-subcategories-list">
+                  {(subCategoriesByAssetType[editAssetType] || []).map((sc) => (
+                    <option key={sc.value} value={sc.value}>{sc.label}</option>
+                  ))}
+                </datalist>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold">القطاع</Label>
-                <Select value={editSector} onValueChange={setEditSector}>
-                  <SelectTrigger className="rounded-xl text-sm">
-                    <SelectValue placeholder="اختر القطاع" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-[#0B0F17]">
-                    {egxSectors.map((sec) => (
-                      <SelectItem key={sec.value} value={sec.value}>{sec.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-instrument-sector" className="text-xs font-semibold">القطاع</Label>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400">اختر أو اكتب مخصص</span>
+                </div>
+                <Input
+                  id="edit-instrument-sector"
+                  list="edit-sectors-list"
+                  value={editSector}
+                  onChange={(e) => setEditSector(e.target.value)}
+                  placeholder="اختر أو اكتب قطاعاً مخصصاً..."
+                  className="rounded-xl text-sm"
+                />
+                <datalist id="edit-sectors-list">
+                  {egxSectors.map((sec) => (
+                    <option key={sec.value} value={sec.value}>{sec.label}</option>
+                  ))}
+                </datalist>
               </div>
               <DialogFooter className="mt-3 gap-2 flex-row-reverse">
                 <Button

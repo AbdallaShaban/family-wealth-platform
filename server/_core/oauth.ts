@@ -182,8 +182,11 @@ export function registerOAuthRoutes(app: Express) {
         }
       }
 
-      console.warn("[OAuth] Cannot initiate login: Google credentials are not configured. Redirecting to /login.");
-      return res.redirect(302, "/login?error=oauth_unconfigured");
+      console.warn("[OAuth] Cannot initiate login: Google credentials are not configured.");
+      return res.status(503).json({
+        error: "service_unavailable",
+        message: "بوابة تسجيل الدخول عبر Google غير مهيأة على الخادم حاليًا.",
+      });
     }
 
     const redirectUri = resolveRedirectUri(req);

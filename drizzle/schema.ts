@@ -191,7 +191,7 @@ export const instruments = mysqlTable(
     symbol: varchar("symbol", { length: 48 }),
     name: varchar("name", { length: 200 }).notNull(),
     assetType: mysqlEnum("assetType", ["equity", "fund", "bond", "gold", "real_estate", "cash_equivalent", "other"]).notNull(),
-    subCategory: varchar("subCategory", { length: 64 }),
+    subCategory: varchar("subCategory", { length: 100 }),
     sector: varchar("sector", { length: 100 }),
     currency: varchar("currency", { length: 3 }).notNull(),
     isin: varchar("isin", { length: 32 }),

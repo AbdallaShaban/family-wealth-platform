@@ -284,6 +284,76 @@ export const familyRouter = router({
       await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "cash_flow_category.created", targetType: "cash_flow_category", targetId: String(id), beforeState: null, afterState: input, requestId: crypto.randomUUID(), occurredAt: now });
       return { id };
     }),
+    updateCategory: protectedProcedure.input(z.object({
+      id: z.number().int().positive(),
+      name: z.string().trim().min(2).max(120).optional(),
+      color: z.string().trim().regex(/^#[0-9A-Fa-f]{6}$/).optional().nullable(),
+      isEssential: z.boolean().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "editor");
+      const db = await getDb();
+      if (!db) throw notAvailable();
+      const [existing] = await db
+        .select()
+        .from(cashFlowCategories)
+        .where(and(eq(cashFlowCategories.id, input.id), eq(cashFlowCategories.workspaceId, family.workspace.id), eq(cashFlowCategories.isArchived, "no")))
+        .limit(1);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "التصنيف المالي غير موجود أو مؤرشف." });
+      const nextName = input.name ? input.name.trim() : existing.name;
+      const nextColor = input.color !== undefined ? input.color : existing.color;
+      const nextEssential = input.isEssential !== undefined ? (input.isEssential ? "yes" : "no") : existing.isEssential;
+      const now = Date.now();
+      await db.update(cashFlowCategories).set({
+        name: nextName,
+        color: nextColor,
+        isEssential: nextEssential,
+        updatedAt: now,
+      }).where(eq(cashFlowCategories.id, existing.id));
+      await db.insert(auditEvents).values({
+        workspaceId: family.workspace.id,
+        actorUserId: ctx.user.id,
+        action: "cash_flow_category.updated",
+        targetType: "cash_flow_category",
+        targetId: String(existing.id),
+        beforeState: { name: existing.name, color: existing.color, isEssential: existing.isEssential },
+        afterState: { name: nextName, color: nextColor, isEssential: nextEssential },
+        requestId: crypto.randomUUID(),
+        occurredAt: now,
+      });
+      return { id: existing.id, name: nextName, color: nextColor, isEssential: nextEssential === "yes" };
+    }),
+    deleteCategory: protectedProcedure.input(z.object({
+      id: z.number().int().positive(),
+    })).mutation(async ({ ctx, input }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "editor");
+      const db = await getDb();
+      if (!db) throw notAvailable();
+      const [existing] = await db
+        .select()
+        .from(cashFlowCategories)
+        .where(and(eq(cashFlowCategories.id, input.id), eq(cashFlowCategories.workspaceId, family.workspace.id), eq(cashFlowCategories.isArchived, "no")))
+        .limit(1);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "التصنيف المالي غير موجود أو مؤرشف مسبقًا." });
+      const now = Date.now();
+      await db.update(cashFlowCategories).set({
+        isArchived: "yes",
+        updatedAt: now,
+      }).where(eq(cashFlowCategories.id, existing.id));
+      await db.insert(auditEvents).values({
+        workspaceId: family.workspace.id,
+        actorUserId: ctx.user.id,
+        action: "cash_flow_category.archived",
+        targetType: "cash_flow_category",
+        targetId: String(existing.id),
+        beforeState: { name: existing.name, direction: existing.direction },
+        afterState: { isArchived: "yes" },
+        requestId: crypto.randomUUID(),
+        occurredAt: now,
+      });
+      return { success: true, id: existing.id };
+    }),
     setEssential: protectedProcedure.input(z.object({ categoryId: z.number().int().positive(), isEssential: z.boolean() })).mutation(async ({ ctx, input }) => {
       const family = await familyContext(ctx.user);
       assertRole(family, "owner");
@@ -329,6 +399,23 @@ export const familyRouter = router({
       await db.insert(auditEvents).values({ workspaceId: family.workspace.id, actorUserId: ctx.user.id, action: "budget.upserted", targetType: "budget", targetId: `${category.id}:${input.periodKey}`, beforeState: null, afterState: { categoryId: category.id, periodKey: input.periodKey, plannedAmountBase: amount.toFixed(6) }, requestId: crypto.randomUUID(), occurredAt: now });
       invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
       return { approvalRequired: false as const, categoryId: category.id, periodKey: input.periodKey };
+    }),
+    deleteBudget: protectedProcedure.input(z.object({
+      id: z.number().int().positive(),
+    })).mutation(async ({ ctx, input }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "editor");
+      const db = await getDb();
+      if (!db) throw notAvailable();
+      const [existing] = await db
+        .select()
+        .from(budgets)
+        .where(and(eq(budgets.id, input.id), eq(budgets.workspaceId, family.workspace.id)))
+        .limit(1);
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "الميزانية غير موجودة." });
+      await db.delete(budgets).where(eq(budgets.id, existing.id));
+      invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
+      return { success: true, id: existing.id };
     }),
     templates: protectedProcedure.query(async () => [] as Array<{ id: number; name: string; horizonMonths: string; startsPeriodKey: string; spendingLimitBase: string | null; status: string; createdAt: number; updatedAt: number }>),
     createRollingTemplate: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(140), horizonMonths: z.enum(["3", "6"]), startsPeriodKey: z.string().regex(/^\d{4}-\d{2}$/), spendingLimitBase: money.nullable(), lines: z.array(z.object({ categoryId: z.number().int().positive(), plannedAmountBase: money })).min(1).max(50) })).mutation(async () => { throw new TRPCError({ code: "BAD_REQUEST", message: "قوالب الميزانية المتدحرجة متوقفة في هذا الإصدار لصالح التخطيط القياسي." }); }),
@@ -577,7 +664,7 @@ export const familyRouter = router({
         name: z.string().trim().min(2, "اسم الأداة يجب أن لا يقل عن حرفين").max(200),
         symbol: z.string().trim().max(48).optional().nullable(),
         assetType: z.string().trim().min(1, "نوع الفئة مطلوب"),
-        subCategory: z.string().trim().max(64).optional().nullable(),
+        subCategory: z.string().trim().max(100).optional().nullable(),
         sector: z.string().trim().max(100).optional().nullable(),
         currency,
         isin: z.string().trim().max(32).optional().nullable(),
@@ -652,11 +739,13 @@ export const familyRouter = router({
 
     update: protectedProcedure
       .input(z.object({
-        id: z.number().int().positive("معرف الأداة مطلوب"),
-        name: z.string().trim().min(2, "اسم الأداة يجب أن لا يقل عن حرفين").max(200),
+        id: z.number(),
+        name: z.string().trim().optional(),
         symbol: z.string().trim().max(48).optional().nullable(),
-        assetType: z.string().trim().min(1, "نوع الفئة مطلوب"),
-        subCategory: z.string().trim().max(64).optional().nullable(),
+        ticker: z.string().trim().max(48).optional().nullable(),
+        assetType: z.string().trim().optional(),
+        category: z.string().trim().optional(),
+        subCategory: z.string().trim().max(100).optional().nullable(),
         sector: z.string().trim().max(100).optional().nullable(),
         currency: currency.optional(),
         isin: z.string().trim().max(32).optional().nullable(),
@@ -681,8 +770,16 @@ export const familyRouter = router({
             });
           }
 
-          const canonicalAssetType = normalizeAssetType(input.assetType);
-          const cleanSymbol = input.symbol?.trim() ? input.symbol.trim().toUpperCase() : null;
+          const resolvedName = input.name !== undefined ? input.name.trim() : existing.name;
+          const rawSymbol = input.ticker !== undefined ? input.ticker : input.symbol;
+          const cleanSymbol = rawSymbol !== undefined
+            ? (rawSymbol?.trim() ? rawSymbol.trim().toUpperCase() : null)
+            : existing.symbol;
+
+          const rawCategory = input.category !== undefined ? input.category : input.assetType;
+          const canonicalAssetType = rawCategory !== undefined ? normalizeAssetType(rawCategory) : existing.assetType;
+          const subCategoryValue = input.subCategory !== undefined ? (input.subCategory?.trim() || null) : existing.subCategory;
+          const sectorValue = input.sector !== undefined ? (input.sector?.trim() || null) : existing.sector;
 
           if (cleanSymbol) {
             const [conflict] = await db
@@ -708,13 +805,13 @@ export const familyRouter = router({
           await db
             .update(instruments)
             .set({
-              name: input.name.trim(),
+              name: resolvedName,
               symbol: cleanSymbol,
               assetType: canonicalAssetType,
-              subCategory: input.subCategory?.trim() || null,
-              sector: input.sector?.trim() || null,
+              subCategory: subCategoryValue,
+              sector: sectorValue,
               currency: nextCurrency,
-              isin: input.isin?.trim() ? input.isin.trim().toUpperCase() : null,
+              isin: input.isin !== undefined ? (input.isin?.trim() ? input.isin.trim().toUpperCase() : null) : existing.isin,
               updatedAt: now,
             })
             .where(eq(instruments.id, input.id));
@@ -734,18 +831,18 @@ export const familyRouter = router({
               currency: existing.currency,
             },
             afterState: {
-              name: input.name.trim(),
+              name: resolvedName,
               symbol: cleanSymbol,
               assetType: canonicalAssetType,
-              subCategory: input.subCategory?.trim() || null,
-              sector: input.sector?.trim() || null,
+              subCategory: subCategoryValue,
+              sector: sectorValue,
               currency: nextCurrency,
             },
             requestId: crypto.randomUUID(),
             occurredAt: now,
           });
 
-          return { id: input.id, name: input.name.trim(), symbol: cleanSymbol, assetType: canonicalAssetType };
+          return { id: input.id, name: resolvedName, symbol: cleanSymbol, assetType: canonicalAssetType };
         } catch (err) {
           if (err instanceof TRPCError) throw err;
           console.error("[Instruments.update] Error:", err);
@@ -2017,6 +2114,77 @@ export const familyRouter = router({
         });
 
         return { success: true, originalId: input.id, newEvent };
+      }),
+    updateCashTransaction: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive("معرف العملية مطلوب"),
+        accountId: z.number().int().positive().optional(),
+        amount: money,
+        occurredAt,
+        categoryId: z.number().int().positive().optional().nullable(),
+        memo: z.string().trim().max(2000).optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const [origEvent] = await db
+          .select()
+          .from(financialEvents)
+          .where(and(
+            eq(financialEvents.id, input.id),
+            eq(financialEvents.workspaceId, family.workspace.id),
+            eq(financialEvents.status, "posted")
+          ))
+          .limit(1);
+
+        if (!origEvent) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "العملية النقدية غير موجودة أو تم إلغاؤها مسبقًا.",
+          });
+        }
+
+        if (!["income", "expense", "deposit", "withdrawal"].includes(origEvent.eventType)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "هذا الإجراء مخصص للمعاملات النقدية (دخل، مصروف، إيداع، سحب).",
+          });
+        }
+
+        const targetAccountId = input.accountId ?? origEvent.primaryAccountId;
+        if (!targetAccountId) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "الحساب المالي مطلوب.",
+          });
+        }
+
+        // 1. Reverse original cash event (inverts journal lines and marks event void)
+        await reverseFinancialEvent({
+          context: family,
+          actorUserId: ctx.user.id,
+          eventId: input.id,
+          reason: `تعديل واستبدال المعاملة النقدية #${input.id}`,
+        });
+
+        // 2. Post replacement cash event
+        const replacement = await postCashEvent({
+          context: family,
+          actorUserId: ctx.user.id,
+          eventType: origEvent.eventType as "income" | "expense" | "deposit" | "withdrawal",
+          accountId: targetAccountId,
+          amount: input.amount,
+          currency: origEvent.currency,
+          occurredAt: input.occurredAt,
+          categoryId: input.categoryId !== undefined ? input.categoryId : origEvent.categoryId,
+          memo: input.memo !== undefined ? input.memo : origEvent.memo,
+          idempotencyKey: `mod-cash-${input.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        });
+
+        return { success: true, originalId: input.id, replacement };
       }),
     postCash: protectedProcedure
       .input(z.object({ eventType: z.enum(["opening_balance", "deposit", "withdrawal", "income", "expense"]), accountId: z.number().int().positive(), amount: money, currency, occurredAt, categoryId: z.number().int().positive().optional().nullable(), memo: z.string().trim().max(2_000).optional().nullable(), idempotencyKey }))
