@@ -1307,6 +1307,7 @@ export const familyRouter = router({
           symbol: string;
           name: string;
           currency: string;
+          assetType?: string;
           currentRecordedPrice: string | null;
           fetchedPrice: string;
           changePercent: number;
@@ -1327,7 +1328,7 @@ export const familyRouter = router({
         for (const inst of instRows) {
           if (!inst.symbol) continue;
           try {
-            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency);
+            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency, undefined, inst.assetType, inst.name);
             const currentQuote = latestByInst.get(inst.id);
             const currentPriceNum = currentQuote?.price ? Number(currentQuote.price) : null;
             const fetchedPriceNum = Number(quote.price);
@@ -1352,6 +1353,7 @@ export const familyRouter = router({
               symbol: inst.symbol,
               name: inst.name,
               currency: inst.currency,
+              assetType: inst.assetType,
               currentRecordedPrice: currentQuote?.price ? Number(currentQuote.price).toFixed(2) : null,
               fetchedPrice: fetchedPriceNum.toFixed(2),
               changePercent,
@@ -1543,7 +1545,7 @@ export const familyRouter = router({
             continue;
           }
           try {
-            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency);
+            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency, undefined, inst.assetType, inst.name);
             const insertResult = await db.insert(priceQuotes).values({
               workspaceId: family.workspace.id,
               instrumentId: inst.id,

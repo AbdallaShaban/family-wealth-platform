@@ -326,19 +326,156 @@ export async function fetchEgxStockQuote(symbol: string): Promise<MarketQuote & 
   throw new Error(`تعذر العثور على أحدث سعر للسهم ${clean} من مزودي البورصة المصرية (مباشر مصر / TradingView).`);
 }
 
+// In-memory cache for Mubasher Egypt Mutual Funds (300 seconds TTL)
+let mubasherFundsCache: Array<{
+  fundId: number;
+  name: string;
+  price: number;
+  date: string;
+  profitYearStart?: string;
+  owner?: string;
+}> | null = null;
+let mubasherFundsCacheTime = 0;
+
+export async function fetchMubasherEgxFunds(): Promise<NonNullable<typeof mubasherFundsCache>> {
+  if (mubasherFundsCache && Date.now() - mubasherFundsCacheTime < 300_000) {
+    return mubasherFundsCache;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const res = await fetch("https://www.mubasher.info/api/1/funds?country=eg&size=100", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "application/json, text/plain, */*",
+        "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
+      },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`فشل جلب صناديق استثمار مباشر مصر (HTTP ${res.status})`);
+    const data = await res.json();
+    const rows = data.rows || [];
+    mubasherFundsCache = rows;
+    mubasherFundsCacheTime = Date.now();
+    return rows;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export const KNOWN_EGX_FUNDS: Record<string, { fundId: number; name: string; keywords: string[] }> = {
+  BWS: { fundId: 6149, name: "صندوق بلتون وفرة (EGX33)", keywords: ["وفرة", "بلتون"] },
+  BRE: { fundId: 6203, name: "صندوق بلتون العقاري", keywords: ["بلتون العقاري", "القطاعات العقارية"] },
+  CMS: { fundId: 6144, name: "صندوق مصر شريعة إكويتي (EGX33)", keywords: ["شريعة إكويتى", "شريعة اكويتي", "سي آي استس"] },
+  B100: { fundId: 6148, name: "صندوق بلتون مائة مائة (EGX100)", keywords: ["مائة مائة", "6148"] },
+  BALPHA: { fundId: 6424, name: "صندوق بلتون B-Alpha", keywords: ["B-Alpha", "6424"] },
+  B35: { fundId: 6426, name: "صندوق بلتون B-35", keywords: ["B-35", "6426"] },
+  B70: { fundId: 6466, name: "صندوق بلتون B-70", keywords: ["B-70", "6466"] },
+  BFIN: { fundId: 6202, name: "صندوق بلتون المالي", keywords: ["بلتون المالي", "6202"] },
+  BIND: { fundId: 6204, name: "صندوق بلتون الصناعي", keywords: ["بلتون الصناعي", "6204"] },
+  BCON: { fundId: 6205, name: "صندوق بلتون الاستهلاكي", keywords: ["بلتون الاستهلاكي", "6205"] },
+  BSEC: { fundId: 6035, name: "صندوق بلتون بي سيكيور", keywords: ["بي سيكيور", "6035"] },
+};
+
+const arabicMonthsMap: Record<string, number> = {
+  يناير: 0, فبراير: 1, مارس: 2, أبريل: 3, ابريل: 3,
+  مايو: 4, يونيو: 5, يوليو: 6, أغسطس: 7, اغسطس: 7,
+  سبتمبر: 8, أكتوبر: 9, اكتوبر: 9, نوفمبر: 10, ديسمبر: 11,
+};
+
+export function parseArabicDate(str: string | null | undefined): number {
+  if (!str) return Date.now();
+  const parts = str.trim().split(/\s+/);
+  if (parts.length === 3) {
+    const day = parseInt(parts[0], 10);
+    const month = arabicMonthsMap[parts[1]];
+    const year = parseInt(parts[2], 10);
+    if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+      return new Date(year, month, day, 14, 0, 0).getTime();
+    }
+  }
+  return Date.now();
+}
+
+/**
+ * Fetch NAV (Net Asset Value / سعر الوثيقة) for Egyptian Mutual Funds
+ */
+export async function fetchEgxMutualFundQuote(
+  symbol: string,
+  instrumentName?: string
+): Promise<(MarketQuote & { resolvedSymbol: string }) | null> {
+  const cleanSymbol = symbol.trim().toUpperCase();
+  try {
+    const funds = await fetchMubasherEgxFunds();
+    let match: (typeof funds)[number] | undefined;
+
+    // 1. Direct match from KNOWN_EGX_FUNDS
+    if (KNOWN_EGX_FUNDS[cleanSymbol]) {
+      const info = KNOWN_EGX_FUNDS[cleanSymbol];
+      match = funds.find((f) => f.fundId === info.fundId);
+      if (!match) {
+        match = funds.find((f) => info.keywords.some((k) => f.name && f.name.includes(k)));
+      }
+    }
+
+    // 2. Search by symbol/name match
+    if (!match) {
+      match = funds.find((f) => f.name && f.name.includes(cleanSymbol));
+    }
+
+    // 3. Search by instrument name keywords
+    if (!match && instrumentName) {
+      const cleanName = instrumentName.replace(/صندوق/g, "").trim();
+      const words = cleanName.split(/\s+/).filter((w) => w.length > 2);
+      if (words.length > 0) {
+        match = funds.find((f) => words.every((w) => f.name && f.name.includes(w)));
+      }
+    }
+
+    if (match && Number(match.price) > 0) {
+      const priceNum = Number(match.price);
+      const asOf = parseArabicDate(match.date);
+      const changePercent = parseFloat(match.profitYearStart?.replace("%", "") || "0") || 0;
+
+      return {
+        price: priceNum.toFixed(8),
+        currency: "EGP",
+        asOf,
+        source: "وثائق صناديق الاستثمار (Mubasher NAV)",
+        quoteStatus: "delayed",
+        resolvedSymbol: cleanSymbol,
+        changePercent,
+        arabicName: match.name,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Enhanced live quote fetcher supporting Egyptian Exchange (EGX) tickers,
+ * mutual funds NAVs (BWS, BRE, CMS, etc.),
  * benchmark index symbols (EGX30, EGX33, EGX70), and global equities.
  */
 export async function fetchEgxOrYahooQuote(
   symbol: string,
   instrumentCurrency = "EGP",
-  client: YahooQuoteClient = new YahooFinance()
+  client: YahooQuoteClient = new YahooFinance(),
+  assetType?: string,
+  instrumentName?: string
 ): Promise<MarketQuote & { resolvedSymbol: string }> {
   const normalizedSymbol = symbol.trim().toUpperCase();
   if (!normalizedSymbol) throw new Error("رمز الأداة الاستثمارية غير صالح.");
 
-  // 1. Benchmark index matching
+  // 1. Mutual Fund NAV check
+  if (assetType === "fund" || KNOWN_EGX_FUNDS[normalizedSymbol]) {
+    const fundQuote = await fetchEgxMutualFundQuote(normalizedSymbol, instrumentName);
+    if (fundQuote) return fundQuote;
+  }
+
+  // 2. Benchmark index matching
   if (BENCHMARK_SYMBOLS[normalizedSymbol]) {
     // For EGX30 & EGX70, try TradingView Egypt first
     if (normalizedSymbol === "EGX30" || normalizedSymbol === "^CASE30") {
@@ -375,12 +512,12 @@ export async function fetchEgxOrYahooQuote(
     return { ...norm, resolvedSymbol: bmk.yahooSymbol };
   }
 
-  // 2. Egyptian Pound (EGP) instruments: ALWAYS use direct Egyptian Exchange feeds (Mubasher/TradingView)
+  // 3. Egyptian Pound (EGP) instruments: ALWAYS use direct Egyptian Exchange feeds (Mubasher/TradingView)
   if (instrumentCurrency === "EGP") {
     return await fetchEgxStockQuote(normalizedSymbol);
   }
 
-  // 3. Foreign currency equities / ETFs: Yahoo Finance
+  // 4. Foreign currency equities / ETFs: Yahoo Finance
   const raw = await client.quote(normalizedSymbol);
   const norm = normalizeYahooQuote(raw, instrumentCurrency);
   return { ...norm, resolvedSymbol: normalizedSymbol };

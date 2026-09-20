@@ -18,6 +18,9 @@ import {
   TrendingDown,
   TrendingUp,
   WalletCards,
+  Pencil,
+  Filter,
+  RefreshCw,
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -382,6 +385,44 @@ export default function FintechDashboard() {
     }
   };
 
+  // Table Filter State & Quick Manual Price State
+  const [tableFilter, setTableFilter] = useState<"all" | "equity" | "fund" | "gold">("all");
+  const [quickPriceModalOpen, setQuickPriceModalOpen] = useState(false);
+  const [selectedItemForPrice, setSelectedItemForPrice] = useState<{
+    instrumentId: number;
+    name: string;
+    symbol: string | null;
+    currency: string;
+    assetType: string;
+    price?: number | string | null;
+  } | null>(null);
+  const [quickPriceValue, setQuickPriceValue] = useState("");
+
+  const recordManualPrice = trpc.family.prices.recordManual.useMutation({
+    onSuccess: () => {
+      toast.success("تم تسجيل وتحديث السعر السوقي / سعر الوثيقة بنجاح.");
+      setQuickPriceModalOpen(false);
+      void utils.family.dashboard.invalidate();
+      void marketOverview.refetch();
+    },
+    onError: (err) => {
+      toast.error(err.message || "تعذر تسجيل السعر");
+    },
+  });
+
+  const openQuickPriceModal = (item: {
+    instrumentId: number;
+    name: string;
+    symbol: string | null;
+    currency: string;
+    assetType: string;
+    price?: number | string | null;
+  }) => {
+    setSelectedItemForPrice(item);
+    setQuickPriceValue(item.price ? String(item.price) : "");
+    setQuickPriceModalOpen(true);
+  };
+
   const events = usingDemo
     ? demoDashboard.events.map(event => {
       const isExpense = event.tone === "expense";
@@ -634,14 +675,14 @@ export default function FintechDashboard() {
                   <p className="fintech-overline m-0">المحفظة وسوق المال</p>
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
                     <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    EGX & NAV Live Feed
+                    EGX & Mutual Funds NAV Live Feed
                   </span>
                 </div>
                 <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mt-1">
                   قائمة المتابعة وجدول الأرباح والخسائر المؤسسي (P&L)
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  متابعة لحظية لأسعار الأسهم المصرية (EGX)، الذهب عيار 24، وصناديق الاستثمار مع حساب متوسط تكلفة FIFO والعوائد غير المحققة.
+                  متابعة لحظية لأسعار الأسهم المصرية (EGX)، وثائق صناديق الاستثمار (NAV)، والذهب مع حساب متوسط تكلفة FIFO والعوائد غير المحققة.
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -657,171 +698,375 @@ export default function FintechDashboard() {
               </div>
             </div>
 
-            {/* Institutional High-Density Table */}
-            <div className="rounded-xl border border-slate-100 dark:border-slate-800/80 overflow-hidden">
-              <Table dir="rtl">
-                <TableHeader className="bg-slate-50/70 dark:bg-slate-900/40">
-                  <TableRow className="hover:bg-transparent border-b border-slate-100 dark:border-slate-800">
-                    <TableHead className="text-right text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4">الأصل والرمز</TableHead>
-                    <TableHead className="text-left text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4" dir="ltr">السعر الحالي</TableHead>
-                    <TableHead className="text-left text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4" dir="ltr">تكلفة الشراء (FIFO)</TableHead>
-                    <TableHead className="text-left text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4" dir="ltr">العائد غير المحقق (P&L)</TableHead>
-                    <TableHead className="text-center text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-4">أهداف التداول (Triggers)</TableHead>
-                    <TableHead className="text-center text-xs font-bold text-slate-600 dark:text-slate-400 py-3.5 px-3 w-16">إجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {marketOverview.data.entries.map((item) => {
-                    const position = portfolioMap.get(item.instrumentId);
-                    const isOwned = Boolean(position && Number(position.quantity) > 0);
-                    const currentPrice = item.price !== null ? Number(item.price) : (position?.marketPrice !== null ? Number(position?.marketPrice) : null);
-                    const avgCost = isOwned && position?.averageCost ? Number(position.averageCost) : null;
-                    const quantity = isOwned && position?.quantity ? Number(position.quantity) : 0;
+            {/* Filter Bar & Header Summary */}
+            {(() => {
+              const allEntries = marketOverview.data?.entries ?? [];
+              const equityCount = allEntries.filter((e) => e.assetType === "equity").length;
+              const fundCount = allEntries.filter((e) => e.assetType === "fund").length;
+              const goldCount = allEntries.filter((e) => e.assetType === "gold").length;
+              const ownedCount = allEntries.filter((e) => {
+                const pos = portfolioMap.get(e.instrumentId);
+                return Boolean(pos && Number(pos.quantity) > 0);
+              }).length;
 
-                    // P&L calculation
-                    let unrealizedPnlAbs: number | null = null;
-                    let unrealizedPnlPct: number | null = null;
-                    if (isOwned && currentPrice !== null && avgCost !== null && avgCost > 0) {
-                      unrealizedPnlAbs = (currentPrice - avgCost) * quantity;
-                      unrealizedPnlPct = ((currentPrice - avgCost) / avgCost) * 100;
-                    }
+              const filteredEntries = allEntries.filter((e) => {
+                if (tableFilter === "equity") return e.assetType === "equity";
+                if (tableFilter === "fund") return e.assetType === "fund";
+                if (tableFilter === "gold") return e.assetType === "gold";
+                return true;
+              });
 
-                    const triggers = triggersQuery.data?.[item.instrumentId];
-                    const targetBuy = triggers?.targetBuyPrice ? Number(triggers.targetBuyPrice) : null;
-                    const targetSell = triggers?.targetTakeProfitPrice ? Number(triggers.targetTakeProfitPrice) : null;
+              return (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setTableFilter("all")}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                          tableFilter === "all"
+                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        الكل ({allEntries.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTableFilter("equity")}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                          tableFilter === "equity"
+                            ? "bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 shadow-xs font-bold"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <span className="size-2 rounded-full bg-blue-500" />
+                        أسهم ({equityCount})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTableFilter("fund")}
+                        className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                          tableFilter === "fund"
+                            ? "bg-white dark:bg-slate-800 text-teal-700 dark:text-teal-300 shadow-xs font-bold"
+                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        }`}
+                      >
+                        <span className="size-2 rounded-full bg-teal-500" />
+                        صناديق استثمار ({fundCount})
+                      </button>
+                      {goldCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setTableFilter("gold")}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                            tableFilter === "gold"
+                              ? "bg-white dark:bg-slate-800 text-amber-700 dark:text-amber-300 shadow-xs font-bold"
+                              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                          }`}
+                        >
+                          <span className="size-2 rounded-full bg-amber-500" />
+                          ذهب وسلع ({goldCount})
+                        </button>
+                      )}
+                    </div>
 
-                    // Live status dot
-                    const isLive = item.quoteStatus === "live" || (item.quoteStatus === "delayed" && item.asOf && (Date.now() - item.asOf < 24 * 3600 * 1000));
-                    const statusColor = isLive ? "bg-emerald-500" : "bg-slate-400";
-                    const statusLabel = isLive ? "مباشر / معتمد" : item.quoteStatus === "stale" ? "سعر سابق" : "غير متاح";
+                    <div className="flex items-center gap-3 text-xs text-slate-500 font-medium">
+                      <span className="flex items-center gap-1">
+                        <span>الأصول المملوكة:</span>
+                        <strong className="text-slate-800 dark:text-slate-200 font-mono font-bold">{ownedCount}</strong>
+                      </span>
+                      <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <span className="flex items-center gap-1">
+                        <span>المعروض:</span>
+                        <strong className="text-slate-800 dark:text-slate-200 font-mono font-bold">{filteredEntries.length}</strong>
+                      </span>
+                    </div>
+                  </div>
 
-                    return (
-                      <TableRow key={item.instrumentId} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30 border-b border-slate-100 dark:border-slate-800/60 transition-colors">
-                        {/* 1. Asset & Ticker */}
-                        <TableCell className="py-3 px-4">
-                          <div className="flex items-center gap-2.5">
-                            <span className={`size-2 rounded-full shrink-0 ${statusColor}`} title={statusLabel} />
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <strong className="font-mono font-bold text-slate-900 dark:text-white text-xs tracking-wider" dir="ltr">
-                                  {item.symbol || "—"}
-                                </strong>
-                                <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
-                                  {item.assetType === "equity" ? "أسهم" : item.assetType === "gold" ? "ذهب" : item.assetType === "fund" ? "صندوق" : item.assetType}
-                                </span>
-                                {isOwned && (
-                                  <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/50">
-                                    مملوك
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5 truncate max-w-[200px]" title={item.name}>
-                                {item.name}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
+                  {/* Institutional High-Density Table with Sticky Header & Max Height Constraint */}
+                  <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
+                    <div className="max-h-[480px] overflow-y-auto overflow-x-auto scrollbar-thin">
+                      <Table dir="rtl" className="w-full relative">
+                        <TableHeader className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#0E131F]/95 backdrop-blur-md shadow-xs border-b border-slate-200/90 dark:border-slate-800">
+                          <TableRow className="hover:bg-transparent border-none">
+                            <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit">الأصل والرمز</TableHead>
+                            <TableHead className="text-left text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit" dir="ltr">السعر الحالي / الوثيقة</TableHead>
+                            <TableHead className="text-left text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit" dir="ltr">تكلفة الشراء (FIFO)</TableHead>
+                            <TableHead className="text-left text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit" dir="ltr">العائد غير المحقق (P&L)</TableHead>
+                            <TableHead className="text-center text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit">أهداف التداول (Triggers)</TableHead>
+                            <TableHead className="text-center text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-3 w-16 bg-inherit">إجراءات</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                          {filteredEntries.map((item) => {
+                            const position = portfolioMap.get(item.instrumentId);
+                            const isOwned = Boolean(position && Number(position.quantity) > 0);
+                            const currentPrice = item.price !== null ? Number(item.price) : (position?.marketPrice !== null ? Number(position?.marketPrice) : null);
+                            const avgCost = isOwned && position?.averageCost ? Number(position.averageCost) : null;
+                            const quantity = isOwned && position?.quantity ? Number(position.quantity) : 0;
 
-                        {/* 2. Current Price */}
-                        <TableCell className="py-3 px-4 text-left" dir="ltr">
-                          <div className="font-mono font-bold text-slate-900 dark:text-white text-sm tabular-nums">
-                            {currentPrice !== null ? formatMoney(currentPrice, item.currency, 2) : "—"}
-                          </div>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block mt-0.5">
-                            {item.asOf ? formatDateTime(item.asOf) : "—"}
-                          </span>
-                        </TableCell>
+                            // P&L calculation
+                            let unrealizedPnlAbs: number | null = null;
+                            let unrealizedPnlPct: number | null = null;
+                            if (isOwned && currentPrice !== null && avgCost !== null && avgCost > 0) {
+                              unrealizedPnlAbs = (currentPrice - avgCost) * quantity;
+                              unrealizedPnlPct = ((currentPrice - avgCost) / avgCost) * 100;
+                            }
 
-                        {/* 3. FIFO Cost Basis */}
-                        <TableCell className="py-3 px-4 text-left" dir="ltr">
-                          {isOwned && avgCost !== null ? (
-                            <div>
-                              <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs tabular-nums">
-                                {formatMoney(avgCost, item.currency, 2)}
-                              </span>
-                              <span className="text-[10px] text-slate-400 block font-mono">
-                                {quantity.toLocaleString("en-US", { maximumFractionDigits: 4 })} وحدة
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 text-xs font-mono">—</span>
-                          )}
-                        </TableCell>
+                            const triggers = triggersQuery.data?.[item.instrumentId];
+                            const targetBuy = triggers?.targetBuyPrice ? Number(triggers.targetBuyPrice) : null;
+                            const targetSell = triggers?.targetTakeProfitPrice ? Number(triggers.targetTakeProfitPrice) : null;
 
-                        {/* 4. Unrealized P&L */}
-                        <TableCell className="py-3 px-4 text-left" dir="ltr">
-                          {isOwned && unrealizedPnlAbs !== null && unrealizedPnlPct !== null ? (
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className={`font-mono font-bold text-xs tabular-nums ${unrealizedPnlAbs > 0 ? "text-emerald-600 dark:text-emerald-400" : unrealizedPnlAbs < 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-600"}`}>
-                                  {unrealizedPnlAbs > 0 ? "+" : ""}{formatMoney(unrealizedPnlAbs, item.currency, 2)}
-                                </span>
-                                <span className={`font-mono font-bold text-[10px] px-1 py-0.2 rounded ${unrealizedPnlPct > 0 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300" : unrealizedPnlPct < 0 ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300" : "bg-slate-100 text-slate-700"}`}>
-                                  {unrealizedPnlPct > 0 ? "+" : ""}{unrealizedPnlPct.toFixed(2)}%
-                                </span>
-                              </div>
-                              <span className="text-[9.5px] text-slate-400 font-semibold block mt-0.5">
-                                عائد غير محقق
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 text-xs font-mono">—</span>
-                          )}
-                        </TableCell>
+                            // Live status dot
+                            const isLive = item.quoteStatus === "live" || (item.quoteStatus === "delayed" && item.asOf && (Date.now() - item.asOf < 7 * 24 * 3600 * 1000));
+                            const statusColor = isLive ? "bg-emerald-500" : "bg-slate-400";
+                            const statusLabel = isLive ? (item.assetType === "fund" ? "وثيقة معتمدة" : "مباشر / معتمد") : "بانتظار التحديث";
 
-                        {/* 5. Custom Price Triggers */}
-                        <TableCell className="py-3 px-4 text-center">
-                          <div className="inline-flex items-center gap-2 text-xs font-mono">
-                            <span className="px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/50 text-[10.5px]" title="سعر الشراء المستهدف">
-                              شراء: {targetBuy ? formatMoney(targetBuy, item.currency, 2) : "—"}
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/50 text-[10.5px]" title="سعر جني الأرباح المستهدف">
-                              جني: {targetSell ? formatMoney(targetSell, item.currency, 2) : "—"}
-                            </span>
-                          </div>
-                        </TableCell>
-
-                        {/* 6. Quick Action Dropdown */}
-                        <TableCell className="py-3 px-3 text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="size-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 text-right">
-                              <DropdownMenuLabel className="text-xs font-bold">إجراءات الأداة</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-xs font-medium cursor-pointer"
-                                onClick={() => openTriggerModal(item, targetBuy, targetSell, currentPrice)}
+                            return (
+                              <TableRow
+                                key={item.instrumentId}
+                                className="group even:bg-slate-50/40 dark:even:bg-slate-900/25 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors border-b border-slate-100/80 dark:border-slate-800/50"
                               >
-                                <SlidersHorizontal className="size-3.5 ml-2" />
-                                تعديل تنبيهات السعر
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-xs font-medium cursor-pointer"
-                                onClick={() => setLocation("/investments")}
-                              >
-                                <ArrowUpRight className="size-3.5 ml-2" />
-                                تنفيذ شراء / بيع
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-xs font-medium cursor-pointer"
-                                onClick={() => openDividendModal(item)}
-                              >
-                                <DollarSign className="size-3.5 ml-2" />
-                                تسجيل توزيع نقدي
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                                {/* 1. Asset & Ticker */}
+                                <TableCell className="py-3 px-4">
+                                  <div className="flex items-center gap-2.5">
+                                    <span className={`size-2 rounded-full shrink-0 ${statusColor}`} title={statusLabel} />
+                                    <div>
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <strong className="font-mono font-bold text-slate-900 dark:text-white text-xs tracking-wider" dir="ltr">
+                                          {item.symbol || "—"}
+                                        </strong>
+                                        {/* Category Micro-badge */}
+                                        {item.assetType === "equity" ? (
+                                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60">
+                                            أسهم
+                                          </span>
+                                        ) : item.assetType === "fund" ? (
+                                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300 border border-teal-200/60 dark:border-teal-800/60">
+                                            صندوق استثمار
+                                          </span>
+                                        ) : item.assetType === "gold" ? (
+                                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                                            ذهب وسلع
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                            {item.assetType}
+                                          </span>
+                                        )}
+                                        {isOwned && (
+                                          <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60">
+                                            مملوك
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5 truncate max-w-[220px]" title={item.name}>
+                                        {item.name}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </TableCell>
+
+                                {/* 2. Current Price / NAV */}
+                                <TableCell className="py-3 px-4 text-left" dir="ltr">
+                                  {currentPrice !== null ? (
+                                    <div>
+                                      <div className="font-mono font-bold text-slate-900 dark:text-white text-sm tabular-nums flex items-center justify-end gap-1.5">
+                                        <span>{formatMoney(currentPrice, item.currency, 2)}</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => openQuickPriceModal({ ...item, price: currentPrice })}
+                                          className="opacity-0 group-hover:opacity-100 hover:text-emerald-600 transition-opacity p-0.5 cursor-pointer"
+                                          title="تعديل السعر يدوياً"
+                                        >
+                                          <Pencil className="size-3 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400" />
+                                        </button>
+                                      </div>
+                                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono block mt-0.5">
+                                        {item.assetType === "fund" ? "وثيقة دورية: " : ""}{item.asOf ? formatDate(item.asOf) : "—"}
+                                      </span>
+                                    </div>
+                                  ) : item.assetType === "fund" ? (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <span className="inline-flex items-center gap-1 text-[10.5px] px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/70 font-semibold">
+                                        بانتظار تسعير الوثيقة (NAV)
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => openQuickPriceModal(item)}
+                                        className="size-6 p-0 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 cursor-pointer"
+                                        title="إدخال سعر الوثيقة يدوياً"
+                                      >
+                                        <Pencil className="size-3" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <span className="text-slate-400 text-xs font-mono">—</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => openQuickPriceModal(item)}
+                                        className="opacity-0 group-hover:opacity-100 hover:text-emerald-600 transition-opacity p-0.5 cursor-pointer"
+                                        title="إدخال السعر يدوياً"
+                                      >
+                                        <Pencil className="size-3 text-slate-400" />
+                                      </button>
+                                    </div>
+                                  )}
+                                </TableCell>
+
+                                {/* 3. FIFO Cost Basis */}
+                                <TableCell className="py-3 px-4 text-left" dir="ltr">
+                                  {isOwned && avgCost !== null ? (
+                                    <div>
+                                      <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-xs tabular-nums">
+                                        {formatMoney(avgCost, item.currency, 2)}
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 block font-mono">
+                                        {quantity.toLocaleString("en-US", { maximumFractionDigits: 4 })} وحدة
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 text-xs font-mono">—</span>
+                                  )}
+                                </TableCell>
+
+                                {/* 4. Unrealized P&L Pill */}
+                                <TableCell className="py-3 px-4 text-left" dir="ltr">
+                                  {isOwned && unrealizedPnlAbs !== null && unrealizedPnlPct !== null ? (
+                                    <div className="flex flex-col items-end">
+                                      <div className="flex items-center gap-1.5">
+                                        <span
+                                          className={`font-mono font-bold text-xs tabular-nums px-2 py-0.5 rounded-md border ${
+                                            unrealizedPnlAbs > 0
+                                              ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60"
+                                              : unrealizedPnlAbs < 0
+                                              ? "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60"
+                                              : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                                          }`}
+                                        >
+                                          {unrealizedPnlAbs > 0 ? "+" : ""}{formatMoney(unrealizedPnlAbs, item.currency, 2)}
+                                        </span>
+                                        <span
+                                          className={`font-mono font-bold text-[10.5px] px-1.5 py-0.5 rounded ${
+                                            unrealizedPnlPct > 0
+                                              ? "bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                              : unrealizedPnlPct < 0
+                                              ? "bg-rose-100/80 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
+                                              : "bg-slate-100 text-slate-700"
+                                          }`}
+                                        >
+                                          {unrealizedPnlPct > 0 ? "+" : ""}{unrealizedPnlPct.toFixed(2)}%
+                                        </span>
+                                      </div>
+                                      <span className="text-[9.5px] text-slate-400 font-semibold block mt-0.5">
+                                        عائد غير محقق
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 text-xs font-mono">—</span>
+                                  )}
+                                </TableCell>
+
+                                {/* 5. Custom Price Triggers - Mini Chips */}
+                                <TableCell className="py-3 px-4 text-center">
+                                  {targetBuy || targetSell ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openTriggerModal(item, targetBuy, targetSell, currentPrice)}
+                                      className="inline-flex items-center gap-1.5 text-xs font-mono px-2 py-1 rounded-lg bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                                      title="انقر لتعديل أهداف التداول"
+                                    >
+                                      {targetBuy && (
+                                        <span className="text-blue-600 dark:text-blue-400 font-bold">
+                                          شراء: {formatMoney(targetBuy, item.currency, 2)}
+                                        </span>
+                                      )}
+                                      {targetBuy && targetSell && <span className="text-slate-300 dark:text-slate-600">|</span>}
+                                      {targetSell && (
+                                        <span className="text-amber-600 dark:text-amber-400 font-bold">
+                                          جني: {formatMoney(targetSell, item.currency, 2)}
+                                        </span>
+                                      )}
+                                    </button>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => openTriggerModal(item, targetBuy, targetSell, currentPrice)}
+                                      className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 h-7 px-2 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 cursor-pointer"
+                                    >
+                                      <Plus className="size-3 ml-1" />
+                                      تحديد أهداف
+                                    </Button>
+                                  )}
+                                </TableCell>
+
+                                {/* 6. Quick Action Dropdown (aligned far left for RTL) */}
+                                <TableCell className="py-3 px-3 text-center">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="size-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                                        <MoreHorizontal className="size-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-52 text-right">
+                                      <DropdownMenuLabel className="text-xs font-bold">إجراءات الأداة</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        className="text-xs font-medium cursor-pointer"
+                                        onClick={() => openQuickPriceModal({ ...item, price: currentPrice })}
+                                      >
+                                        <Pencil className="size-3.5 ml-2 text-emerald-600" />
+                                        {item.assetType === "fund" ? "تسجيل سعر الوثيقة (NAV)" : "تحديث السعر يدوياً"}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-xs font-medium cursor-pointer"
+                                        onClick={() => openTriggerModal(item, targetBuy, targetSell, currentPrice)}
+                                      >
+                                        <SlidersHorizontal className="size-3.5 ml-2" />
+                                        تعديل تنبيهات السعر
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-xs font-medium cursor-pointer"
+                                        onClick={() => setLocation("/investments")}
+                                      >
+                                        <ArrowUpRight className="size-3.5 ml-2" />
+                                        تنفيذ صفقة استثمارية
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-xs font-medium cursor-pointer"
+                                        onClick={() => openDividendModal(item)}
+                                      >
+                                        <DollarSign className="size-3.5 ml-2 text-blue-600" />
+                                        تسجيل توزيع نقدي
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    {/* Table Footer */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-50/70 dark:bg-slate-900/40 border-t border-slate-200/70 dark:border-slate-800 text-xs text-slate-500">
+                      <div className="flex items-center gap-2">
+                        <span className="size-2 rounded-full bg-emerald-500" />
+                        <span>تغذية لحظية متصلة مع البورصة المصرية ومباشر مصر لوثائق الصناديق</span>
+                      </div>
+                      <div className="font-mono text-[11px]">
+                        إجمالي الأدوات النشطة: {filteredEntries.length} | المحفظة: {ownedCount} مراكز مملوكة
+                      </div>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </section>
         ) : null}
 
@@ -1325,6 +1570,75 @@ export default function FintechDashboard() {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
                 {isSubmittingDividend ? "جارٍ القيد..." : "قيد التوزيع في الحساب"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Quick Price Entry Dialog */}
+        <Dialog open={quickPriceModalOpen} onOpenChange={setQuickPriceModalOpen}>
+          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 text-right" dir="rtl">
+            <DialogHeader className="text-right space-y-1">
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Pencil className="size-4 text-emerald-600" />
+                {selectedItemForPrice?.assetType === "fund" ? "تسجيل وتعديل سعر الوثيقة (NAV)" : "تحديث السعر السوقي يدوياً"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                {selectedItemForPrice?.name} ({selectedItemForPrice?.symbol})
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {selectedItemForPrice?.assetType === "fund" ? "سعر الوثيقة المعلن (EGP)" : "السعر السوقي للأصل (EGP)"}
+                </Label>
+                <div className="relative">
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    value={quickPriceValue}
+                    onChange={(e) => setQuickPriceValue(e.target.value)}
+                    className="rounded-xl text-sm font-mono font-bold text-left pl-14"
+                    dir="ltr"
+                    autoFocus
+                  />
+                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 pointer-events-none font-mono font-bold">
+                    {selectedItemForPrice?.currency || "EGP"}
+                  </span>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                {selectedItemForPrice?.assetType === "fund"
+                  ? "سيتم تسجيل السعر كقيمة أصول صافية (NAV) معتمدة وتحديث العوائد غير المحققة فوراً."
+                  : "سيتم تسجيل السعر كتقييم سوقي لحظي معتمد للأصل."}
+              </p>
+            </div>
+
+            <DialogFooter className="gap-2 sm:justify-start">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setQuickPriceModalOpen(false)}
+                className="rounded-xl text-xs"
+              >
+                إلغاء
+              </Button>
+              <Button
+                type="button"
+                disabled={recordManualPrice.isPending || !quickPriceValue || isNaN(Number(quickPriceValue))}
+                onClick={() => {
+                  if (!selectedItemForPrice) return;
+                  recordManualPrice.mutate({
+                    instrumentId: selectedItemForPrice.instrumentId,
+                    price: quickPriceValue.trim(),
+                    asOf: Date.now(),
+                  });
+                }}
+                className="rounded-xl text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              >
+                {recordManualPrice.isPending ? "جارٍ الحفظ..." : "حفظ السعر واعتماد التقييم"}
               </Button>
             </DialogFooter>
           </DialogContent>

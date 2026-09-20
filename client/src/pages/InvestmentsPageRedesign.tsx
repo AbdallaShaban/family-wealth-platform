@@ -1806,14 +1806,14 @@ export default function InvestmentsPageRedesign() {
               <div className="flex items-center justify-between">
                 <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <RefreshCw className="size-5 text-emerald-600 dark:text-emerald-400" />
-                  مراجعة واعتماد أسعار السوق (البورصة المصرية)
+                  مراجعة واعتماد أسعار السوق وصناديق الاستثمار (EGX & Mutual Funds NAV)
                 </DialogTitle>
                 <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
-                  مباشر مصر + TradingView
+                  مباشر مصر (EGX + صناديق NAV) + TradingView
                 </Badge>
               </div>
               <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-                تم جلب أحدث أسعار التداول الحقيقية ومطابقتها مع ضوابط الانحراف وسلامة التاريخ. يمكنك تعديل أي سعر يدوياً أو استبعاد أداة قبل الاعتماد النهائي في المحفظة.
+                تم جلب أحدث أسعار التداول اللحظية ووثائق صناديق الاستثمار ومطابقتها مع ضوابط الانحراف وسلامة التاريخ. يمكنك تعديل أي سعر يدوياً أو استبعاد أداة قبل الاعتماد النهائي في المحفظة.
               </DialogDescription>
             </DialogHeader>
 
@@ -1851,7 +1851,7 @@ export default function InvestmentsPageRedesign() {
                       <th className="py-2.5 px-3 w-10 text-center">اعتماد</th>
                       <th className="py-2.5 px-3">الأداة / الرمز</th>
                       <th className="py-2.5 px-3">السعر المسجل</th>
-                      <th className="py-2.5 px-3">السعر المسحوب</th>
+                      <th className="py-2.5 px-3">السعر المسحوب / NAV</th>
                       <th className="py-2.5 px-3">التغير %</th>
                       <th className="py-2.5 px-3">تاريخ السعر</th>
                       <th className="py-2.5 px-3">حالة الفحص</th>
@@ -1859,7 +1859,7 @@ export default function InvestmentsPageRedesign() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {previewQuotes.map((q, idx) => (
+                    {previewQuotes.map((q: any, idx: number) => (
                       <tr
                         key={q.instrumentId}
                         className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
@@ -1879,7 +1879,18 @@ export default function InvestmentsPageRedesign() {
                           />
                         </td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-slate-900 dark:text-white">{q.name}</div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-slate-900 dark:text-white">{q.name}</span>
+                            {q.assetType === "fund" || (q.name && q.name.includes("صندوق")) ? (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-teal-50 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300 border border-teal-200">
+                                وثيقة NAV
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200">
+                                سهم
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[11px] font-mono text-slate-500">{q.symbol}</div>
                         </td>
                         <td className="py-2.5 px-3 font-mono">
