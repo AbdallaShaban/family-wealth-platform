@@ -264,7 +264,7 @@ function FintechNav({
                       <button
                         className={`size-10 rounded-xl flex items-center justify-center transition-all ${
                           isCurrent
-                            ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm"
+                            ? "bg-[rgba(16,185,129,0.12)] text-emerald-400 border border-emerald-500/30 shadow-sm"
                             : "text-slate-400 hover:text-white hover:bg-white/5"
                         }`}
                         onClick={() => onNavigate(item.path)}
@@ -277,7 +277,7 @@ function FintechNav({
                     <TooltipContent
                       side="left"
                       sideOffset={12}
-                      className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
+                      className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
                     >
                       <p className="font-semibold text-xs text-[#F8FAFC]">{item.label}</p>
                       <p className="text-[10px] text-[#34D399] font-medium mt-0.5">{group.label}</p>
@@ -317,7 +317,7 @@ function FintechNav({
               <AccordionTrigger
                 className={`fintech-v2-group-trigger flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
                   hasActiveItem
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                    ? "bg-[rgba(16,185,129,0.12)] text-emerald-400 border border-emerald-500/20"
                     : "text-slate-300 hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -345,7 +345,7 @@ function FintechNav({
                       key={item.path}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-150 text-right ${
                         isCurrent
-                          ? "bg-emerald-500/10 text-emerald-400 font-semibold border-r-2 border-emerald-500 shadow-sm"
+                          ? "bg-[rgba(16,185,129,0.12)] text-emerald-400 font-semibold border-r-2 border-emerald-500 shadow-sm"
                           : "text-slate-400 hover:text-slate-100 hover:bg-white/5 font-medium"
                       }`}
                       onClick={() => onNavigate(item.path)}
@@ -393,7 +393,7 @@ function UserControls({
                 {initial}
               </div>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] text-xs px-3 py-1.5 shadow-xl">
+            <TooltipContent side="left" className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] text-xs px-3 py-1.5 shadow-xl">
               <p className="font-bold">{user?.name || "مستخدم FAMILY"}</p>
               <p className="text-[10px] text-[#34D399]">{roleLabel}</p>
               <p className="text-[10px] text-[#94A3B8]">{user?.email || "جلسة آمنة"}</p>
@@ -410,7 +410,7 @@ function UserControls({
                 {theme === "dark" ? <Sun className="size-4 text-amber-300" /> : <Moon className="size-4" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] text-xs px-2.5 py-1">
+            <TooltipContent side="left" className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] text-xs px-2.5 py-1">
               تبديل الوضع اللوني
             </TooltipContent>
           </Tooltip>
@@ -425,7 +425,7 @@ function UserControls({
                 <LogOut className="size-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-[#0B1628] border border-[#243B53] text-[#F8FAFC] text-xs px-2.5 py-1">
+            <TooltipContent side="left" className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] text-xs px-2.5 py-1">
               تسجيل الخروج
             </TooltipContent>
           </Tooltip>
@@ -614,7 +614,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl">
-      <aside className={`fintech-v2-sidebar bg-[#090D16]/95 backdrop-blur-2xl border-l border-white/5 shadow-2xl ${collapsed ? "is-collapsed" : ""}`}>
+      {/* Scoped Sidebar Styling: Deep Charcoal Slate (#0B0F17) */}
+      <style>{`
+        aside.fintech-v2-sidebar,
+        .fintech-v2-mobile-sheet {
+          background-color: #0B0F17 !important;
+          background: #0B0F17 !important;
+          background-image: none !important;
+          border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+        aside.fintech-v2-sidebar::before,
+        aside.fintech-v2-sidebar::after {
+          display: none !important;
+          content: none !important;
+        }
+      `}</style>
+      <aside
+        data-sidebar="true"
+        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""}`}
+        style={{
+          backgroundColor: "#0B0F17",
+          background: "#0B0F17",
+          backgroundImage: "none",
+          borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
+        }}
+      >
         <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-4 py-3.5 border-b border-white/[0.08] shrink-0 min-h-[68px]">
           <FintechBrand collapsed={collapsed} />
           <button
@@ -636,7 +660,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="right" className="fintech-v2-mobile-sheet" dir="rtl">
+        <SheetContent
+          side="right"
+          className="fintech-v2-mobile-sheet"
+          style={{
+            backgroundColor: "#0B0F17",
+            background: "#0B0F17",
+            backgroundImage: "none",
+            borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
+          }}
+          dir="rtl"
+        >
           <div className="fintech-v2-mobile-body">
             <div className="p-4 border-b border-white/[0.08]">
               <FintechBrand collapsed={false} />

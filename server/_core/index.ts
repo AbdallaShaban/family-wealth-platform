@@ -29,6 +29,13 @@ function isPortAvailable(port: number, host: string = "0.0.0.0"): Promise<boolea
 }
 
 async function findAvailablePort(startPort: number = 3000, host: string = "0.0.0.0"): Promise<number> {
+  if (process.env.NODE_ENV === "production") {
+    const available = await isPortAvailable(startPort, host);
+    if (!available) {
+      throw new Error(`[Production Error] Port ${startPort} on host ${host} is already in use. Refusing dynamic port fallback in production mode.`);
+    }
+    return startPort;
+  }
   for (let port = startPort; port < startPort + 20; port++) {
     if (await isPortAvailable(port, host)) {
       return port;
@@ -59,9 +66,39 @@ async function startServer() {
   });
 
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Standard payload parser (2MB) for general APIs; large payload (50MB) scoped strictly to file uploads & statement imports
+  const standardJson = express.json({ limit: "2mb" });
+  const standardUrlencoded = express.urlencoded({ limit: "2mb", extended: true });
+  const largeJson = express.json({ limit: "50mb" });
+  const largeUrlencoded = express.urlencoded({ limit: "50mb", extended: true });
+
+  const isLargePayloadRoute = (req: express.Request) => {
+    const targetUrl = req.originalUrl || req.url || req.path || "";
+    return (
+      targetUrl.includes("vault") ||
+      targetUrl.includes("import") ||
+      targetUrl.includes("statement") ||
+      targetUrl.includes("backup") ||
+      targetUrl.includes("upload")
+    );
+  };
+
+  app.use((req, res, next) => {
+    if (isLargePayloadRoute(req)) {
+      largeJson(req, res, next);
+    } else {
+      standardJson(req, res, next);
+    }
+  });
+
+  app.use((req, res, next) => {
+    if (isLargePayloadRoute(req)) {
+      largeUrlencoded(req, res, next);
+    } else {
+      standardUrlencoded(req, res, next);
+    }
+  });
   app.use((req, res, next) => {
     const startedAt = performance.now();
     res.setHeader("x-request-id", randomUUID());
@@ -133,4 +170,7 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+startServer().catch(err => {
+  console.error("[Fatal Server Startup Error]", err);
+  process.exit(1);
+});

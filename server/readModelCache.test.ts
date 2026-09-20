@@ -128,4 +128,32 @@ describe("readModelCache", () => {
     expect(freshProfile).toEqual({ profile: "ws1", count: 2 });
     expect(ws1ProfileLoads).toBe(2);
   });
+
+  it("enforces MAX_CACHE_ENTRIES (500) limit with LRU eviction of oldest accessed keys", async () => {
+    // Fill cache up to 500 entries
+    for (let i = 1; i <= 500; i++) {
+      await getCachedReadModel(`item:${i}`, async () => `val_${i}`, 60_000);
+    }
+    expect(readModelCacheSize()).toBe(500);
+
+    // Access item:1 again to refresh its LRU position (making item:2 the oldest)
+    await getCachedReadModel("item:1", async () => "re-read", 60_000);
+
+    // Adding 501st item should evict the oldest entry (item:2)
+    await getCachedReadModel("item:501", async () => "val_501", 60_000);
+    expect(readModelCacheSize()).toBe(500);
+
+    // item:1 should still be cached
+    let reload1 = 0;
+    const item1 = await getCachedReadModel("item:1", async () => { reload1++; return "fresh"; }, 60_000);
+    expect(item1).toBe("val_1");
+    expect(reload1).toBe(0);
+
+    // item:2 should have been evicted and therefore reload
+    let reload2 = 0;
+    const item2 = await getCachedReadModel("item:2", async () => { reload2++; return "fresh_2"; }, 60_000);
+    expect(item2).toBe("fresh_2");
+    expect(reload2).toBe(1);
+  });
 });
+

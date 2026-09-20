@@ -24,7 +24,16 @@ if (analyticsEndpoint && analyticsWebsiteId && typeof window !== "undefined") {
   document.head.appendChild(script);
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000, // 30 seconds fresh data window
+      gcTime: 5 * 60_000, // 5 minutes cache garbage collection
+      refetchOnWindowFocus: false, // Prevent eager refetch on tab switch
+      retry: 1,
+    },
+  },
+});
 
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
