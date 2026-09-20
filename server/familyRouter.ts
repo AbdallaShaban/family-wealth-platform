@@ -1333,7 +1333,7 @@ export const familyRouter = router({
             const currentPriceNum = currentQuote?.price ? Number(currentQuote.price) : null;
             const fetchedPriceNum = Number(quote.price);
 
-            const sanity = checkQuoteSanity(fetchedPriceNum, currentPriceNum, quote.asOf);
+            const sanity = checkQuoteSanity(fetchedPriceNum, currentPriceNum, quote.asOf, inst.assetType);
 
             let changePercent = quote.changePercent ?? 0;
             if (!quote.changePercent && currentPriceNum && currentPriceNum > 0) {

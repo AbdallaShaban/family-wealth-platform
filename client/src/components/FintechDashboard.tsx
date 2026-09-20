@@ -804,7 +804,7 @@ export default function FintechDashboard() {
                             <TableHead className="text-right text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit">الأصل والرمز</TableHead>
                             <TableHead className="text-left text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit font-mono" dir="ltr">السعر الحالي / الوثيقة</TableHead>
                             <TableHead className="text-left text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit font-mono" dir="ltr">تكلفة الشراء (FIFO)</TableHead>
-                            <TableHead className="text-left text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit font-mono" dir="ltr">العائد غير المحقق (P&L)</TableHead>
+                            <TableHead className="text-left text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit font-mono whitespace-nowrap" dir="ltr">العائد غير المحقق (P&L)</TableHead>
                             <TableHead className="text-center text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit">أهداف التداول (Triggers)</TableHead>
                             <TableHead className="text-center text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-3 w-16 bg-inherit">إجراءات</TableHead>
                           </TableRow>
@@ -880,16 +880,24 @@ export default function FintechDashboard() {
                                 </TableCell>
 
                                 {/* 2. Current Price / NAV */}
-                                <TableCell className="py-3 px-4 text-left" dir="ltr">
+                                <TableCell
+                                  className="py-3 px-4 text-left cursor-pointer group/price hover:bg-emerald-50/50 dark:hover:bg-emerald-950/25 transition-colors rounded-lg"
+                                  dir="ltr"
+                                  onClick={() => openQuickPriceModal({ ...item, price: currentPrice })}
+                                  title={item.assetType === "fund" ? "انقر لتعديل ومطابقة سعر وثيقة الصندوق مع كشف ثاندر (Thndr)" : "انقر لتعديل السعر يدوياً"}
+                                >
                                   {currentPrice !== null ? (
                                     <div>
                                       <div className="font-mono font-bold text-slate-900 dark:text-white text-sm tabular-nums flex items-center justify-end gap-1.5">
                                         <span>{formatMoney(currentPrice, item.currency, 2)}</span>
                                         <button
                                           type="button"
-                                          onClick={() => openQuickPriceModal({ ...item, price: currentPrice })}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openQuickPriceModal({ ...item, price: currentPrice });
+                                          }}
                                           className="opacity-0 group-hover:opacity-100 hover:text-emerald-600 transition-opacity p-0.5 cursor-pointer"
-                                          title="تعديل السعر يدوياً"
+                                          title="تعديل السعر أو مطابقة كشف ثاندر"
                                         >
                                           <Pencil className="size-3 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400" />
                                         </button>
@@ -906,9 +914,12 @@ export default function FintechDashboard() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => openQuickPriceModal(item)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openQuickPriceModal(item);
+                                        }}
                                         className="size-6 p-0 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 cursor-pointer"
-                                        title="إدخال سعر الوثيقة يدوياً"
+                                        title="إدخال ومطابقة سعر الوثيقة مع ثاندر"
                                       >
                                         <Pencil className="size-3" />
                                       </Button>
@@ -918,7 +929,10 @@ export default function FintechDashboard() {
                                       <span className="text-slate-400 text-xs font-mono">—</span>
                                       <button
                                         type="button"
-                                        onClick={() => openQuickPriceModal(item)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openQuickPriceModal(item);
+                                        }}
                                         className="opacity-0 group-hover:opacity-100 hover:text-emerald-600 transition-opacity p-0.5 cursor-pointer"
                                         title="إدخال السعر يدوياً"
                                       >
@@ -945,37 +959,24 @@ export default function FintechDashboard() {
                                 </TableCell>
 
                                 {/* 4. Unrealized P&L Pill */}
-                                <TableCell className="py-3 px-4 text-left" dir="ltr">
+                                <TableCell className="py-3 px-4 text-left whitespace-nowrap" dir="ltr">
                                   {isOwned && unrealizedPnlAbs !== null && unrealizedPnlPct !== null ? (
-                                    <div className="flex flex-col items-end">
-                                      <div className="flex items-center gap-1.5">
-                                        <span
-                                          className={`font-mono font-bold text-xs tabular-nums px-2 py-0.5 rounded-md border tracking-tight ${
-                                            unrealizedPnlAbs > 0
-                                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                                              : unrealizedPnlAbs < 0
-                                              ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
-                                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-                                          }`}
-                                        >
-                                          {unrealizedPnlAbs > 0 ? "+" : ""}{formatMoney(unrealizedPnlAbs, item.currency, 2)}
-                                        </span>
-                                        <span
-                                          className={`font-mono font-bold text-[10.5px] px-1.5 py-0.5 rounded tracking-tight ${
-                                            unrealizedPnlPct > 0
-                                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                              : unrealizedPnlPct < 0
-                                              ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                                          }`}
-                                        >
-                                          {unrealizedPnlPct > 0 ? "+" : ""}{unrealizedPnlPct.toFixed(2)}%
-                                        </span>
-                                      </div>
-                                      <span className="text-[9.5px] text-slate-400 font-semibold block mt-0.5">
-                                        عائد غير محقق
+                                    <span
+                                      className={`inline-flex items-center gap-1.5 whitespace-nowrap px-2.5 py-1 rounded-md text-xs font-bold font-mono border tabular-nums tracking-tight ${
+                                        unrealizedPnlAbs > 0
+                                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                          : unrealizedPnlAbs < 0
+                                          ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                          : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                                      }`}
+                                    >
+                                      <span>
+                                        {unrealizedPnlAbs > 0 ? "+" : ""}{formatMoney(unrealizedPnlAbs, item.currency, 2)}
                                       </span>
-                                    </div>
+                                      <span className="opacity-80">
+                                        ({unrealizedPnlPct > 0 ? "+" : ""}{unrealizedPnlPct.toFixed(2)}%)
+                                      </span>
+                                    </span>
                                   ) : (
                                     <span className="text-slate-400 text-xs font-mono">—</span>
                                   )}
@@ -1592,17 +1593,26 @@ export default function FintechDashboard() {
             <DialogHeader className="text-right space-y-1">
               <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Pencil className="size-4 text-emerald-600" />
-                {selectedItemForPrice?.assetType === "fund" ? "تسجيل وتعديل سعر الوثيقة (NAV)" : "تحديث السعر السوقي يدوياً"}
+                {selectedItemForPrice?.assetType === "fund"
+                  ? "تسجيل ومطابقة سعر الوثيقة (Thndr / NAV Matching)"
+                  : "تحديث السعر السوقي يدوياً"}
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
                 {selectedItemForPrice?.name} ({selectedItemForPrice?.symbol})
+                {selectedItemForPrice?.assetType === "fund" && (
+                  <span className="block text-[11px] text-teal-600 dark:text-teal-400 font-semibold mt-1">
+                    يمكنك إدخال سعر الوثيقة المعتمد فوراً لمطابقة كشف حساب ثاندر (Thndr) أو مدير الصندوق.
+                  </span>
+                )}
               </DialogDescription>
             </DialogHeader>
 
             <div className="py-4 space-y-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  {selectedItemForPrice?.assetType === "fund" ? "سعر الوثيقة المعلن (EGP)" : "السعر السوقي للأصل (EGP)"}
+                  {selectedItemForPrice?.assetType === "fund"
+                    ? "سعر الوثيقة المعتمد (NAV) بكشف ثاندر (EGP)"
+                    : "السعر السوقي للأصل (EGP)"}
                 </Label>
                 <div className="relative">
                   <Input
@@ -1622,7 +1632,7 @@ export default function FintechDashboard() {
               </div>
               <p className="text-[11px] text-slate-500">
                 {selectedItemForPrice?.assetType === "fund"
-                  ? "سيتم تسجيل السعر كقيمة أصول صافية (NAV) معتمدة وتحديث العوائد غير المحققة فوراً."
+                  ? "سيتم تسجيل السعر كقيمة أصول صافية (NAV) معتمدة ومطابقة لمحفظة ثاندر وتحديث العوائد غير المحققة فوراً."
                   : "سيتم تسجيل السعر كتقييم سوقي لحظي معتمد للأصل."}
               </p>
             </div>

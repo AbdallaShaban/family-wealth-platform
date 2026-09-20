@@ -234,9 +234,13 @@ export async function fetchTradingViewEgxScan(symbol: string): Promise<{
 export function checkQuoteSanity(
   fetchedPrice: number,
   currentRecordedPrice: number | null | undefined,
-  quoteAsOf: number
+  quoteAsOf: number,
+  assetType?: string
 ) {
-  const MAX_ALLOWED_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (accounts for weekend/holidays)
+  // Mutual funds publish NAV periodically (weekly or bi-weekly), so allow 14 days. Equities allow 7 days.
+  const MAX_ALLOWED_AGE_MS = assetType === "fund"
+    ? 14 * 24 * 60 * 60 * 1000
+    : 7 * 24 * 60 * 60 * 1000;
   const isStaleDate = !quoteAsOf || Date.now() - quoteAsOf > MAX_ALLOWED_AGE_MS;
 
   let isDeviationWarning = false;
@@ -344,7 +348,7 @@ export async function fetchMubasherEgxFunds(): Promise<NonNullable<typeof mubash
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
   try {
-    const res = await fetch("https://www.mubasher.info/api/1/funds?country=eg&size=100", {
+    const res = await fetch("https://www.mubasher.info/api/1/funds?country=eg&size=250", {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept: "application/json, text/plain, */*",
@@ -364,9 +368,10 @@ export async function fetchMubasherEgxFunds(): Promise<NonNullable<typeof mubash
 }
 
 export const KNOWN_EGX_FUNDS: Record<string, { fundId: number; name: string; keywords: string[] }> = {
-  BWS: { fundId: 6149, name: "صندوق بلتون وفرة (EGX33)", keywords: ["وفرة", "بلتون"] },
-  BRE: { fundId: 6203, name: "صندوق بلتون العقاري", keywords: ["بلتون العقاري", "القطاعات العقارية"] },
-  CMS: { fundId: 6144, name: "صندوق مصر شريعة إكويتي (EGX33)", keywords: ["شريعة إكويتى", "شريعة اكويتي", "سي آي استس"] },
+  BWS: { fundId: 6149, name: "صندوق بلتون وفرة (EGX33)", keywords: ["وفرة", "بلتون", "6149"] },
+  BRE: { fundId: 6203, name: "صندوق بلتون العقاري", keywords: ["بلتون العقاري", "القطاعات العقارية", "الإصدار الرابع", "6203"] },
+  BMS: { fundId: 6483, name: "صندوق بلتون يومي B / السيولة", keywords: ["يومي B", "أدوات الدخل الثابت", "بي سيكيور", "بلتون", "BMS"] },
+  CMS: { fundId: 6144, name: "صندوق مصر شريعة إكويتي (EGX33)", keywords: ["شريعة إكويتى", "شريعة اكويتي", "مصر مؤشر شريعة", "سي آي استس", "6144"] },
   B100: { fundId: 6148, name: "صندوق بلتون مائة مائة (EGX100)", keywords: ["مائة مائة", "6148"] },
   BALPHA: { fundId: 6424, name: "صندوق بلتون B-Alpha", keywords: ["B-Alpha", "6424"] },
   B35: { fundId: 6426, name: "صندوق بلتون B-35", keywords: ["B-35", "6426"] },
@@ -375,6 +380,7 @@ export const KNOWN_EGX_FUNDS: Record<string, { fundId: number; name: string; key
   BIND: { fundId: 6204, name: "صندوق بلتون الصناعي", keywords: ["بلتون الصناعي", "6204"] },
   BCON: { fundId: 6205, name: "صندوق بلتون الاستهلاكي", keywords: ["بلتون الاستهلاكي", "6205"] },
   BSEC: { fundId: 6035, name: "صندوق بلتون بي سيكيور", keywords: ["بي سيكيور", "6035"] },
+  AZG: { fundId: 6122, name: "صندوق أزيموت لفرص الأسهم الشريعة", keywords: ["أزيموت", "فرص الشريعة", "AZ"] },
 };
 
 const arabicMonthsMap: Record<string, number> = {
