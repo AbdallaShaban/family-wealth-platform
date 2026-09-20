@@ -172,38 +172,46 @@ textarea:user-invalid {
 /* FAMILY Fintech application shell */
 .fintech-app-inset { min-width: 0; background: radial-gradient(circle at 72% -8%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 32rem), var(--background); }
 .fintech-app-shell { display: flex; min-height: 100svh; background: radial-gradient(circle at 78% -12%, color-mix(in srgb, var(--primary) 8%, transparent), transparent 31rem), var(--background); }
-.fintech-v2-sidebar { position: sticky; top: 0; display: flex; width: 292px; min-width: 292px; max-width: 292px; height: 100svh; max-height: 100svh; flex: 0 0 292px; flex-direction: column; overflow: hidden; contain: paint; isolation: isolate; border-left: 1px solid rgba(148, 163, 184, 0.12); background: #0B1628; color: #F8FAFC; transition: width .22s cubic-bezier(.23,1,.32,1), flex-basis .22s cubic-bezier(.23,1,.32,1), min-width .22s cubic-bezier(.23,1,.32,1), max-width .22s cubic-bezier(.23,1,.32,1); z-index: 30; }
-.dark .fintech-v2-sidebar { background: #0B1628; border-left: 1px solid rgba(148, 163, 184, 0.12); }
+.fintech-v2-sidebar { position: sticky; top: 0; display: flex; width: 292px; min-width: 292px; max-width: 292px; height: 100svh; max-height: 100svh; flex: 0 0 292px; flex-direction: column; overflow: hidden; contain: paint; isolation: isolate; border-left: 1px solid rgba(255, 255, 255, 0.05); background: rgba(9, 13, 22, 0.95); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5); color: #F8FAFC; transition: width .22s cubic-bezier(.23,1,.32,1), flex-basis .22s cubic-bezier(.23,1,.32,1), min-width .22s cubic-bezier(.23,1,.32,1), max-width .22s cubic-bezier(.23,1,.32,1); z-index: 30; }
+.dark .fintech-v2-sidebar { background: rgba(9, 13, 22, 0.95); border-left: 1px solid rgba(255, 255, 255, 0.05); }
 .fintech-v2-sidebar.is-collapsed { width: 68px; min-width: 68px; max-width: 68px; flex-basis: 68px; }
-.fintech-v2-sidebar > header { flex-shrink: 0; display: flex; min-height: 68px; height: 68px; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 14px 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.10); background: #0B1628; }
+.fintech-v2-sidebar > header { flex-shrink: 0; display: flex; min-height: 68px; height: 68px; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 14px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); background: transparent; }
 .fintech-v2-sidebar.is-collapsed > header { justify-content: center; padding: 14px 8px 12px; }
 .fintech-v2-sidebar.is-collapsed .fintech-v2-brand { display: none; }
 .fintech-v2-brand { display: flex; min-width: 0; align-items: center; gap: 10px; }
 .fintech-v2-brand > div:last-child { display: grid; min-width: 0; gap: 2px; }
 .fintech-v2-brand strong { overflow: hidden; color: #F8FAFC; font-family: Inter, Cairo, sans-serif; font-size: 15px; font-weight: 800; letter-spacing: .08em; text-overflow: ellipsis; white-space: nowrap; direction: ltr; }
-.fintech-v2-brand span { color: #6EE7B7; font-family: Inter, Cairo, sans-serif; font-size: 8.5px; font-weight: 700; letter-spacing: .12em; white-space: nowrap; direction: ltr; }
-.fintech-v2-collapse { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 9px; background: rgba(255, 255, 255, 0.025); color: #94A3B8; transition: background .16s ease, color .16s ease, border-color .16s ease; }
-.fintech-v2-collapse:hover { background: rgba(16, 185, 129, 0.08); color: #F8FAFC; border-color: rgba(16, 185, 129, 0.24); }
-.fintech-v2-nav { flex: 1 1 0%; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 10px 10px 14px; scrollbar-width: thin; scrollbar-color: rgba(16, 185, 129, 0.25) transparent; -webkit-overflow-scrolling: touch; }
-.fintech-v2-group-trigger { min-height: 38px; border-radius: 9px; border: 1px solid rgba(148, 163, 184, 0.08) !important; background: rgba(255, 255, 255, 0.02) !important; color: #CBD5E1 !important; padding: 0 9px !important; font-size: 11.5px !important; font-weight: 700 !important; text-decoration: none !important; transition: background .16s ease, color .16s ease, border-color .16s ease !important; }
-.fintech-v2-group-trigger:hover { background: rgba(16, 185, 129, 0.055) !important; color: #F8FAFC !important; border-color: rgba(16, 185, 129, 0.18) !important; }
-.fintech-v2-group-trigger[data-state="open"] { background: rgba(15, 29, 50, 0.6) !important; border-color: rgba(16, 185, 129, 0.20) !important; color: #F8FAFC !important; }
-.fintech-v2-group-trigger.has-active { border-color: rgba(16, 185, 129, 0.24) !important; background: rgba(16, 185, 129, 0.12) !important; color: #F8FAFC !important; }
+.fintech-v2-brand span { color: #34D399; font-family: Inter, Cairo, sans-serif; font-size: 9px; font-weight: 700; letter-spacing: .12em; white-space: nowrap; direction: ltr; }
+.fintech-v2-collapse { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 9px; background: rgba(255, 255, 255, 0.03); color: #94A3B8; transition: background .16s ease, color .16s ease, border-color .16s ease; }
+.fintech-v2-collapse:hover { background: rgba(16, 185, 129, 0.12); color: #F8FAFC; border-color: rgba(16, 185, 129, 0.28); }
+.fintech-v2-nav { flex: 1 1 0%; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch; }
+.fintech-v2-nav::-webkit-scrollbar { display: none; }
+.scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.fintech-glass-card { background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4); }
+.fintech-btn-primary { background: #059669; color: #FFFFFF; font-weight: 600; padding: 0.625rem 1rem; border-radius: 0.75rem; border: 1px solid rgba(52, 211, 153, 0.2); box-shadow: 0 10px 15px -3px rgba(6, 78, 59, 0.5); transition: all 0.15s ease; }
+.fintech-btn-primary:hover { background: #10B981; }
+.fintech-btn-primary:active { transform: scale(0.98); }
+.fintech-v2-group-trigger { min-height: 38px; border-radius: 9px; border: 1px solid transparent !important; background: transparent !important; color: #CBD5E1 !important; padding: 0 9px !important; font-size: 11.5px !important; font-weight: 700 !important; text-decoration: none !important; transition: background .16s ease, color .16s ease, border-color .16s ease !important; }
+.fintech-v2-group-trigger:hover { background: rgba(255, 255, 255, 0.05) !important; color: #F8FAFC !important; }
+.fintech-v2-group-trigger[data-state="open"] { background: rgba(255, 255, 255, 0.03) !important; color: #F8FAFC !important; }
+.fintech-v2-group-trigger.has-active { border-color: rgba(16, 185, 129, 0.24) !important; background: rgba(16, 185, 129, 0.10) !important; color: #34D399 !important; }
 .fintech-v2-group-trigger > svg { width: 14px; height: 14px; color: #94A3B8; }
-.fintech-v2-item { display: flex; width: 100%; min-height: 35px; align-items: center; gap: 9px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #CBD5E1; padding: 0 9px; font-size: 11.5px; font-weight: 500; text-align: right; transition: transform .16s cubic-bezier(.23,1,.32,1), background .16s ease, color .16s ease, border-color .16s ease; }
+.fintech-v2-item { display: flex; width: 100%; min-height: 35px; align-items: center; gap: 9px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: #94A3B8; padding: 0 9px; font-size: 11.5px; font-weight: 500; text-align: right; transition: transform .16s cubic-bezier(.23,1,.32,1), background .16s ease, color .16s ease, border-color .16s ease; }
 .fintech-v2-item svg { color: #94A3B8; transition: color .16s ease; }
-.fintech-v2-item:hover { transform: translateX(-2px); background: rgba(16, 185, 129, 0.055); color: #F8FAFC; }
-.fintech-v2-item:hover svg { color: #34D399; }
-.fintech-v2-item.is-active { border-color: rgba(16, 185, 129, 0.28); background: rgba(16, 185, 129, 0.12); color: #F8FAFC; font-weight: 700; box-shadow: inset -3.5px 0 0 #10B981; }
+.fintech-v2-item:hover { transform: translateX(-2px); background: rgba(255, 255, 255, 0.05); color: #F8FAFC; }
+.fintech-v2-item:hover svg { color: #F8FAFC; }
+.fintech-v2-item.is-active { border-right: 2px solid #10B981; background: rgba(16, 185, 129, 0.10); color: #34D399; font-weight: 600; }
 .fintech-v2-item.is-active svg { color: #34D399; }
-.fintech-v2-icon-nav { display: flex; flex-direction: column; align-items: center; flex: 1 1 0%; min-height: 0; gap: 4px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-gutter: stable; padding: 10px 4px 14px; scrollbar-width: thin; scrollbar-color: rgba(16, 185, 129, 0.25) transparent; -webkit-overflow-scrolling: touch; }
+.fintech-v2-icon-nav { display: flex; flex-direction: column; align-items: center; flex: 1 1 0%; min-height: 0; gap: 4px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: none; -ms-overflow-style: none; -webkit-overflow-scrolling: touch; }
+.fintech-v2-icon-nav::-webkit-scrollbar { display: none; }
 .fintech-v2-icon-btn { display: grid; width: 42px; height: 38px; place-items: center; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #94A3B8; transition: background .16s ease, color .16s ease, transform .16s ease, border-color .16s ease; }
-.fintech-v2-icon-btn:hover { transform: translateY(-1px); background: rgba(16, 185, 129, 0.08); color: #F8FAFC; }
-.fintech-v2-icon-btn.is-active { border-color: rgba(16, 185, 129, 0.28); background: rgba(16, 185, 129, 0.15); color: #34D399; box-shadow: inset -3px 0 0 #10B981; }
-.fintech-v2-user-zone { flex-shrink: 0; padding: 10px 12px 14px; border-top: 1px solid rgba(148, 163, 184, 0.10); background: rgba(255, 255, 255, 0.025); }
+.fintech-v2-icon-btn:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.06); color: #F8FAFC; }
+.fintech-v2-icon-btn.is-active { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.15); color: #34D399; }
+.fintech-v2-user-zone { flex-shrink: 0; padding: 10px 12px 14px; border-top: 1px solid rgba(255, 255, 255, 0.05); background: transparent; }
 .fintech-v2-sidebar.is-collapsed .fintech-v2-user-zone { padding: 10px 4px 14px; }
 .fintech-v2-main { display: flex; min-width: 0; flex: 1; flex-direction: column; background: var(--background); }
-.fintech-v2-mobile-sheet { width: min(88vw, 21rem) !important; border: 0 !important; background: #0B1628 !important; color: #F8FAFC; padding: 0 !important; }
+.fintech-v2-mobile-sheet { width: min(88vw, 21rem) !important; border: 0 !important; background: rgba(9, 13, 22, 0.98) !important; backdrop-filter: blur(24px) !important; color: #F8FAFC; padding: 0 !important; }
 .fintech-v2-mobile-body { display: flex; height: 100%; flex-direction: column; }
 .fintech-v2-mobile-body .fintech-v2-nav { padding: 10px 14px 14px; }
 .fintech-v2-mobile-body .fintech-v2-user-zone { margin-top: auto; }
