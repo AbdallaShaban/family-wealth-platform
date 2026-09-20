@@ -38,6 +38,8 @@ import {
   Pencil,
   Trash2,
   RefreshCw,
+  AlertTriangle,
+  Check,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -362,20 +364,41 @@ export default function InvestmentsPageRedesign() {
     },
   });
 
-  const syncMarketPrices = trpc.family.investments.syncMarketPrices.useMutation({
+  // Market Price Preview & Review Modal State
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [previewQuotes, setPreviewQuotes] = useState<Array<any>>([]);
+
+  const previewMarketPrices = trpc.family.investments.previewMarketPrices.useMutation({
     onSuccess: (data) => {
-      toast.success(
-        data.updatedCount > 0
-          ? `تم تحديث أسعار ${data.updatedCount} أداة بنجاح من البورصة المصرية والأسواق.`
-          : "تم فحص أسعار السوق؛ جميع الأدوات مسجلة بأحدث الأسعار."
+      if (!data.previewList || data.previewList.length === 0) {
+        toast.info("لا توجد أدوات استثمارية برموز سوقية مسجلة للمزامنة.");
+        return;
+      }
+      setPreviewQuotes(
+        data.previewList.map((item) => ({
+          ...item,
+          approved: !item.isStaleDate,
+          userEditedPrice: item.fetchedPrice,
+        }))
       );
+      setReviewModalOpen(true);
+    },
+    onError: (err) => {
+      toast.error(errorText(err));
+    },
+  });
+
+  const commitMarketPrices = trpc.family.investments.commitMarketPrices.useMutation({
+    onSuccess: (data) => {
+      toast.success(`تم اعتماد وتحديث أسعار ${data.count} أداة بنجاح وتحديث تقييم المحفظة.`);
+      setReviewModalOpen(false);
       void utils.family.portfolio.list.invalidate();
       void utils.family.instruments.list.invalidate();
       void utils.family.dashboard.invalidate();
       void utils.performance.getPerformanceSummary.invalidate();
     },
-    onError: (error) => {
-      toast.error(errorText(error));
+    onError: (err) => {
+      toast.error(errorText(err));
     },
   });
 
@@ -518,12 +541,12 @@ export default function InvestmentsPageRedesign() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={syncMarketPrices.isPending}
-                onClick={() => syncMarketPrices.mutate()}
+                disabled={previewMarketPrices.isPending}
+                onClick={() => previewMarketPrices.mutate()}
                 className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all flex items-center gap-1.5"
               >
-                <RefreshCw className={`size-3.5 ${syncMarketPrices.isPending ? "animate-spin text-emerald-600 dark:text-emerald-400" : ""}`} />
-                {syncMarketPrices.isPending ? "جارٍ التحديث…" : "تحديث الأسعار"}
+                <RefreshCw className={`size-3.5 ${previewMarketPrices.isPending ? "animate-spin text-emerald-600 dark:text-emerald-400" : ""}`} />
+                {previewMarketPrices.isPending ? "جارٍ فحص الأسعار…" : "تحديث الأسعار (مباشر)"}
               </Button>
               <Button
                 size="sm"
@@ -1776,6 +1799,193 @@ export default function InvestmentsPageRedesign() {
           isLoading={deleteTradeMutation.isPending}
           onConfirm={handleConfirmDeleteTrade}
         />
+        {/* Market Price Review & Override Modal */}
+        <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-2xl p-6 bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 shadow-xl text-right">
+            <DialogHeader className="text-right space-y-1.5 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <RefreshCw className="size-5 text-emerald-600 dark:text-emerald-400" />
+                  مراجعة واعتماد أسعار السوق (البورصة المصرية)
+                </DialogTitle>
+                <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800">
+                  مباشر مصر + TradingView
+                </Badge>
+              </div>
+              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+                تم جلب أحدث أسعار التداول الحقيقية ومطابقتها مع ضوابط الانحراف وسلامة التاريخ. يمكنك تعديل أي سعر يدوياً أو استبعاد أداة قبل الاعتماد النهائي في المحفظة.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-3">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const allApproved = previewQuotes.every((q) => q.approved);
+                      setPreviewQuotes(previewQuotes.map((q) => ({ ...q, approved: !allApproved })));
+                    }}
+                    className="text-xs rounded-lg h-7 px-2.5 border-slate-200 dark:border-slate-700"
+                  >
+                    {previewQuotes.every((q) => q.approved) ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                  </Button>
+                  <span className="text-xs text-slate-500">
+                    تم تحديد {previewQuotes.filter((q) => q.approved).length} من أصل {previewQuotes.length} أداة
+                  </span>
+                </div>
+                {previewQuotes.some((q) => q.isDeviationWarning) && (
+                  <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1 font-medium bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+                    <AlertTriangle className="size-3.5" />
+                    توجد أدوات بتغير سعري ملحوظ يتجاوز 25% (يرجى التأكد)
+                  </span>
+                )}
+              </div>
+
+              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+                    <tr>
+                      <th className="py-2.5 px-3 w-10 text-center">اعتماد</th>
+                      <th className="py-2.5 px-3">الأداة / الرمز</th>
+                      <th className="py-2.5 px-3">السعر المسجل</th>
+                      <th className="py-2.5 px-3">السعر المسحوب</th>
+                      <th className="py-2.5 px-3">التغير %</th>
+                      <th className="py-2.5 px-3">تاريخ السعر</th>
+                      <th className="py-2.5 px-3">حالة الفحص</th>
+                      <th className="py-2.5 px-3 w-36">السعر المعتمد (تعديل يدوي)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {previewQuotes.map((q, idx) => (
+                      <tr
+                        key={q.instrumentId}
+                        className={`hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors ${
+                          !q.approved ? "opacity-50" : ""
+                        }`}
+                      >
+                        <td className="py-2.5 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={q.approved}
+                            onChange={(e) => {
+                              const updated = [...previewQuotes];
+                              updated[idx].approved = e.target.checked;
+                              setPreviewQuotes(updated);
+                            }}
+                            className="size-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                          />
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-bold text-slate-900 dark:text-white">{q.name}</div>
+                          <div className="text-[11px] font-mono text-slate-500">{q.symbol}</div>
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          {q.currentRecordedPrice ? `${q.currentRecordedPrice} ${q.currency}` : "—"}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-slate-100">
+                          {q.fetchedPrice} {q.currency}
+                        </td>
+                        <td className="py-2.5 px-3 font-mono">
+                          <span
+                            className={
+                              q.changePercent > 0
+                                ? "text-emerald-600 font-bold"
+                                : q.changePercent < 0
+                                ? "text-rose-600 font-bold"
+                                : "text-slate-500"
+                            }
+                          >
+                            {q.changePercent > 0 ? `+${q.changePercent}%` : `${q.changePercent}%`}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-[11px] text-slate-500 font-mono">
+                          {q.dateFormatted}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {q.isStaleDate ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                              <Clock className="size-3" />
+                              تاريخ قديم
+                            </span>
+                          ) : q.isDeviationWarning ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                              <AlertTriangle className="size-3" />
+                              انحراف {q.deviationPercent}%
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle2 className="size-3" />
+                              متحقق
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={q.userEditedPrice}
+                            onChange={(e) => {
+                              const updated = [...previewQuotes];
+                              updated[idx].userEditedPrice = e.target.value;
+                              setPreviewQuotes(updated);
+                            }}
+                            className="h-8 rounded-lg text-xs font-mono font-bold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-left"
+                            dir="ltr"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-4 gap-2 flex-row-reverse justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-3">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReviewModalOpen(false)}
+                  className="rounded-xl text-xs px-4"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={commitMarketPrices.isPending || previewQuotes.filter((q) => q.approved).length === 0}
+                  onClick={() => {
+                    const approvedList = previewQuotes
+                      .filter((q) => q.approved && Number(q.userEditedPrice) > 0)
+                      .map((q) => ({
+                        instrumentId: q.instrumentId,
+                        price: q.userEditedPrice,
+                        source: q.source,
+                        asOf: q.asOf,
+                      }));
+                    commitMarketPrices.mutate({ quotes: approvedList });
+                  }}
+                  className="rounded-xl text-xs px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 shadow-sm"
+                >
+                  {commitMarketPrices.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Check className="size-3.5" />
+                  )}
+                  اعتماد وحفظ الأسعار المحددة ({previewQuotes.filter((q) => q.approved).length})
+                </Button>
+              </div>
+
+              <div className="text-[11px] text-slate-400">
+                المصدر الرئيسي: مباشر مصر | الاحتياطي: TradingView EGX
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </main>
     </DashboardLayout>
   );

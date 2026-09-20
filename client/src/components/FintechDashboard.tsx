@@ -153,11 +153,10 @@ function ExecutiveMetricCell({
 
   return (
     <div
-      className={`p-5 flex flex-col justify-between transition-colors ${
-        isPriority
+      className={`p-5 flex flex-col justify-between transition-colors ${isPriority
           ? "bg-slate-50/50 dark:bg-slate-900/30"
           : "hover:bg-slate-50/40 dark:hover:bg-slate-900/20"
-      } ${className}`}
+        } ${className}`}
     >
       <div className="flex items-center justify-between">
         <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs tracking-wide">
@@ -169,11 +168,10 @@ function ExecutiveMetricCell({
       </div>
       <div className="mt-3.5 mb-1.5">
         <strong
-          className={`font-mono tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap ${
-            isPriority
+          className={`font-mono tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap ${isPriority
               ? "text-slate-900 dark:text-white font-extrabold text-2xl lg:text-3xl"
               : "text-slate-900 dark:text-white font-bold text-xl sm:text-2xl"
-          }`}
+            }`}
         >
           <AnimatedMoney value={value} currency={currency} />
         </strong>
@@ -277,30 +275,30 @@ export default function FintechDashboard() {
   const accounts = usingDemo
     ? demoDashboard.accounts
     : (live?.accounts ?? []).map(account => ({
-        id: String(account.id),
-        name: account.name,
-        value: Number(account.baseValue ?? account.balance ?? 0),
-        currency: account.currency,
-        kind: account.accountType,
-      }));
+      id: String(account.id),
+      name: account.name,
+      value: Number(account.baseValue ?? account.balance ?? 0),
+      currency: account.currency,
+      kind: account.accountType,
+    }));
   const allocation = usingDemo
     ? [...demoDashboard.allocation]
     : [
-        ...(live?.accounts ?? [])
-          .filter(account => account.baseValue !== null && Number(account.baseValue) > 0)
-          .map((account, index) => ({
-            name: account.name,
-            value: Number(account.baseValue),
-            color: ["#10B981", "#38BDF8", "#F59E0B"][index % 3],
-          })),
-        ...(live?.portfolio ?? [])
-          .filter(position => position.baseMarketValue !== null && Number(position.baseMarketValue) > 0)
-          .map((position, index) => ({
-            name: position.instrumentName,
-            value: Number(position.baseMarketValue),
-            color: ["#F43F5E", "#34D399"][index % 2],
-          })),
-      ];
+      ...(live?.accounts ?? [])
+        .filter(account => account.baseValue !== null && Number(account.baseValue) > 0)
+        .map((account, index) => ({
+          name: account.name,
+          value: Number(account.baseValue),
+          color: ["#10B981", "#38BDF8", "#F59E0B"][index % 3],
+        })),
+      ...(live?.portfolio ?? [])
+        .filter(position => position.baseMarketValue !== null && Number(position.baseMarketValue) > 0)
+        .map((position, index) => ({
+          name: position.instrumentName,
+          value: Number(position.baseMarketValue),
+          color: ["#F43F5E", "#34D399"][index % 2],
+        })),
+    ];
   const cashFlow = usingDemo ? [...demoDashboard.cashFlow] : (cashFlowQuery.data ?? []);
 
   const openTriggerModal = (
@@ -386,58 +384,58 @@ export default function FintechDashboard() {
 
   const events = usingDemo
     ? demoDashboard.events.map(event => {
-        const isExpense = event.tone === "expense";
-        const isTransfer = event.type.includes("تحويل");
-        return {
-          id: event.id,
-          title: event.type,
-          badge: isExpense ? "سحب / مصروف" : isTransfer ? "تحويل" : event.tone === "growth" ? "تقييم أصل" : "إيداع سيولة",
-          amount: event.amount,
-          currency: event.currency,
-          date: event.date,
-          tone: event.tone,
-          isOutflow: isExpense,
-          isTransfer,
-        };
-      })
+      const isExpense = event.tone === "expense";
+      const isTransfer = event.type.includes("تحويل");
+      return {
+        id: event.id,
+        title: event.type,
+        badge: isExpense ? "سحب / مصروف" : isTransfer ? "تحويل" : event.tone === "growth" ? "تقييم أصل" : "إيداع سيولة",
+        amount: event.amount,
+        currency: event.currency,
+        date: event.date,
+        tone: event.tone,
+        isOutflow: isExpense,
+        isTransfer,
+      };
+    })
     : (live?.recentEvents ?? []).map(event => {
-        const isTransfer = event.eventType === "transfer";
-        const isOutflow = !isTransfer && ["expense", "withdrawal", "fee", "tax", "debt_payment", "buy"].includes(event.eventType);
-        const label = eventLabels[event.eventType] ?? event.eventType;
-        const defaultTitle =
-          event.eventType === "deposit"
-            ? "إيداع سيولة نقدية"
-            : event.eventType === "opening_balance"
+      const isTransfer = event.eventType === "transfer";
+      const isOutflow = !isTransfer && ["expense", "withdrawal", "fee", "tax", "debt_payment", "buy"].includes(event.eventType);
+      const label = eventLabels[event.eventType] ?? event.eventType;
+      const defaultTitle =
+        event.eventType === "deposit"
+          ? "إيداع سيولة نقدية"
+          : event.eventType === "opening_balance"
             ? "رصيد افتتاحي للحساب"
             : event.eventType === "withdrawal"
-            ? "سحب سيولة نقدية"
-            : event.eventType === "expense"
-            ? "مصروف مصنف"
-            : event.eventType === "transfer"
-            ? "تحويل داخلي"
-            : label;
-        return {
-          id: String(event.id),
-          title: event.memo ? event.memo : defaultTitle,
-          badge: label,
-          amount: event.grossAmount,
-          currency: event.currency,
-          date: formatDateTime(event.occurredAt),
-          tone: isTransfer ? ("transfer" as const) : isOutflow ? ("expense" as const) : ("income" as const),
-          isOutflow,
-          isTransfer,
-        };
-      });
+              ? "سحب سيولة نقدية"
+              : event.eventType === "expense"
+                ? "مصروف مصنف"
+                : event.eventType === "transfer"
+                  ? "تحويل داخلي"
+                  : label;
+      return {
+        id: String(event.id),
+        title: event.memo ? event.memo : defaultTitle,
+        badge: label,
+        amount: event.grossAmount,
+        currency: event.currency,
+        date: formatDateTime(event.occurredAt),
+        tone: isTransfer ? ("transfer" as const) : isOutflow ? ("expense" as const) : ("income" as const),
+        isOutflow,
+        isTransfer,
+      };
+    });
   const debtItems = usingDemo
     ? demoDashboard.debts
     : (debts.data ?? []).filter(debt => debt.status === "active").map(debt => ({
-        id: String(debt.id),
-        name: debt.name,
-        outstanding: debt.outstanding,
-        currency: debt.currency,
-        payment: debt.minimumPayment,
-        rate: debt.annualInterestRate,
-      }));
+      id: String(debt.id),
+      name: debt.name,
+      outstanding: debt.outstanding,
+      currency: debt.currency,
+      payment: debt.minimumPayment,
+      rate: debt.annualInterestRate,
+    }));
   const netWorth = usingDemo ? demoDashboard.netWorth : (live?.netWorthBase ?? "0");
   const liquidBalance = usingDemo ? demoDashboard.liquidBalance : (live?.liquidBalanceBase ?? "0");
   const liabilities = usingDemo ? demoDashboard.liabilities : (live?.liabilityBalanceBase ?? "0");
@@ -556,11 +554,10 @@ export default function FintechDashboard() {
               ) : live?.netWorthDelta ? (
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                   <span
-                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10.5px] font-bold font-mono border ${
-                      live.netWorthDelta.isPositive
+                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10.5px] font-bold font-mono border ${live.netWorthDelta.isPositive
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60"
                         : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60"
-                    }`}
+                      }`}
                   >
                     <span>{live.netWorthDelta.isPositive ? "▲ +" : "▼ -"}</span>
                     <span>{currency} {formatMoney(live.netWorthDelta.absolute, currency, 2)}</span>
@@ -680,7 +677,7 @@ export default function FintechDashboard() {
                     const currentPrice = item.price !== null ? Number(item.price) : (position?.marketPrice !== null ? Number(position?.marketPrice) : null);
                     const avgCost = isOwned && position?.averageCost ? Number(position.averageCost) : null;
                     const quantity = isOwned && position?.quantity ? Number(position.quantity) : 0;
-                    
+
                     // P&L calculation
                     let unrealizedPnlAbs: number | null = null;
                     let unrealizedPnlPct: number | null = null;
@@ -939,8 +936,8 @@ export default function FintechDashboard() {
                                   isTransfer
                                     ? "font-mono font-bold text-slate-700 dark:text-slate-300 tabular-nums text-xs"
                                     : isOutflow
-                                    ? "font-mono font-bold text-slate-900 dark:text-white tabular-nums text-xs"
-                                    : "font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums text-xs"
+                                      ? "font-mono font-bold text-slate-900 dark:text-white tabular-nums text-xs"
+                                      : "font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums text-xs"
                                 }
                               >
                                 {isTransfer ? "↔ " : isOutflow ? "- " : "+ "}

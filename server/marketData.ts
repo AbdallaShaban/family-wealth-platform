@@ -14,8 +14,15 @@ export type MarketQuote = {
   price: string;
   currency: string;
   asOf: number;
-  source: "Yahoo Finance via yahoo-finance2";
-  quoteStatus: "delayed";
+  source: string;
+  quoteStatus: "delayed" | "live";
+  changePercent?: number;
+  arabicName?: string;
+  resolvedSymbol?: string;
+  deviationPercent?: number;
+  isStaleDate?: boolean;
+  isDeviationWarning?: boolean;
+  sanityStatus?: "normal" | "deviation_warning" | "stale_warning";
 };
 
 const currencyCode = /^[A-Z]{3}$/;
@@ -119,6 +126,7 @@ export const BENCHMARK_SYMBOLS: Record<string, { yahooSymbol: string; name: stri
   GOLD_USD: { yahooSymbol: "GC=F", name: "مؤشر الذهب العالمي (دولار/أونصة)", currency: "USD" },
 };
 
+
 export function normalizeYahooQuote(raw: Awaited<ReturnType<YahooQuoteClient["quote"]>>, fallbackCurrency?: string): MarketQuote {
   const price = raw.regularMarketPrice;
   const rawCurrency = raw.currency?.trim().toUpperCase();
@@ -136,9 +144,191 @@ export async function fetchYahooQuote(symbol: string, client: YahooQuoteClient =
   return normalizeYahooQuote(await client.quote(normalizedSymbol), fallbackCurrency);
 }
 
+// In-memory cache for Mubasher Egypt stock prices (60 seconds TTL)
+let mubasherCache: Array<{
+  code: string;
+  name: string;
+  value: string;
+  change: string;
+  changePercentage: string;
+  updatedAt: string;
+}> | null = null;
+let mubasherCacheTime = 0;
+
+export async function fetchMubasherEgxPrices(): Promise<NonNullable<typeof mubasherCache>> {
+  if (mubasherCache && Date.now() - mubasherCacheTime < 60_000) {
+    return mubasherCache;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch("https://www.mubasher.info/api/1/stocks/prices?country=eg&period=1D", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "application/json, text/plain, */*",
+        "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
+      },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`فشل استجابة مباشر مصر (HTTP ${res.status})`);
+    const data = await res.json();
+    const prices = data.prices || [];
+    if (!Array.isArray(prices) || prices.length === 0) {
+      throw new Error("لم يتم العثور على بيانات في قائمة أسعار مباشر مصر.");
+    }
+    mubasherCache = prices;
+    mubasherCacheTime = Date.now();
+    return prices;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 /**
- * Enhanced live quote fetcher supporting Egyptian Exchange (EGX) tickers (.CA),
- * benchmark index symbols (^CASE30, ^SHARIAH.CA, ^EGX70EWI.CA), and global equities.
+ * Secondary Fallback: Fetch price from TradingView Egypt scanner API
+ */
+export async function fetchTradingViewEgxScan(symbol: string): Promise<{
+  price: number;
+  changePercent: number;
+  description: string;
+  ticker: string;
+} | null> {
+  const cleanCode = symbol.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
+  const ticker = `EGX:${cleanCode}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch("https://scanner.tradingview.com/egypt/scan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        symbols: { tickers: [ticker] },
+        columns: ["name", "close", "change", "description", "currency"],
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const row = json.data?.[0];
+    if (row && Array.isArray(row.d) && Number(row.d[1]) > 0) {
+      return {
+        price: Number(row.d[1]),
+        changePercent: Number(row.d[2]) || 0,
+        description: String(row.d[3] || cleanCode),
+        ticker,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * Sanity and Stale Checks for Market Quotes:
+ * - Flags quotes older than 7 calendar days as STALE_DATE.
+ * - Flags quotes deviating by >25% from current recorded price/cost basis as DEVIATION_WARNING.
+ */
+export function checkQuoteSanity(
+  fetchedPrice: number,
+  currentRecordedPrice: number | null | undefined,
+  quoteAsOf: number
+) {
+  const MAX_ALLOWED_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days (accounts for weekend/holidays)
+  const isStaleDate = !quoteAsOf || Date.now() - quoteAsOf > MAX_ALLOWED_AGE_MS;
+
+  let isDeviationWarning = false;
+  let deviationPercent = 0;
+  if (currentRecordedPrice && currentRecordedPrice > 0) {
+    deviationPercent = Math.round(
+      (Math.abs(fetchedPrice - currentRecordedPrice) / currentRecordedPrice) * 10000
+    ) / 100;
+    if (deviationPercent > 25) {
+      isDeviationWarning = true;
+    }
+  }
+
+  const status: "normal" | "deviation_warning" | "stale_warning" = isStaleDate
+    ? "stale_warning"
+    : isDeviationWarning
+    ? "deviation_warning"
+    : "normal";
+
+  return {
+    isStaleDate,
+    isDeviationWarning,
+    deviationPercent,
+    status,
+    message: isStaleDate
+      ? "تاريخ السعر قديم يتجاوز 7 أيام."
+      : isDeviationWarning
+      ? `انحراف سعري ملحوظ بنسبة ${deviationPercent}% عن السعر المسجل.`
+      : "السعر محدث ومتحقق من سلامته.",
+  };
+}
+
+/**
+ * Primary Real-Time / Close Quote Fetcher for Egyptian Exchange (EGX) Equities:
+ * Targets Mubasher Info Egypt as primary, and TradingView Egypt as secondary fallback.
+ * Strictly avoids stale Yahoo Finance .CA feeds.
+ */
+export async function fetchEgxStockQuote(symbol: string): Promise<MarketQuote & { resolvedSymbol: string }> {
+  const clean = symbol.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
+  if (!clean) throw new Error("رمز سهم البورصة المصرية غير صالح.");
+
+  // 1. Primary: Mubasher Info Egypt
+  try {
+    const list = await fetchMubasherEgxPrices();
+    const match = list.find((item) => item.code.trim().toUpperCase() === clean);
+    if (match && Number(match.value) > 0) {
+      const priceNum = Number(match.value);
+      // Parse updatedAt (format: "2026-09-17 11:29:53")
+      const parsedTime = match.updatedAt
+        ? new Date(match.updatedAt.replace(" ", "T")).getTime()
+        : Date.now();
+      const asOf = Number.isFinite(parsedTime) && parsedTime > 0 ? parsedTime : Date.now();
+      const changePercent = parseFloat(match.changePercentage?.replace("%", "") || "0") || 0;
+
+      return {
+        price: priceNum.toFixed(8),
+        currency: "EGP",
+        asOf,
+        source: "مباشر مصر (Mubasher EGX)",
+        quoteStatus: "delayed",
+        resolvedSymbol: match.code,
+        changePercent,
+        arabicName: match.name,
+      };
+    }
+  } catch (err) {
+    // Continue to TradingView fallback
+  }
+
+  // 2. Secondary Fallback: TradingView Egypt Scanner
+  try {
+    const tv = await fetchTradingViewEgxScan(clean);
+    if (tv && tv.price > 0) {
+      return {
+        price: tv.price.toFixed(8),
+        currency: "EGP",
+        asOf: Date.now(),
+        source: "TradingView (EGX)",
+        quoteStatus: "delayed",
+        resolvedSymbol: clean,
+        changePercent: tv.changePercent,
+        arabicName: tv.description,
+      };
+    }
+  } catch {}
+
+  throw new Error(`تعذر العثور على أحدث سعر للسهم ${clean} من مزودي البورصة المصرية (مباشر مصر / TradingView).`);
+}
+
+/**
+ * Enhanced live quote fetcher supporting Egyptian Exchange (EGX) tickers,
+ * benchmark index symbols (EGX30, EGX33, EGX70), and global equities.
  */
 export async function fetchEgxOrYahooQuote(
   symbol: string,
@@ -148,44 +338,52 @@ export async function fetchEgxOrYahooQuote(
   const normalizedSymbol = symbol.trim().toUpperCase();
   if (!normalizedSymbol) throw new Error("رمز الأداة الاستثمارية غير صالح.");
 
-  // 1. Benchmark index match
+  // 1. Benchmark index matching
   if (BENCHMARK_SYMBOLS[normalizedSymbol]) {
+    // For EGX30 & EGX70, try TradingView Egypt first
+    if (normalizedSymbol === "EGX30" || normalizedSymbol === "^CASE30") {
+      const tv = await fetchTradingViewEgxScan("EGX30");
+      if (tv && tv.price > 0) {
+        return {
+          price: tv.price.toFixed(8),
+          currency: "EGP",
+          asOf: Date.now(),
+          source: "TradingView (EGX30)",
+          quoteStatus: "delayed",
+          resolvedSymbol: "EGX:EGX30",
+          changePercent: tv.changePercent,
+        };
+      }
+    } else if (normalizedSymbol === "EGX70" || normalizedSymbol === "^EGX70EWI.CA") {
+      const tv = await fetchTradingViewEgxScan("EGX70EWI");
+      if (tv && tv.price > 0) {
+        return {
+          price: tv.price.toFixed(8),
+          currency: "EGP",
+          asOf: Date.now(),
+          source: "TradingView (EGX70 EWI)",
+          quoteStatus: "delayed",
+          resolvedSymbol: "EGX:EGX70EWI",
+          changePercent: tv.changePercent,
+        };
+      }
+    }
+
     const bmk = BENCHMARK_SYMBOLS[normalizedSymbol];
     const raw = await client.quote(bmk.yahooSymbol);
     const norm = normalizeYahooQuote(raw, bmk.currency);
     return { ...norm, resolvedSymbol: bmk.yahooSymbol };
   }
 
-  // 2. Build candidate list (for EGX stocks, try .CA first then naked ticker)
-  const candidates: string[] = [];
+  // 2. Egyptian Pound (EGP) instruments: ALWAYS use direct Egyptian Exchange feeds (Mubasher/TradingView)
   if (instrumentCurrency === "EGP") {
-    if (normalizedSymbol.endsWith(".CA")) {
-      candidates.push(normalizedSymbol);
-      candidates.push(normalizedSymbol.replace(/\.CA$/, ""));
-    } else if (!normalizedSymbol.includes(".") && !normalizedSymbol.startsWith("^")) {
-      candidates.push(`${normalizedSymbol}.CA`);
-      candidates.push(normalizedSymbol);
-    } else {
-      candidates.push(normalizedSymbol);
-    }
-  } else {
-    candidates.push(normalizedSymbol);
+    return await fetchEgxStockQuote(normalizedSymbol);
   }
 
-  let lastError: Error | null = null;
-  for (const cand of candidates) {
-    try {
-      const raw = await client.quote(cand);
-      if (raw && Number(raw.regularMarketPrice) > 0) {
-        const norm = normalizeYahooQuote(raw, instrumentCurrency);
-        return { ...norm, resolvedSymbol: cand };
-      }
-    } catch (err: any) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-    }
-  }
-
-  throw lastError || new Error(`تعذر الحصول على سعر للأداة ${symbol} من السوق.`);
+  // 3. Foreign currency equities / ETFs: Yahoo Finance
+  const raw = await client.quote(normalizedSymbol);
+  const norm = normalizeYahooQuote(raw, instrumentCurrency);
+  return { ...norm, resolvedSymbol: normalizedSymbol };
 }
 
 export function yahooFxSymbol(fromCurrency: string, toCurrency: string) {
@@ -210,4 +408,5 @@ export async function fetchYahooFxQuote(
   }
   return { ...quote, fromCurrency: fromCurrency.trim().toUpperCase(), toCurrency: expectedCurrency, symbol };
 }
+
 

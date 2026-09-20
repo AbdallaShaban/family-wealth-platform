@@ -8,6 +8,7 @@ import {
   normalizeYahooQuote,
   resolveEgxSymbol,
   yahooFxSymbol,
+  checkQuoteSanity,
 } from "./marketData";
 
 describe("market data adapter", () => {
@@ -94,4 +95,25 @@ describe("market data adapter", () => {
     expect(Number(result.pricePerGramEgp)).toBeLessThan(4100);
     expect(result.formula).toBe("([GC=F] / 31.1035) * USD/EGP");
   });
+
+  it("checks quote sanity, detecting stale quotes (>7 days) and severe price deviation (>25%)", () => {
+    const now = Date.now();
+    // 1. Normal valid quote
+    const normal = checkQuoteSanity(54.0, 52.0, now - 24 * 3600 * 1000);
+    expect(normal.status).toBe("normal");
+    expect(normal.isStaleDate).toBe(false);
+    expect(normal.isDeviationWarning).toBe(false);
+
+    // 2. Stale quote (> 7 days)
+    const stale = checkQuoteSanity(54.0, 52.0, now - 10 * 24 * 3600 * 1000);
+    expect(stale.status).toBe("stale_warning");
+    expect(stale.isStaleDate).toBe(true);
+
+    // 3. Severe deviation (> 25%) - e.g. 54 vs 37.89 (~42% deviation)
+    const deviation = checkQuoteSanity(54.0, 37.89, now - 2 * 3600 * 1000);
+    expect(deviation.status).toBe("deviation_warning");
+    expect(deviation.isDeviationWarning).toBe(true);
+    expect(deviation.deviationPercent).toBeGreaterThan(25);
+  });
 });
+

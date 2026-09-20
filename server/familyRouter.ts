@@ -1,4 +1,4 @@
-import { and, desc, eq, gt } from "drizzle-orm";
+import { and, desc, eq, gt, or, like, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -23,7 +23,7 @@ import { buildImportRows, detectDuplicate, parseCsv, sha256, validateColumnMappi
 import { canPostImportedRow, shouldKeepImportInReview } from "./bankImportWorkflow";
 import { projectScenario } from "./scenarioMath";
 import { approvalActionTypes, isApprovalExecutable, requiresApproval, type ApprovalActionType } from "./approvalWorkflowMath";
-import { BENCHMARK_SYMBOLS, calculateGold24kGramEgp, fetchEgxOrYahooQuote, fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
+import { BENCHMARK_SYMBOLS, calculateGold24kGramEgp, checkQuoteSanity, fetchEgxOrYahooQuote, fetchYahooFxQuote, fetchYahooQuote } from "./marketData";
 import { calculateZakat } from "./zakatMath";
 import { storageGetSignedUrl, storagePut } from "./storage";
 import { decryptVaultValue, encryptVaultValue } from "./vaultCrypto";
@@ -1271,6 +1271,249 @@ export const familyRouter = router({
         return { approvalRequired: false as const, event };
       }),
 
+    previewMarketPrices: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const instRows = await db
+          .select()
+          .from(instruments)
+          .where(
+            and(
+              eq(instruments.workspaceId, family.workspace.id),
+              sql`${instruments.symbol} IS NOT NULL AND ${instruments.symbol} != ''`
+            )
+          );
+
+        // Fetch latest recorded quotes for each instrument
+        const existingQuotes = await db
+          .select()
+          .from(priceQuotes)
+          .where(eq(priceQuotes.workspaceId, family.workspace.id))
+          .orderBy(desc(priceQuotes.asOf));
+
+        const latestByInst = new Map<number, typeof existingQuotes[number]>();
+        for (const q of existingQuotes) {
+          if (!latestByInst.has(q.instrumentId)) {
+            latestByInst.set(q.instrumentId, q);
+          }
+        }
+
+        const previewList: Array<{
+          instrumentId: number;
+          symbol: string;
+          name: string;
+          currency: string;
+          currentRecordedPrice: string | null;
+          fetchedPrice: string;
+          changePercent: number;
+          asOf: number;
+          dateFormatted: string;
+          source: string;
+          resolvedSymbol: string;
+          isStaleDate: boolean;
+          isDeviationWarning: boolean;
+          deviationPercent: number;
+          sanityStatus: "normal" | "deviation_warning" | "stale_warning";
+          sanityMessage: string;
+          selectedPrice: string;
+        }> = [];
+
+        const errors: Array<{ symbol: string; reason: string }> = [];
+
+        for (const inst of instRows) {
+          if (!inst.symbol) continue;
+          try {
+            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency);
+            const currentQuote = latestByInst.get(inst.id);
+            const currentPriceNum = currentQuote?.price ? Number(currentQuote.price) : null;
+            const fetchedPriceNum = Number(quote.price);
+
+            const sanity = checkQuoteSanity(fetchedPriceNum, currentPriceNum, quote.asOf);
+
+            let changePercent = quote.changePercent ?? 0;
+            if (!quote.changePercent && currentPriceNum && currentPriceNum > 0) {
+              changePercent = Math.round(((fetchedPriceNum - currentPriceNum) / currentPriceNum) * 10000) / 100;
+            }
+
+            const dateFormatted = new Date(quote.asOf).toLocaleDateString("ar-EG", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+
+            previewList.push({
+              instrumentId: inst.id,
+              symbol: inst.symbol,
+              name: inst.name,
+              currency: inst.currency,
+              currentRecordedPrice: currentQuote?.price ? Number(currentQuote.price).toFixed(2) : null,
+              fetchedPrice: fetchedPriceNum.toFixed(2),
+              changePercent,
+              asOf: quote.asOf,
+              dateFormatted,
+              source: quote.source,
+              resolvedSymbol: quote.resolvedSymbol || inst.symbol,
+              isStaleDate: sanity.isStaleDate,
+              isDeviationWarning: sanity.isDeviationWarning,
+              deviationPercent: sanity.deviationPercent,
+              sanityStatus: sanity.status,
+              sanityMessage: sanity.message,
+              selectedPrice: fetchedPriceNum.toFixed(2),
+            });
+          } catch (err: any) {
+            errors.push({ symbol: inst.symbol, reason: err?.message || "تعذر جلب السعر" });
+          }
+        }
+
+        return {
+          previewList,
+          errors,
+        };
+      }),
+
+    commitMarketPrices: protectedProcedure
+      .input(
+        z.object({
+          quotes: z.array(
+            z.object({
+              instrumentId: z.number().int().positive(),
+              price: z.string().trim().min(1),
+              source: z.string().trim().optional(),
+              asOf: z.number().int().positive().optional(),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const now = Date.now();
+        let committedCount = 0;
+
+        for (const item of input.quotes) {
+          const priceDecimal = parsePositiveAmount(item.price, "سعر السوق");
+          const [inst] = await db
+            .select()
+            .from(instruments)
+            .where(
+              and(
+                eq(instruments.id, item.instrumentId),
+                eq(instruments.workspaceId, family.workspace.id)
+              )
+            )
+            .limit(1);
+
+          if (!inst) continue;
+
+          const asOf = item.asOf || now;
+          const source = item.source || "مباشر مصر / سوق مصر";
+
+          const insertResult = await db.insert(priceQuotes).values({
+            workspaceId: family.workspace.id,
+            instrumentId: inst.id,
+            price: priceDecimal.toFixed(8),
+            currency: inst.currency,
+            source,
+            quoteStatus: "delayed",
+            asOf,
+            createdAt: now,
+          });
+          const quoteId = Number(insertResult[0].insertId);
+
+          const provResult = await db.insert(valuationProvenance).values(
+            buildMarketProvenance({
+              workspaceId: family.workspace.id,
+              provider: "egx-market-direct",
+              source,
+              rawSymbol: inst.symbol || inst.name,
+              fetchedAt: now,
+              asOf,
+              status: "delayed",
+              metadata: { instrumentId: inst.id, quoteId, price: priceDecimal.toFixed(8) },
+            })
+          );
+
+          await db.insert(valuationSnapshots).values(
+            buildInstrumentSnapshot({
+              workspaceId: family.workspace.id,
+              instrumentId: inst.id,
+              provenanceId: Number(provResult[0].insertId),
+              quoteId,
+              price: priceDecimal.toFixed(8),
+              currency: inst.currency,
+              baseCurrency: family.workspace.baseCurrency,
+              status: "delayed",
+              asOf,
+              capturedAt: now,
+            })
+          );
+
+          await db.update(instruments).set({ updatedAt: now }).where(eq(instruments.id, inst.id));
+          committedCount++;
+        }
+
+        invalidateReadModelCache(`wealth-health:score:${family.workspace.id}`);
+        invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
+
+        return {
+          success: true,
+          count: committedCount,
+        };
+      }),
+
+    purgeStaleQuotes: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const family = await familyContext(ctx.user);
+        assertRole(family, "editor");
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const staleDateThreshold = 1735689600000; // 2025-01-01
+        const staleQuotes = await db
+          .select({ id: priceQuotes.id })
+          .from(priceQuotes)
+          .where(
+            and(
+              eq(priceQuotes.workspaceId, family.workspace.id),
+              or(
+                sql`${priceQuotes.asOf} < ${staleDateThreshold}`,
+                like(priceQuotes.source, "%Yahoo%")
+              )
+            )
+          );
+
+        let deletedCount = 0;
+        if (staleQuotes.length > 0) {
+          const staleIds = staleQuotes.map((q) => q.id);
+          const delRes = await db
+            .delete(priceQuotes)
+            .where(
+              and(
+                eq(priceQuotes.workspaceId, family.workspace.id),
+                inArray(priceQuotes.id, staleIds)
+              )
+            );
+          deletedCount = staleQuotes.length;
+        }
+
+        invalidateReadModelCache(`wealth-health:score:${family.workspace.id}`);
+        invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
+
+        return {
+          success: true,
+          deletedCount,
+        };
+      }),
+
     syncMarketPrices: protectedProcedure
       .mutation(async ({ ctx }) => {
         const family = await familyContext(ctx.user);
@@ -1315,7 +1558,7 @@ export const familyRouter = router({
             const provResult = await db.insert(valuationProvenance).values(
               buildMarketProvenance({
                 workspaceId: family.workspace.id,
-                provider: "yahoo-finance-egx",
+                provider: "egx-market-direct",
                 source: quote.source,
                 rawSymbol: inst.symbol,
                 fetchedAt: now,
@@ -1353,7 +1596,7 @@ export const familyRouter = router({
           }
         }
 
-        // Sync / track Egyptian benchmark indices (EGX30, EGX33, EGX70)
+        // Sync Egyptian benchmark indices (EGX30, EGX33, EGX70)
         const benchmarkKeys = ["EGX30", "EGX33", "EGX70"];
         for (const bmkKey of benchmarkKeys) {
           try {
@@ -1393,7 +1636,7 @@ export const familyRouter = router({
                 instrumentId: bmkInst.id,
                 price: bmkQuote.price,
                 currency: bmkQuote.currency,
-                source: "yahoo_finance_benchmark",
+                source: bmkQuote.source || "egx_benchmark",
                 quoteStatus: "delayed",
                 asOf: bmkQuote.asOf,
                 createdAt: now,
