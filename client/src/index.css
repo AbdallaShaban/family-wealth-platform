@@ -67,24 +67,24 @@
 }
 
 .dark {
-  --background: #08111F;
+  --background: #070A11;
   --foreground: #F8FAFC;
-  --muted: #0F1D32;
+  --muted: #0F172A;
   --muted-foreground: #94A3B8;
-  --border: #243B53;
+  --border: rgba(148, 163, 184, 0.14);
   --ring: #10B981;
-  --card: #12243B;
+  --card: #0D1527;
   --card-foreground: #F8FAFC;
-  --popover: #12243B;
+  --popover: #0D1527;
   --popover-foreground: #F8FAFC;
   --primary: #10B981;
-  --primary-foreground: #0B1628;
-  --secondary: #0F1D32;
+  --primary-foreground: #070A11;
+  --secondary: #111C33;
   --secondary-foreground: #34D399;
-  --accent: #17304F;
+  --accent: #15223E;
   --accent-foreground: #F8FAFC;
   --destructive: #F43F5E;
-  --sidebar: #0B1628;
+  --sidebar: #070D18;
   --sidebar-foreground: #F8FAFC;
   --sidebar-border: rgba(148, 163, 184, 0.12);
   --sidebar-accent: rgba(16, 185, 129, 0.12);
@@ -102,6 +102,37 @@ html { scroll-behavior: smooth; background: var(--background); }
 body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-body); }
 .dark { color-scheme: dark; }
 button { font-family: inherit; cursor: pointer; }
+
+/* Ultra-thin luxury scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.22);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.45);
+}
+
+/* Glassmorphism card surfaces */
+.glass-card {
+  background: rgba(13, 21, 39, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 1rem;
+}
+.glass-panel {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.10);
+}
 .privacy-mode [data-sensitive-value],
 .privacy-mode-active [data-sensitive-value] { display: inline-block; min-width: 4.5em; border-radius: .35em; color: transparent !important; background: linear-gradient(90deg, var(--muted), color-mix(in srgb, var(--muted) 68%, var(--foreground))); filter: none; user-select: none; }
 

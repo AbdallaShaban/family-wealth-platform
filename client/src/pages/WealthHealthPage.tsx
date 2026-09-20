@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import HealthRadialGauge from "@/components/HealthRadialGauge";
 import SensitiveValue from "@/components/SensitiveValue";
 import { formatMoney } from "@/lib/financialDisplay";
 import {
@@ -212,39 +213,28 @@ export default function WealthHealthPage() {
           </div>
         ) : scoreData ? (
           <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs mb-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            {/* Left: Overall Health Score */}
-            <div className="w-full md:w-5/12 flex flex-col justify-between border-b md:border-b-0 md:border-l border-slate-100 dark:border-slate-800/80 pb-5 md:pb-0 md:pl-6">
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <FinancialTooltip term="FIRE_SCORE">
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 cursor-help border-b border-dashed border-slate-400/60">
-                      مؤشر الصحة المالية الشامل
-                    </span>
-                  </FinancialTooltip>
-                  <span className="bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60 font-bold text-xs px-3 py-1 rounded-lg">
-                    {scoreData.ratingTier === "excellent"
-                      ? "مرونة استثنائية"
-                      : scoreData.ratingTier === "good"
-                      ? "نمو متوازن"
-                      : scoreData.ratingTier === "moderate"
-                      ? "تحت المراقبة"
-                      : "حرج"}
+            {/* Left: Overall Health Score Gauge */}
+            <div className="w-full md:w-5/12 flex flex-col items-center justify-between border-b md:border-b-0 md:border-l border-slate-100 dark:border-slate-800/80 pb-5 md:pb-0 md:pl-6">
+              <div className="w-full flex items-center justify-between gap-2 mb-1">
+                <FinancialTooltip term="FIRE_SCORE">
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 cursor-help border-b border-dashed border-slate-400/60">
+                    مؤشر الصحة المالية الشامل
                   </span>
-                </div>
-
-                <div className="flex items-baseline gap-2 justify-start my-2">
-                  <span className="text-slate-900 dark:text-white font-extrabold font-mono text-5xl tabular-nums">
-                    {scoreData.totalScore}
-                  </span>
-                  <span className="text-slate-400 dark:text-slate-500 font-semibold text-lg">/ 100</span>
-                </div>
-
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-1">
-                  {scoreData.ratingTierLabelAr}
-                </p>
+                </FinancialTooltip>
+                <span className="bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 font-bold text-[11px] px-2.5 py-0.5 rounded-lg">
+                  مقياس معياري 0 - 100
+                </span>
               </div>
 
-              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 font-mono text-[11px]">
+              <div className="w-full flex justify-center py-2">
+                <HealthRadialGauge
+                  score={parseFloat(scoreData.totalScore) || 0}
+                  tierLabel={scoreData.ratingTierLabelAr}
+                  ratingTier={scoreData.ratingTier}
+                />
+              </div>
+
+              <div className="w-full flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-2 pt-3 border-t border-slate-100 dark:border-slate-800/60 font-mono text-[11px]">
                 <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>تقييم حتمي استناداً إلى الدفتر المحاسبي</span>
               </div>
@@ -819,7 +809,7 @@ export default function WealthHealthPage() {
               <div className="size-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center">
                 <Calculator className="size-4 text-indigo-600 dark:text-indigo-400" />
               </div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">محاكي أفق الاستقلال المالي — FIRE</h2>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">الاستقلال المالي ومحاكي FIRE</h2>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               إسقاط حتمي دقيق يحسب تاريخ الوصول المستهدف باستخدام معادلة فيشر الرياضية ودقة حسابية متناهية

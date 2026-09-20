@@ -77,7 +77,7 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { icon: Landmark, label: "الحسابات والأرصدة", path: "/accounts", minimumRole: "viewer" },
       { icon: TrendingUp, label: "الاستثمارات والمحافظ", path: "/investments", minimumRole: "viewer" },
-      { icon: BriefcaseBusiness, label: "الأصول والتأمين", path: "/assets-insurance", minimumRole: "viewer" },
+      { icon: BriefcaseBusiness, label: "الأصول الخاصة والتأمين", path: "/assets-insurance", minimumRole: "viewer" },
     ],
   },
   {
