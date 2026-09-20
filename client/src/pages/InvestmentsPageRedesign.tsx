@@ -1801,8 +1801,8 @@ export default function InvestmentsPageRedesign() {
         />
         {/* Market Price Review & Override Modal */}
         <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
-          <DialogContent className="max-w-4xl max-h-[88vh] overflow-y-auto rounded-2xl p-6 bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 shadow-xl text-right">
-            <DialogHeader className="text-right space-y-1.5 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <DialogContent className="max-w-5xl w-[92vw] sm:max-w-5xl max-h-[85vh] flex flex-col p-6 rounded-2xl bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 shadow-2xl text-right" dir="rtl">
+            <DialogHeader className="shrink-0 text-right space-y-1.5 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div className="flex items-center justify-between">
                 <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <RefreshCw className="size-5 text-emerald-600 dark:text-emerald-400" />
@@ -1817,8 +1817,8 @@ export default function InvestmentsPageRedesign() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="py-3">
-              <div className="flex items-center justify-between mb-3">
+            <div className="py-3 flex-1 min-h-0 flex flex-col">
+              <div className="shrink-0 flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
@@ -1844,18 +1844,18 @@ export default function InvestmentsPageRedesign() {
                 )}
               </div>
 
-              <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-x-auto">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-bold">
+              <div className="flex-1 min-h-0 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto overflow-y-auto max-h-[55vh] scrollbar-thin">
+                <table className="min-w-[780px] w-full text-right text-xs">
+                  <thead className="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold">
                     <tr>
                       <th className="py-2.5 px-3 w-10 text-center">اعتماد</th>
-                      <th className="py-2.5 px-3">الأداة / الرمز</th>
-                      <th className="py-2.5 px-3">السعر المسجل</th>
-                      <th className="py-2.5 px-3">السعر المسحوب / NAV</th>
-                      <th className="py-2.5 px-3">التغير %</th>
-                      <th className="py-2.5 px-3">تاريخ السعر</th>
-                      <th className="py-2.5 px-3">حالة الفحص</th>
-                      <th className="py-2.5 px-3 w-36">السعر المعتمد (تعديل يدوي)</th>
+                      <th className="py-2.5 px-3 min-w-[220px] w-[240px]">الأداة / الرمز</th>
+                      <th className="py-2.5 px-3 min-w-[120px] w-[130px]">السعر المسجل</th>
+                      <th className="py-2.5 px-3 min-w-[120px] w-[130px]">السعر المسحوب / NAV</th>
+                      <th className="py-2.5 px-3 min-w-[85px] w-[90px]">التغير %</th>
+                      <th className="py-2.5 px-3 min-w-[110px] w-[120px] whitespace-nowrap">تاريخ السعر</th>
+                      <th className="py-2.5 px-3 min-w-[100px] w-[110px] whitespace-nowrap">حالة الفحص</th>
+                      <th className="py-2.5 px-3 min-w-[120px] w-[130px]">السعر المعتمد</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -1912,10 +1912,10 @@ export default function InvestmentsPageRedesign() {
                             {q.changePercent > 0 ? `+${q.changePercent}%` : `${q.changePercent}%`}
                           </span>
                         </td>
-                        <td className="py-2.5 px-3 text-[11px] text-slate-500 font-mono">
+                        <td className="py-2.5 px-3 text-[11px] text-slate-500 font-mono whitespace-nowrap">
                           {q.dateFormatted}
                         </td>
-                        <td className="py-2.5 px-3">
+                        <td className="py-2.5 px-3 whitespace-nowrap">
                           {q.isStaleDate ? (
                             <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
                               <Clock className="size-3" />
@@ -1954,7 +1954,7 @@ export default function InvestmentsPageRedesign() {
               </div>
             </div>
 
-            <DialogFooter className="mt-4 gap-2 flex-row-reverse justify-between items-center border-t border-slate-100 dark:border-slate-800 pt-3">
+            <DialogFooter className="shrink-0 mt-4 gap-2 flex-row-reverse justify-between items-center border-t border-slate-150 dark:border-slate-800 pt-4">
               <div className="flex gap-2">
                 <Button
                   type="button"
