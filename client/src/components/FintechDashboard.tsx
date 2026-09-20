@@ -245,6 +245,31 @@ export default function FintechDashboard() {
   const [isSubmittingDividend, setIsSubmittingDividend] = useState(false);
   const [isSubmittingTrigger, setIsSubmittingTrigger] = useState(false);
 
+  // Table Filter State & Quick Manual Price State
+  const [tableFilter, setTableFilter] = useState<"all" | "equity" | "fund" | "gold">("all");
+  const [quickPriceModalOpen, setQuickPriceModalOpen] = useState(false);
+  const [selectedItemForPrice, setSelectedItemForPrice] = useState<{
+    instrumentId: number;
+    name: string;
+    symbol: string | null;
+    currency: string;
+    assetType: string;
+    price?: number | string | null;
+  } | null>(null);
+  const [quickPriceValue, setQuickPriceValue] = useState("");
+
+  const recordManualPrice = trpc.family.prices.recordManual.useMutation({
+    onSuccess: () => {
+      toast.success("تم تسجيل وتحديث السعر السوقي / سعر الوثيقة بنجاح.");
+      setQuickPriceModalOpen(false);
+      void utils.family.dashboard.invalidate();
+      void marketOverview.refetch();
+    },
+    onError: (err) => {
+      toast.error(err.message || "تعذر تسجيل السعر");
+    },
+  });
+
   // Safely memoize portfolioMap BEFORE any early returns
   type PortfolioItem = NonNullable<typeof summary.data>["portfolio"][number];
   const portfolioMap = useMemo(() => {
@@ -384,31 +409,6 @@ export default function FintechDashboard() {
       setIsSubmittingDividend(false);
     }
   };
-
-  // Table Filter State & Quick Manual Price State
-  const [tableFilter, setTableFilter] = useState<"all" | "equity" | "fund" | "gold">("all");
-  const [quickPriceModalOpen, setQuickPriceModalOpen] = useState(false);
-  const [selectedItemForPrice, setSelectedItemForPrice] = useState<{
-    instrumentId: number;
-    name: string;
-    symbol: string | null;
-    currency: string;
-    assetType: string;
-    price?: number | string | null;
-  } | null>(null);
-  const [quickPriceValue, setQuickPriceValue] = useState("");
-
-  const recordManualPrice = trpc.family.prices.recordManual.useMutation({
-    onSuccess: () => {
-      toast.success("تم تسجيل وتحديث السعر السوقي / سعر الوثيقة بنجاح.");
-      setQuickPriceModalOpen(false);
-      void utils.family.dashboard.invalidate();
-      void marketOverview.refetch();
-    },
-    onError: (err) => {
-      toast.error(err.message || "تعذر تسجيل السعر");
-    },
-  });
 
   const openQuickPriceModal = (item: {
     instrumentId: number;
