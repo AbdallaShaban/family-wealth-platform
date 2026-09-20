@@ -162,7 +162,7 @@ function ExecutiveMetricCell({
         } ${className}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs tracking-wide">
+        <span className="text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wide">
           {label}
         </span>
         <div className={`flex size-8 items-center justify-center rounded-xl ${accentStyles}`}>
@@ -171,7 +171,7 @@ function ExecutiveMetricCell({
       </div>
       <div className="mt-3.5 mb-1.5">
         <strong
-          className={`font-mono tabular-nums block overflow-hidden text-ellipsis whitespace-nowrap ${isPriority
+          className={`font-mono tabular-nums tracking-tight block overflow-hidden text-ellipsis whitespace-nowrap ${isPriority
               ? "text-slate-900 dark:text-white font-extrabold text-2xl lg:text-3xl"
               : "text-slate-900 dark:text-white font-bold text-xl sm:text-2xl"
             }`}
@@ -179,7 +179,7 @@ function ExecutiveMetricCell({
           <AnimatedMoney value={value} currency={currency} />
         </strong>
       </div>
-      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block leading-relaxed">
+      <span className="text-slate-600 dark:text-slate-400 text-xs font-medium block leading-relaxed">
         {detail}
       </span>
     </div>
@@ -201,6 +201,17 @@ function DashboardSkeleton() {
     </DashboardLayout>
   );
 }
+
+const FINTECH_ASSET_PALETTE = [
+  "#10B981", // Emerald
+  "#6366F1", // Indigo
+  "#0EA5E9", // Sky Blue
+  "#F59E0B", // Amber
+  "#F43F5E", // Rose
+  "#14B8A6", // Teal
+  "#8B5CF6", // Violet
+  "#EC4899", // Pink
+];
 
 export default function FintechDashboard() {
   const { user } = useAuth();
@@ -317,14 +328,14 @@ export default function FintechDashboard() {
         .map((account, index) => ({
           name: account.name,
           value: Number(account.baseValue),
-          color: ["#10B981", "#38BDF8", "#F59E0B"][index % 3],
+          color: FINTECH_ASSET_PALETTE[index % FINTECH_ASSET_PALETTE.length],
         })),
       ...(live?.portfolio ?? [])
         .filter(position => position.baseMarketValue !== null && Number(position.baseMarketValue) > 0)
         .map((position, index) => ({
           name: position.instrumentName,
           value: Number(position.baseMarketValue),
-          color: ["#F43F5E", "#34D399"][index % 2],
+          color: FINTECH_ASSET_PALETTE[(index + 3) % FINTECH_ASSET_PALETTE.length],
         })),
     ];
   const cashFlow = usingDemo ? [...demoDashboard.cashFlow] : (cashFlowQuery.data ?? []);
@@ -788,14 +799,14 @@ export default function FintechDashboard() {
                   <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-2xs">
                     <div className="max-h-[480px] overflow-y-auto overflow-x-auto scrollbar-thin">
                       <Table dir="rtl" className="w-full relative">
-                        <TableHeader className="sticky top-0 z-20 bg-slate-50/95 dark:bg-[#0E131F]/95 backdrop-blur-md shadow-xs border-b border-slate-200/90 dark:border-slate-800">
+                        <TableHeader className="sticky top-0 z-20 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md shadow-xs border-b border-slate-200 dark:border-slate-800">
                           <TableRow className="hover:bg-transparent border-none">
-                            <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit">الأصل والرمز</TableHead>
-                            <TableHead className="text-left text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit" dir="ltr">السعر الحالي / الوثيقة</TableHead>
-                            <TableHead className="text-left text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit" dir="ltr">تكلفة الشراء (FIFO)</TableHead>
-                            <TableHead className="text-left text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit" dir="ltr">العائد غير المحقق (P&L)</TableHead>
-                            <TableHead className="text-center text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-4 bg-inherit">أهداف التداول (Triggers)</TableHead>
-                            <TableHead className="text-center text-xs font-bold text-slate-700 dark:text-slate-300 py-3.5 px-3 w-16 bg-inherit">إجراءات</TableHead>
+                            <TableHead className="text-right text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit">الأصل والرمز</TableHead>
+                            <TableHead className="text-left text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit font-mono" dir="ltr">السعر الحالي / الوثيقة</TableHead>
+                            <TableHead className="text-left text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit font-mono" dir="ltr">تكلفة الشراء (FIFO)</TableHead>
+                            <TableHead className="text-left text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit font-mono" dir="ltr">العائد غير المحقق (P&L)</TableHead>
+                            <TableHead className="text-center text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-4 bg-inherit">أهداف التداول (Triggers)</TableHead>
+                            <TableHead className="text-center text-xs font-bold text-slate-800 dark:text-slate-200 py-3.5 px-3 w-16 bg-inherit">إجراءات</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -826,7 +837,7 @@ export default function FintechDashboard() {
                             return (
                               <TableRow
                                 key={item.instrumentId}
-                                className="group even:bg-slate-50/40 dark:even:bg-slate-900/25 hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors border-b border-slate-100/80 dark:border-slate-800/50"
+                                className="group even:bg-slate-50/40 dark:even:bg-slate-900/25 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 transition-colors border-b border-slate-100/80 dark:border-slate-800/50"
                               >
                                 {/* 1. Asset & Ticker */}
                                 <TableCell className="py-3 px-4">
@@ -834,7 +845,7 @@ export default function FintechDashboard() {
                                     <span className={`size-2 rounded-full shrink-0 ${statusColor}`} title={statusLabel} />
                                     <div>
                                       <div className="flex items-center gap-1.5 flex-wrap">
-                                        <strong className="font-mono font-bold text-slate-900 dark:text-white text-xs tracking-wider" dir="ltr">
+                                        <strong className="font-mono font-bold text-slate-900 dark:text-white text-xs tracking-tight" dir="ltr">
                                           {item.symbol || "—"}
                                         </strong>
                                         {/* Category Micro-badge */}
@@ -939,23 +950,23 @@ export default function FintechDashboard() {
                                     <div className="flex flex-col items-end">
                                       <div className="flex items-center gap-1.5">
                                         <span
-                                          className={`font-mono font-bold text-xs tabular-nums px-2 py-0.5 rounded-md border ${
+                                          className={`font-mono font-bold text-xs tabular-nums px-2 py-0.5 rounded-md border tracking-tight ${
                                             unrealizedPnlAbs > 0
-                                              ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60"
+                                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                                               : unrealizedPnlAbs < 0
-                                              ? "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60"
-                                              : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+                                              ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
                                           }`}
                                         >
                                           {unrealizedPnlAbs > 0 ? "+" : ""}{formatMoney(unrealizedPnlAbs, item.currency, 2)}
                                         </span>
                                         <span
-                                          className={`font-mono font-bold text-[10.5px] px-1.5 py-0.5 rounded ${
+                                          className={`font-mono font-bold text-[10.5px] px-1.5 py-0.5 rounded tracking-tight ${
                                             unrealizedPnlPct > 0
-                                              ? "bg-emerald-100/80 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                                               : unrealizedPnlPct < 0
-                                              ? "bg-rose-100/80 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
-                                              : "bg-slate-100 text-slate-700"
+                                              ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
                                           }`}
                                         >
                                           {unrealizedPnlPct > 0 ? "+" : ""}{unrealizedPnlPct.toFixed(2)}%
@@ -1364,7 +1375,7 @@ export default function FintechDashboard() {
                     </strong>
 
                     <div className="text-left w-full mt-3" dir="ltr">
-                      <span className="font-mono font-bold text-slate-900 dark:text-white text-base tabular-nums">
+                      <span className="font-mono font-bold text-slate-900 dark:text-white text-base tabular-nums tracking-tight">
                         <SensitiveValue>{formatMoney(account.value, account.currency, 0)}</SensitiveValue>
                       </span>
                     </div>
@@ -1412,25 +1423,25 @@ export default function FintechDashboard() {
                 <Label htmlFor="targetBuyPrice" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   سعر الشراء المستهدف (Dip Buy Trigger)
                 </Label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <Input
                     id="targetBuyPrice"
                     type="number"
                     step="0.01"
-                    placeholder="مثال: 75.50"
+                    placeholder="مثال: 29.50"
                     value={selectedTriggerItem?.targetBuyPrice || ""}
                     onChange={(e) =>
                       setSelectedTriggerItem((prev) => (prev ? { ...prev, targetBuyPrice: e.target.value } : null))
                     }
-                    className="font-mono text-left"
+                    className="font-mono font-bold text-slate-900 dark:text-slate-100 text-left pl-16 pr-3 h-10 rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     dir="ltr"
                   />
-                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 pointer-events-none font-mono">
+                  <span className="absolute left-2.5 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-mono font-bold tracking-tight pointer-events-none border border-slate-200/60 dark:border-slate-700/60">
                     {selectedTriggerItem?.currency || "EGP"}
                   </span>
                 </div>
-                <p className="text-[10.5px] text-slate-500">
-                  يُطلق تنبيهاً عند انخفاض السعر إلى هذا المستوى أو أدنى منه.
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
+                  يُطلق تنبيهاً ذكياً عند انخفاض السعر إلى هذا المستوى أو أدنى منه.
                 </p>
               </div>
 
@@ -1438,25 +1449,25 @@ export default function FintechDashboard() {
                 <Label htmlFor="targetTakeProfitPrice" className="text-xs font-bold text-slate-700 dark:text-slate-300">
                   سعر جني الأرباح المستهدف (Take-Profit Trigger)
                 </Label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <Input
                     id="targetTakeProfitPrice"
                     type="number"
                     step="0.01"
-                    placeholder="مثال: 110.00"
+                    placeholder="مثال: 45.00"
                     value={selectedTriggerItem?.targetTakeProfitPrice || ""}
                     onChange={(e) =>
                       setSelectedTriggerItem((prev) => (prev ? { ...prev, targetTakeProfitPrice: e.target.value } : null))
                     }
-                    className="font-mono text-left"
+                    className="font-mono font-bold text-slate-900 dark:text-slate-100 text-left pl-16 pr-3 h-10 rounded-xl border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     dir="ltr"
                   />
-                  <span className="absolute left-3 top-2.5 text-xs text-slate-400 pointer-events-none font-mono">
+                  <span className="absolute left-2.5 px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-mono font-bold tracking-tight pointer-events-none border border-slate-200/60 dark:border-slate-700/60">
                     {selectedTriggerItem?.currency || "EGP"}
                   </span>
                 </div>
-                <p className="text-[10.5px] text-slate-500">
-                  يُطلق تنبيهاً عند ارتفاع السعر وتحقيق هدف جني الأرباح.
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 font-medium">
+                  يُطلق تنبيهاً ذكياً عند ارتفاع السعر وتحقيق هدف جني الأرباح.
                 </p>
               </div>
             </div>

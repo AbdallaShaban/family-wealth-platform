@@ -159,9 +159,9 @@ export default function FintechCharts({
           </div>
         </div>
 
-        {/* Clean Account Breakdown Legend List */}
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
-          {allocation.slice(0, 5).map((item, index) => {
+        {/* Organized 2-Column Grid Legend to prevent vertical stacking & cutoff */}
+        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {allocation.slice(0, 8).map((item, index) => {
             const pct = pieTotal ? Math.round((item.value / pieTotal) * 100) : 0;
             const isHovered = hoveredIndex === index;
             return (
@@ -169,35 +169,32 @@ export default function FintechCharts({
                 key={item.name}
                 onMouseEnter={() => setHoveredIndex(index)}
                 onMouseLeave={() => setHoveredIndex(null)}
-                className={`group flex items-center justify-between py-1.5 px-2.5 rounded-lg transition-all duration-150 cursor-pointer ${
+                className={`group flex items-center justify-between py-2 px-2.5 rounded-xl transition-all duration-150 cursor-pointer border ${
                   isHovered
-                    ? "bg-slate-100/90 dark:bg-[#0E1420] shadow-2xs"
-                    : "hover:bg-slate-50/80 dark:hover:bg-[#0E1420]/50"
+                    ? "bg-slate-100/90 dark:bg-slate-800/90 border-slate-300 dark:border-slate-700 shadow-xs"
+                    : "bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 border-slate-200/60 dark:border-slate-800/60"
                 }`}
               >
                 {/* Right side (RTL): Color Dot + Account Name */}
-                <div className="flex items-center gap-2.5 min-w-0 flex-1 ml-3">
+                <div className="flex items-center gap-2 min-w-0 flex-1 ml-2">
                   <span
                     className="size-2.5 rounded-full shrink-0 ring-1 ring-slate-200/60 dark:ring-slate-700"
                     style={{ backgroundColor: item.color }}
                   />
                   <span
-                    className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate"
+                    className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate"
                     title={item.name}
                   >
                     {item.name}
                   </span>
                 </div>
 
-                {/* Subtle dotted connector line on larger viewports */}
-                <div className="hidden sm:block flex-1 mx-3 border-b border-dashed border-slate-200/60 dark:border-slate-800/60 group-hover:border-slate-300 dark:group-hover:border-slate-700 transition-colors" />
-
                 {/* Left side (RTL): Percentage + Formatted Amount */}
-                <div className="flex items-center gap-3 shrink-0 text-left" dir="ltr">
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 font-mono">
+                <div className="flex items-center gap-2 shrink-0 text-left" dir="ltr">
+                  <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                     {pct}%
                   </span>
-                  <span className="text-xs font-bold font-mono text-slate-900 dark:text-white tabular-nums min-w-[76px] text-right">
+                  <span className="text-xs font-bold font-mono text-slate-900 dark:text-white tabular-nums tracking-tight">
                     <SensitiveValue>{formatMoney(item.value, currency, 0)}</SensitiveValue>
                   </span>
                 </div>
