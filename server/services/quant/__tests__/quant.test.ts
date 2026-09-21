@@ -18,6 +18,9 @@ import {
   calculateSubscriptionCountdowns,
   PaperTradingManager,
   PaperPortfolioState,
+  resolveEgxAsset,
+  searchEgxCatalog,
+  normalizeArabic,
 } from "../index";
 
 describe("Quantitative Indicator Algorithms", () => {
@@ -265,3 +268,47 @@ describe("Paper Trading Simulation Engine", () => {
     expect(state.positions[0].quantity).toBe(50);
   });
 });
+
+describe("EGX Master Catalog & Fuzzy Arabic Resolver", () => {
+  it("normalizes Arabic characters (alef, teh marbuta, yaa, and diacritics)", () => {
+    expect(normalizeArabic("الْمَنْصُورَةُ")).toBe("المنصوره");
+    expect(normalizeArabic("إي فاينانس")).toBe("اي فاينانس");
+    expect(normalizeArabic("أبو قير")).toBe("ابو قير");
+    expect(normalizeArabic("سيدي كرير")).toBe("سيدي كرير");
+  });
+
+  it("resolves Arabic company names to official EGX tickers", () => {
+    const mpco = resolveEgxAsset("المنصورة للدواجن");
+    expect(mpco).toBeDefined();
+    expect(mpco?.ticker).toBe("MPCO.CA");
+    expect(mpco?.symbol).toBe("MPCO");
+    expect(mpco?.sector).toContain("الأغذية");
+
+    const ezz = resolveEgxAsset("حديد عز");
+    expect(ezz?.ticker).toBe("ESRS.CA");
+
+    const tmgh = resolveEgxAsset("طلعت مصطفى");
+    expect(tmgh?.ticker).toBe("TMGH.CA");
+
+    const cib = resolveEgxAsset("البنك التجاري الدولي");
+    expect(cib?.ticker).toBe("COMI.CA");
+  });
+
+  it("resolves raw tickers and funds reliably", () => {
+    expect(resolveEgxAsset("MPCO")?.ticker).toBe("MPCO.CA");
+    expect(resolveEgxAsset("MPCO.CA")?.ticker).toBe("MPCO.CA");
+    expect(resolveEgxAsset("AZG")?.assetType).toBe("MUTUAL_FUND");
+    expect(resolveEgxAsset("GOLD_24K")?.assetType).toBe("GOLD");
+    expect(resolveEgxAsset("ذهب عيار 24")?.ticker).toBe("GOLD_24K");
+  });
+
+  it("searches catalog and returns matching suggestions", () => {
+    const poultryResults = searchEgxCatalog("دواجن");
+    expect(poultryResults.length).toBeGreaterThanOrEqual(1);
+    expect(poultryResults.some((r) => r.ticker === "MPCO.CA")).toBe(true);
+
+    const goldResults = searchEgxCatalog("ذهب");
+    expect(goldResults.length).toBeGreaterThanOrEqual(2);
+  });
+});
+

@@ -1,5 +1,7 @@
 import YahooFinance from "yahoo-finance2";
 import Decimal from "decimal.js";
+import { resolveEgxAsset, normalizeArabic } from "./services/quant/egxCatalog";
+
 
 type YahooQuoteClient = {
   quote(symbol: string): Promise<{
@@ -160,7 +162,7 @@ export async function fetchMubasherEgxPrices(): Promise<NonNullable<typeof mubas
     return mubasherCache;
   }
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const timeout = setTimeout(() => controller.abort(), 5_000);
   try {
     const res = await fetch("https://www.mubasher.info/api/1/stocks/prices?country=eg&period=1D", {
       headers: {
@@ -196,7 +198,7 @@ export async function fetchTradingViewEgxScan(symbol: string): Promise<{
   const cleanCode = symbol.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
   const ticker = `EGX:${cleanCode}`;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const timeout = setTimeout(() => controller.abort(), 5_000);
   try {
     const res = await fetch("https://scanner.tradingview.com/egypt/scan", {
       method: "POST",
@@ -274,18 +276,37 @@ export function checkQuoteSanity(
 }
 
 /**
- * Primary Real-Time / Close Quote Fetcher for Egyptian Exchange (EGX) Equities:
- * Targets Mubasher Info Egypt as primary, and TradingView Egypt as secondary fallback.
- * Strictly avoids stale Yahoo Finance .CA feeds.
+ * Multi-Tier Real Quote Provider for Egyptian Exchange (EGX) Equities:
+ * - Tier 1: Primary live feed via Mubasher Info Egypt (231 listed equities, real EGP prices)
+ * - Tier 1.5: Secondary live scanner via TradingView Egypt Scanner
+ * - Tier 2: Tertiary fallback via Yahoo Finance (.CA ticker)
+ * - Fail-Safe: Zero synthetic fallback. Throws explicit friendly Arabic error if unavailable.
  */
-export async function fetchEgxStockQuote(symbol: string): Promise<MarketQuote & { resolvedSymbol: string }> {
-  const clean = symbol.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
-  if (!clean) throw new Error("رمز سهم البورصة المصرية غير صالح.");
+export async function fetchEgxStockQuote(
+  symbolOrName: string,
+  client: YahooQuoteClient = new YahooFinance()
+): Promise<MarketQuote & { resolvedSymbol: string }> {
+  const rawInput = symbolOrName.trim();
+  if (!rawInput) throw new Error("رمز أو اسم سهم البورصة المصرية غير صالح.");
 
-  // 1. Primary: Mubasher Info Egypt
+  // 0. Resolve against EGX Master Catalog
+  const catalogEntry = resolveEgxAsset(rawInput);
+  const targetCode = catalogEntry
+    ? catalogEntry.symbol
+    : rawInput.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
+  const targetNameAr = catalogEntry?.nameAr;
+
+  // 1. Tier 1 (Primary Live Feed): Mubasher Info Egypt (231 active EGX stocks)
   try {
     const list = await fetchMubasherEgxPrices();
-    const match = list.find((item) => item.code.trim().toUpperCase() === clean);
+    const match = list.find((item) => {
+      const codeMatch = item.code.trim().toUpperCase() === targetCode;
+      if (codeMatch) return true;
+      if (targetNameAr && normalizeArabic(item.name) === normalizeArabic(targetNameAr)) return true;
+      if (normalizeArabic(item.name) === normalizeArabic(rawInput)) return true;
+      return false;
+    });
+
     if (match && Number(match.value) > 0) {
       const priceNum = Number(match.value);
       // Parse updatedAt (format: "2026-09-17 11:29:53")
@@ -299,20 +320,20 @@ export async function fetchEgxStockQuote(symbol: string): Promise<MarketQuote & 
         price: priceNum.toFixed(8),
         currency: "EGP",
         asOf,
-        source: "مباشر مصر (Mubasher EGX)",
+        source: "البورصة المصرية (مباشر / EGX Feed)",
         quoteStatus: "delayed",
         resolvedSymbol: match.code,
         changePercent,
-        arabicName: match.name,
+        arabicName: match.name || targetNameAr,
       };
     }
   } catch (err) {
-    // Continue to TradingView fallback
+    // Continue to Tier 1.5 & Tier 2
   }
 
-  // 2. Secondary Fallback: TradingView Egypt Scanner
+  // 1.5 Tier 1.5: TradingView Egypt Scanner
   try {
-    const tv = await fetchTradingViewEgxScan(clean);
+    const tv = await fetchTradingViewEgxScan(targetCode);
     if (tv && tv.price > 0) {
       return {
         price: tv.price.toFixed(8),
@@ -320,15 +341,37 @@ export async function fetchEgxStockQuote(symbol: string): Promise<MarketQuote & 
         asOf: Date.now(),
         source: "TradingView (EGX)",
         quoteStatus: "delayed",
-        resolvedSymbol: clean,
+        resolvedSymbol: targetCode,
         changePercent: tv.changePercent,
-        arabicName: tv.description,
+        arabicName: tv.description || targetNameAr,
       };
     }
   } catch {}
 
-  throw new Error(`تعذر العثور على أحدث سعر للسهم ${clean} من مزودي البورصة المصرية (مباشر مصر / TradingView).`);
+  // 2. Tier 2: Yahoo Finance Fallback (with 5000ms timeout race)
+  try {
+    const yahooTicker = targetCode.includes(".") ? targetCode : `${targetCode}.CA`;
+    const quotePromise = client.quote(yahooTicker);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("مهلة استجابة Yahoo Finance انتهت")), 5_000)
+    );
+    const raw = await Promise.race([quotePromise, timeoutPromise]);
+    if (raw && Number(raw.regularMarketPrice) > 0) {
+      const norm = normalizeYahooQuote(raw, "EGP");
+      return {
+        ...norm,
+        source: "Yahoo Finance (.CA)",
+        resolvedSymbol: targetCode,
+        arabicName: targetNameAr,
+      };
+    }
+  } catch {}
+
+
+  // Fail-Safe: No mock numbers
+  throw new Error(`تعذر جلب السعر اللحظي حالياً من البورصة المصرية لـ "${rawInput}".`);
 }
+
 
 // In-memory cache for Mubasher Egypt Mutual Funds (300 seconds TTL)
 let mubasherFundsCache: Array<{
@@ -346,7 +389,7 @@ export async function fetchMubasherEgxFunds(): Promise<NonNullable<typeof mubash
     return mubasherFundsCache;
   }
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
+  const timeout = setTimeout(() => controller.abort(), 5_000);
   try {
     const res = await fetch("https://www.mubasher.info/api/1/funds?country=eg&size=250", {
       headers: {

@@ -41,6 +41,8 @@ import {
   calculateSubscriptionCountdowns,
   PaperTradingManager,
   PaperPortfolioState,
+  resolveEgxAsset,
+  searchEgxCatalog,
 } from "./services/quant";
 
 function dbUnavailable() {
@@ -82,47 +84,18 @@ export const quantRouter = router({
       const rawInput = input.ticker.trim();
       const upperInput = rawInput.toUpperCase();
 
-      // Symbol alias resolution table (Arabic names & standard codes)
-      const aliases: Record<string, { ticker: string; assetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND"; nameAr: string }> = {
-        CIB: { ticker: "COMI.CA", assetType: "EGX_STOCK", nameAr: "البنك التجاري الدولي - مصر" },
-        COMI: { ticker: "COMI.CA", assetType: "EGX_STOCK", nameAr: "البنك التجاري الدولي - مصر" },
-        "التجاري": { ticker: "COMI.CA", assetType: "EGX_STOCK", nameAr: "البنك التجاري الدولي - مصر" },
-        SWDY: { ticker: "SWDY.CA", assetType: "EGX_STOCK", nameAr: "السويدي إليكتريك" },
-        "السويدي": { ticker: "SWDY.CA", assetType: "EGX_STOCK", nameAr: "السويدي إليكتريك" },
-        ETEL: { ticker: "ETEL.CA", assetType: "EGX_STOCK", nameAr: "الشركة المصرية للاتصالات (وي)" },
-        "وي": { ticker: "ETEL.CA", assetType: "EGX_STOCK", nameAr: "الشركة المصرية للاتصالات (وي)" },
-        "المصرية للاتصالات": { ticker: "ETEL.CA", assetType: "EGX_STOCK", nameAr: "الشركة المصرية للاتصالات (وي)" },
-        ABUK: { ticker: "ABUK.CA", assetType: "EGX_STOCK", nameAr: "أبو قير للأسمدة والصناعات الكيماوية" },
-        "أبو قير": { ticker: "ABUK.CA", assetType: "EGX_STOCK", nameAr: "أبو قير للأسمدة والصناعات الكيماوية" },
-        FWRY: { ticker: "FWRY.CA", assetType: "EGX_STOCK", nameAr: "فوري لتكنولوجيا البنوك والمدفوعات" },
-        "فوري": { ticker: "FWRY.CA", assetType: "EGX_STOCK", nameAr: "فوري لتكنولوجيا البنوك والمدفوعات" },
-        TMGH: { ticker: "TMGH.CA", assetType: "EGX_STOCK", nameAr: "مجموعة طلعت مصطفى القابضة" },
-        "طلعت مصطفى": { ticker: "TMGH.CA", assetType: "EGX_STOCK", nameAr: "مجموعة طلعت مصطفى القابضة" },
-        MFPC: { ticker: "MFPC.CA", assetType: "EGX_STOCK", nameAr: "مصر لإنتاج الأسمدة (موبكو)" },
-        "موبكو": { ticker: "MFPC.CA", assetType: "EGX_STOCK", nameAr: "مصر لإنتاج الأسمدة (موبكو)" },
-        HRHO: { ticker: "HRHO.CA", assetType: "EGX_STOCK", nameAr: "إي إف جي القابضة (هيرميس)" },
-        "هيرميس": { ticker: "HRHO.CA", assetType: "EGX_STOCK", nameAr: "إي إف جي القابضة (هيرميس)" },
-        EAST: { ticker: "EAST.CA", assetType: "EGX_STOCK", nameAr: "الشرقية - إيسترن كومباني" },
-        "الشرقية": { ticker: "EAST.CA", assetType: "EGX_STOCK", nameAr: "الشرقية - إيسترن كومباني" },
-        GOLD: { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
-        GOLD_24K: { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
-        "ذهب": { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
-        "الذهب": { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
-        AZG: { ticker: "AZG", assetType: "MUTUAL_FUND", nameAr: "صندوق أزيموت للذهب العيني (AZG)" },
-        "أزيموت": { ticker: "AZG", assetType: "MUTUAL_FUND", nameAr: "صندوق أزيموت للذهب العيني (AZG)" },
-      };
-
-      const matchedAlias = aliases[rawInput] || aliases[upperInput];
-      const resolvedTicker = matchedAlias
-        ? matchedAlias.ticker
+      // 0. Resolve against EGX Master Catalog & Arabic normalization
+      const catalogEntry = resolveEgxAsset(rawInput);
+      const resolvedTicker = catalogEntry
+        ? catalogEntry.ticker
         : upperInput.includes("GOLD")
         ? "GOLD_24K"
         : upperInput === "AZG"
         ? "AZG"
         : resolveEgxSymbol(upperInput);
 
-      const effectiveAssetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND" = matchedAlias
-        ? matchedAlias.assetType
+      const effectiveAssetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND" = catalogEntry
+        ? catalogEntry.assetType
         : resolvedTicker.includes("GOLD")
         ? "GOLD"
         : resolvedTicker === "AZG"
@@ -130,8 +103,8 @@ export const quantRouter = router({
         : input.assetType;
 
       let livePrice: number | null = null;
-      let liveName: string | null = matchedAlias?.nameAr ?? null;
-      let liveSource = "البيانات الإرشادية الفنية للمنصة";
+      let liveName: string | null = catalogEntry?.nameAr ?? null;
+      let liveSource = "البورصة المصرية (مباشر / EGX Feed)";
       let liveChange: number | undefined = undefined;
 
       // 1. Fetch live quote via fetchEgxOrYahooQuote for stocks & funds
@@ -145,7 +118,7 @@ export const quantRouter = router({
             if (typeof q.changePercent === "number") liveChange = q.changePercent;
           }
         } catch {
-          // Graceful fallback to registry/candles
+          // Handled below if quote is unavailable
         }
       } else if (effectiveAssetType === "GOLD" || resolvedTicker.includes("GOLD")) {
         const goldQuotes = calculatePhysicalGoldQuotes(4650);
@@ -174,6 +147,44 @@ export const quantRouter = router({
           liveName = foundFund.nameAr;
           if (!livePrice) livePrice = foundFund.latestNAV;
         }
+      }
+
+      // Fail-Safe Integrity: If price cannot be fetched from live feeds, do NOT invent mock prices
+      if (!livePrice && effectiveAssetType !== "GOLD") {
+        return {
+          ticker: resolvedTicker,
+          action: "WAIT",
+          actionAr: "السعر غير متاح حالياً بالبورصة",
+          confidenceScore: 0,
+          currentPrice: 0,
+          entryZone: { min: 0, max: 0 },
+          targets: { t1: 0, t2: 0 },
+          stopLoss: 0,
+          riskRewardRatio: 0,
+          indicators: {
+            rsi: null,
+            macdHistogram: null,
+            macdTrend: "NEUTRAL",
+            bollingerPosition: "NORMAL",
+            bollingerPercentB: null,
+            trendEMA: "SIDEWAYS",
+            volatilityATR: null,
+            immediateSupport: null,
+            immediateResistance: null,
+          },
+          arabicAnalysis: {
+            headline: `تعذر جلب السعر اللحظي حالياً من البورصة المصرية لـ ${liveName || resolvedTicker}`,
+            keyPoints: [
+              "لم نتمكن من تلقي سعر تداول حديث من مزودي البورصة المصرية (مباشر مصر / TradingView / Yahoo).",
+              "يرجى التحقق من صحة رمز السهم أو المحاولة خلال ساعات عمل السوق الرسمية (10:00 ص - 2:30 م).",
+            ],
+            riskWarning: "تنبيه: لا تعرض المنصة أرقاماً عشوائية حفاظاً على دقة ومصداقية قراراتك الاستثمارية.",
+          },
+          instrumentNameAr: liveName || resolvedTicker,
+          source: "UNAVAILABLE",
+          changePercent: undefined,
+          generatedAt: new Date().toISOString(),
+        };
       }
 
       let candles: CandleInput[] = [];
@@ -251,6 +262,16 @@ export const quantRouter = router({
         changePercent: liveChange,
       });
     }),
+
+  /**
+   * 2.5 Search Master EGX & Mutual Funds Catalog (Live Autocomplete)
+   */
+  searchCatalog: protectedProcedure
+    .input(z.object({ query: z.string().default("") }))
+    .query(async ({ input }) => {
+      return searchEgxCatalog(input.query, 10);
+    }),
+
 
   /**
    * 3. Asset Allocation & Rebalancing Analysis (Strictly Real Database Positions)

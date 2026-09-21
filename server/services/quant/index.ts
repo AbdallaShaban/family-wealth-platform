@@ -8,3 +8,5 @@ export * from "./advisorySignals";
 export * from "./rebalanceEngine";
 export * from "./financialHealthDiagnostics";
 export * from "./paperTradingService";
+export * from "./egxCatalog";
+
