@@ -54,6 +54,9 @@ export interface AdvisorySignalResult {
     keyPoints: string[];
     riskWarning: string;
   };
+  instrumentNameAr?: string;
+  source?: string;
+  changePercent?: number;
   generatedAt: string;
 }
 
@@ -63,7 +66,12 @@ export interface AdvisorySignalResult {
 export function generateAdvisorySignal(
   ticker: string,
   candles: CandleInput[],
-  options?: { assetType?: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND" }
+  options?: {
+    assetType?: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND";
+    instrumentNameAr?: string;
+    source?: string;
+    changePercent?: number;
+  }
 ): AdvisorySignalResult {
   if (!candles || candles.length < 15) {
     const fallbackPrice = candles && candles.length > 0 ? candles[candles.length - 1].close : 100;
@@ -93,6 +101,9 @@ export function generateAdvisorySignal(
         keyPoints: ["يلزم توفر 15 شمعة على الأقل لحساب مؤشرات RSI وMACD بدقة."],
         riskWarning: "تنبيه إرشادي: لا تقم بأي تداولات حقيقية بناء على بيانات ناقصة.",
       },
+      instrumentNameAr: options?.instrumentNameAr,
+      source: options?.source,
+      changePercent: options?.changePercent,
       generatedAt: new Date().toISOString(),
     };
   }
@@ -265,6 +276,9 @@ export function generateAdvisorySignal(
       keyPoints,
       riskWarning,
     },
+    instrumentNameAr: options?.instrumentNameAr,
+    source: options?.source,
+    changePercent: options?.changePercent,
     generatedAt: new Date().toISOString(),
   };
 }

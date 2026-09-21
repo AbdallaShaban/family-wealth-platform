@@ -25,6 +25,7 @@ import {
   instruments,
   marketCandles,
 } from "../drizzle/schema";
+import { fetchEgxOrYahooQuote, resolveEgxSymbol } from "./marketData";
 
 import {
   CandleInput,
@@ -78,6 +79,103 @@ export const quantRouter = router({
     )
     .query(async ({ input }) => {
       const db = await getDb();
+      const rawInput = input.ticker.trim();
+      const upperInput = rawInput.toUpperCase();
+
+      // Symbol alias resolution table (Arabic names & standard codes)
+      const aliases: Record<string, { ticker: string; assetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND"; nameAr: string }> = {
+        CIB: { ticker: "COMI.CA", assetType: "EGX_STOCK", nameAr: "البنك التجاري الدولي - مصر" },
+        COMI: { ticker: "COMI.CA", assetType: "EGX_STOCK", nameAr: "البنك التجاري الدولي - مصر" },
+        "التجاري": { ticker: "COMI.CA", assetType: "EGX_STOCK", nameAr: "البنك التجاري الدولي - مصر" },
+        SWDY: { ticker: "SWDY.CA", assetType: "EGX_STOCK", nameAr: "السويدي إليكتريك" },
+        "السويدي": { ticker: "SWDY.CA", assetType: "EGX_STOCK", nameAr: "السويدي إليكتريك" },
+        ETEL: { ticker: "ETEL.CA", assetType: "EGX_STOCK", nameAr: "الشركة المصرية للاتصالات (وي)" },
+        "وي": { ticker: "ETEL.CA", assetType: "EGX_STOCK", nameAr: "الشركة المصرية للاتصالات (وي)" },
+        "المصرية للاتصالات": { ticker: "ETEL.CA", assetType: "EGX_STOCK", nameAr: "الشركة المصرية للاتصالات (وي)" },
+        ABUK: { ticker: "ABUK.CA", assetType: "EGX_STOCK", nameAr: "أبو قير للأسمدة والصناعات الكيماوية" },
+        "أبو قير": { ticker: "ABUK.CA", assetType: "EGX_STOCK", nameAr: "أبو قير للأسمدة والصناعات الكيماوية" },
+        FWRY: { ticker: "FWRY.CA", assetType: "EGX_STOCK", nameAr: "فوري لتكنولوجيا البنوك والمدفوعات" },
+        "فوري": { ticker: "FWRY.CA", assetType: "EGX_STOCK", nameAr: "فوري لتكنولوجيا البنوك والمدفوعات" },
+        TMGH: { ticker: "TMGH.CA", assetType: "EGX_STOCK", nameAr: "مجموعة طلعت مصطفى القابضة" },
+        "طلعت مصطفى": { ticker: "TMGH.CA", assetType: "EGX_STOCK", nameAr: "مجموعة طلعت مصطفى القابضة" },
+        MFPC: { ticker: "MFPC.CA", assetType: "EGX_STOCK", nameAr: "مصر لإنتاج الأسمدة (موبكو)" },
+        "موبكو": { ticker: "MFPC.CA", assetType: "EGX_STOCK", nameAr: "مصر لإنتاج الأسمدة (موبكو)" },
+        HRHO: { ticker: "HRHO.CA", assetType: "EGX_STOCK", nameAr: "إي إف جي القابضة (هيرميس)" },
+        "هيرميس": { ticker: "HRHO.CA", assetType: "EGX_STOCK", nameAr: "إي إف جي القابضة (هيرميس)" },
+        EAST: { ticker: "EAST.CA", assetType: "EGX_STOCK", nameAr: "الشرقية - إيسترن كومباني" },
+        "الشرقية": { ticker: "EAST.CA", assetType: "EGX_STOCK", nameAr: "الشرقية - إيسترن كومباني" },
+        GOLD: { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
+        GOLD_24K: { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
+        "ذهب": { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
+        "الذهب": { ticker: "GOLD_24K", assetType: "GOLD", nameAr: "ذهب عيار 24 (سعر الجرام الصافي)" },
+        AZG: { ticker: "AZG", assetType: "MUTUAL_FUND", nameAr: "صندوق أزيموت للذهب العيني (AZG)" },
+        "أزيموت": { ticker: "AZG", assetType: "MUTUAL_FUND", nameAr: "صندوق أزيموت للذهب العيني (AZG)" },
+      };
+
+      const matchedAlias = aliases[rawInput] || aliases[upperInput];
+      const resolvedTicker = matchedAlias
+        ? matchedAlias.ticker
+        : upperInput.includes("GOLD")
+        ? "GOLD_24K"
+        : upperInput === "AZG"
+        ? "AZG"
+        : resolveEgxSymbol(upperInput);
+
+      const effectiveAssetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND" = matchedAlias
+        ? matchedAlias.assetType
+        : resolvedTicker.includes("GOLD")
+        ? "GOLD"
+        : resolvedTicker === "AZG"
+        ? "MUTUAL_FUND"
+        : input.assetType;
+
+      let livePrice: number | null = null;
+      let liveName: string | null = matchedAlias?.nameAr ?? null;
+      let liveSource = "البيانات الإرشادية الفنية للمنصة";
+      let liveChange: number | undefined = undefined;
+
+      // 1. Fetch live quote via fetchEgxOrYahooQuote for stocks & funds
+      if (effectiveAssetType === "EGX_STOCK" || effectiveAssetType === "MUTUAL_FUND") {
+        try {
+          const q = await fetchEgxOrYahooQuote(resolvedTicker, "EGP");
+          if (q && Number(q.price) > 0) {
+            livePrice = Number(q.price);
+            if (q.arabicName) liveName = q.arabicName;
+            if (q.source) liveSource = q.source;
+            if (typeof q.changePercent === "number") liveChange = q.changePercent;
+          }
+        } catch {
+          // Graceful fallback to registry/candles
+        }
+      } else if (effectiveAssetType === "GOLD" || resolvedTicker.includes("GOLD")) {
+        const goldQuotes = calculatePhysicalGoldQuotes(4650);
+        const p24 = goldQuotes.purities.find((p) => p.karat === 24);
+        if (p24) {
+          livePrice = p24.gramPriceEGP;
+          liveName = "ذهب عيار 24 (سعر الجرام الصافي)";
+          liveSource = "تسعير الذهب الفوري (سوق الصاغة المصري)";
+          liveChange = p24.change24hPercent;
+        }
+      }
+
+      // Check known instruments registry if name is not set
+      if (!liveName) {
+        const found = EGX_TOP_INSTRUMENTS.find(
+          (s) => s.ticker === resolvedTicker || s.symbol === resolvedTicker.replace(".CA", "")
+        );
+        if (found) {
+          liveName = found.nameAr;
+          if (!livePrice) livePrice = found.lastClose ?? null;
+        }
+      }
+      if (!liveName) {
+        const foundFund = EGYPTIAN_MUTUAL_FUNDS.find((f) => f.code === resolvedTicker);
+        if (foundFund) {
+          liveName = foundFund.nameAr;
+          if (!livePrice) livePrice = foundFund.latestNAV;
+        }
+      }
+
       let candles: CandleInput[] = [];
 
       // Check if instrument exists in database to fetch actual candles
@@ -86,7 +184,7 @@ export const quantRouter = router({
           const inst = await db
             .select()
             .from(instruments)
-            .where(eq(instruments.symbol, input.ticker.toUpperCase()))
+            .where(eq(instruments.symbol, resolvedTicker))
             .limit(1);
 
           if (inst.length > 0) {
@@ -113,11 +211,9 @@ export const quantRouter = router({
         }
       }
 
-      // If insufficient candles in database, generate realistic price progression based on known baseline
+      // If insufficient candles in database, generate realistic price progression anchored to baseline
       if (candles.length < 15) {
-        const found = EGX_TOP_INSTRUMENTS.find((s) => s.ticker === input.ticker.toUpperCase());
-        const basePrice = found?.lastClose || (input.ticker.includes("GOLD") ? 4650 : 50);
-
+        const basePrice = livePrice || (resolvedTicker.includes("GOLD") ? 4650 : 50);
         let current = basePrice * 0.94;
         const now = Date.now();
         const oneDayMs = 24 * 60 * 60 * 1000;
@@ -141,7 +237,19 @@ export const quantRouter = router({
         }
       }
 
-      return generateAdvisorySignal(input.ticker, candles, { assetType: input.assetType });
+      // Anchor the latest candle close to the live fetched price
+      if (candles.length > 0 && livePrice) {
+        candles[candles.length - 1].close = livePrice;
+        candles[candles.length - 1].high = Math.max(candles[candles.length - 1].high, livePrice);
+        candles[candles.length - 1].low = Math.min(candles[candles.length - 1].low, livePrice);
+      }
+
+      return generateAdvisorySignal(resolvedTicker, candles, {
+        assetType: effectiveAssetType,
+        instrumentNameAr: liveName ?? resolvedTicker,
+        source: liveSource,
+        changePercent: liveChange,
+      });
     }),
 
   /**
