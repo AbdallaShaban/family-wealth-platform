@@ -38,13 +38,14 @@ export async function refreshYahooMarketData() : Promise<MarketRefreshResult> {
     for (const instrument of activeInstruments) {
       if (!instrument.symbol) { result.skipped += 1; continue; }
       try {
-        const quote = await fetchEgxOrYahooQuote(instrument.symbol, instrument.currency);
+        const quote = await fetchEgxOrYahooQuote(instrument.symbol, instrument.currency, undefined, instrument.assetType, instrument.name);
         if (quote.currency !== instrument.currency) throw new Error("عملة المصدر لا تطابق عملة الأداة المسجلة.");
         if (await hasQuote(db, instrument.id, quote.asOf)) { result.skipped += 1; continue; }
         const capturedAt = Date.now();
         const quoteInsert = await db.insert(priceQuotes).values({ workspaceId: workspace.id, instrumentId: instrument.id, price: quote.price, currency: quote.currency, source: quote.source, quoteStatus: quote.quoteStatus, asOf: quote.asOf, createdAt: capturedAt });
         const quoteId = Number(quoteInsert[0].insertId);
-        const provenanceInsert = await db.insert(valuationProvenance).values(buildMarketProvenance({ workspaceId: workspace.id, provider: "yahoo-finance2", source: quote.source, rawSymbol: instrument.symbol, fetchedAt: capturedAt, asOf: quote.asOf, status: quote.quoteStatus, metadata: { instrumentId: instrument.id, quoteId } }));
+        const providerName = quote.source.includes("NBE") ? "nbe-funds" : quote.source.includes("Mubasher") ? "mubasher" : "market-feed";
+        const provenanceInsert = await db.insert(valuationProvenance).values(buildMarketProvenance({ workspaceId: workspace.id, provider: providerName, source: quote.source, rawSymbol: instrument.symbol, fetchedAt: capturedAt, asOf: quote.asOf, status: quote.quoteStatus, metadata: { instrumentId: instrument.id, quoteId } }));
         await db.insert(valuationSnapshots).values(buildInstrumentSnapshot({ workspaceId: workspace.id, instrumentId: instrument.id, provenanceId: Number(provenanceInsert[0].insertId), quoteId, price: quote.price, currency: quote.currency, baseCurrency: workspace.baseCurrency, status: quote.quoteStatus, asOf: quote.asOf, capturedAt }));
         result.refreshedQuotes += 1;
         workspaceQuotesRefreshed += 1;

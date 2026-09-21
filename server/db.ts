@@ -11,19 +11,23 @@ export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
     dbUrl = dbUrl.slice(1, -1);
   }
 
-  const connectionLimit = env.DB_CONNECTION_LIMIT ? parseInt(env.DB_CONNECTION_LIMIT, 10) : 10;
-  const maxIdle = env.DB_MAX_IDLE ? parseInt(env.DB_MAX_IDLE, 10) : 10;
-  const idleTimeout = env.DB_IDLE_TIMEOUT_MS ? parseInt(env.DB_IDLE_TIMEOUT_MS, 10) : 60000;
   const isTiDB = Boolean(dbUrl && dbUrl.includes("tidbcloud.com"));
+  const defaultMaxIdle = isTiDB ? 2 : 10;
+  const defaultIdleTimeout = isTiDB ? 30000 : 60000;
+  const defaultConnectTimeout = 8000;
+
+  const connectionLimit = env.DB_CONNECTION_LIMIT ? parseInt(env.DB_CONNECTION_LIMIT, 10) : 10;
+  const maxIdle = env.DB_MAX_IDLE ? parseInt(env.DB_MAX_IDLE, 10) : defaultMaxIdle;
+  const idleTimeout = env.DB_IDLE_TIMEOUT_MS ? parseInt(env.DB_IDLE_TIMEOUT_MS, 10) : defaultIdleTimeout;
 
   return {
     uri: dbUrl,
     connectionLimit: Number.isFinite(connectionLimit) && connectionLimit > 0 ? connectionLimit : 10,
-    maxIdle: Number.isFinite(maxIdle) && maxIdle > 0 ? maxIdle : 10,
-    idleTimeout: Number.isFinite(idleTimeout) && idleTimeout > 0 ? idleTimeout : 60000,
+    maxIdle: Number.isFinite(maxIdle) && maxIdle > 0 ? maxIdle : defaultMaxIdle,
+    idleTimeout: Number.isFinite(idleTimeout) && idleTimeout > 0 ? idleTimeout : defaultIdleTimeout,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
-    connectTimeout: 15000,
+    connectTimeout: defaultConnectTimeout,
     waitForConnections: true,
     queueLimit: 0,
     ...(isTiDB
@@ -34,6 +38,8 @@ export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
 
 let _pool: mysql.Pool | null = null;
 let _db: ReturnType<typeof drizzle> | null = null;
+let _heartbeatTimer: NodeJS.Timeout | null = null;
+let _isPinging = false;
 
 export async function resetDb(): Promise<void> {
   if (_pool) {
@@ -45,6 +51,67 @@ export async function resetDb(): Promise<void> {
   }
   _pool = null;
   _db = null;
+}
+
+/**
+ * Pings the active database connection to keep TiDB Serverless warm and detect silent disconnects
+ */
+export async function pingDb(): Promise<boolean> {
+  if (_isPinging) return false;
+  _isPinging = true;
+  try {
+    let pool = getPool();
+    if (!pool) {
+      await getDb();
+      pool = getPool();
+    }
+    if (!pool) return false;
+
+    // Strict 4-second timeout for the ping query itself
+    await Promise.race([
+      pool.query("SELECT 1 as heartbeat"),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Heartbeat query timeout (4000ms)")), 4000)
+      ),
+    ]);
+    return true;
+  } catch (err: any) {
+    console.warn(
+      `[Database Heartbeat] Ping failed (${err?.code || err?.message}). Cycling pool for auto-reconnect.`
+    );
+    await resetDb();
+    return false;
+  } finally {
+    _isPinging = false;
+  }
+}
+
+/**
+ * Starts background heartbeat keeper every 45s to prevent TiDB Serverless idle scale-down
+ */
+export function startDbHeartbeat(intervalMs = 45000): void {
+  if (_heartbeatTimer) return;
+  _heartbeatTimer = setInterval(async () => {
+    try {
+      const ok = await pingDb();
+      if (ok) {
+        console.log(`[Database Heartbeat] TiDB connection warm-up ping OK (${new Date().toLocaleTimeString()})`);
+      }
+    } catch (err: any) {
+      console.warn("[Database Heartbeat] Error during heartbeat ping:", err?.message || err);
+    }
+  }, intervalMs);
+
+  if (typeof _heartbeatTimer.unref === "function") {
+    _heartbeatTimer.unref();
+  }
+}
+
+export function stopDbHeartbeat(): void {
+  if (_heartbeatTimer) {
+    clearInterval(_heartbeatTimer);
+    _heartbeatTimer = null;
+  }
 }
 
 // Lazily create the drizzle instance with explicit mysql2 connection pool and robust reconnect handling
@@ -85,6 +152,10 @@ export async function getDb() {
       });
 
       _db = drizzle(_pool as any);
+
+      if (process.env.NODE_ENV !== "test") {
+        startDbHeartbeat(45000);
+      }
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;

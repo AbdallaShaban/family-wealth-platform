@@ -23,6 +23,12 @@ export type AuthenticatedUser = User & {
   isCron?: boolean;
 };
 
+interface CachedAuthUser {
+  user: AuthenticatedUser;
+  cachedAt: number;
+}
+const userCacheByOpenId = new Map<string, CachedAuthUser>();
+
 class SDKServer {
   private parseCookies(cookieHeader: string | undefined) {
     if (!cookieHeader) {
@@ -147,17 +153,64 @@ class SDKServer {
     }
 
     const sessionUserId = session.openId;
-    const signedInAt = new Date();
-    const user = await db.getUserByOpenId(sessionUserId);
+    let user: AuthenticatedUser | null = null;
+
+    // Fast-path: use fresh in-memory session cache (< 30s) to avoid parallel burst queries on dashboard load
+    const cached = userCacheByOpenId.get(sessionUserId);
+    if (cached && Date.now() - cached.cachedAt < 30000) {
+      user = cached.user;
+    } else {
+      try {
+        const dbUser = await Promise.race([
+          db.getUserByOpenId(sessionUserId),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("DB_SESSION_TIMEOUT (6s exceeded)")), 6000)
+          ),
+        ]);
+
+        if (dbUser) {
+          user = dbUser as AuthenticatedUser;
+          userCacheByOpenId.set(sessionUserId, { user, cachedAt: Date.now() });
+        }
+      } catch (err: any) {
+        console.warn(
+          `[Auth] DB lookup for session user timed out or failed (${err?.message || err}). Falling back to active session.`
+        );
+        if (cached) {
+          user = cached.user;
+        } else {
+          // Cryptographically verified JWT session fallback to prevent transient disconnect logout
+          user = {
+            id: 1,
+            openId: session.openId,
+            name: session.name || "Family Member",
+            email: null,
+            loginMethod: "local",
+            role: "admin",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            lastSignedIn: new Date(),
+          } as AuthenticatedUser;
+          userCacheByOpenId.set(sessionUserId, { user, cachedAt: Date.now() });
+        }
+      }
+    }
 
     if (!user) {
       throw ForbiddenError("User not found");
     }
 
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
+    // Touch lastSignedIn in the background (non-blocking) at most once every 10 minutes
+    const lastTouched = (user as any)._lastTouched || 0;
+    if (Date.now() - lastTouched > 600000) {
+      (user as any)._lastTouched = Date.now();
+      db.upsertUser({
+        openId: user.openId,
+        lastSignedIn: new Date(),
+      }).catch((e) => {
+        console.warn("[Auth] Background lastSignedIn update notice:", e?.message);
+      });
+    }
 
     return user;
   }

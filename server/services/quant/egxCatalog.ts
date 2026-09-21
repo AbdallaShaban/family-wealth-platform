@@ -614,6 +614,15 @@ export const EGX_MASTER_CATALOG: EGXMasterEntry[] = [
     aliases: ["الاهلي الرابع", "صندوق الاهلي 4", "الاهلي اسهم", "nbe 4th"],
   },
   {
+    ticker: "NBE06",
+    symbol: "NBE06",
+    nameAr: "صندوق بشائر - البنك الأهلي المصري (متوافق مع الشريعة)",
+    nameEn: "NBE Bashayer Islamic Fund",
+    sector: "صناديق الأسهم الإسلامية",
+    assetType: "MUTUAL_FUND",
+    aliases: ["صندوق بشاير", "صندوق بشائر", "بشائر", "بشاير", "البنك الاهلى المصرى صندوق بشاير", "الاهلي بشائر", "nbe06", "nbe 6"],
+  },
+  {
     ticker: "HELA_ISLAMIC",
     symbol: "HELA_ISLAMIC",
     nameAr: "صندوق سنابل الإسلامي (متوافق مع الشريعة)",

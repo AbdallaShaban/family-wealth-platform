@@ -13,7 +13,7 @@ import { handleScheduledMarketRefresh } from "../marketRefreshHandler";
 import { handleCreateAccount, handleListAccounts } from "../accountsHandler";
 import { startMarketAutomationDaemon } from "../marketScheduler";
 import { sql } from "drizzle-orm";
-import { ensurePasswordHashColumn, getDb } from "../db";
+import { ensurePasswordHashColumn, getDb, startDbHeartbeat } from "../db";
 import { validateProductionJwtSecret } from "../auditorTokenService";
 
 const operationalMetrics = { startedAt: Date.now(), requests: 0, responses5xx: 0, totalResponseMs: 0, lastRequestAt: null as number | null };
@@ -167,6 +167,7 @@ async function startServer() {
   server.listen(port, host, () => {
     console.log(`Server running on http://localhost:${port}/ (bound to ${host})`);
     startMarketAutomationDaemon();
+    startDbHeartbeat(45000);
   });
 }
 
