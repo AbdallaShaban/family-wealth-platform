@@ -23,7 +23,10 @@ export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
     idleTimeout: Number.isFinite(idleTimeout) && idleTimeout > 0 ? idleTimeout : 60000,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
-    ...(isTiDB && !dbUrl.includes("ssl=")
+    connectTimeout: 15000,
+    waitForConnections: true,
+    queueLimit: 0,
+    ...(isTiDB
       ? { ssl: { minVersion: "TLSv1.2", rejectUnauthorized: true } }
       : {}),
   };
@@ -32,12 +35,55 @@ export function getMysqlPoolConfig(env: NodeJS.ProcessEnv = process.env) {
 let _pool: mysql.Pool | null = null;
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance with explicit mysql2 connection pool
+export async function resetDb(): Promise<void> {
+  if (_pool) {
+    try {
+      await _pool.end();
+    } catch {
+      // Ignore pool close errors
+    }
+  }
+  _pool = null;
+  _db = null;
+}
+
+// Lazily create the drizzle instance with explicit mysql2 connection pool and robust reconnect handling
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       const config = getMysqlPoolConfig();
       _pool = mysql.createPool(config);
+
+      // Handle connection pool errors to prevent uncaught exceptions and heal stale pools
+      (_pool as any).on("error", (err: any) => {
+        console.error("[Database Pool] Error event:", err?.message || err);
+        const fatalCodes = [
+          "PROTOCOL_CONNECTION_LOST",
+          "ECONNRESET",
+          "ETIMEDOUT",
+          "EPIPE",
+          "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR",
+          "ER_CON_COUNT_ERROR",
+        ];
+        if (fatalCodes.includes(err?.code) || err?.fatal) {
+          console.warn(`[Database Pool] Fatal connection error (${err?.code || "FATAL"}). Invalidation scheduled for auto-reconnect.`);
+          _pool = null;
+          _db = null;
+        }
+      });
+
+      // Guard individual connection sockets against unhandled disconnects
+      (_pool as any).on("connection", (conn: any) => {
+        conn.on("error", (err: any) => {
+          console.warn("[Database Socket] Socket error:", err?.code || err?.message);
+          if (["ECONNRESET", "PROTOCOL_CONNECTION_LOST", "EPIPE"].includes(err?.code)) {
+            try {
+              conn.destroy();
+            } catch {}
+          }
+        });
+      });
+
       _db = drizzle(_pool as any);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
@@ -54,6 +100,47 @@ export function getPool() {
 
 export function setDbInstance(db: any) {
   _db = db;
+}
+
+/**
+ * Executes a database operation with automatic reconnection retry on network disconnects (ECONNRESET, connection closed, etc.)
+ */
+export async function withDbRetry<T>(
+  operation: (db: NonNullable<ReturnType<typeof drizzle>>) => Promise<T>,
+  maxRetries = 2
+): Promise<T> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const db = await getDb();
+    if (!db) {
+      throw new Error("Database is not available");
+    }
+    try {
+      return await operation(db);
+    } catch (err: any) {
+      lastError = err;
+      const isDisconnect =
+        err?.code === "PROTOCOL_CONNECTION_LOST" ||
+        err?.code === "ECONNRESET" ||
+        err?.code === "ETIMEDOUT" ||
+        err?.code === "EPIPE" ||
+        err?.code === "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR" ||
+        err?.message?.includes("Connection lost") ||
+        err?.message?.includes("closed the connection") ||
+        err?.message?.includes("ECONNRESET");
+
+      if (isDisconnect && attempt < maxRetries) {
+        console.warn(
+          `[Database] Connection issue during query (${err?.code || err?.message}). Resetting pool and retrying (${attempt}/${maxRetries})...`
+        );
+        await resetDb();
+        await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
@@ -151,29 +238,25 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 }
 
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
+export async function getUserByOpenId(openId: string): Promise<User | undefined> {
+  return withDbRetry(async (db) => {
+    const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  }).catch((err) => {
+    console.warn("[Database] Cannot get user: database not available or query failed:", err?.message || err);
     return undefined;
-  }
-
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  });
 }
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user by email: database not available");
-    return undefined;
-  }
-
   const normalized = email.trim().toLowerCase();
-  const result = await db.select().from(users).where(eq(users.email, normalized)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  return withDbRetry(async (db) => {
+    const result = await db.select().from(users).where(eq(users.email, normalized)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
+  }).catch((err) => {
+    console.warn("[Database] Cannot get user by email:", err?.message || err);
+    return undefined;
+  });
 }
 
 export async function createUserWithPassword(params: {
@@ -181,35 +264,32 @@ export async function createUserWithPassword(params: {
   passwordHash: string;
   name: string;
 }): Promise<User> {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database is not available");
-  }
+  return withDbRetry(async (db) => {
+    const normalizedEmail = params.email.trim().toLowerCase();
+    const existingCount = await db.select({ count: sql<number>`count(*)` }).from(users);
+    const isFirstUser = Number(existingCount[0]?.count ?? 0) === 0;
+    const openId = `local|${randomUUID()}`;
 
-  const normalizedEmail = params.email.trim().toLowerCase();
-  const existingCount = await db.select({ count: sql<number>`count(*)` }).from(users);
-  const isFirstUser = Number(existingCount[0]?.count ?? 0) === 0;
-  const openId = `local|${randomUUID()}`;
+    const now = new Date();
+    await db.insert(users).values({
+      openId,
+      email: normalizedEmail,
+      name: params.name.trim(),
+      passwordHash: params.passwordHash,
+      loginMethod: "local",
+      role: isFirstUser ? "admin" : "user",
+      createdAt: now,
+      updatedAt: now,
+      lastSignedIn: now,
+    });
 
-  const now = new Date();
-  await db.insert(users).values({
-    openId,
-    email: normalizedEmail,
-    name: params.name.trim(),
-    passwordHash: params.passwordHash,
-    loginMethod: "local",
-    role: isFirstUser ? "admin" : "user",
-    createdAt: now,
-    updatedAt: now,
-    lastSignedIn: now,
+    const [created] = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+    if (!created) {
+      throw new Error("Failed to retrieve created user");
+    }
+
+    return created;
   });
-
-  const [created] = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-  if (!created) {
-    throw new Error("Failed to retrieve created user");
-  }
-
-  return created;
 }
 
 export async function ensurePasswordHashColumn(): Promise<void> {
