@@ -35,149 +35,6 @@ export const goalFundingSourceLabel: Record<string, string> = {
   other: "مصدر آخر",
 };
 
-export function GoalsPage() {
-  const utils = trpc.useUtils();
-  const goals = trpc.family.goals.list.useQuery();
-  const [name, setName] = useState("");
-  const [goalType, setGoalType] = useState<"emergency_fund" | "retirement" | "education" | "legacy" | "custom">("emergency_fund");
-  const [metric, setMetric] = useState<"net_worth" | "liquid_assets" | "investments">("liquid_assets");
-  const [targetAmount, setTargetAmount] = useState("");
-  const [targetDate, setTargetDate] = useState("");
-  const create = trpc.family.goals.create.useMutation({
-    onSuccess: () => {
-      toast.success("تم إنشاء الهدف. تقدمه يُحسب مباشرة من قيودك وحيازاتك المقيمة.");
-      void utils.family.goals.list.invalidate();
-      setName("");
-      setTargetAmount("");
-      setTargetDate("");
-    },
-    onError: error => toast.error(textError(error)),
-  });
-
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    create.mutate({
-      name,
-      goalType,
-      metric,
-      targetAmount,
-      targetDate: targetDate ? Date.parse(`${targetDate}T00:00:00.000Z`) : null,
-    });
-  };
-
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-6xl space-y-6">
-        <PageHeader
-          title="الأهداف والتخطيط"
-          description="لا يحتوي الهدف على قيمة تقدم قابلة للتعديل. يتتبع تلقائيًا مقياسًا ماليًا من الدفتر والحيازات ذات الأسعار الموثقة."
-          breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والتحليل", href: "/goals" },
-            { label: "الأهداف والتخطيط" },
-          ]}
-          badge={{ text: "تخطيط مالي", variant: "institutional" }}
-          icon={Target}
-        />
-        <div className="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="size-5 text-emerald-700" />
-                إنشاء هدف
-              </CardTitle>
-              <CardDescription>الأهداف في الإصدار الحالي مقومة بعملة مساحة FAMILY الأساسية.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={submit} className="grid gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="goal-name">اسم الهدف</Label>
-                  <Input id="goal-name" value={name} onChange={e => setName(e.target.value)} placeholder="مثال: احتياطي طوارئ" required minLength={2} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>نوع الهدف</Label>
-                  <Select value={goalType} onValueChange={value => setGoalType(value as typeof goalType)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(goalTypeLabel).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>ما الذي يقيسه الهدف؟</Label>
-                  <Select value={metric} onValueChange={value => setMetric(value as typeof metric)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(goalMetricLabel).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>{label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="goal-target">القيمة المستهدفة</Label>
-                  <Input id="goal-target" value={targetAmount} onChange={e => setTargetAmount(e.target.value)} inputMode="decimal" required />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="goal-date">تاريخ مستهدف</Label>
-                  <Input id="goal-date" type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
-                </div>
-                <Button type="submit" disabled={create.isPending}>
-                  {create.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
-                  حفظ الهدف
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>التقدم الفعلي</CardTitle>
-              <CardDescription>يُحدّث عند تغيير المقياس المالي المرتبط، لا عند تعديل بطاقة الواجهة.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {goals.isLoading ? (
-                <Skeleton className="h-80" />
-              ) : goals.error ? (
-                <InlineError message={textError(goals.error)} />
-              ) : goals.data?.length ? (
-                <div className="space-y-5">
-                  {goals.data.map(goal => (
-                    <div key={goal.id} className="rounded-xl border bg-white p-4">
-                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                        <div>
-                          <p className="font-semibold text-slate-900">{goal.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {goalTypeLabel[goal.goalType]} · يتتبع {goalMetricLabel[goal.metric]}
-                            {goal.targetDate ? ` · مستهدف ${new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium" }).format(new Date(goal.targetDate))}` : ""}
-                          </p>
-                        </div>
-                        <Badge variant={goal.progressPercent >= 100 ? "secondary" : "outline"}>
-                          {goal.progressPercent}%
-                        </Badge>
-                      </div>
-                      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-emerald-600 transition-[width] duration-300" style={{ width: `${goal.progressPercent}%` }} />
-                      </div>
-                      <div className="mt-3 flex items-center justify-between text-sm">
-                        <span className="font-medium text-emerald-700">{money(goal.currentAmount, goal.currency)}</span>
-                        <span className="text-slate-500">من {money(goal.targetAmount, goal.currency)}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState icon={Target} title="لم تحدد أهدافًا بعد" description="أنشئ هدفًا مقاسًا بالسيولة أو الاستثمارات أو صافي الثروة. ستتغير نسبة التقدم مع تغير البيانات المالية الحقيقية." />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </DashboardLayout>
-  );
-}
-
 export default function GoalsPlanningPage() {
   const utils = trpc.useUtils();
   const access = useFamilyPermissions();
@@ -379,36 +236,36 @@ export default function GoalsPlanningPage() {
               ) : goals.data?.length ? (
                 <div className="space-y-4">
                   {goals.data.map(goal => (
-                    <div key={goal.id} className="rounded-xl border bg-white p-4">
+                    <div key={goal.id} className="rounded-xl border border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0E1420] p-4">
                       <div className="flex flex-col justify-between gap-3 sm:flex-row">
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-slate-900">{goal.name}</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{goal.name}</p>
                             <Badge variant="outline">أولوية {goal.priority}</Badge>
                             <Badge variant="secondary">
                               {parseFloat(goal.targetAmount || "0") > 0 ? `${goal.progressPercent}% فعلي` : "0.0% (الهدف غير محدد)"}
                             </Badge>
                           </div>
-                          <p className="mt-2 text-xs text-slate-500">
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                             {goalTypeLabel[goal.goalType]} · مصدر التمويل: {goalFundingSourceLabel[goal.fundingSource]} · القيمة الحالية: {money(goal.currentAmount, goal.currency)} من {money(goal.targetAmount, goal.currency)}
                           </p>
                         </div>
                         {goal.projection.monthsToTarget ? (
-                          <p className="text-sm font-semibold text-emerald-700">متوقع: {money(goal.projection.projectedAmount, goal.currency)}</p>
+                          <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">متوقع: {money(goal.projection.projectedAmount, goal.currency)}</p>
                         ) : null}
                       </div>
-                      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100">
+                      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                         <div className="h-full rounded-full bg-emerald-600 transition-[width] duration-300" style={{ width: `${parseFloat(goal.targetAmount || "0") > 0 ? goal.progressPercent : 0}%` }} />
                       </div>
                       {goal.projection.monthsToTarget ? (
-                        <div className="mt-4 grid gap-2 text-xs text-slate-600 sm:grid-cols-3">
+                        <div className="mt-4 grid gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-3">
                           <span>هدف بعد التضخم: {money(goal.projection.inflationAdjustedTargetAmount, goal.currency)}</span>
                           <span>فجوة متوقعة: {money(goal.projection.projectedGap, goal.currency)}</span>
                           <span>مساهمة لازمة: {money(goal.projection.requiredMonthlyContribution, goal.currency)}/شهر</span>
                           <span className="sm:col-span-3">الافتراضات: مساهمة {money(goal.monthlyContribution, goal.currency)} شهريًا، عائد {goal.assumedAnnualReturn}%، تضخم {goal.assumedAnnualInflation}%، وأفق {goal.projection.monthsToTarget} شهرًا.</span>
                         </div>
                       ) : (
-                        <p className="mt-3 text-xs text-slate-500">احفظ تاريخًا مستهدفًا لحساب الإسقاط؛ لا تخمن المنصة موعدًا من تلقاء نفسها.</p>
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">احفظ تاريخًا مستهدفًا لحساب الإسقاط؛ لا تخمن المنصة موعدًا من تلقاء نفسها.</p>
                       )}
                     </div>
                   ))}

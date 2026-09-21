@@ -53,6 +53,7 @@ export default function LedgerPage() {
       void utils.family.dashboard.invalidate();
       void utils.family.accounts.list.invalidate();
       void utils.family.ledger.recent.invalidate();
+      void utils.family.cashFlow.summary.invalidate();
       setAmount("");
       setMemo("");
       setVaultDocId(null);

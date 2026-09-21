@@ -39,6 +39,7 @@ export function CashFlowRegisterCard({ onComplete }: { onComplete?: () => void }
       void utils.family.ledger.recent.invalidate();
       void utils.family.dashboard.invalidate();
       void utils.family.cashFlow.summary.invalidate();
+      void utils.family.accounts.list.invalidate();
       onComplete?.();
     },
     onError: error => toast.error(textError(error)),

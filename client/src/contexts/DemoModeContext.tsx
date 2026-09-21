@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type DemoModeContextValue = {
   isDemoMode: boolean;
@@ -15,7 +15,16 @@ export function DemoModeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORAGE_KEY, String(isDemoMode));
   }, [isDemoMode]);
 
-  return <DemoModeContext.Provider value={{ isDemoMode, toggleDemoMode: () => setIsDemoMode(value => !value) }}>{children}</DemoModeContext.Provider>;
+  const toggleDemoMode = useCallback(() => {
+    setIsDemoMode(value => !value);
+  }, []);
+
+  const value = useMemo(
+    () => ({ isDemoMode, toggleDemoMode }),
+    [isDemoMode, toggleDemoMode]
+  );
+
+  return <DemoModeContext.Provider value={value}>{children}</DemoModeContext.Provider>;
 }
 
 export function useDemoMode() {

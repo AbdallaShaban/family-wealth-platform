@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "family_privacy_mode";
 
@@ -34,7 +34,7 @@ export function PrivacyModeProvider({
     getInitialPrivacyState(initialPrivate)
   );
 
-  const setPrivacy = (value: boolean) => {
+  const setPrivacy = useCallback((value: boolean) => {
     setIsPrivateState(value);
     try {
       if (typeof window !== "undefined") {
@@ -43,11 +43,21 @@ export function PrivacyModeProvider({
     } catch {
       // Storage access might be restricted
     }
-  };
+  }, []);
 
-  const togglePrivacy = () => {
-    setPrivacy(!isPrivate);
-  };
+  const togglePrivacy = useCallback(() => {
+    setIsPrivateState(prev => {
+      const next = !prev;
+      try {
+        if (typeof window !== "undefined") {
+          localStorage.setItem(STORAGE_KEY, String(next));
+        }
+      } catch {
+        // Storage access might be restricted
+      }
+      return next;
+    });
+  }, []);
 
   // Sync class on documentElement or body for global CSS targeting
   useEffect(() => {
@@ -60,10 +70,13 @@ export function PrivacyModeProvider({
     }
   }, [isPrivate]);
 
+  const value = useMemo(
+    () => ({ isPrivate, togglePrivacy, setPrivacy }),
+    [isPrivate, togglePrivacy, setPrivacy]
+  );
+
   return (
-    <PrivacyModeContext.Provider
-      value={{ isPrivate, togglePrivacy, setPrivacy }}
-    >
+    <PrivacyModeContext.Provider value={value}>
       {children}
     </PrivacyModeContext.Provider>
   );

@@ -439,8 +439,6 @@ export const familyRouter = router({
       return { success: true, id: existing.id };
     }),
     templates: protectedProcedure.query(async () => [] as Array<{ id: number; name: string; horizonMonths: string; startsPeriodKey: string; spendingLimitBase: string | null; status: string; createdAt: number; updatedAt: number }>),
-    createRollingTemplate: protectedProcedure.input(z.object({ name: z.string().trim().min(2).max(140), horizonMonths: z.enum(["3", "6"]), startsPeriodKey: z.string().regex(/^\d{4}-\d{2}$/), spendingLimitBase: money.nullable(), lines: z.array(z.object({ categoryId: z.number().int().positive(), plannedAmountBase: money })).min(1).max(50) })).mutation(async () => { throw new TRPCError({ code: "BAD_REQUEST", message: "قوالب الميزانية المتدحرجة متوقفة في هذا الإصدار لصالح التخطيط القياسي." }); }),
-    applyRollingTemplate: protectedProcedure.input(z.object({ templateId: z.number().int().positive() })).mutation(async () => { throw new TRPCError({ code: "BAD_REQUEST", message: "قوالب الميزانية المتدحرجة متوقفة في هذا الإصدار." }); }),
     recurring: router({
       list: protectedProcedure.query(async ({ ctx }) => {
         const family = await familyContext(ctx.user);

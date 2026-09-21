@@ -47,26 +47,30 @@ export default function RebalanceReviewPage() {
                 {data.allocation.classes.map(row => (
                   <div
                     key={row.assetClass}
-                    className={`rounded-xl border p-4 ${row.status === "review" ? "border-amber-200 bg-amber-50" : "bg-white"}`}
+                    className={`rounded-xl border p-4 transition-colors ${
+                      row.status === "review"
+                        ? "border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20"
+                        : "border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0E1420]"
+                    }`}
                   >
                     <div className="flex flex-col justify-between gap-3 sm:flex-row">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold">{assetClassLabel[row.assetClass]}</p>
+                          <p className="font-semibold text-slate-900 dark:text-white">{assetClassLabel[row.assetClass]}</p>
                           <Badge variant={row.status === "review" ? "destructive" : row.status === "within_band" ? "secondary" : "outline"}>
                             {row.status === "review" ? "تتطلب مراجعة" : row.status === "within_band" ? "ضمن الحد" : "لا يوجد هدف"}
                           </Badge>
                         </div>
-                        <p className="mt-2 text-sm text-slate-600">
+                        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                           فعلي {row.actualPercent}% مقابل مستهدف {row.targetPercent === null ? "—" : `${row.targetPercent}%`} · الانحراف {row.driftPercent === null ? "—" : `${row.driftPercent}%`}
                         </p>
                       </div>
                       {row.adjustmentToTarget === null ? (
-                        <span className="text-sm text-slate-500">احفظ هدفًا لهذه الفئة.</span>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">احفظ هدفًا لهذه الفئة.</span>
                       ) : (
                         <div className="text-right">
-                          <p className="text-xs text-slate-500">مبلغ التقارب إلى الهدف</p>
-                          <p className="mt-1 font-semibold text-slate-900">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">مبلغ التقارب إلى الهدف</p>
+                          <p className="mt-1 font-semibold text-slate-900 dark:text-white font-mono tabular-nums">
                             {Number(row.adjustmentToTarget) === 0
                               ? "لا فرق"
                               : `${Number(row.adjustmentToTarget) > 0 ? "زيادة" : "خفض"} ${money(Math.abs(Number(row.adjustmentToTarget)).toFixed(6), data.baseCurrency)}`}
@@ -74,7 +78,7 @@ export default function RebalanceReviewPage() {
                         </div>
                       )}
                     </div>
-                    <p className="mt-3 text-xs leading-5 text-slate-500">
+                    <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">
                       هذا مقياس توزيع حتمي، وليس توصية شخصية أو أمر تداول. راجع السيولة والضرائب والرسوم والقيود قبل أي قرار خارجي.
                     </p>
                   </div>

@@ -157,23 +157,23 @@ export default function FeeTaxRulesPage() {
               ) : rules.data?.length ? (
                 <div className="space-y-3">
                   {rules.data.map(rule => (
-                    <div key={rule.id} className="rounded-xl border bg-white p-4">
+                    <div key={rule.id} className="rounded-xl border border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0E1420] p-4">
                       <div className="flex flex-col justify-between gap-3 sm:flex-row">
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-slate-900">{rule.name}</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{rule.name}</p>
                             <Badge variant={rule.status === "active" ? "secondary" : "outline"}>
                               {rule.status === "active" ? "نشطة" : "مؤرشفة"}
                             </Badge>
                             <Badge variant="outline">{rule.chargeType === "fee" ? "رسم" : "ضريبة"}</Badge>
                           </div>
-                          <p className="mt-2 text-sm text-slate-600">
+                          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                             {rule.calculationMethod === "percentage"
                               ? `${rule.value}% من قيمة الصفقة`
                               : `${money(rule.value, rule.currency || "EGP")} ثابت`}{" "}
                             · {rule.appliesTo === "both" ? "شراء وبيع" : rule.appliesTo === "buy" ? "شراء" : "بيع"}
                           </p>
-                          {rule.jurisdictionNote ? <p className="mt-2 text-xs text-slate-500">{rule.jurisdictionNote}</p> : null}
+                          {rule.jurisdictionNote ? <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{rule.jurisdictionNote}</p> : null}
                         </div>
                         {rule.status === "active" && access.canEdit ? (
                           <Button type="button" variant="outline" size="sm" onClick={() => archive.mutate({ ruleId: rule.id })} disabled={archive.isPending}>

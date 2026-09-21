@@ -165,14 +165,14 @@ export default function RiskAllocationPage() {
                   {summary.data?.allocation.classes.some(row => row.actualAmount !== "0.000000") ? (
                     <div className="space-y-3">
                       {summary.data.allocation.classes.map(row => (
-                        <div key={row.assetClass} className="rounded-xl border bg-white p-4">
+                        <div key={row.assetClass} className="rounded-xl border border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0E1420] p-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-semibold">{assetClassLabel[row.assetClass]}</p>
+                            <p className="font-semibold text-slate-900 dark:text-white">{assetClassLabel[row.assetClass]}</p>
                             <Badge variant={row.status === "review" ? "destructive" : row.status === "within_band" ? "secondary" : "outline"}>
                               {row.status === "review" ? "راجع الانحراف" : row.status === "within_band" ? "ضمن الحد" : "لا يوجد هدف"}
                             </Badge>
                           </div>
-                          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-4">
+                          <div className="mt-3 grid gap-2 text-sm sm:grid-cols-4 text-slate-600 dark:text-slate-300">
                             <span>القيمة: {money(row.actualAmount, summary.data.baseCurrency)}</span>
                             <span>الفعلي: {row.actualPercent}%</span>
                             <span>المستهدف: {row.targetPercent === null ? "—" : `${row.targetPercent}%`}</span>
@@ -185,7 +185,7 @@ export default function RiskAllocationPage() {
                     <EmptyState icon={TrendingUp} title="لا توجد قيم مقيمة للتخصيص" description="سجل حسابًا أو حيازة وسعرًا وFX موثقًا، ثم سيُحسب التوزيع الفعلي من البيانات المتاحة فقط." />
                   )}
                   {summary.data?.unvaluedCurrencies.length || summary.data?.unvaluedInstruments.length ? (
-                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/20 p-4 text-sm text-amber-900 dark:text-amber-200">
                       مستبعد من التوزيع إلى حين التقييم: {[...summary.data.unvaluedCurrencies, ...summary.data.unvaluedInstruments].join("، ")}.
                     </div>
                   ) : null}

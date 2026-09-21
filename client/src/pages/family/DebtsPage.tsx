@@ -74,6 +74,8 @@ export function DebtsPage() {
       void utils.family.debts.list.invalidate();
       void utils.family.dashboard.invalidate();
       void utils.family.accounts.list.invalidate();
+      void utils.family.emergencyFund.summary.invalidate();
+      void utils.family.cashFlow.summary.invalidate();
     },
     onError: error => toast.error(textError(error)),
   });
@@ -90,6 +92,8 @@ export function DebtsPage() {
       void utils.family.dashboard.invalidate();
       void utils.family.accounts.list.invalidate();
       void utils.family.ledger.recent.invalidate();
+      void utils.family.emergencyFund.summary.invalidate();
+      void utils.family.cashFlow.summary.invalidate();
     },
     onError: error => toast.error(textError(error)),
   });

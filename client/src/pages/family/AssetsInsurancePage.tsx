@@ -56,6 +56,7 @@ function arabicDate(timestamp: number) {
 const utcDateInput = arabicDate;
 
 export function GoldYahooSuggestionCard() {
+  const utils = trpc.useUtils();
   const access = useFamilyPermissions();
   const [, setLocation] = useLocation();
   const assets = trpc.family.specialAssets.list.useQuery();
@@ -65,6 +66,7 @@ export function GoldYahooSuggestionCard() {
   const recordValuation = trpc.family.specialAssets.recordYahooGoldValuation.useMutation({
     onSuccess: data => {
       toast.success(`حُفظ snapshot الذهب من ${data.source} بحالة مراجعة؛ لم يُنشأ قيد.`);
+      void utils.family.specialAssets.list.invalidate();
     },
     onError: error => toast.error(textError(error)),
   });
