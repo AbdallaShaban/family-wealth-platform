@@ -71,6 +71,8 @@ import { toast } from "sonner";
 const FintechCharts = lazy(() => import("./FintechCharts"));
 import OnboardingChecklist from "./OnboardingChecklist";
 import { OnboardingWizard } from "./OnboardingWizard";
+import WealthCoPilotCard from "./dashboard/WealthCoPilotCard";
+import RetailSignalsWidget from "./dashboard/RetailSignalsWidget";
 
 const eventLabels: Record<string, string> = {
   opening_balance: "رصيد افتتاحي",
@@ -552,6 +554,11 @@ export default function FintechDashboard() {
           </div>
         </motion.section>
 
+        <WealthCoPilotCard
+          baseCurrency={currency}
+          isDemo={usingDemo}
+        />
+
         <OnboardingChecklist
           hasAccounts={hasAccounts}
           hasTransactions={hasTransactions}
@@ -677,6 +684,8 @@ export default function FintechDashboard() {
             className="border-b-0 lg:border-l-0"
           />
         </motion.section>
+
+        <RetailSignalsWidget />
 
         {!usingDemo && marketOverview.data?.entries.length ? (
           <section className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs" aria-label="مراقبة السوق">
