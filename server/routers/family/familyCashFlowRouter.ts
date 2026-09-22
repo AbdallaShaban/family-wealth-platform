@@ -25,6 +25,8 @@ import {
 } from "../../../drizzle/schema";
 import { currency, money, notAvailable } from "../../schemas/familySchemas";
 
+import { ensureDefaultCategories } from "../../seedCategories";
+
 function heartbeatSessionToken(request: { headers: { cookie?: string; authorization?: string } }) {
   const cookieToken = parseCookie(request.headers.cookie ?? "")[COOKIE_NAME];
   const bearerToken = request.headers.authorization?.startsWith("Bearer ") ? request.headers.authorization.slice(7) : undefined;
@@ -43,7 +45,11 @@ export const familyCashFlowRouter = router({
     const family = await ensurePersonalFamilyContext(ctx.user);
     const db = await getDb();
     if (!db) throw notAvailable();
-    const activeCategories = await db.select().from(cashFlowCategories).where(and(eq(cashFlowCategories.workspaceId, family.workspace.id), eq(cashFlowCategories.isArchived, "no"))).orderBy(cashFlowCategories.direction, cashFlowCategories.name);
+    let activeCategories = await db.select().from(cashFlowCategories).where(and(eq(cashFlowCategories.workspaceId, family.workspace.id), eq(cashFlowCategories.isArchived, "no"))).orderBy(cashFlowCategories.direction, cashFlowCategories.name);
+    if (activeCategories.length === 0) {
+      await ensureDefaultCategories(family.workspace.id);
+      activeCategories = await db.select().from(cashFlowCategories).where(and(eq(cashFlowCategories.workspaceId, family.workspace.id), eq(cashFlowCategories.isArchived, "no"))).orderBy(cashFlowCategories.direction, cashFlowCategories.name);
+    }
     return activeCategories.map(category => ({ ...category, isArchived: false as const }));
   }),
 

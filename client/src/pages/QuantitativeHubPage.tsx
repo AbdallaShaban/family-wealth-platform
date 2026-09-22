@@ -54,9 +54,25 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function QuantitativeHubPage() {
+  const [location] = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window !== "undefined") {
+      if (window.location.pathname.includes("/gold")) return "market";
+      const params = new URLSearchParams(window.location.search);
+      return params.get("tab") || "signals";
+    }
+    return "signals";
+  });
+
+  React.useEffect(() => {
+    if (location.includes("/gold")) {
+      setActiveTab("market");
+    }
+  }, [location]);
+
   const [selectedTicker, setSelectedTicker] = useState("COMI.CA");
   const [targetProfile, setTargetProfile] = useState<"BALANCED" | "CONSERVATIVE" | "GROWTH">("BALANCED");
   
@@ -308,7 +324,7 @@ export default function QuantitativeHubPage() {
         </div>
 
         {/* Main Tabs Hub */}
-        <Tabs defaultValue="signals" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid grid-cols-2 md:grid-cols-5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 h-auto gap-1">
             <TabsTrigger value="signals" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 font-bold text-slate-200">
               <Zap className="w-4 h-4" />
@@ -398,6 +414,41 @@ export default function QuantitativeHubPage() {
                         />
                       </div>
                     </div>
+
+                    {/* Visual Sentiment / Momentum Gauge */}
+                    {(() => {
+                      const isBullish = signal.action.includes("ACCUMULATE") || signal.indicators.trendEMA === "BULLISH_UPTREND";
+                      const isBearish = signal.action.includes("PROFIT") || signal.indicators.trendEMA === "BEARISH_DOWNTREND";
+                      const isNeutral = !isBullish && !isBearish;
+
+                      return (
+                        <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                          <div className="flex items-center justify-between text-xs font-bold">
+                            <span className="text-slate-300">مؤشر الاتجاه والزخم:</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
+                              isBullish
+                                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                                : isBearish
+                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                            }`}>
+                              {isBullish ? "صاعد (Bullish)" : isBearish ? "هابط (Bearish)" : "محايد (Neutral)"}
+                            </span>
+                          </div>
+                          {/* 3-Part Bar Meter */}
+                          <div className="grid grid-cols-3 gap-1.5 h-2.5">
+                            <div className={`rounded-r-full transition-all duration-300 ${isBullish ? "bg-emerald-500 shadow-sm shadow-emerald-500/50" : "bg-slate-800"}`} />
+                            <div className={`transition-all duration-300 ${isNeutral ? "bg-amber-400 shadow-sm shadow-amber-400/50" : "bg-slate-800"}`} />
+                            <div className={`rounded-l-full transition-all duration-300 ${isBearish ? "bg-rose-500 shadow-sm shadow-rose-500/50" : "bg-slate-800"}`} />
+                          </div>
+                          <div className="flex justify-between text-[10px] text-slate-400 font-mono">
+                            <span>صاعد (Bullish)</span>
+                            <span>محايد (Neutral)</span>
+                            <span>هابط (Bearish)</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Price Targets Box */}
                     <div className="bg-slate-950/70 rounded-xl p-4 space-y-3 text-xs border border-slate-800 font-semibold">
@@ -581,8 +632,8 @@ export default function QuantitativeHubPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-xl border border-slate-800 overflow-hidden">
-                  <Table>
+                <div className="rounded-xl border border-slate-800 overflow-x-auto">
+                  <Table className="min-w-[650px]">
                     <TableHeader className="bg-slate-950">
                       <TableRow className="border-slate-800">
                         <TableHead className="text-right text-slate-200 font-bold">الرمز</TableHead>

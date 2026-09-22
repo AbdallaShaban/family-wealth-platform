@@ -25,7 +25,7 @@ import {
   instruments,
   marketCandles,
 } from "../drizzle/schema";
-import { fetchEgxOrYahooQuote, resolveEgxSymbol } from "./marketData";
+import { fetchEgxOrYahooQuote, resolveEgxSymbol, fetchLiveGoldGramPrice } from "./marketData";
 
 import {
   CandleInput,
@@ -57,7 +57,16 @@ export const quantRouter = router({
    * 1. Egyptian Market Hub: EGX stocks, physical gold rates, mutual funds & dividend calendar
    */
   getEgyptMarket: protectedProcedure.query(async () => {
-    const goldQuotes = calculatePhysicalGoldQuotes(4650);
+    let gold24Price = 4650;
+    try {
+      const live24 = await fetchLiveGoldGramPrice(24);
+      if (live24 && live24.pricePerGramEgp > 1000) {
+        gold24Price = live24.pricePerGramEgp;
+      }
+    } catch {
+      // fallback to 4650
+    }
+    const goldQuotes = calculatePhysicalGoldQuotes(gold24Price);
 
     return {
       egxStocks: EGX_TOP_INSTRUMENTS,
@@ -121,12 +130,19 @@ export const quantRouter = router({
           // Handled below if quote is unavailable
         }
       } else if (effectiveAssetType === "GOLD" || resolvedTicker.includes("GOLD")) {
-        const goldQuotes = calculatePhysicalGoldQuotes(4650);
+        let gold24 = 4650;
+        try {
+          const live24 = await fetchLiveGoldGramPrice(24);
+          if (live24 && live24.pricePerGramEgp > 1000) gold24 = live24.pricePerGramEgp;
+        } catch {
+          // fallback to 4650
+        }
+        const goldQuotes = calculatePhysicalGoldQuotes(gold24);
         const p24 = goldQuotes.purities.find((p) => p.karat === 24);
         if (p24) {
           livePrice = p24.gramPriceEGP;
           liveName = "ذهب عيار 24 (سعر الجرام الصافي)";
-          liveSource = "تسعير الذهب الفوري (سوق الصاغة المصري)";
+          liveSource = "تسعير الذهب الفوري (سوق الصاغة المصري / Isagha Feed)";
           liveChange = p24.change24hPercent;
         }
       }

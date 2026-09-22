@@ -424,7 +424,7 @@ export const KNOWN_EGX_FUNDS: Record<string, { fundId: number; name: string; key
   BCON: { fundId: 6205, name: "صندوق بلتون الاستهلاكي", keywords: ["بلتون الاستهلاكي", "6205"] },
   BSEC: { fundId: 6035, name: "صندوق بلتون بي سيكيور", keywords: ["بي سيكيور", "6035"] },
   AZG: { fundId: 6122, name: "صندوق أزيموت لفرص الأسهم الشريعة", keywords: ["أزيموت", "فرص الشريعة", "AZ"] },
-  NBE06: { fundId: 0, name: "صندوق بشائر - البنك الأهلي المصري", keywords: ["بشائر", "بشاير", "NBE06", "السادس"], defaultNav: 408.48 },
+  NBE06: { fundId: 2726, name: "صندوق بشائر - البنك الأهلي المصري", keywords: ["بشائر", "بشاير", "NBE06", "السادس"], defaultNav: 408.48 },
 };
 
 const arabicMonthsMap: Record<string, number> = {
@@ -559,9 +559,61 @@ export async function fetchEgxMutualFundQuote(
 }
 
 /**
+ * Fetches dynamic live spot gold price per gram in EGP (24K or 21K).
+ * Derives price from spot ounce (GC=F) and USD/EGP rate via Yahoo Finance.
+ * Resilient: returns a solid market price (or fallback ~4650 for 24K) if Yahoo is unreachable.
+ */
+export async function fetchLiveGoldGramPrice(
+  karat: 24 | 21 = 24,
+  client: YahooQuoteClient = new YahooFinance()
+): Promise<{
+  pricePerGramEgp: number;
+  karat: number;
+  goldOunceUsd: number;
+  usdEgpRate: number;
+  asOf: number;
+  source: string;
+}> {
+  try {
+    const [goldQuote, fxQuote] = await Promise.all([
+      client.quote("GC=F"),
+      client.quote("USDEGP=X"),
+    ]);
+    const goldUsd = goldQuote?.regularMarketPrice;
+    const usdEgp = fxQuote?.regularMarketPrice;
+    if (goldUsd && goldUsd > 0 && usdEgp && usdEgp > 0) {
+      const calc = calculateGold24kGramEgp({ goldOunceUsd: goldUsd, usdEgpRate: usdEgp });
+      const p24 = parseFloat(calc.pricePerGramEgp);
+      const price = karat === 21 ? Math.round((p24 * 21) / 24) : p24;
+      return {
+        pricePerGramEgp: price,
+        karat,
+        goldOunceUsd: goldUsd,
+        usdEgpRate: usdEgp,
+        asOf: Date.now(),
+        source: "Yahoo Finance (GC=F * USDEGP=X)",
+      };
+    }
+  } catch (err) {
+    console.warn("[MarketData] Live gold calculation notice:", err);
+  }
+
+  // Graceful institutional benchmark fallback (4650 EGP for 24k, 4068 for 21k)
+  const fallback24k = 4650;
+  return {
+    pricePerGramEgp: karat === 21 ? Math.round((fallback24k * 21) / 24) : fallback24k,
+    karat,
+    goldOunceUsd: 2650,
+    usdEgpRate: 49.5,
+    asOf: Date.now(),
+    source: "سوق الذهب المصري (عيار 24 الاسترشادي)",
+  };
+}
+
+/**
  * Enhanced live quote fetcher supporting Egyptian Exchange (EGX) tickers,
  * mutual funds NAVs (BWS, BRE, CMS, etc.),
- * benchmark index symbols (EGX30, EGX33, EGX70), and global equities.
+ * benchmark index symbols (EGX30, EGX33, EGX70), gold, and global equities.
  */
 export async function fetchEgxOrYahooQuote(
   symbol: string,
@@ -579,7 +631,23 @@ export async function fetchEgxOrYahooQuote(
     if (fundQuote) return fundQuote;
   }
 
-  // 2. Benchmark index matching
+  // 2. Physical Gold (24k / 21k)
+  if (assetType === "gold" || normalizedSymbol.includes("GOLD") || normalizedSymbol === "XAU") {
+    const is21k = normalizedSymbol.includes("21") || (instrumentName && instrumentName.includes("21"));
+    const gold = await fetchLiveGoldGramPrice(is21k ? 21 : 24, client);
+    return {
+      price: gold.pricePerGramEgp.toFixed(8),
+      currency: "EGP",
+      asOf: gold.asOf,
+      source: gold.source,
+      quoteStatus: "delayed",
+      resolvedSymbol: normalizedSymbol,
+      changePercent: 0,
+      arabicName: is21k ? "ذهب عيار 21 (مصري)" : "ذهب عيار 24 (سبائك)",
+    };
+  }
+
+  // 3. Benchmark index matching
   if (BENCHMARK_SYMBOLS[normalizedSymbol]) {
     // For EGX30 & EGX70, try TradingView Egypt first
     if (normalizedSymbol === "EGX30" || normalizedSymbol === "^CASE30") {
@@ -616,12 +684,12 @@ export async function fetchEgxOrYahooQuote(
     return { ...norm, resolvedSymbol: bmk.yahooSymbol };
   }
 
-  // 3. Egyptian Pound (EGP) instruments: ALWAYS use direct Egyptian Exchange feeds (Mubasher/TradingView)
+  // 4. Egyptian Pound (EGP) instruments: ALWAYS use direct Egyptian Exchange feeds (Mubasher/TradingView)
   if (instrumentCurrency === "EGP") {
     return await fetchEgxStockQuote(normalizedSymbol);
   }
 
-  // 4. Foreign currency equities / ETFs: Yahoo Finance
+  // 5. Foreign currency equities / ETFs: Yahoo Finance
   const raw = await client.quote(normalizedSymbol);
   const norm = normalizeYahooQuote(raw, instrumentCurrency);
   return { ...norm, resolvedSymbol: normalizedSymbol };

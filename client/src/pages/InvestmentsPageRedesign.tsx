@@ -271,6 +271,62 @@ export default function InvestmentsPageRedesign() {
   const role = access.data?.membership.role || "viewer";
   const canAdvise = ["owner", "advisor"].includes(role);
   const canEdit = ["owner", "advisor", "editor"].includes(role);
+  // Dividend Recording State
+  const [dividendModalOpen, setDividendModalOpen] = useState(false);
+  const [selectedDividendPos, setSelectedDividendPos] = useState<any | null>(null);
+  const [dividendAccountId, setDividendAccountId] = useState("");
+  const [dividendAmount, setDividendAmount] = useState("");
+  const [dividendMemo, setDividendMemo] = useState("");
+
+  const handleOpenDividendModal = (pos: any) => {
+    setSelectedDividendPos(pos);
+    setDividendAmount("");
+    setDividendMemo(`توزيع أرباح نقدية: ${pos.instrumentName || pos.symbol || ""}`);
+    const firstBank = (accounts.data ?? []).find(
+      (a) => ["bank", "cash", "wallet"].includes(a.accountType) && a.status === "active"
+    ) || (accounts.data ?? [])[0];
+    if (firstBank) {
+      setDividendAccountId(String(firstBank.id));
+    }
+    setDividendModalOpen(true);
+  };
+
+  const postDividendMutation = trpc.family.ledger.postDividend.useMutation({
+    onSuccess: () => {
+      toast.success("تم تسجيل توزيع الأرباح وترحيله إلى الحساب المصرفي ودفتر الأستاذ بنجاح.");
+      setDividendModalOpen(false);
+      setSelectedDividendPos(null);
+      setDividendAmount("");
+      void utils.family.accounts.list.invalidate();
+      void utils.family.dashboard.invalidate();
+      void utils.family.cashFlow.invalidate();
+      void utils.family.portfolio.list.invalidate();
+      void utils.family.ledger.recent.invalidate();
+    },
+    onError: (error) => toast.error(errorText(error)),
+  });
+
+  const handleRecordDividend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDividendPos || !dividendAccountId || !dividendAmount) {
+      toast.error("يرجى تحديد الحساب البنكي وإدخال قيمة التوزيعات.");
+      return;
+    }
+    const val = Number(dividendAmount);
+    if (isNaN(val) || val <= 0) {
+      toast.error("يرجى إدخال مبلغ صحيح أكبر من الصفر.");
+      return;
+    }
+    await postDividendMutation.mutateAsync({
+      accountId: Number(dividendAccountId),
+      instrumentId: selectedDividendPos.instrumentId,
+      amount: val.toFixed(2),
+      currency: selectedDividendPos.currency || baseCurrency,
+      occurredAt: Date.now(),
+      memo: dividendMemo || `توزيع أرباح نقدية: ${selectedDividendPos.instrumentName}`,
+      idempotencyKey: `dividend-${selectedDividendPos.instrumentId}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    });
+  };
 
   const tradeAccounts = (accounts.data ?? []).filter(
     (account) => ["cash", "bank", "brokerage", "wallet"].includes(account.accountType) && account.status === "active"
@@ -748,16 +804,33 @@ export default function InvestmentsPageRedesign() {
                             <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
                           </td>
                           <td className="py-3.5 px-4 text-right">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
-                              pos.quoteStatus === "unavailable"
-                                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40"
-                                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
-                            }`}>
-                              {pos.quoteStatus === "unavailable" ? "يتطلب سعرًا" : "متاح"}
-                            </span>
+                            {(() => {
+                              const isAvailable = pos.quoteStatus !== "unavailable" || (pos.marketPrice && Number(pos.marketPrice) > 0);
+                              return (
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                  !isAvailable
+                                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40"
+                                    : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
+                                }`}>
+                                  {!isAvailable ? "يتطلب سعرًا" : "متاح"}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="py-3.5 px-4 text-left">
-                            <div className="flex items-center justify-end">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {canEdit && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenDividendModal(pos)}
+                                  className="bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                                  title="تسجيل توزيع أرباح نقدية لحساب بنكي"
+                                >
+                                  <CircleDollarSign className="size-3.5" />
+                                  <span>توزيع أرباح</span>
+                                </Button>
+                              )}
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -766,7 +839,7 @@ export default function InvestmentsPageRedesign() {
                                   setSide("sell");
                                   setActiveTab("trades");
                                 }}
-                                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all"
+                                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all cursor-pointer"
                               >
                                 تداول
                               </Button>
@@ -1995,6 +2068,122 @@ export default function InvestmentsPageRedesign() {
                 المصدر الرئيسي: مباشر مصر | الاحتياطي: TradingView EGX
               </div>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dividend Recording Modal */}
+        <Dialog open={dividendModalOpen} onOpenChange={setDividendModalOpen}>
+          <DialogContent className="max-w-md text-right" dir="rtl">
+            <form onSubmit={handleRecordDividend}>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+                  <CircleDollarSign className="size-5 text-emerald-600 dark:text-emerald-400" />
+                  <span>تسجيل توزيع أرباح نقدية (Cash Dividend)</span>
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+                  إيداع التوزيعات النقدية لحيازتك مباشرة في أحد الحسابات البنكية مع إنشاء القيد في دفتر الأستاذ.
+                </DialogDescription>
+              </DialogHeader>
+
+              {selectedDividendPos && (
+                <div className="space-y-4 py-4">
+                  {/* Holding Summary */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        {selectedDividendPos.instrumentName}
+                      </span>
+                      <span className="font-mono text-slate-500 dark:text-slate-400">
+                        {selectedDividendPos.symbol || "بدون رمز"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                      <span>الكمية المملوكة: <b className="font-mono text-slate-800 dark:text-slate-200">{selectedDividendPos.quantity}</b></span>
+                      <span>العملة: <b className="font-mono text-slate-800 dark:text-slate-200">{selectedDividendPos.currency || baseCurrency}</b></span>
+                    </div>
+                  </div>
+
+                  {/* Destination Bank Account */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="dividend-account" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      الحساب المودع به (حساب بنكي / نقدي)
+                    </Label>
+                    <Select value={dividendAccountId} onValueChange={setDividendAccountId}>
+                      <SelectTrigger id="dividend-account" className="w-full text-right text-xs rounded-xl">
+                        <SelectValue placeholder="اختر الحساب البنكي المستقبل" />
+                      </SelectTrigger>
+                      <SelectContent dir="rtl">
+                        {(accounts.data ?? [])
+                          .filter((a) => ["bank", "cash", "wallet"].includes(a.accountType) && a.status === "active")
+                          .map((acc) => (
+                            <SelectItem key={acc.id} value={String(acc.id)} className="text-xs">
+                              {acc.name} ({acc.institution || acc.accountType}) · {acc.currency}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Dividend Amount */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="dividend-amount" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      إجمالي مبلغ التوزيع ({selectedDividendPos.currency || baseCurrency})
+                    </Label>
+                    <Input
+                      id="dividend-amount"
+                      type="number"
+                      step="any"
+                      min="0.01"
+                      required
+                      placeholder="0.00"
+                      value={dividendAmount}
+                      onChange={(e) => setDividendAmount(e.target.value)}
+                      className="text-right font-mono text-sm rounded-xl"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* Memo */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="dividend-memo" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      البيان / ملاحظات القيد
+                    </Label>
+                    <Input
+                      id="dividend-memo"
+                      type="text"
+                      placeholder="توزيع أرباح نقدية عن الفترة..."
+                      value={dividendMemo}
+                      onChange={(e) => setDividendMemo(e.target.value)}
+                      className="text-right text-xs rounded-xl"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter className="gap-2 flex-row-reverse justify-between items-center border-t border-slate-150 dark:border-slate-800 pt-3">
+                <Button
+                  type="submit"
+                  disabled={postDividendMutation.isPending || !dividendAmount || !dividendAccountId}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  {postDividendMutation.isPending ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Check className="size-3.5" />
+                  )}
+                  <span>تأكيد وتسجيل التوزيع</span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDividendModalOpen(false)}
+                  className="rounded-xl text-xs px-4"
+                >
+                  إلغاء
+                </Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       </main>

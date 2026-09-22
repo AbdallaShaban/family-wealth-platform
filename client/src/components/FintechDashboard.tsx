@@ -21,6 +21,7 @@ import {
   Pencil,
   Filter,
   RefreshCw,
+  Info,
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -31,6 +32,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import SensitiveValue from "@/components/SensitiveValue";
 import { formatMoney, formatDateTime, formatDate } from "@/lib/financialDisplay";
 import {
@@ -133,6 +135,7 @@ function ExecutiveMetricCell({
   accent = "emerald",
   className = "",
   isPriority = false,
+  infoTooltip,
 }: {
   icon: any;
   label: string;
@@ -142,6 +145,7 @@ function ExecutiveMetricCell({
   accent?: "indigo" | "emerald" | "sky" | "rose" | "amber";
   className?: string;
   isPriority?: boolean;
+  infoTooltip?: React.ReactNode;
 }) {
   const accentStyles = {
     indigo:
@@ -164,9 +168,30 @@ function ExecutiveMetricCell({
         } ${className}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wide">
-          {label}
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-slate-700 dark:text-slate-300 font-bold text-xs tracking-wide">
+            {label}
+          </span>
+          {infoTooltip && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-help inline-flex items-center"
+                  aria-label="معلومات إضافية"
+                >
+                  <Info className="size-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="max-w-xs text-xs p-3 bg-slate-900 text-slate-100 border border-slate-700 shadow-xl z-50 rounded-xl"
+              >
+                {infoTooltip}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
         <div className={`flex size-8 items-center justify-center rounded-xl ${accentStyles}`}>
           <Icon className="size-4" />
         </div>
@@ -637,6 +662,19 @@ export default function FintechDashboard() {
             label="السيولة المتاحة"
             value={liquidBalance}
             currency={currency}
+            infoTooltip={
+              <div className="space-y-2 text-right" dir="rtl">
+                <p className="font-bold text-emerald-400 text-xs">تفصيل السيولة النقدية والتسويات المعلقة:</p>
+                <div className="text-[11px] leading-relaxed text-slate-300 space-y-1.5">
+                  <p>
+                    <strong className="text-white">• سيولة حرة:</strong> مبالغ نقدية فورية مودعة بالحسابات المصرفية والمحافظ الإلكترونية، متاحة للسحب أو التحويل الفوري.
+                  </p>
+                  <p>
+                    <strong className="text-amber-300">• معلق تسوية (T+2):</strong> حصيلة مبيعات أسهم أو وثائق استثمار بالبورصة المصرية، قيد المقاصة المركزية وتصبح جاهزة للسحب البنكي بعد يومي عمل رسميين من تاريخ التنفيذ.
+                  </p>
+                </div>
+              </div>
+            }
             detail={
               !usingDemo && live?.unsettledCashBase && Number(live.unsettledCashBase) > 0 ? (
                 <div className="text-[11px] leading-tight space-y-0.5 mt-0.5">

@@ -22,7 +22,16 @@ import {
   AlertCircle,
   HelpCircle,
   X,
+  Activity,
+  Layers as LayersIcon,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface QuickChip {
   label: string;
@@ -48,6 +57,7 @@ export default function RetailSignalsWidget() {
   const [searchInput, setSearchInput] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeTicker, setActiveTicker] = useState("COMI.CA");
+  const [indicatorsModalOpen, setIndicatorsModalOpen] = useState(false);
 
   // Query live catalog autocomplete
   const { data: searchSuggestions } = trpc.quant.searchCatalog.useQuery(
@@ -324,14 +334,30 @@ export default function RetailSignalsWidget() {
                 </div>
               ) : null}
 
-              {/* Traffic Light Action Badge */}
-              <Badge
-                variant="outline"
-                className={`text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 shadow-xs ${actionTheme.badgeClass}`}
-              >
-                <span className={`size-2 rounded-full ${actionTheme.dotColor} animate-pulse`} />
-                <span>{liveSignal.actionAr}</span>
-              </Badge>
+              {/* Traffic Light Action Badge & Technical Indicator Trigger */}
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={`text-xs sm:text-sm font-extrabold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 shadow-xs ${actionTheme.badgeClass}`}
+                >
+                  <span className={`size-2 rounded-full ${actionTheme.dotColor} animate-pulse`} />
+                  <span>{liveSignal.actionAr}</span>
+                </Badge>
+
+                {liveSignal.indicators && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIndicatorsModalOpen(true)}
+                    className="h-8 px-2.5 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold flex items-center gap-1.5 bg-white/70 dark:bg-slate-900/70 shadow-2xs cursor-pointer"
+                    title="شرح المؤشرات الفنية للقرار"
+                  >
+                    <Activity className="size-3.5 text-indigo-500" />
+                    <span>أساس القرار</span>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -440,6 +466,125 @@ export default function RetailSignalsWidget() {
           )}
         </motion.div>
       ) : null}
+
+      {/* Technical Indicators Detailed Explanation Modal */}
+      {liveSignal && liveSignal.indicators && (
+        <Dialog open={indicatorsModalOpen} onOpenChange={setIndicatorsModalOpen}>
+          <DialogContent className="max-w-xl text-right" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+                <Activity className="size-5 text-indigo-500" />
+                <span>الأساس الفني للقرار: {liveSignal.instrumentNameAr || liveSignal.ticker}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+                قراءة المؤشرات الفنية والخوارزمية اللحظية المحسوبة على حركة السعر
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3.5 py-2">
+              {/* Signal Summary Header */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">التوصية الفنية:</span>
+                  <Badge variant="outline" className={`text-xs font-extrabold ${actionTheme.badgeClass}`}>
+                    {liveSignal.actionAr}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    مستوى الثقة: <b className="text-emerald-500 font-mono">{liveSignal.confidenceScore}%</b>
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    العائد للمخاطرة: <b className="font-mono">1:{liveSignal.riskRewardRatio}</b>
+                  </span>
+                </div>
+              </div>
+
+              {/* Indicator 1: RSI */}
+              <div className="p-3 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white dark:bg-slate-950 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-blue-500" />
+                    مؤشر القوة النسبية (RSI 14)
+                  </span>
+                  <span className="font-mono text-xs font-extrabold text-blue-600 dark:text-blue-400">
+                    {liveSignal.indicators.rsi !== null ? Number(liveSignal.indicators.rsi).toFixed(1) : "غير متاح"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {Number(liveSignal.indicators.rsi) < 35
+                    ? "السعر في منطقة تشبع بيعي حاد (Oversold < 35)، مما يرجح ارتداداً صعودياً وشيكاً ويدعم قرار التجميع."
+                    : Number(liveSignal.indicators.rsi) > 65
+                    ? "السعر في منطقة تشبع شرائي مرتفع (Overbought > 65)، مما يزيد من احتمالية جني الأرباح والتصحيح المؤقت."
+                    : "قوة الاتجاه في النطاق المتوازن (35 - 65)، ما يعكس حركة مستقرة دون إفراط شرائي أو بيعي."}
+                </p>
+              </div>
+
+              {/* Indicator 2: Bollinger Bands */}
+              <div className="p-3 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white dark:bg-slate-950 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-purple-500" />
+                    حدود بولينجر (Bollinger Bands)
+                  </span>
+                  <span className="font-mono text-xs font-bold text-purple-600 dark:text-purple-400">
+                    {liveSignal.indicators.bollingerPosition === "LOWER_BAND"
+                      ? "ملامسة الحد السفلي (دعم)"
+                      : liveSignal.indicators.bollingerPosition === "UPPER_BAND"
+                      ? "ملامسة الحد العلوي (مقاومة)"
+                      : "داخل النطاق الطبيعي"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {liveSignal.indicators.bollingerPosition === "LOWER_BAND"
+                    ? "تداول السعر قرب الحد السفلي لقناة بولينجر يؤكد وصول الحركة لقاع سعري إحصائي مناسب للدخول الآمن."
+                    : liveSignal.indicators.bollingerPosition === "UPPER_BAND"
+                    ? "ملامسة الحد العلوي تشير إلى اتساع ذروة الحركة واقتراب مقاومة ديناميكية تستدعي تخفيف المراكز."
+                    : "السعر يتحرك ضمن النطاق الإحصائي القياسي للتقلبات دون خروج غير اعتيادي."}
+                </p>
+              </div>
+
+              {/* Indicator 3: Moving Averages & Trend */}
+              <div className="p-3 rounded-xl border border-slate-200/70 dark:border-slate-800/80 bg-white dark:bg-slate-950 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-amber-500" />
+                    المتوسطات المتحركة والزخم (EMA & MACD)
+                  </span>
+                  <span className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+                    {liveSignal.indicators.trendEMA === "BULLISH_UPTREND"
+                      ? "مسار صاعد (Bullish)"
+                      : liveSignal.indicators.trendEMA === "BEARISH_DOWNTREND"
+                      ? "مسار هابط (Bearish)"
+                      : "مسار عرضي (Sideways)"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {liveSignal.indicators.trendEMA === "BULLISH_UPTREND"
+                    ? "المتوسطات المتحركة السريعة فوق المتوسطات البطيئة ومؤشر الماكد يدعم الاستمرار الإيجابي."
+                    : liveSignal.indicators.trendEMA === "BEARISH_DOWNTREND"
+                    ? "المتوسطات المتحركة تحت ضغط بيعي وتتطلب الحذر والتزام وقف الخسارة الصارم."
+                    : "الاتجاه يتحرك في نطاق تجميع عرضي بانتظار اختراق تأكيدي."}
+                </p>
+              </div>
+
+              {/* Support & Resistance Levels */}
+              {(liveSignal.indicators.immediateSupport || liveSignal.indicators.immediateResistance) && (
+                <div className="grid grid-cols-2 gap-2 pt-1 text-center font-mono text-xs">
+                  <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    <span className="text-[10px] block font-sans text-emerald-600 dark:text-emerald-400">أقرب دعم فني</span>
+                    <b>{liveSignal.indicators.immediateSupport ? `${liveSignal.indicators.immediateSupport.toFixed(2)} ج.م` : "—"}</b>
+                  </div>
+                  <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                    <span className="text-[10px] block font-sans text-rose-600 dark:text-rose-400">أقرب مقاومة فنية</span>
+                    <b>{liveSignal.indicators.immediateResistance ? `${liveSignal.indicators.immediateResistance.toFixed(2)} ج.م` : "—"}</b>
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </section>
   );
 }

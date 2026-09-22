@@ -87,17 +87,17 @@ export default function WealthCoPilotCard({
     : Number(dashboardSummary?.liquidBalanceBase ?? emergencyFund?.liquidReserveBase ?? 0);
   const emergencyCoverageMonths = monthlyBurn > 0 ? liquidReserve / monthlyBurn : 0;
 
-  // Highest interest debt for Avalanche payoff
-  const highestInterestDebt = [...activeDebts].sort((a, b) => b.interestRate - a.interestRate)[0];
+  // Priority debt for payoff: interest-bearing first, then personal debts
+  const hasActiveDebt = activeDebts.length > 0;
+  const highestPriorityDebt = [...activeDebts].sort((a, b) => b.interestRate - a.interestRate)[0];
 
   // Formulate Rule-Based Multi-Tier Action Plan:
   // Tier 1: Emergency Fund (< 3 months)
   const needsEmergencyBuffer = emergencyCoverageMonths < 3;
   const emergencyAllocation = needsEmergencyBuffer ? Math.round(surplusCash * 0.45) : 0;
 
-  // Tier 2: High-Interest Debt payoff
-  const hasHighInterestDebt = Boolean(highestInterestDebt && highestInterestDebt.interestRate >= 12);
-  const debtAllocation = hasHighInterestDebt
+  // Tier 2: Active Debt payoff (incorporates both bank loans and 0% personal obligations)
+  const debtAllocation = hasActiveDebt
     ? needsEmergencyBuffer
       ? Math.round(surplusCash * 0.35)
       : Math.round(surplusCash * 0.55)
@@ -174,7 +174,7 @@ export default function WealthCoPilotCard({
             <Button
               onClick={() => {
                 if (needsEmergencyBuffer) setLocation("/emergency-fund");
-                else if (hasHighInterestDebt) setLocation("/debts");
+                else if (hasActiveDebt) setLocation("/debts");
                 else setLocation("/trading/swing");
               }}
               size="sm"
@@ -221,7 +221,7 @@ export default function WealthCoPilotCard({
             </div>
           </div>
 
-          {/* Pillar 2: High Interest Debt Payoff */}
+          {/* Pillar 2: Active Debt Payoff */}
           <div className="rounded-2xl border border-white/10 bg-white/5 dark:bg-slate-900/60 p-4 backdrop-blur-sm flex flex-col justify-between hover:border-amber-500/40 transition-colors">
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
@@ -230,26 +230,34 @@ export default function WealthCoPilotCard({
               </span>
               <Badge
                 className={
-                  hasHighInterestDebt
-                    ? "bg-amber-500/20 text-amber-300 border-0 text-[10px]"
+                  hasActiveDebt
+                    ? highestPriorityDebt.interestRate > 0
+                      ? "bg-amber-500/20 text-amber-300 border-0 text-[10px]"
+                      : "bg-orange-500/20 text-orange-300 border-0 text-[10px]"
                     : "bg-slate-500/20 text-slate-300 border-0 text-[10px]"
                 }
               >
-                {hasHighInterestDebt ? "يوفر فوائد" : "لا ديون مرتفعة"}
+                {hasActiveDebt
+                  ? highestPriorityDebt.interestRate > 0
+                    ? "يوفر فوائد"
+                    : "التزام شخصي قائم"
+                  : "خالٍ من الديون"}
               </Badge>
             </div>
             <div>
               <strong className="text-base font-bold text-white block mb-1">
-                {hasHighInterestDebt ? (
+                {hasActiveDebt ? (
                   <SensitiveValue>{formatMoney(debtAllocation, baseCurrency)}</SensitiveValue>
                 ) : (
-                  "صفر أعباء حرجة"
+                  "صفر التزامات"
                 )}
               </strong>
               <p className="text-[11px] text-slate-300/80 leading-normal">
-                {hasHighInterestDebt && highestInterestDebt
-                  ? `سداد مبكر لقرض "${highestInterestDebt.name}" بفائدة ${highestInterestDebt.interestRate}% لتوفير الأعباء التمويلية.`
-                  : "لا توجد التزامات استهلاكية عالية الفائدة ترهق ميزانيتك. ممتاز!"}
+                {hasActiveDebt && highestPriorityDebt
+                  ? highestPriorityDebt.interestRate > 0
+                    ? `سداد مبكر لقرض "${highestPriorityDebt.name}" بفائدة ${highestPriorityDebt.interestRate}% لتوفير الأعباء التمويلية.`
+                    : `سداد تدريجي لالتزام "${highestPriorityDebt.name}" (الرصيد: ${formatMoney(highestPriorityDebt.outstandingBalance, baseCurrency)}) لتصفية الذمم المالية.`
+                  : "لا توجد أي التزامات مالية أو ديون ترهق ميزانيتك. ممتاز!"}
               </p>
             </div>
           </div>

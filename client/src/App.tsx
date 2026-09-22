@@ -55,11 +55,14 @@ function Router() {
   return (
     <Suspense fallback={<div className="fintech-route-loading" role="status" aria-label="جارٍ تحميل الشاشة"><i /><i /><i /></div>}><Switch>
       <Route path={"/"} component={FamilyHomeGate} />
+      <Route path={"/overview"} component={FamilyHomeGate} />
       <Route path={"/login"} component={LoginPage} />
       <Route path={"/auth"} component={LoginPage} />
       <Route path={"/quant"} component={QuantitativeHubPage} />
+      <Route path={"/gold"} component={QuantitativeHubPage} />
       <Route path={"/intelligence"} component={QuantitativeHubPage} />
       <Route path={"/advisory"} component={QuantitativeHubPage} />
+      <Route path={"/advisor"} component={QuantitativeHubPage} />
       <Route path={"/family/quant"} component={QuantitativeHubPage} />
       <Route path={"/trading/swing"} component={SwingTradingPage} />
       <Route path={"/family/trading/swing"} component={SwingTradingPage} />
@@ -69,6 +72,7 @@ function Router() {
       <Route path={"/accounts"} component={AccountsPage} />
       <Route path={"/ledger"} component={LedgerPage} />
       <Route path={"/cash-flow"} component={CashFlowPage} />
+      <Route path={"/cashflow"} component={CashFlowPage} />
       <Route path={"/cash-flow/record"} component={CashFlowRegisterPage} />
       <Route path={"/cash-flow/recurring"} component={RecurringRulesPage} />
       <Route path={"/imports"} component={BankImportInbox} />

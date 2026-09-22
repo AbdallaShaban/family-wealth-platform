@@ -109,6 +109,8 @@ export default function SwingTradingPage() {
 
   const instrumentsQuery = trpc.family.instruments.list.useQuery();
   const accountsQuery = trpc.family.accounts.list.useQuery();
+  const portfolioQuery = trpc.family.portfolio.list.useQuery();
+  const egyptMarketQuery = trpc.quant.getEgyptMarket.useQuery();
 
   // Mutations
   const utils = trpc.useUtils();
@@ -992,10 +994,29 @@ export default function SwingTradingPage() {
                     value={formInstrumentId}
                     onValueChange={(val) => {
                       setFormInstrumentId(val);
-                      // Auto populate entry price from latest quote if available
                       const inst = instruments.find((i) => String(i.id) === val);
-                      if (inst?.symbol === "COMI.CA") setFormEntryPrice("88.50");
-                      else if (inst?.symbol === "SWDY.CA") setFormEntryPrice("47.25");
+                      if (inst) {
+                        // 1. Check portfolio position live quote
+                        const pos = (portfolioQuery.data ?? []).find((p) => p.instrumentId === inst.id);
+                        if (pos?.marketPrice && Number(pos.marketPrice) > 0) {
+                          setFormEntryPrice(Number(pos.marketPrice).toFixed(2));
+                        } else if (inst.symbol) {
+                          // 2. Check Egypt Market stocks
+                          const stock = (egyptMarketQuery.data?.egxStocks ?? []).find(
+                            (s) => s.ticker === inst.symbol || s.symbol === inst.symbol?.replace(".CA", "")
+                          );
+                          if (stock?.lastClose) {
+                            setFormEntryPrice(Number(stock.lastClose).toFixed(2));
+                          } else if (inst.assetType === "gold" || inst.symbol.includes("GOLD") || inst.name.includes("ذهب")) {
+                            const g24 = egyptMarketQuery.data?.gold.purities[0]?.gramPriceEGP;
+                            if (g24) setFormEntryPrice(Number(g24).toFixed(2));
+                          } else if (inst.symbol === "COMI.CA") {
+                            setFormEntryPrice("88.50");
+                          } else if (inst.symbol === "SWDY.CA") {
+                            setFormEntryPrice("47.25");
+                          }
+                        }
+                      }
                     }}
                   >
                     <SelectTrigger className="bg-slate-900 border-slate-800 text-xs">
@@ -1204,6 +1225,43 @@ export default function SwingTradingPage() {
                     </b>
                   </div>
                 </div>
+
+                {/* Visual Risk/Reward Ratio Meter Bar */}
+                {coPilotInsights.rr.riskRewardRatio ? (
+                  <div className="space-y-1.5 border-t border-amber-500/20 pt-2">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-300">مقياس جدوى المخاطرة للعائد:</span>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs font-mono font-bold ${
+                          coPilotInsights.rr.riskRewardRatio >= 2.5
+                            ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                            : coPilotInsights.rr.riskRewardRatio >= 1.5
+                            ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                            : "bg-rose-500/20 text-rose-400 border-rose-500/30"
+                        }`}
+                      >
+                        {coPilotInsights.rr.riskRewardRatio >= 2.5
+                          ? "عائد ممتاز (≥ 1:2.5)"
+                          : coPilotInsights.rr.riskRewardRatio >= 1.5
+                          ? "عائد مقبول (≥ 1:1.5)"
+                          : "مخاطرة مرتفعة (< 1:1.5)"}
+                      </Badge>
+                    </div>
+                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          coPilotInsights.rr.riskRewardRatio >= 2.5
+                            ? "bg-emerald-500 shadow-sm shadow-emerald-500/50"
+                            : coPilotInsights.rr.riskRewardRatio >= 1.5
+                            ? "bg-amber-400 shadow-sm shadow-amber-400/50"
+                            : "bg-rose-500 shadow-sm shadow-rose-500/50"
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(10, (coPilotInsights.rr.riskRewardRatio / 4) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : null}
 
                 {coPilotInsights.posSize && (
                   <div className="text-slate-400 border-t border-amber-500/20 pt-1.5">
