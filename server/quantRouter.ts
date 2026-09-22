@@ -52,6 +52,200 @@ function dbUnavailable() {
   });
 }
 
+async function calculateAdvisorySignalInternal(
+  ticker: string,
+  assetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND" = "EGX_STOCK"
+) {
+  const db = await getDb();
+  const rawInput = ticker.trim();
+  const upperInput = rawInput.toUpperCase();
+
+  // 0. Resolve against EGX Master Catalog & Arabic normalization
+  const catalogEntry = resolveEgxAsset(rawInput);
+  const resolvedTicker = catalogEntry
+    ? catalogEntry.ticker
+    : upperInput.includes("GOLD")
+    ? "GOLD_24K"
+    : upperInput === "AZG"
+    ? "AZG"
+    : resolveEgxSymbol(upperInput);
+
+  const effectiveAssetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND" = catalogEntry
+    ? catalogEntry.assetType
+    : resolvedTicker.includes("GOLD")
+    ? "GOLD"
+    : resolvedTicker === "AZG"
+    ? "MUTUAL_FUND"
+    : assetType;
+
+  let livePrice: number | null = null;
+  let liveName: string | null = catalogEntry?.nameAr ?? null;
+  let liveSource = "البورصة المصرية (مباشر / EGX Feed)";
+  let liveChange: number | undefined = undefined;
+
+  // 1. Fetch live quote via fetchEgxOrYahooQuote for stocks & funds
+  if (effectiveAssetType === "EGX_STOCK" || effectiveAssetType === "MUTUAL_FUND") {
+    try {
+      const q = await fetchEgxOrYahooQuote(resolvedTicker, "EGP");
+      if (q && Number(q.price) > 0) {
+        livePrice = Number(q.price);
+        if (q.arabicName) liveName = q.arabicName;
+        if (q.source) liveSource = q.source;
+        if (typeof q.changePercent === "number") liveChange = q.changePercent;
+      }
+    } catch {
+      // Handled below if quote is unavailable
+    }
+  } else if (effectiveAssetType === "GOLD" || resolvedTicker.includes("GOLD")) {
+    let gold24 = 4650;
+    try {
+      const live24 = await fetchLiveGoldGramPrice(24);
+      if (live24 && live24.pricePerGramEgp > 1000) gold24 = live24.pricePerGramEgp;
+    } catch {
+      // fallback to 4650
+    }
+    const goldQuotes = calculatePhysicalGoldQuotes(gold24);
+    const p24 = goldQuotes.purities.find((p) => p.karat === 24);
+    if (p24) {
+      livePrice = p24.gramPriceEGP;
+      liveName = "ذهب عيار 24 (سعر الجرام الصافي)";
+      liveSource = "تسعير الذهب الفوري (سوق الصاغة المصري / Isagha Feed)";
+      liveChange = p24.change24hPercent;
+    }
+  }
+
+  // Check known instruments registry if name is not set
+  if (!liveName) {
+    const found = EGX_TOP_INSTRUMENTS.find(
+      (s) => s.ticker === resolvedTicker || s.symbol === resolvedTicker.replace(".CA", "")
+    );
+    if (found) {
+      liveName = found.nameAr;
+      if (!livePrice) livePrice = found.lastClose ?? null;
+    }
+  }
+  if (!liveName) {
+    const foundFund = EGYPTIAN_MUTUAL_FUNDS.find((f) => f.code === resolvedTicker);
+    if (foundFund) {
+      liveName = foundFund.nameAr;
+      if (!livePrice) livePrice = foundFund.latestNAV;
+    }
+  }
+
+  // Fail-Safe Integrity: If price cannot be fetched from live feeds, do NOT invent mock prices
+  if (!livePrice && effectiveAssetType !== "GOLD") {
+    return {
+      ticker: resolvedTicker,
+      action: "WAIT" as const,
+      actionAr: "السعر غير متاح حالياً بالبورصة",
+      confidenceScore: 0,
+      currentPrice: 0,
+      entryZone: { min: 0, max: 0 },
+      targets: { t1: 0, t2: 0 },
+      stopLoss: 0,
+      riskRewardRatio: 0,
+      indicators: {
+        rsi: null,
+        macdHistogram: null,
+        macdTrend: "NEUTRAL",
+        bollingerPosition: "NORMAL",
+        bollingerPercentB: null,
+        trendEMA: "SIDEWAYS",
+        volatilityATR: null,
+        immediateSupport: null,
+        immediateResistance: null,
+      },
+      arabicAnalysis: {
+        headline: `تعذر جلب السعر اللحظي حالياً من البورصة المصرية لـ ${liveName || resolvedTicker}`,
+        keyPoints: [
+          "لم نتمكن من تلقي سعر تداول حديث من مزودي البورصة المصرية (مباشر مصر / TradingView / Yahoo).",
+          "يرجى التحقق من صحة رمز السهم أو المحاولة خلال ساعات عمل السوق الرسمية (10:00 ص - 2:30 م).",
+        ],
+        riskWarning: "تنبيه: لا تعرض المنصة أرقاماً عشوائية حفاظاً على دقة ومصداقية قراراتك الاستثمارية.",
+      },
+      instrumentNameAr: liveName || resolvedTicker,
+      source: "UNAVAILABLE",
+      changePercent: undefined,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  let candles: CandleInput[] = [];
+
+  // Check if instrument exists in database to fetch actual candles
+  if (db) {
+    try {
+      const inst = await db
+        .select()
+        .from(instruments)
+        .where(eq(instruments.symbol, resolvedTicker))
+        .limit(1);
+
+      if (inst.length > 0) {
+        const dbCandles = await db
+          .select()
+          .from(marketCandles)
+          .where(eq(marketCandles.instrumentId, inst[0].id))
+          .orderBy(desc(marketCandles.timestamp))
+          .limit(50);
+
+        if (dbCandles.length >= 15) {
+          candles = dbCandles.reverse().map((c) => ({
+            open: Number(c.open),
+            high: Number(c.high),
+            low: Number(c.low),
+            close: Number(c.close),
+            volume: Number(c.volume),
+            timestamp: c.timestamp,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn("[QuantRouter] Notice fetching DB candles:", err);
+    }
+  }
+
+  // If insufficient candles in database, generate realistic price progression anchored to baseline
+  if (candles.length < 15) {
+    const basePrice = livePrice || (resolvedTicker.includes("GOLD") ? 4650 : 50);
+    let current = basePrice * 0.94;
+    const now = Date.now();
+    const oneDayMs = 24 * 60 * 60 * 1000;
+
+    for (let i = 35; i >= 0; i--) {
+      const changePct = Math.sin(i * 0.4) * 0.015 + (Math.random() - 0.48) * 0.02;
+      const open = current;
+      const close = Number((open * (1 + changePct)).toFixed(2));
+      const high = Number((Math.max(open, close) * (1 + Math.random() * 0.012)).toFixed(2));
+      const low = Number((Math.min(open, close) * (1 - Math.random() * 0.012)).toFixed(2));
+      current = close;
+
+      candles.push({
+        open,
+        high,
+        low,
+        close,
+        volume: Math.round(50000 + Math.random() * 80000),
+        timestamp: now - i * oneDayMs,
+      });
+    }
+  }
+
+  // Anchor the latest candle close to the live fetched price
+  if (candles.length > 0 && livePrice) {
+    candles[candles.length - 1].close = livePrice;
+    candles[candles.length - 1].high = Math.max(candles[candles.length - 1].high, livePrice);
+    candles[candles.length - 1].low = Math.min(candles[candles.length - 1].low, livePrice);
+  }
+
+  return generateAdvisorySignal(resolvedTicker, candles, {
+    assetType: effectiveAssetType,
+    instrumentNameAr: liveName ?? resolvedTicker,
+    source: liveSource,
+    changePercent: liveChange,
+  });
+}
+
 export const quantRouter = router({
   /**
    * 1. Egyptian Market Hub: EGX stocks, physical gold rates, mutual funds & dividend calendar
@@ -89,195 +283,31 @@ export const quantRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const db = await getDb();
-      const rawInput = input.ticker.trim();
-      const upperInput = rawInput.toUpperCase();
-
-      // 0. Resolve against EGX Master Catalog & Arabic normalization
-      const catalogEntry = resolveEgxAsset(rawInput);
-      const resolvedTicker = catalogEntry
-        ? catalogEntry.ticker
-        : upperInput.includes("GOLD")
-        ? "GOLD_24K"
-        : upperInput === "AZG"
-        ? "AZG"
-        : resolveEgxSymbol(upperInput);
-
-      const effectiveAssetType: "EGX_STOCK" | "GOLD" | "MUTUAL_FUND" = catalogEntry
-        ? catalogEntry.assetType
-        : resolvedTicker.includes("GOLD")
-        ? "GOLD"
-        : resolvedTicker === "AZG"
-        ? "MUTUAL_FUND"
-        : input.assetType;
-
-      let livePrice: number | null = null;
-      let liveName: string | null = catalogEntry?.nameAr ?? null;
-      let liveSource = "البورصة المصرية (مباشر / EGX Feed)";
-      let liveChange: number | undefined = undefined;
-
-      // 1. Fetch live quote via fetchEgxOrYahooQuote for stocks & funds
-      if (effectiveAssetType === "EGX_STOCK" || effectiveAssetType === "MUTUAL_FUND") {
-        try {
-          const q = await fetchEgxOrYahooQuote(resolvedTicker, "EGP");
-          if (q && Number(q.price) > 0) {
-            livePrice = Number(q.price);
-            if (q.arabicName) liveName = q.arabicName;
-            if (q.source) liveSource = q.source;
-            if (typeof q.changePercent === "number") liveChange = q.changePercent;
-          }
-        } catch {
-          // Handled below if quote is unavailable
-        }
-      } else if (effectiveAssetType === "GOLD" || resolvedTicker.includes("GOLD")) {
-        let gold24 = 4650;
-        try {
-          const live24 = await fetchLiveGoldGramPrice(24);
-          if (live24 && live24.pricePerGramEgp > 1000) gold24 = live24.pricePerGramEgp;
-        } catch {
-          // fallback to 4650
-        }
-        const goldQuotes = calculatePhysicalGoldQuotes(gold24);
-        const p24 = goldQuotes.purities.find((p) => p.karat === 24);
-        if (p24) {
-          livePrice = p24.gramPriceEGP;
-          liveName = "ذهب عيار 24 (سعر الجرام الصافي)";
-          liveSource = "تسعير الذهب الفوري (سوق الصاغة المصري / Isagha Feed)";
-          liveChange = p24.change24hPercent;
-        }
-      }
-
-      // Check known instruments registry if name is not set
-      if (!liveName) {
-        const found = EGX_TOP_INSTRUMENTS.find(
-          (s) => s.ticker === resolvedTicker || s.symbol === resolvedTicker.replace(".CA", "")
-        );
-        if (found) {
-          liveName = found.nameAr;
-          if (!livePrice) livePrice = found.lastClose ?? null;
-        }
-      }
-      if (!liveName) {
-        const foundFund = EGYPTIAN_MUTUAL_FUNDS.find((f) => f.code === resolvedTicker);
-        if (foundFund) {
-          liveName = foundFund.nameAr;
-          if (!livePrice) livePrice = foundFund.latestNAV;
-        }
-      }
-
-      // Fail-Safe Integrity: If price cannot be fetched from live feeds, do NOT invent mock prices
-      if (!livePrice && effectiveAssetType !== "GOLD") {
-        return {
-          ticker: resolvedTicker,
-          action: "WAIT",
-          actionAr: "السعر غير متاح حالياً بالبورصة",
-          confidenceScore: 0,
-          currentPrice: 0,
-          entryZone: { min: 0, max: 0 },
-          targets: { t1: 0, t2: 0 },
-          stopLoss: 0,
-          riskRewardRatio: 0,
-          indicators: {
-            rsi: null,
-            macdHistogram: null,
-            macdTrend: "NEUTRAL",
-            bollingerPosition: "NORMAL",
-            bollingerPercentB: null,
-            trendEMA: "SIDEWAYS",
-            volatilityATR: null,
-            immediateSupport: null,
-            immediateResistance: null,
-          },
-          arabicAnalysis: {
-            headline: `تعذر جلب السعر اللحظي حالياً من البورصة المصرية لـ ${liveName || resolvedTicker}`,
-            keyPoints: [
-              "لم نتمكن من تلقي سعر تداول حديث من مزودي البورصة المصرية (مباشر مصر / TradingView / Yahoo).",
-              "يرجى التحقق من صحة رمز السهم أو المحاولة خلال ساعات عمل السوق الرسمية (10:00 ص - 2:30 م).",
-            ],
-            riskWarning: "تنبيه: لا تعرض المنصة أرقاماً عشوائية حفاظاً على دقة ومصداقية قراراتك الاستثمارية.",
-          },
-          instrumentNameAr: liveName || resolvedTicker,
-          source: "UNAVAILABLE",
-          changePercent: undefined,
-          generatedAt: new Date().toISOString(),
-        };
-      }
-
-      let candles: CandleInput[] = [];
-
-      // Check if instrument exists in database to fetch actual candles
-      if (db) {
-        try {
-          const inst = await db
-            .select()
-            .from(instruments)
-            .where(eq(instruments.symbol, resolvedTicker))
-            .limit(1);
-
-          if (inst.length > 0) {
-            const dbCandles = await db
-              .select()
-              .from(marketCandles)
-              .where(eq(marketCandles.instrumentId, inst[0].id))
-              .orderBy(desc(marketCandles.timestamp))
-              .limit(50);
-
-            if (dbCandles.length >= 15) {
-              candles = dbCandles.reverse().map((c) => ({
-                open: Number(c.open),
-                high: Number(c.high),
-                low: Number(c.low),
-                close: Number(c.close),
-                volume: Number(c.volume),
-                timestamp: c.timestamp,
-              }));
-            }
-          }
-        } catch (err) {
-          console.warn("[QuantRouter] Notice fetching DB candles:", err);
-        }
-      }
-
-      // If insufficient candles in database, generate realistic price progression anchored to baseline
-      if (candles.length < 15) {
-        const basePrice = livePrice || (resolvedTicker.includes("GOLD") ? 4650 : 50);
-        let current = basePrice * 0.94;
-        const now = Date.now();
-        const oneDayMs = 24 * 60 * 60 * 1000;
-
-        for (let i = 35; i >= 0; i--) {
-          const changePct = Math.sin(i * 0.4) * 0.015 + (Math.random() - 0.48) * 0.02;
-          const open = current;
-          const close = Number((open * (1 + changePct)).toFixed(2));
-          const high = Number((Math.max(open, close) * (1 + Math.random() * 0.012)).toFixed(2));
-          const low = Number((Math.min(open, close) * (1 - Math.random() * 0.012)).toFixed(2));
-          current = close;
-
-          candles.push({
-            open,
-            high,
-            low,
-            close,
-            volume: Math.round(50000 + Math.random() * 80000),
-            timestamp: now - i * oneDayMs,
-          });
-        }
-      }
-
-      // Anchor the latest candle close to the live fetched price
-      if (candles.length > 0 && livePrice) {
-        candles[candles.length - 1].close = livePrice;
-        candles[candles.length - 1].high = Math.max(candles[candles.length - 1].high, livePrice);
-        candles[candles.length - 1].low = Math.min(candles[candles.length - 1].low, livePrice);
-      }
-
-      return generateAdvisorySignal(resolvedTicker, candles, {
-        assetType: effectiveAssetType,
-        instrumentNameAr: liveName ?? resolvedTicker,
-        source: liveSource,
-        changePercent: liveChange,
-      });
+      return calculateAdvisorySignalInternal(input.ticker, input.assetType);
     }),
+
+  /**
+   * 2.4 Top High-Conviction Market Signals (Lightweight for Dashboard Carousel)
+   */
+  getTopSignals: protectedProcedure.query(async () => {
+    const topAssets = [
+      { ticker: "COMI.CA", assetType: "EGX_STOCK" as const },
+      { ticker: "SWDY.CA", assetType: "EGX_STOCK" as const },
+      { ticker: "GOLD_24K", assetType: "GOLD" as const },
+    ];
+
+    const results = await Promise.all(
+      topAssets.map(async (asset) => {
+        try {
+          return await calculateAdvisorySignalInternal(asset.ticker, asset.assetType);
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    return results.filter((r): r is NonNullable<typeof r> => Boolean(r));
+  }),
 
   /**
    * 2.5 Search Master EGX & Mutual Funds Catalog (Live Autocomplete)

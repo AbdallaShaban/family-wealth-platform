@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { useDemoMode } from "@/contexts/DemoModeContext";
@@ -66,6 +67,8 @@ type TradeExecutionMode = "ADVISORY_TRACKING" | "FUNDED_LEDGER";
 
 export default function SwingTradingPage() {
   // Hoist ALL hooks to the top level
+  const [location] = useLocation();
+  const handledParamsRef = useRef<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("ALL");
   const [paperOnlyFilter, setPaperOnlyFilter] = useState<boolean | undefined>(undefined);
@@ -180,8 +183,79 @@ export default function SwingTradingPage() {
     return trades.length > 0 ? trades[0] : null;
   }, [trades, selectedTradeId]);
 
+  // Deep-Linking & Pre-population from Overview / Quant Hub
+  useEffect(() => {
+    if (typeof window === "undefined" || instruments.length === 0) return;
 
-  // Query candles for active trade
+    const params = new URLSearchParams(window.location.search);
+    const ticker = params.get("ticker") || params.get("symbol");
+    const action = params.get("action");
+    const entry = params.get("entry");
+    const tp = params.get("tp");
+    const sl = params.get("sl");
+    const name = params.get("name");
+
+    if (!ticker && action !== "swing") return;
+
+    const paramKey = `${ticker || ""}-${entry || ""}-${tp || ""}-${sl || ""}`;
+    if (handledParamsRef.current === paramKey) return;
+    handledParamsRef.current = paramKey;
+
+    if (ticker) {
+      const cleanTicker = ticker.toUpperCase().trim();
+      const baseSymbol = cleanTicker.replace(".CA", "");
+
+      // Helper to map DB assetType to formCategory
+      const resolveCategory = (type?: string): "EGX_STOCK" | "NBE_MUTUAL_FUND" | "TELDA_LIQUIDITY" | "GOLD" | "CRYPTO_OTHER" => {
+        if (type === "gold") return "GOLD";
+        if (type === "fund") return "NBE_MUTUAL_FUND";
+        return "EGX_STOCK";
+      };
+
+      // Find matching instrument by symbol, symbol without .CA, or gold/funds
+      const matched = instruments.find((i) => {
+        const sym = (i.symbol || "").toUpperCase();
+        return (
+          sym === cleanTicker ||
+          sym === baseSymbol ||
+          (cleanTicker.includes("GOLD") && (i.assetType === "gold" || sym.includes("GOLD") || i.name.includes("ذهب"))) ||
+          (cleanTicker === "AZG" && (sym.includes("AZG") || i.name.includes("أزيموت"))) ||
+          (name && i.name.includes(name))
+        );
+      });
+
+      if (matched) {
+        setFormInstrumentId(String(matched.id));
+        setFormCategory(resolveCategory(matched.assetType));
+      } else {
+        // Fallback to first matching asset type or first instrument
+        const fallback =
+          instruments.find((i) =>
+            cleanTicker.includes("GOLD") ? i.assetType === "gold" : i.assetType === "equity"
+          ) || instruments[0];
+        if (fallback) {
+          setFormInstrumentId(String(fallback.id));
+          setFormCategory(resolveCategory(fallback.assetType));
+        }
+      }
+    }
+
+    if (entry && Number(entry) > 0) {
+      setFormEntryPrice(entry);
+    }
+    if (tp && Number(tp) > 0) {
+      setFormTakeProfit(tp);
+    }
+    if (sl && Number(sl) > 0) {
+      setFormStopLoss(sl);
+    }
+    if (name || ticker) {
+      setFormNotes(`صفقة موجهة من إشارات التحليل الكمي (${name || ticker})`);
+    }
+
+    setIsNewTradeOpen(true);
+    toast.success(`تم استيراد بيانات التداول لـ ${name || ticker} بنجاح`);
+  }, [instruments, location]);
   const activeInstrumentId = activeTrade?.instrumentId ?? (instruments.length > 0 ? instruments[0].id : 1);
   const candlesQuery = trpc.swingTrading.getCandles.useQuery(
     {

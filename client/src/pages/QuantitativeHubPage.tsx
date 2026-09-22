@@ -52,28 +52,49 @@ import {
   Plus,
   Trash2,
   ExternalLink,
+  ArrowUpRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 
 export default function QuantitativeHubPage() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
       if (window.location.pathname.includes("/gold")) return "market";
       const params = new URLSearchParams(window.location.search);
-      return params.get("tab") || "signals";
+      return params.get("tab") || (params.get("ticker") ? "signals" : "signals");
     }
     return "signals";
+  });
+
+  const [selectedTicker, setSelectedTicker] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tickerParam = params.get("ticker");
+      if (tickerParam) return tickerParam.toUpperCase();
+    }
+    return "COMI.CA";
   });
 
   React.useEffect(() => {
     if (location.includes("/gold")) {
       setActiveTab("market");
     }
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tickerParam = params.get("ticker");
+      if (tickerParam) {
+        setSelectedTicker(tickerParam.toUpperCase());
+        setActiveTab("signals");
+      }
+      const tabParam = params.get("tab");
+      if (tabParam) {
+        setActiveTab(tabParam);
+      }
+    }
   }, [location]);
 
-  const [selectedTicker, setSelectedTicker] = useState("COMI.CA");
   const [targetProfile, setTargetProfile] = useState<"BALANCED" | "CONSERVATIVE" | "GROWTH">("BALANCED");
   
   // Simulation Trade Modal
@@ -264,59 +285,59 @@ export default function QuantitativeHubPage() {
           </div>
         </div>
 
-        {/* Top Summary Ticker Bar */}
+        {/* Top Summary Ticker Bar - Dark Institutional High-Contrast Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="bg-slate-900/80 border-slate-800 shadow-md">
+          <Card className="bg-[#0B1222] border border-slate-700/80 shadow-lg text-white">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-300 font-semibold">ذهب عيار 24 (سبائك)</p>
-                <p className="text-2xl font-black text-amber-400 mt-1">
+                <p className="text-xs text-slate-200 font-bold">ذهب عيار 24 (سبائك)</p>
+                <p className="text-2xl font-black text-amber-400 mt-1 font-mono">
                   {egyptMarket?.gold.purities[0]?.gramPriceEGP ? formatMoney(egyptMarket.gold.purities[0].gramPriceEGP) : "4,650 ج.م"}
                 </p>
               </div>
-              <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <div className="p-2.5 rounded-xl bg-[#162033] text-amber-400 border border-slate-700">
                 <DollarSign className="w-5 h-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/80 border-slate-800 shadow-md">
+          <Card className="bg-[#0B1222] border border-slate-700/80 shadow-lg text-white">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-300 font-semibold">الجنيه الذهب (8 جم 21k)</p>
-                <p className="text-2xl font-black text-amber-300 mt-1">
+                <p className="text-xs text-slate-200 font-bold">الجنيه الذهب (8 جم 21k)</p>
+                <p className="text-2xl font-black text-amber-300 mt-1 font-mono">
                   {egyptMarket?.gold.sovereign.priceEGP ? formatMoney(egyptMarket.gold.sovereign.priceEGP) : "32,550 ج.م"}
                 </p>
               </div>
-              <div className="p-2.5 rounded-xl bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+              <div className="p-2.5 rounded-xl bg-[#162033] text-amber-300 border border-slate-700">
                 <Layers className="w-5 h-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/80 border-slate-800 shadow-md">
+          <Card className="bg-[#0B1222] border border-slate-700/80 shadow-lg text-white">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-300 font-semibold">سيولة الطوارئ العائلية الحقيقية</p>
-                <p className="text-2xl font-black text-emerald-400 mt-1">
+                <p className="text-xs text-slate-200 font-bold">سيولة الطوارئ العائلية الحقيقية</p>
+                <p className="text-2xl font-black text-emerald-400 mt-1 font-mono">
                   {health?.diagnostics.emergencyRunwayMonths !== undefined ? `${health.diagnostics.emergencyRunwayMonths} أشهر` : "0 أشهر"}
                 </p>
               </div>
-              <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <div className="p-2.5 rounded-xl bg-[#162033] text-emerald-400 border border-slate-700">
                 <Activity className="w-5 h-5" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/80 border-slate-800 shadow-md">
+          <Card className="bg-[#0B1222] border border-slate-700/80 shadow-lg text-white">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-300 font-semibold">عائد محفظة المحاكاة</p>
-                <p className={`text-2xl font-black mt-1 ${((paperData?.paperState.totalReturnPercent ?? 0) >= 0) ? "text-emerald-400" : "text-rose-400"}`}>
+                <p className="text-xs text-slate-200 font-bold">عائد محفظة المحاكاة</p>
+                <p className={`text-2xl font-black mt-1 font-mono ${((paperData?.paperState.totalReturnPercent ?? 0) >= 0) ? "text-emerald-400" : "text-rose-400"}`}>
                   {paperData?.paperState.totalReturnPercent ? `${paperData.paperState.totalReturnPercent > 0 ? "+" : ""}${paperData.paperState.totalReturnPercent}%` : "0.00%"}
                 </p>
               </div>
-              <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              <div className="p-2.5 rounded-xl bg-[#162033] text-blue-400 border border-slate-700">
                 <BarChart3 className="w-5 h-5" />
               </div>
             </CardContent>
@@ -350,28 +371,30 @@ export default function QuantitativeHubPage() {
 
           {/* ================= TAB 1: ADVISORY SIGNALS ================= */}
           <TabsContent value="signals" className="space-y-6">
-            {/* Quick Symbol Selector */}
-            <div className="flex flex-wrap items-center gap-2 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-              <span className="text-xs font-bold text-slate-200 ml-2">اختر الأصل للتحليل الكمي:</span>
-              {egyptMarket?.egxStocks.map((stock) => (
+            {/* Quick Symbol Selector with Mobile Smooth Horizontal Scroll */}
+            <div className="overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex items-center gap-2 bg-slate-900/90 p-3 rounded-xl border border-slate-800 min-w-max">
+                <span className="text-xs font-bold text-slate-200 ml-2">اختر الأصل للتحليل الكمي:</span>
+                {egyptMarket?.egxStocks.map((stock) => (
+                  <Button
+                    key={stock.ticker}
+                    variant={selectedTicker === stock.ticker ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedTicker(stock.ticker)}
+                    className={`text-xs h-8 font-semibold ${selectedTicker === stock.ticker ? "bg-amber-500 text-slate-950 font-black shadow-md" : "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"}`}
+                  >
+                    {stock.symbol} ({stock.nameAr.split(" ")[0]})
+                  </Button>
+                ))}
                 <Button
-                  key={stock.ticker}
-                  variant={selectedTicker === stock.ticker ? "default" : "outline"}
+                  variant={selectedTicker === "AZG" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedTicker(stock.ticker)}
-                  className={`text-xs h-8 font-semibold ${selectedTicker === stock.ticker ? "bg-amber-500 text-slate-950 font-black shadow-md" : "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"}`}
+                  onClick={() => setSelectedTicker("AZG")}
+                  className={`text-xs h-8 font-semibold ${selectedTicker === "AZG" ? "bg-amber-500 text-slate-950 font-black shadow-md" : "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"}`}
                 >
-                  {stock.symbol} ({stock.nameAr.split(" ")[0]})
+                  AZG (صندوق الذهب)
                 </Button>
-              ))}
-              <Button
-                variant={selectedTicker === "AZG" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedTicker("AZG")}
-                className={`text-xs h-8 font-semibold ${selectedTicker === "AZG" ? "bg-amber-500 text-slate-950 font-black shadow-md" : "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"}`}
-              >
-                AZG (صندوق الذهب)
-              </Button>
+              </div>
             </div>
 
             {/* Signal Details Card */}
@@ -474,13 +497,27 @@ export default function QuantitativeHubPage() {
                       </div>
                     </div>
 
-                    <Button
-                      onClick={() => setIsSimTradeOpen(true)}
-                      className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black gap-2 py-2.5 shadow-md"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      محاكاة صفقة افتراضية
-                    </Button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <Button
+                        onClick={() => setIsSimTradeOpen(true)}
+                        variant="outline"
+                        className="w-full border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-100 font-bold gap-1.5 py-2.5 text-xs"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-400" />
+                        محاكاة افتراضية
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          const swingUrl = `/trading/swing?ticker=${encodeURIComponent(signal.ticker)}&action=swing&entry=${signal.entryZone.min}&tp=${signal.targets.t1}&sl=${signal.stopLoss}&name=${encodeURIComponent(activeInstrument?.nameAr || signal.instrumentNameAr || signal.ticker)}`;
+                          setLocation(swingUrl);
+                        }}
+                        className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black gap-1.5 py-2.5 text-xs shadow-md"
+                      >
+                        <ArrowUpRight className="w-4 h-4 rotate-180" />
+                        تداول في السوينج
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -547,13 +584,13 @@ export default function QuantitativeHubPage() {
                     </div>
 
                     {/* Explanatory Points */}
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 space-y-2.5">
+                    <div className="bg-[#1f1908] border border-amber-500/50 rounded-xl p-4 space-y-2.5">
                       <p className="text-xs font-black text-amber-300 flex items-center gap-1.5 mb-2">
                         <Info className="w-4 h-4 text-amber-400" />
                         خلاصة التحليل الاسترشادي التفسيري:
                       </p>
                       {signal.arabicAnalysis.keyPoints.map((pt, idx) => (
-                        <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-100 font-medium leading-relaxed">
+                        <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-100 font-semibold leading-relaxed">
                           <span className="text-amber-400 font-bold mt-0.5">•</span>
                           <span>{pt}</span>
                         </div>
@@ -653,17 +690,31 @@ export default function QuantitativeHubPage() {
                           <TableCell className="font-bold text-slate-100">{stock.lastClose} ج.م</TableCell>
                           <TableCell className="text-emerald-400 font-black">{stock.typicalDividendYield}%</TableCell>
                           <TableCell className="text-center">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedTicker(stock.ticker);
-                                toast.info(`تم تحميل إشارات التحليل الكمي لـ ${stock.nameAr}`);
-                              }}
-                              className="text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-500/20 font-bold"
-                            >
-                              فحص كمي
-                            </Button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedTicker(stock.ticker);
+                                  setActiveTab("signals");
+                                  toast.info(`تم تحميل إشارات التحليل الكمي لـ ${stock.nameAr}`);
+                                  window.scrollTo({ top: 150, behavior: "smooth" });
+                                }}
+                                className="text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-500/20 font-bold h-7 px-2"
+                              >
+                                فحص كمي
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setLocation(`/trading/swing?ticker=${encodeURIComponent(stock.ticker)}&action=swing&entry=${stock.lastClose}&name=${encodeURIComponent(stock.nameAr)}`);
+                                }}
+                                className="text-xs border-slate-700 bg-slate-900/60 hover:bg-amber-500 hover:text-slate-950 text-slate-200 font-bold h-7 px-2"
+                              >
+                                سوينج
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
