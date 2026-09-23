@@ -102,7 +102,7 @@ export default function RetailSignalsWidget() {
   return (
     <section
       aria-label="أبرز إشارات السوق والفرص الاستثمارية"
-      className="rounded-2xl border border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0B0F17] p-5 sm:p-6 shadow-xs"
+      className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0B1222] p-5 sm:p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none"
       dir="rtl"
     >
       {/* Widget Header: Market Highlights & Top Signals */}

@@ -109,40 +109,36 @@ export default function WealthCoPilotCard({
   return (
     <>
       <motion.section
-        className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900/95 dark:from-emerald-950/60 dark:via-[#0D1527] dark:to-[#070A11] p-6 sm:p-7 shadow-lg shadow-emerald-950/10 text-slate-100"
-        dir="rtl"
         initial={reduceMotion ? false : { opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.38, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0B1222] p-4 sm:p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none"
+        dir="rtl"
         aria-label="المستشار المالي الذكي"
       >
-        {/* Ambient background decoration */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           {/* Header & Main Surplus Indicator */}
-          <div className="space-y-2 max-w-xl">
+          <div className="space-y-1.5 max-w-xl">
             <div className="flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400">
-                <Sparkles className="size-4 animate-pulse" />
+              <span className="flex size-7 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60">
+                <Sparkles className="size-4" />
               </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                 المستشار المالي الذكي (Auto Wealth Co-Pilot)
               </span>
               <Badge
                 variant="outline"
-                className="bg-emerald-500/10 text-emerald-300 border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-md"
+                className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 text-[10px] px-2 py-0.5 rounded-md"
               >
                 تحديث هذا الشهر
               </Badge>
             </div>
 
-            <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white leading-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">
               {surplusCash > 0 ? (
                 <>
                   لديك فائض مالي يقدر بـ{" "}
-                  <span className="text-emerald-400 inline-flex items-baseline">
+                  <span className="text-emerald-700 dark:text-emerald-400 inline-flex items-baseline font-mono">
                     <SensitiveValue>{formatMoney(surplusCash, baseCurrency)}</SensitiveValue>
                   </span>{" "}
                   يمكن استثماره بذكاء.
@@ -154,21 +150,21 @@ export default function WealthCoPilotCard({
               )}
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-300/90 leading-relaxed">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               يقوم المحرك الرياضي بتحليل إيراداتك ومصروفاتك والتزاماتك تلقائياً لتقديم خطة
               توزيع ثلاثية تمنع تآكل أموالك بالتضخم وتسرع سداد الديون.
             </p>
           </div>
 
           {/* Action Button & Info Trigger */}
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <Button
               onClick={() => setInfoModalOpen(true)}
               variant="outline"
               size="sm"
-              className="bg-white/10 hover:bg-white/15 text-slate-200 border-white/15 backdrop-blur-sm rounded-xl text-xs py-2 px-3 h-auto cursor-pointer"
+              className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 rounded-xl text-xs py-2 px-3 h-auto cursor-pointer"
             >
-              <HelpCircle className="size-3.5 ml-1.5 text-slate-300" />
+              <HelpCircle className="size-3.5 ml-1.5 text-slate-400" />
               كيف حسبنا ذلك؟
             </Button>
             <Button
@@ -178,7 +174,7 @@ export default function WealthCoPilotCard({
                 else setLocation("/trading/swing");
               }}
               size="sm"
-              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-md transition-all cursor-pointer h-auto flex items-center gap-2"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 px-3.5 rounded-xl shadow-xs transition-all cursor-pointer h-auto flex items-center gap-1.5"
             >
               <span>تنفيذ الخطة المقترحة</span>
               <ArrowRight className="size-3.5 rotate-180" />
@@ -187,33 +183,33 @@ export default function WealthCoPilotCard({
         </div>
 
         {/* Actionable 3-Pillar Breakdown Cards */}
-        <div className="relative z-10 mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="relative z-10 mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
           {/* Pillar 1: Emergency Buffer */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 dark:bg-slate-900/60 p-4 backdrop-blur-sm flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                <ShieldCheck className="size-4 text-emerald-400" />
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-3.5 flex flex-col justify-between hover:border-emerald-500/40 transition-colors">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
                 1. درع الطوارئ (الأمان)
               </span>
               <Badge
                 className={
                   emergencyCoverageMonths >= 3
-                    ? "bg-emerald-500/20 text-emerald-300 border-0 text-[10px]"
-                    : "bg-amber-500/20 text-amber-300 border-0 text-[10px]"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 text-[10px]"
+                    : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 text-[10px]"
                 }
               >
                 {emergencyCoverageMonths >= 3 ? "مكتمل (آمن)" : "يحتاج تعزيز"}
               </Badge>
             </div>
             <div>
-              <strong className="text-base font-bold text-white block mb-1">
+              <strong className="text-base font-bold font-mono text-slate-900 dark:text-white block mb-0.5">
                 {needsEmergencyBuffer ? (
                   <SensitiveValue>{formatMoney(emergencyAllocation, baseCurrency)}</SensitiveValue>
                 ) : (
                   "مستقر (3+ أشهر)"
                 )}
               </strong>
-              <p className="text-[11px] text-slate-300/80 leading-normal">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                 {needsEmergencyBuffer
                   ? `غطاء الطوارئ الحالي ${emergencyCoverageMonths.toFixed(1)} شهر فقط. وجّه هذا المبلغ لحساب سيولة يومية.`
                   : "لديك احتياطي آمن يغطي نفقات أسرتك. لا تحتاج لضخ سيولة راكدة إضافية."}
@@ -222,19 +218,19 @@ export default function WealthCoPilotCard({
           </div>
 
           {/* Pillar 2: Active Debt Payoff */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 dark:bg-slate-900/60 p-4 backdrop-blur-sm flex flex-col justify-between hover:border-amber-500/40 transition-colors">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                <CreditCard className="size-4 text-amber-400" />
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-3.5 flex flex-col justify-between hover:border-amber-500/40 transition-colors">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <CreditCard className="size-4 text-amber-600 dark:text-amber-400" />
                 2. السداد المعجل للديون
               </span>
               <Badge
                 className={
                   hasActiveDebt
                     ? highestPriorityDebt.interestRate > 0
-                      ? "bg-amber-500/20 text-amber-300 border-0 text-[10px]"
-                      : "bg-orange-500/20 text-orange-300 border-0 text-[10px]"
-                    : "bg-slate-500/20 text-slate-300 border-0 text-[10px]"
+                      ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60 text-[10px]"
+                      : "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60 text-[10px]"
+                    : "bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-[10px]"
                 }
               >
                 {hasActiveDebt
@@ -245,36 +241,36 @@ export default function WealthCoPilotCard({
               </Badge>
             </div>
             <div>
-              <strong className="text-base font-bold text-white block mb-1">
+              <strong className="text-base font-bold font-mono text-slate-900 dark:text-white block mb-0.5">
                 {hasActiveDebt ? (
                   <SensitiveValue>{formatMoney(debtAllocation, baseCurrency)}</SensitiveValue>
                 ) : (
                   "صفر التزامات"
                 )}
               </strong>
-              <p className="text-[11px] text-slate-300/80 leading-normal">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                 {hasActiveDebt && highestPriorityDebt
                   ? highestPriorityDebt.interestRate > 0
                     ? `سداد مبكر لقرض "${highestPriorityDebt.name}" بفائدة ${highestPriorityDebt.interestRate}% لتوفير الأعباء التمويلية.`
-                    : `سداد تدريجي لالتزام "${highestPriorityDebt.name}" (الرصيد: ${formatMoney(highestPriorityDebt.outstandingBalance, baseCurrency)}) لتصفية الذمم المالية.`
+                    : `سداد تدريجي لالتزام "${highestPriorityDebt.name}" لتصفية الذمم المالية.`
                   : "لا توجد أي التزامات مالية أو ديون ترهق ميزانيتك. ممتاز!"}
               </p>
             </div>
           </div>
 
           {/* Pillar 3: Growth & Gold Inflation Hedge */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 dark:bg-slate-900/60 p-4 backdrop-blur-sm flex flex-col justify-between hover:border-sky-500/40 transition-colors">
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                <Coins className="size-4 text-sky-400" />
+          <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 p-3.5 flex flex-col justify-between hover:border-sky-500/40 transition-colors">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Coins className="size-4 text-sky-600 dark:text-sky-400" />
                 3. مضاعفة الثروة والتحوط
               </span>
-              <Badge className="bg-sky-500/20 text-sky-300 border-0 text-[10px]">
+              <Badge className="bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60 text-[10px]">
                 ذهب + أسهم نمو
               </Badge>
             </div>
             <div>
-              <strong className="text-base font-bold text-white block mb-1">
+              <strong className="text-base font-bold font-mono text-slate-900 dark:text-white block mb-0.5">
                 <SensitiveValue>
                   {formatMoney(
                     surplusCash > 0 ? investmentAllocation : 0,
