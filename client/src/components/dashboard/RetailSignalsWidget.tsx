@@ -60,21 +60,21 @@ export default function RetailSignalsWidget() {
     switch (action) {
       case "STRONG_ACCUMULATE":
         return {
-          badgeClass: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+          badgeClass: "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800/60",
           dotColor: "bg-emerald-500",
           cardBorder: "hover:border-emerald-500/40",
           label: "شراء وتجميع قوي",
         };
       case "ACCUMULATE":
         return {
-          badgeClass: "bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30",
+          badgeClass: "bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-200 dark:border-teal-800/60",
           dotColor: "bg-teal-500",
           cardBorder: "hover:border-teal-500/40",
           label: "تجميع تدريجي",
         };
       case "TAKE_PROFIT_PARTIAL":
         return {
-          badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+          badgeClass: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800/60",
           dotColor: "bg-amber-500",
           cardBorder: "hover:border-amber-500/40",
           label: "جني أرباح جزئي",
@@ -82,7 +82,7 @@ export default function RetailSignalsWidget() {
       case "TAKE_PROFIT_FULL":
       case "DEFENSIVE_EXIT":
         return {
-          badgeClass: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
+          badgeClass: "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-800/60",
           dotColor: "bg-rose-500",
           cardBorder: "hover:border-rose-500/40",
           label: "خروج وقائي",
@@ -91,7 +91,7 @@ export default function RetailSignalsWidget() {
       case "WAIT":
       default:
         return {
-          badgeClass: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+          badgeClass: "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/40 dark:text-blue-200 dark:border-blue-800/60",
           dotColor: "bg-blue-500",
           cardBorder: "hover:border-blue-500/40",
           label: "احتفاظ ومراقبة",
@@ -102,14 +102,14 @@ export default function RetailSignalsWidget() {
   return (
     <section
       aria-label="أبرز إشارات السوق والفرص الاستثمارية"
-      className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#0B1222] p-5 sm:p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none"
+      className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-5 sm:p-6 shadow-sm"
       dir="rtl"
     >
       {/* Widget Header: Market Highlights & Top Signals */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800/80 mb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+            <span className="p-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800/60">
               <Sparkles className="size-4" />
             </span>
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white m-0 tracking-tight">
@@ -117,12 +117,12 @@ export default function RetailSignalsWidget() {
             </h2>
             <Badge
               variant="outline"
-              className="text-[11px] font-bold border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 mr-2"
+              className="text-[11px] font-bold border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200 mr-2"
             >
               أفضل 3 فرص عالية الثقة
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 m-0">
+          <p className="text-xs text-slate-600 dark:text-slate-400 m-0 font-medium">
             تحليل كمي لحظي يجمع بين المتوسطات المتحركة، مستويات فيبوناتشي، وزخم البولينجر لتحديد أفضل نقاط الدخول والخروج.
           </p>
         </div>
@@ -146,7 +146,7 @@ export default function RetailSignalsWidget() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-slate-200/60 dark:border-slate-800/60 p-4 space-y-3 bg-slate-50/50 dark:bg-slate-900/30"
+              className="rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-slate-50/50 dark:bg-slate-900/30"
             >
               <div className="flex items-center justify-between">
                 <Skeleton className="h-5 w-24 rounded" />
@@ -200,7 +200,7 @@ export default function RetailSignalsWidget() {
                   initial={reduceMotion ? undefined : { opacity: 0, y: 10 }}
                   animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.08, duration: 0.25 }}
-                  className={`flex flex-col justify-between rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 transition-all duration-200 hover:shadow-md ${theme.cardBorder}`}
+                  className={`flex flex-col justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] p-4 transition-all duration-200 hover:shadow-md ${theme.cardBorder}`}
                 >
                   <div>
                     {/* Card Header: Symbol, Name & Action Badge */}
@@ -210,11 +210,11 @@ export default function RetailSignalsWidget() {
                           <span className="font-mono text-xs font-extrabold text-slate-900 dark:text-white">
                             {signal.ticker}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-medium">
+                          <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                             {isGold ? "ذهب فيزيائي" : isFund ? "صندوق استثمار" : "أسهم EGX"}
                           </span>
                         </div>
-                        <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5 line-clamp-1">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 line-clamp-1">
                           {displayName}
                         </h3>
                       </div>
@@ -229,16 +229,16 @@ export default function RetailSignalsWidget() {
                     </div>
 
                     {/* Price & Confidence Meter */}
-                    <div className="flex items-baseline justify-between mb-3 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800/70">
+                    <div className="flex items-baseline justify-between mb-3 bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800/70">
                       <div>
-                        <span className="text-[10px] text-slate-400 block">السعر اللحظي</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 block font-medium">السعر اللحظي</span>
                         <span className="text-base font-black font-mono text-slate-900 dark:text-white">
                           {formatMoney(signal.currentPrice)}
                         </span>
                       </div>
                       <div className="text-left">
-                        <span className="text-[10px] text-slate-400 block">درجة الثقة الكمية</span>
-                        <span className="text-xs font-black font-mono text-emerald-600 dark:text-emerald-400">
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 block font-medium">درجة الثقة الكمية</span>
+                        <span className="text-xs font-black font-mono text-emerald-800 dark:text-emerald-400">
                           {signal.confidenceScore}%
                         </span>
                       </div>
@@ -246,39 +246,39 @@ export default function RetailSignalsWidget() {
 
                     {/* Key Tactical Levels (Entry, TP1, SL, R:R) */}
                     <div className="grid grid-cols-2 gap-2 text-xs mb-3.5">
-                      <div className="bg-slate-50/80 dark:bg-slate-950/40 p-2 rounded-md border border-slate-100 dark:border-slate-800/60">
-                        <span className="text-[10px] text-slate-400 block mb-0.5 font-medium">منطقة الشراء</span>
-                        <span className="font-mono font-bold text-slate-700 dark:text-slate-200 text-[11px]">
+                      <div className="bg-slate-50 dark:bg-slate-950/40 p-2 rounded-md border border-slate-200 dark:border-slate-800/60">
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 block mb-0.5 font-medium">منطقة الشراء</span>
+                        <span className="font-mono font-bold text-slate-900 dark:text-slate-200 text-[11px]">
                           {signal.entryZone.min.toFixed(2)} - {signal.entryZone.max.toFixed(2)}
                         </span>
                       </div>
 
-                      <div className="bg-emerald-50/40 dark:bg-emerald-950/20 p-2 rounded-md border border-emerald-200/50 dark:border-emerald-800/40">
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block mb-0.5 font-medium flex items-center gap-0.5">
+                      <div className="bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded-md border border-emerald-200 dark:border-emerald-800/40">
+                        <span className="text-[10px] text-emerald-800 dark:text-emerald-400 block mb-0.5 font-bold flex items-center gap-0.5">
                           <Target className="size-2.5" />
                           الهدف الأول (TP1)
                         </span>
-                        <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 text-[11px]">
+                        <span className="font-mono font-bold text-emerald-900 dark:text-emerald-300 text-[11px]">
                           {signal.targets.t1.toFixed(2)} ج.م
                         </span>
                       </div>
 
-                      <div className="bg-rose-50/40 dark:bg-rose-950/20 p-2 rounded-md border border-rose-200/50 dark:border-rose-800/40">
-                        <span className="text-[10px] text-rose-600 dark:text-rose-400 block mb-0.5 font-medium flex items-center gap-0.5">
+                      <div className="bg-rose-50 dark:bg-rose-950/20 p-2 rounded-md border border-rose-200 dark:border-rose-800/40">
+                        <span className="text-[10px] text-rose-800 dark:text-rose-400 block mb-0.5 font-bold flex items-center gap-0.5">
                           <ShieldAlert className="size-2.5" />
                           وقف الخسارة
                         </span>
-                        <span className="font-mono font-bold text-rose-700 dark:text-rose-300 text-[11px]">
+                        <span className="font-mono font-bold text-rose-900 dark:text-rose-300 text-[11px]">
                           {signal.stopLoss.toFixed(2)} ج.م
                         </span>
                       </div>
 
-                      <div className="bg-slate-50/80 dark:bg-slate-950/40 p-2 rounded-md border border-slate-100 dark:border-slate-800/60">
-                        <span className="text-[10px] text-slate-400 block mb-0.5 font-medium flex items-center gap-0.5">
+                      <div className="bg-amber-50 dark:bg-slate-950/40 p-2 rounded-md border border-amber-200 dark:border-slate-800/60">
+                        <span className="text-[10px] text-amber-800 dark:text-amber-400 block mb-0.5 font-bold flex items-center gap-0.5">
                           <Scale className="size-2.5" />
                           العائد للمخاطرة (R:R)
                         </span>
-                        <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-[11px]">
+                        <span className="font-mono font-bold text-amber-900 dark:text-amber-300 text-[11px]">
                           1 : {signal.riskRewardRatio}
                         </span>
                       </div>

@@ -34,7 +34,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import SensitiveValue from "@/components/SensitiveValue";
-import { formatMoney, formatDateTime, formatDate } from "@/lib/financialDisplay";
+import { formatMoney, formatDateTime, formatDate, normalizeCurrency } from "@/lib/financialDisplay";
 import {
   Table,
   TableBody,
@@ -119,9 +119,18 @@ function AnimatedMoney({ value, currency }: { value: number | string; currency: 
     return () => cancelAnimationFrame(frame);
   }, [target, reduceMotion]);
 
+  const safeCurrency = normalizeCurrency(currency);
+  const formattedNumber = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(display) ? display : 0);
+
   return (
-    <span className="tabular-nums" dir="ltr">
-      <SensitiveValue>{formatMoney(display, currency, 2)}</SensitiveValue>
+    <span className="tabular-nums inline-flex items-baseline gap-1.5" dir="ltr">
+      <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 select-none">
+        {safeCurrency}
+      </span>
+      <SensitiveValue>{formattedNumber}</SensitiveValue>
     </span>
   );
 }
@@ -149,15 +158,15 @@ function ExecutiveMetricCell({
 }) {
   const accentStyles = {
     indigo:
-      "bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/60",
+      "bg-indigo-50 text-indigo-800 border border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-200 dark:border-indigo-800/60",
     emerald:
-      "bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60",
+      "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800/60",
     sky:
-      "bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800/60",
+      "bg-sky-50 text-sky-800 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-200 dark:border-sky-800/60",
     amber:
-      "bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60",
+      "bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-200 dark:border-amber-800/60",
     rose:
-      "bg-rose-50 text-rose-700 border border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800/60",
+      "bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-800/60",
   }[accent || "emerald"];
 
   return (
@@ -169,7 +178,7 @@ function ExecutiveMetricCell({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <span className="text-slate-500 dark:text-slate-400 font-semibold text-xs tracking-wider uppercase">
+          <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs tracking-wider uppercase">
             {label}
           </span>
           {infoTooltip && (
@@ -206,7 +215,7 @@ function ExecutiveMetricCell({
           <AnimatedMoney value={value} currency={currency} />
         </strong>
       </div>
-      <span className="text-slate-500 dark:text-slate-400 text-xs font-medium block leading-relaxed">
+      <span className="text-slate-600 dark:text-slate-400 text-xs font-medium block leading-relaxed">
         {detail}
       </span>
     </div>
@@ -657,13 +666,13 @@ export default function FintechDashboard() {
         />
 
         {!usingDemo && decisions.data?.length ? (
-          <section className="bg-white dark:bg-[#0B1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none" aria-label="مركز القرارات">
+          <section className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm" aria-label="مركز القرارات">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
               <div>
-                <p className="text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">مركز القرار</p>
+                <p className="text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">مركز القرار</p>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">أهم ثلاث إشارات فقط</h2>
               </div>
-              <Button variant="ghost" onClick={() => setLocation("/approvals")} className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer">
+              <Button variant="ghost" onClick={() => setLocation("/approvals")} className="text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer">
                 إدارة القرارات ←
               </Button>
             </div>
@@ -671,17 +680,17 @@ export default function FintechDashboard() {
               {decisions.data.slice(0, 3).map(item => (
                 <button
                   onClick={() => setLocation(item.actionPath)}
-                  className="bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 p-3.5 rounded-xl text-right transition-all flex flex-col justify-between cursor-pointer group"
+                  className="bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 p-3.5 rounded-xl text-right transition-all flex flex-col justify-between cursor-pointer group"
                   key={item.id}
                 >
-                  <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 w-fit mb-2">
+                  <span className="inline-block px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200 border border-amber-200 dark:border-amber-800/60 w-fit mb-2">
                     {item.priority}
                   </span>
                   <div>
                     <strong className="text-slate-900 dark:text-white text-sm font-semibold block group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
                       {item.title}
                     </strong>
-                    <p className="text-slate-500 dark:text-slate-400 font-medium text-xs mt-1">{item.detail}</p>
+                    <p className="text-slate-600 dark:text-slate-400 font-medium text-xs mt-1">{item.detail}</p>
                   </div>
                   {item.amount && (
                     <b className="font-mono font-bold text-slate-900 dark:text-white text-sm mt-2 block" dir="ltr">
@@ -695,7 +704,7 @@ export default function FintechDashboard() {
         ) : null}
 
         <motion.section
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none overflow-hidden mb-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden mb-6"
           initial={reduceMotion ? false : { opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.42, delay: 0.05 }}
@@ -712,15 +721,15 @@ export default function FintechDashboard() {
                 <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                   <span
                     className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10.5px] font-bold font-mono border ${live.netWorthDelta.isPositive
-                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60"
-                        : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60"
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800/60"
+                        : "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-200 dark:border-rose-800/60"
                       }`}
                   >
                     <span>{live.netWorthDelta.isPositive ? "▲ +" : "▼ -"}</span>
                     <span>{currency} {formatMoney(live.netWorthDelta.absolute, currency, 2)}</span>
                     <span>({live.netWorthDelta.isPositive ? "+" : "-"}{live.netWorthDelta.percentage}%)</span>
                   </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">عن الإغلاق السابق</span>
+                  <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">عن الإغلاق السابق</span>
                 </div>
               ) : (
                 "مُقوّم بعملة الأساس"
@@ -728,7 +737,7 @@ export default function FintechDashboard() {
             }
             accent="indigo"
             isPriority={true}
-            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
+            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200 dark:border-slate-800"
           />
           <ExecutiveMetricCell
             icon={WalletCards}
@@ -751,15 +760,15 @@ export default function FintechDashboard() {
             detail={
               !usingDemo && live?.unsettledCashBase && Number(live.unsettledCashBase) > 0 ? (
                 <div className="text-[11px] leading-tight space-y-0.5 mt-0.5">
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300">
+                  <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
                     <span>سيولة حرة:</span>
-                    <b className="font-mono text-emerald-600 dark:text-emerald-400">
+                    <b className="font-mono text-emerald-800 dark:text-emerald-400 font-bold">
                       {formatMoney(live.freeLiquidityBase ?? liquidBalance, currency, 2)}
                     </b>
                   </div>
-                  <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 text-[10.5px]">
+                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 text-[10.5px]">
                     <span>معلّق تسوية T+2:</span>
-                    <b className="font-mono text-amber-600 dark:text-amber-400">
+                    <b className="font-mono text-amber-800 dark:text-amber-400 font-bold">
                       {formatMoney(live.unsettledCashBase, currency, 2)}
                     </b>
                   </div>
@@ -769,7 +778,7 @@ export default function FintechDashboard() {
               )
             }
             accent="emerald"
-            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
+            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200 dark:border-slate-800"
           />
           <ExecutiveMetricCell
             icon={BarChart3}
@@ -783,7 +792,7 @@ export default function FintechDashboard() {
               </>
             }
             accent="sky"
-            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80"
+            className="border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200 dark:border-slate-800"
           />
           <ExecutiveMetricCell
             icon={BadgeDollarSign}
@@ -799,12 +808,12 @@ export default function FintechDashboard() {
         <RetailSignalsWidget />
 
         {!usingDemo && marketOverview.data?.entries.length ? (
-          <section className="bg-white dark:bg-[#0B1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none" aria-label="مراقبة السوق">
+          <section className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm" aria-label="مراقبة السوق">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="fintech-overline m-0">المحفظة وسوق المال</p>
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+                  <p className="text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wider m-0">المحفظة وسوق المال</p>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
                     <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     EGX & Mutual Funds Live Feed
                   </span>
@@ -812,7 +821,7 @@ export default function FintechDashboard() {
                 <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mt-1">
                   أبرز تحركات السوق ومراكز المحفظة
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
                   ملخص تنفيذي لأهم المراكز الاستثمارية المتحركة بالبورصة وصناديق الاستثمار مع حساب الأرباح غير المحققة.
                 </p>
               </div>
@@ -860,38 +869,38 @@ export default function FintechDashboard() {
                         <div
                           key={item.instrumentId}
                           onClick={() => setLocation("/investments")}
-                          className="bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 rounded-xl p-4 flex flex-col justify-between hover:border-amber-500/40 transition-all cursor-pointer group"
+                          className="bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between hover:border-amber-500/40 transition-all cursor-pointer group"
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1 mb-2">
-                              <span className="font-mono font-bold text-xs text-slate-900 dark:text-white group-hover:text-amber-400 transition-colors">
+                              <span className="font-mono font-bold text-xs text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                                 {item.symbol || item.name}
                               </span>
                               <div className="flex items-center gap-1">
                                 {isOwned && (
-                                  <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                  <span className="bg-emerald-50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-[10px] font-bold px-1.5 py-0.5 rounded">
                                     مملوك
                                   </span>
                                 )}
-                                <span className="text-[10px] text-slate-400 font-medium">
+                                <span className="text-[10px] text-slate-600 dark:text-slate-400 font-medium">
                                   {item.assetType === "equity" ? "سهم" : item.assetType === "fund" ? "صندوق" : "ذهب"}
                                 </span>
                               </div>
                             </div>
-                            <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300 line-clamp-1 mb-3">
+                            <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-200 line-clamp-1 mb-3">
                               {item.name}
                             </h3>
                           </div>
 
-                          <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 space-y-1.5">
+                          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1.5">
                             <div className="flex items-baseline justify-between">
-                              <span className="text-[11px] text-slate-400">السعر:</span>
+                              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">السعر:</span>
                               <div className="flex items-center gap-1.5">
                                 <b className="font-mono text-sm font-bold text-slate-900 dark:text-white" dir="ltr">
                                   {formatMoney(item.price, item.currency, 2)}
                                 </b>
                                 <span
-                                  className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800/70 dark:text-slate-300"
+                                  className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                                 >
                                   {item.quoteStatus === "live" ? "مباشر" : "مسجل"}
                                 </span>
@@ -899,13 +908,13 @@ export default function FintechDashboard() {
                             </div>
 
                             {isOwned && pos && (
-                              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-dashed border-slate-200/60 dark:border-slate-800/60">
-                                <span className="text-slate-500">ربح غير محقق:</span>
+                              <div className="flex items-center justify-between text-[11px] pt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
+                                <span className="text-slate-600 dark:text-slate-400 font-medium">ربح غير محقق:</span>
                                 <span
                                   className={`font-mono font-bold ${
                                     Number(pos.baseUnrealizedPnl || 0) >= 0
-                                      ? "text-emerald-600 dark:text-emerald-400"
-                                      : "text-rose-600 dark:text-rose-400"
+                                      ? "text-emerald-800 dark:text-emerald-300"
+                                      : "text-rose-800 dark:text-rose-300"
                                   }`}
                                   dir="ltr"
                                 >
@@ -920,7 +929,7 @@ export default function FintechDashboard() {
                     })}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-800 rounded-xl text-xs text-slate-400">
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-50/70 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-400">
                     <div className="flex items-center gap-2">
                       <span className="size-2 rounded-full bg-emerald-500" />
                       <span>{allEntries.length} أصل مالي مراقب • {totalOwned} مركز استثماري نشط بمحفظتك</span>
@@ -929,7 +938,7 @@ export default function FintechDashboard() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setLocation("/investments")}
-                      className="text-xs font-bold text-amber-500 hover:text-amber-400 h-auto p-0 cursor-pointer"
+                      className="text-xs font-bold text-amber-800 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 h-auto p-0 cursor-pointer"
                     >
                       إدارة كافة الأصول الاستثمارية والأسعار اللحظية ←
                     </Button>
@@ -981,7 +990,7 @@ export default function FintechDashboard() {
             </Suspense>
             <section className="fintech-content-grid fintech-lower-grid">
               <motion.article
-                className="bg-white dark:bg-[#0B1222] border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none rounded-2xl p-5 sm:p-6 flex flex-col justify-between h-full"
+                className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl p-5 sm:p-6 flex flex-col justify-between h-full"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.26 }}
@@ -991,7 +1000,7 @@ export default function FintechDashboard() {
                     <h2 className="text-base font-bold text-slate-900 dark:text-white">
                       آخر ما تحرك في المساحة
                     </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
                       أحدث العمليات النقدية والتحويلات المسجلة
                     </p>
                   </div>
@@ -1019,15 +1028,15 @@ export default function FintechDashboard() {
                             {/* Right Side (Transaction Details in RTL) */}
                             <div className="flex items-center gap-3 min-w-0">
                               {isTransfer ? (
-                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 flex items-center justify-center shrink-0">
                                   <ArrowLeftRight className="size-4" />
                                 </div>
                               ) : isOutflow ? (
-                                <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/60 text-rose-700 dark:text-rose-400 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-800 dark:text-rose-400 flex items-center justify-center shrink-0">
                                   <ArrowUpRight className="size-4" />
                                 </div>
                               ) : (
-                                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-400 flex items-center justify-center shrink-0">
                                   <ArrowDownLeft className="size-4" />
                                 </div>
                               )}
@@ -1035,14 +1044,14 @@ export default function FintechDashboard() {
                                 <strong className="text-slate-900 dark:text-white font-semibold text-sm truncate block">
                                   {event.title}
                                 </strong>
-                                <span className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 block font-normal">
+                                <span className="text-slate-600 dark:text-slate-400 text-xs mt-0.5 block font-medium">
                                   {event.date}
                                 </span>
                               </div>
                             </div>
 
                             {/* Subtle track line connecting details and amount on desktop for comfortable visual tracking */}
-                            <div className="hidden sm:block flex-1 mx-4 border-b border-dashed border-slate-200/60 dark:border-slate-800/60 group-hover:border-slate-300 dark:group-hover:border-slate-700 transition-colors" />
+                            <div className="hidden sm:block flex-1 mx-4 border-b border-dashed border-slate-200 dark:border-slate-800 group-hover:border-slate-300 dark:group-hover:border-slate-700 transition-colors" />
 
                             {/* Left Side (Amount in RTL) */}
                             <div className="shrink-0 text-left" dir="ltr">
@@ -1052,7 +1061,7 @@ export default function FintechDashboard() {
                                     ? "font-mono font-bold text-slate-700 dark:text-slate-300 tabular-nums text-xs"
                                     : isOutflow
                                       ? "font-mono font-bold text-slate-900 dark:text-white tabular-nums text-xs"
-                                      : "font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums text-xs"
+                                      : "font-mono font-bold text-emerald-800 dark:text-emerald-400 tabular-nums text-xs"
                                 }
                               >
                                 {isTransfer ? "↔ " : isOutflow ? "- " : "+ "}
@@ -1078,7 +1087,7 @@ export default function FintechDashboard() {
                 )}
               </motion.article>
               <motion.article
-                className="bg-white dark:bg-[#0B1222] border border-slate-200/80 dark:border-slate-800 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none rounded-2xl p-5 sm:p-6 flex flex-col justify-between h-full"
+                className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl p-5 sm:p-6 flex flex-col justify-between h-full"
                 initial={reduceMotion ? false : { opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.42, delay: 0.31 }}
@@ -1088,7 +1097,7 @@ export default function FintechDashboard() {
                     <h2 className="text-base font-bold text-slate-900 dark:text-white">
                       نظرة على السداد
                     </h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
                       موقف الالتزامات والأقساط وخدمة الدين
                     </p>
                   </div>
@@ -1126,7 +1135,7 @@ export default function FintechDashboard() {
                             <strong className="text-xs font-bold text-slate-900 dark:text-white block">
                               {debt.name}
                             </strong>
-                            <small className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block mt-0.5">
+                            <small className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mt-0.5">
                               دفعة دنيا <SensitiveValue>{formatMoney(debt.payment, debt.currency, 0)}</SensitiveValue> شهرياً
                             </small>
                           </div>
@@ -1134,7 +1143,7 @@ export default function FintechDashboard() {
                             <b className="font-mono font-bold text-slate-900 dark:text-white text-sm">
                               <SensitiveValue>{formatMoney(debt.outstanding, debt.currency, 0)}</SensitiveValue>
                             </b>
-                            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block mt-0.5" dir="rtl">
+                            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mt-0.5" dir="rtl">
                               {debt.rate}% سنوياً
                             </span>
                           </div>
@@ -1145,15 +1154,15 @@ export default function FintechDashboard() {
                 ) : (
                   <div className="flex flex-col justify-between flex-1 py-1 space-y-3">
                     {/* Sleek Status Badge */}
-                    <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60">
+                    <div className="flex items-center gap-3 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60">
                       <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
                         <ShieldCheck className="size-4" />
                       </div>
                       <div className="min-w-0">
-                        <strong className="text-slate-900 dark:text-white font-semibold text-sm block truncate">
+                        <strong className="text-slate-900 dark:text-white font-bold text-sm block truncate">
                           سجل التزامات آمن وخالٍ من الديون
                         </strong>
-                        <span className="text-slate-500 dark:text-slate-400 text-xs block mt-0.5">
+                        <span className="text-slate-600 dark:text-slate-400 text-xs block mt-0.5 font-medium">
                           لا توجد قروض، بطاقات أو التزامات تمويلية مستحقة السداد.
                         </span>
                       </div>
@@ -1161,36 +1170,36 @@ export default function FintechDashboard() {
 
                     {/* Institutional 3-Tile Metric Grid */}
                     <div className="grid grid-cols-3 gap-2.5 text-center">
-                      <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200/70 dark:border-slate-800/80 rounded-xl p-3 text-center">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium text-xs block">
+                      <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
+                        <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs block">
                           إجمالي الالتزامات
                         </span>
                         <strong className="text-slate-900 dark:text-white font-bold font-mono text-base mt-1 block">
                           0 {currency}
                         </strong>
                       </div>
-                      <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200/70 dark:border-slate-800/80 rounded-xl p-3 text-center">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium text-xs block">
+                      <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
+                        <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs block">
                           عبء خدمة الدين
                         </span>
                         <strong className="text-slate-900 dark:text-white font-bold font-mono text-base mt-1 block">
                           0.0%
                         </strong>
                       </div>
-                      <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200/70 dark:border-slate-800/80 rounded-xl p-3 text-center">
-                        <span className="text-slate-500 dark:text-slate-400 font-medium text-xs block">
+                      <div className="bg-slate-50 dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-center">
+                        <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs block">
                           التصنيف الائتماني
                         </span>
-                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60 font-bold text-xs px-2.5 py-1 rounded-lg inline-block mt-1">
+                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-200 dark:border-emerald-800/60 font-bold text-xs px-2.5 py-1 rounded-lg inline-block mt-1">
                           ممتاز AAA
                         </span>
                       </div>
                     </div>
 
                     {/* Operational Solvency Bottom Indicator */}
-                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/80 dark:bg-[#0E1420] border border-slate-200/70 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300">
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
                       <span className="font-semibold">الملاءة المالية التشغيلية:</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <span className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5">
                         <span className="inline-block size-2 rounded-full bg-emerald-500" />
                         تغطية سيولة تامة 100%
                       </span>
@@ -1210,7 +1219,7 @@ export default function FintechDashboard() {
                   <h2 className="text-base font-bold text-slate-900 dark:text-white">
                     ملخص مواقفك المالية
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
                     توزيع الأرصدة والسيولة عبر الحسابات المسجلة
                   </p>
                 </div>
@@ -1230,17 +1239,17 @@ export default function FintechDashboard() {
                   <button
                     onClick={() => setLocation("/accounts")}
                     key={account.id}
-                    className="bg-white dark:bg-[#0E1420] border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] dark:shadow-none hover:border-slate-300 dark:hover:border-slate-700 transition-all text-right group flex flex-col justify-between min-h-[120px] w-full cursor-pointer"
+                    className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all text-right group flex flex-col justify-between min-h-[120px] w-full cursor-pointer"
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                         {account.kind}
                       </span>
                       <ArrowUpRight className="size-3.5 text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors shrink-0" />
                     </div>
 
                     <strong
-                      className="text-slate-900 dark:text-white font-semibold text-sm leading-snug line-clamp-2 block mt-2.5 w-full break-words"
+                      className="text-slate-900 dark:text-white font-bold text-sm leading-snug line-clamp-2 block mt-2.5 w-full break-words"
                       title={account.name}
                     >
                       {account.name}
@@ -1283,7 +1292,7 @@ export default function FintechDashboard() {
 
             <div className="space-y-4 py-2">
               {selectedTriggerItem?.currentPrice !== null && (
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 text-xs">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-xs">
                   <span className="text-slate-600 dark:text-slate-400">السعر المرجعي الحالي:</span>
                   <strong className="font-mono font-bold text-slate-900 dark:text-white" dir="ltr">
                     {formatMoney(selectedTriggerItem?.currentPrice ?? 0, selectedTriggerItem?.currency || "EGP", 2)}
@@ -1538,13 +1547,13 @@ export default function FintechDashboard() {
 
         {/* Debt Paydown Modal */}
         <Dialog open={debtPaymentModalOpen} onOpenChange={setDebtPaymentModalOpen}>
-          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-[#0B1222] border border-slate-200 dark:border-slate-800 text-right" dir="rtl">
+          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 text-right" dir="rtl">
             <DialogHeader className="text-right space-y-1">
               <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <BadgeDollarSign className="size-5 text-rose-500" />
                 تسجيل سداد دفعة دين / التزام مالي
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+              <DialogDescription className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                 قيد محاسبي مزدوج يخفض رصيد الدين القائم ويسحب الدفعة من حسابك النقدي أو البنكي.
               </DialogDescription>
             </DialogHeader>
