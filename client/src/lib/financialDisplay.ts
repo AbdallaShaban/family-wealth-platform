@@ -78,3 +78,33 @@ export function formatShortMonth(date: Date | number | string | null | undefined
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return months[d.getMonth()] || "";
 }
+
+/**
+ * Formats a timestamp into explicit Cairo Local Time (Africa/Cairo / GMT+3)
+ * Example output: "22 سبتمبر 2026 - 02:45 م"
+ */
+export function formatCairoDateTime(timestamp: Date | number | string | null | undefined): string {
+  const d = parseValidDate(timestamp);
+  if (!d) return "—";
+  try {
+    const formatter = new Intl.DateTimeFormat("ar-EG", {
+      timeZone: "Africa/Cairo",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const parts = formatter.formatToParts(d);
+    const day = parts.find(p => p.type === "day")?.value;
+    const month = parts.find(p => p.type === "month")?.value;
+    const year = parts.find(p => p.type === "year")?.value;
+    const hour = parts.find(p => p.type === "hour")?.value;
+    const minute = parts.find(p => p.type === "minute")?.value;
+    const dayPeriod = parts.find(p => p.type === "dayPeriod")?.value || "";
+    return `${day} ${month} ${year} - ${hour}:${minute} ${dayPeriod}`.trim();
+  } catch {
+    return d.toLocaleString("ar-EG", { timeZone: "Africa/Cairo" });
+  }
+}

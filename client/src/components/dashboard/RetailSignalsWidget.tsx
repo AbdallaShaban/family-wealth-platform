@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -17,11 +17,33 @@ import {
   CheckCircle2,
   Scale,
   Zap,
+  Copy,
+  Check,
+  PlusCircle,
 } from "lucide-react";
+import { toast } from "sonner";
+import { LogExternalTradeModal } from "@/components/trading/LogExternalTradeModal";
 
 export default function RetailSignalsWidget() {
   const [, setLocation] = useLocation();
   const reduceMotion = useReducedMotion();
+  const [tradeModalOpen, setTradeModalOpen] = useState(false);
+  const [tradeAsset, setTradeAsset] = useState<{ symbol: string; name: string; currentPrice?: number } | null>(null);
+  const [copiedTicker, setCopiedTicker] = useState<string | null>(null);
+
+  const copyTradeCard = (signal: any, displayName: string) => {
+    const text = `📋 بطاقة صفقة استرشادية: ${displayName} (${signal.ticker})
+• الإجراء المقترح: ${signal.actionAr || "تجميع"} (ثقة: ${signal.confidenceScore}%)
+• السعر الاسترشادي: ${signal.currentPrice} ج.م
+• نطاق الدخول: ${signal.entryZone.min.toFixed(2)} - ${signal.entryZone.max.toFixed(2)} ج.م
+• الهدف الأول (TP1): ${signal.targets.t1.toFixed(2)} ج.م
+• وقف الخسارة (SL): ${signal.stopLoss.toFixed(2)} ج.م
+• نسبة العائد للمخاطرة: 1 : ${signal.riskRewardRatio}`;
+    navigator.clipboard.writeText(text);
+    setCopiedTicker(signal.ticker);
+    toast.success(`تم نسخ بطاقة الصفقة لـ ${displayName} إلى الحافظة بنجاح`);
+    setTimeout(() => setCopiedTicker(null), 2500);
+  };
 
   // Query live top 3 high-conviction quantitative signals
   const {
@@ -263,27 +285,67 @@ export default function RetailSignalsWidget() {
                     </div>
                   </div>
 
-                  {/* Dual Quick Action Buttons */}
-                  <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
-                    <Button
-                      onClick={() => setLocation(quantUrl)}
-                      variant="outline"
-                      size="sm"
-                      className="w-full text-xs font-bold h-8 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
-                    >
-                      <BarChart2 className="size-3 ml-1 text-slate-500" />
-                      <span>تحليل معمق</span>
-                    </Button>
+                  {/* Action Buttons Matrix */}
+                  <div className="space-y-1.5 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => setLocation(quantUrl)}
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs font-bold h-8 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-pointer"
+                      >
+                        <BarChart2 className="size-3 ml-1 text-slate-500" />
+                        <span>تحليل معمق</span>
+                      </Button>
 
-                    <Button
-                      onClick={() => setLocation(swingUrl)}
-                      size="sm"
-                      className="w-full text-xs font-bold h-8 bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 text-white shadow-xs cursor-pointer"
-                    >
-                      <Zap className="size-3 ml-1" />
-                      <span>تنفيذ سوينج</span>
-                      <ArrowUpRight className="size-3 rotate-180 mr-0.5" />
-                    </Button>
+                      <Button
+                        onClick={() => setLocation(swingUrl)}
+                        size="sm"
+                        className="w-full text-xs font-bold h-8 bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 text-white shadow-xs cursor-pointer"
+                      >
+                        <Zap className="size-3 ml-1" />
+                        <span>تنفيذ سوينج</span>
+                        <ArrowUpRight className="size-3 rotate-180 mr-0.5" />
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        onClick={() => copyTradeCard(signal, displayName)}
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-[11px] font-semibold h-7 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      >
+                        {copiedTicker === signal.ticker ? (
+                          <>
+                            <Check className="size-3 ml-1 text-emerald-500" />
+                            <span className="text-emerald-500">تم النسخ</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="size-3 ml-1 text-slate-400" />
+                            <span>نسخ بطاقة الصفقة</span>
+                          </>
+                        )}
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          setTradeAsset({
+                            symbol: signal.ticker,
+                            name: displayName,
+                            currentPrice: signal.currentPrice,
+                          });
+                          setTradeModalOpen(true);
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="w-full text-[11px] font-semibold h-7 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
+                      >
+                        <PlusCircle className="size-3 ml-1 text-amber-500" />
+                        <span>تسجيل صفقة خارجية</span>
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -291,6 +353,16 @@ export default function RetailSignalsWidget() {
           </div>
         </div>
       )}
+
+      {/* External Trade Modal */}
+      <LogExternalTradeModal
+        open={tradeModalOpen}
+        onOpenChange={setTradeModalOpen}
+        defaultTicker={tradeAsset?.symbol}
+        defaultInstrumentName={tradeAsset?.name}
+        defaultPrice={tradeAsset?.currentPrice}
+      />
     </section>
   );
 }
+

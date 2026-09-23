@@ -313,9 +313,11 @@ export const quantRouter = router({
    * 2.5 Search Master EGX & Mutual Funds Catalog (Live Autocomplete)
    */
   searchCatalog: protectedProcedure
-    .input(z.object({ query: z.string().default("") }))
+    .input(z.object({ query: z.string().default(""), limit: z.number().optional().default(30) }).optional())
     .query(async ({ input }) => {
-      return searchEgxCatalog(input.query, 10);
+      const q = input?.query ?? "";
+      const limit = input?.limit ?? 30;
+      return searchEgxCatalog(q, limit);
     }),
 
 

@@ -76,24 +76,29 @@ export default function FintechCharts({
   const hoveredPercent =
     hoveredItem && pieTotal ? Math.round((hoveredItem.value / pieTotal) * 100) : 0;
 
-  // Generate real recent 6 months for clean baseline canvas when cashFlow is empty
-  const defaultRecentMonths = ["Apr", "May", "Jun", "Jul", "Aug", "Sep"];
-  const displayCashFlow = cashFlow.length
+  const hasCashFlowData = cashFlow.length > 0 && cashFlow.some(c => c.income > 0 || c.expense > 0);
+  const defaultRecentMonths = ["أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر"];
+  const displayCashFlow = hasCashFlowData
     ? cashFlow
     : defaultRecentMonths.map((month) => ({ month, income: 0, expense: 0 }));
 
   return (
     <section className="fintech-content-grid">
-      {/* 1. Donut Chart: مواقع القيمة المقيمة */}
-      <article className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full">
+      {/* 1. Donut Chart: توزيع السيولة النقدية والمصرفية */}
+      <article className="bg-[#0B1222] border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between h-full text-slate-100">
         <div>
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 mb-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
             <div>
-              <h2 className="text-slate-900 dark:text-white font-bold text-base">
-                مواقع القيمة المقيمة
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                توزيع الأصول والمراكز الاستثمارية القائمة
+              <div className="flex items-center gap-2">
+                <h2 className="text-white font-extrabold text-base">
+                  توزيع السيولة النقدية والمصرفية
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  الحسابات الحرة والمحافظ
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">
+                توزيع الأرصدة المصرفية السائلة والمحافظ الإلكترونية (بدون احتساب الأسهم لمنع الازدواج)
               </p>
             </div>
           </div>
@@ -133,24 +138,24 @@ export default function FintechCharts({
               {hoveredItem ? (
                 <div className="flex flex-col items-center justify-center px-2 max-w-[130px] animate-in fade-in zoom-in-95 duration-150">
                   <span
-                    className="text-slate-500 dark:text-slate-400 text-xs block mb-0.5 truncate max-w-[124px]"
+                    className="text-slate-400 text-xs block mb-0.5 truncate max-w-[124px]"
                     title={hoveredItem.name}
                   >
                     {hoveredItem.name}
                   </span>
-                  <strong className="font-bold font-mono text-xl text-slate-900 dark:text-white mt-0.5 block tabular-nums">
+                  <strong className="font-bold font-mono text-xl text-white mt-0.5 block tabular-nums">
                     <SensitiveValue>{formatMoney(hoveredItem.value, currency, 0)}</SensitiveValue>
                   </strong>
-                  <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  <span className="text-xs font-bold font-mono text-emerald-400 mt-0.5">
                     {hoveredPercent}%
                   </span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center px-2 max-w-[130px] animate-in fade-in duration-150">
-                  <span className="text-slate-500 dark:text-slate-400 text-xs block mb-0.5">
-                    إجمالي الأصول
+                  <span className="text-slate-400 text-xs block mb-0.5 font-medium">
+                    إجمالي السيولة النقدية
                   </span>
-                  <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl tabular-nums mt-0.5 block">
+                  <strong className="text-white font-extrabold font-mono text-xl tabular-nums mt-0.5 block">
                     <SensitiveValue>{formatMoney(pieTotal, currency, 0)}</SensitiveValue>
                   </strong>
                 </div>
@@ -159,8 +164,8 @@ export default function FintechCharts({
           </div>
         </div>
 
-        {/* Organized 2-Column Grid Legend to prevent vertical stacking & cutoff */}
-        <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Organized 2-Column Grid Legend */}
+        <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-2">
           {allocation.slice(0, 8).map((item, index) => {
             const pct = pieTotal ? Math.round((item.value / pieTotal) * 100) : 0;
             const isHovered = hoveredIndex === index;
@@ -171,18 +176,18 @@ export default function FintechCharts({
                 onMouseLeave={() => setHoveredIndex(null)}
                 className={`group flex items-center justify-between py-2 px-2.5 rounded-xl transition-all duration-150 cursor-pointer border ${
                   isHovered
-                    ? "bg-slate-100/90 dark:bg-slate-800/90 border-slate-300 dark:border-slate-700 shadow-xs"
-                    : "bg-slate-50/50 dark:bg-slate-900/30 hover:bg-slate-100/60 dark:hover:bg-slate-800/40 border-slate-200/60 dark:border-slate-800/60"
+                    ? "bg-slate-800/90 border-slate-700 shadow-xs"
+                    : "bg-slate-900/60 hover:bg-slate-800/60 border-slate-800"
                 }`}
               >
                 {/* Right side (RTL): Color Dot + Account Name */}
                 <div className="flex items-center gap-2 min-w-0 flex-1 ml-2">
                   <span
-                    className="size-2.5 rounded-full shrink-0 ring-1 ring-slate-200/60 dark:ring-slate-700"
+                    className="size-2.5 rounded-full shrink-0 ring-1 ring-slate-700"
                     style={{ backgroundColor: item.color }}
                   />
                   <span
-                    className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate"
+                    className="text-xs font-semibold text-slate-200 truncate"
                     title={item.name}
                   >
                     {item.name}
@@ -191,10 +196,10 @@ export default function FintechCharts({
 
                 {/* Left side (RTL): Percentage + Formatted Amount */}
                 <div className="flex items-center gap-2 shrink-0 text-left" dir="ltr">
-                  <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
                     {pct}%
                   </span>
-                  <span className="text-xs font-bold font-mono text-slate-900 dark:text-white tabular-nums tracking-tight">
+                  <span className="text-xs font-bold font-mono text-white tabular-nums tracking-tight">
                     <SensitiveValue>{formatMoney(item.value, currency, 0)}</SensitiveValue>
                   </span>
                 </div>
@@ -205,103 +210,103 @@ export default function FintechCharts({
       </article>
 
       {/* 2. Flow Chart: الدخل مقابل المصروفات */}
-      <article className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs flex flex-col justify-between h-full">
+      <article className="bg-[#0B1222] border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between h-full text-slate-100">
         <div>
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80 mb-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
             <div>
-              <h2 className="text-slate-900 dark:text-white font-bold text-base">
+              <h2 className="text-white font-extrabold text-base">
                 الدخل مقابل المصروفات
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              <p className="text-xs text-slate-400 font-medium mt-0.5">
                 مقارنة الإيرادات والنفقات النقدية الدورية
               </p>
             </div>
+            {hasCashFlowData && (
+              <button
+                type="button"
+                onClick={onShowLedger}
+                className="text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                دفتر الأستاذ ←
+              </button>
+            )}
           </div>
 
           <div className="relative min-h-[280px] h-[280px] mt-2 w-full flex-1 flex flex-col justify-center">
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart
-                data={displayCashFlow}
-                margin={{ top: 12, right: 4, left: -24, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="incomeGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop
-                      offset="0%"
-                      stopColor="#11a889"
-                      stopOpacity={cashFlow.length ? 0.35 : 0.05}
-                    />
-                    <stop offset="100%" stopColor="#11a889" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="expenseGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop
-                      offset="0%"
-                      stopColor="#e46b7a"
-                      stopOpacity={cashFlow.length ? 0.24 : 0.05}
-                    />
-                    <stop offset="100%" stopColor="#e46b7a" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  stroke="#E2E8F0"
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  className="dark:opacity-20"
-                />
-                <XAxis
-                  dataKey="month"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 11 }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "#94a3b8", fontSize: 11 }}
-                  tickFormatter={(value) =>
-                    value >= 1000 ? `${Math.round(value / 1000)}K` : String(value)
-                  }
-                  domain={cashFlow.length ? [0, "auto"] : [0, 10000]}
-                />
-                {cashFlow.length ? (
+            {hasCashFlowData ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <AreaChart
+                  data={displayCashFlow}
+                  margin={{ top: 12, right: 4, left: -24, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="incomeGradient" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#10B981" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="expenseGradient" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#F43F5E" stopOpacity={0.3} />
+                      <stop offset="100%" stopColor="#F43F5E" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    stroke="#1E293B"
+                    strokeDasharray="3 3"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#64748B", fontSize: 11 }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "#64748B", fontSize: 11 }}
+                    tickFormatter={(value) =>
+                      value >= 1000 ? `${Math.round(value / 1000)}K` : String(value)
+                    }
+                    domain={[0, "auto"]}
+                  />
                   <Tooltip content={<ChartTooltip currency={currency} />} />
-                ) : null}
-                <Area
-                  type="monotone"
-                  dataKey="income"
-                  name="الدخل"
-                  stroke="#11a889"
-                  strokeWidth={cashFlow.length ? 3 : 1.5}
-                  strokeDasharray={cashFlow.length ? undefined : "4 4"}
-                  strokeOpacity={cashFlow.length ? 1 : 0.4}
-                  fill="url(#incomeGradient)"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="expense"
-                  name="المصروفات"
-                  stroke="#e46b7a"
-                  strokeWidth={cashFlow.length ? 3 : 1.5}
-                  strokeDasharray={cashFlow.length ? undefined : "4 4"}
-                  strokeOpacity={cashFlow.length ? 1 : 0.4}
-                  fill="url(#expenseGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-
-            {/* Minimal Institutional Empty State */}
-            {!cashFlow.length && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none p-4 text-center">
-                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium">
-                  لا توجد تدفقات نقدية مسجلة لهذه الفترة
+                  <Area
+                    type="monotone"
+                    dataKey="income"
+                    name="الدخل"
+                    stroke="#10B981"
+                    strokeWidth={2.5}
+                    fill="url(#incomeGradient)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expense"
+                    name="المصروفات"
+                    stroke="#F43F5E"
+                    strokeWidth={2.5}
+                    fill="url(#expenseGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              /* Sleek Polish Zero-State Prompt */
+              <div className="h-full flex flex-col items-center justify-center p-6 text-center rounded-xl bg-[#0F172A]/70 border border-dashed border-slate-800">
+                <div className="size-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
+                  <Plus className="size-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-200">
+                  بانتظار تسجيل حركات الدخل والمصروفات
+                </h3>
+                <p className="text-xs text-slate-400 max-w-sm mt-1 leading-relaxed font-medium">
+                  سجل عمليات الإيداع والصرف أو استورد كشف الحساب البنكي لرسم مقارنة التدفقات النقدية تلقائياً.
                 </p>
                 <button
                   type="button"
                   onClick={onShowLedger}
-                  className="pointer-events-auto inline-flex items-center gap-1.5 bg-white dark:bg-[#0E1420] border border-slate-200/90 dark:border-slate-800/80 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 text-xs font-semibold px-4 py-2 rounded-xl shadow-xs mt-2 transition-all cursor-pointer"
+                  className="mt-4 inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all cursor-pointer"
                 >
-                  <Plus className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>تسجيل أول حركة</span>
+                  <Plus className="size-3.5" />
+                  <span>تسجيل حركة نقدية الآن</span>
                 </button>
               </div>
             )}

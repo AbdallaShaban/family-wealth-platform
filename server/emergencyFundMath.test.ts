@@ -24,4 +24,16 @@ describe("FAMILY emergency fund calculations", () => {
     expect(output.coverageMonths).toBeNull();
     expect(output.recommendation.status).toBe("plan_needed");
   });
+
+  it("returns null for coverageMonths if essential expenses are zero even if debt obligations exist", () => {
+    const output = calculateEmergencyFund({
+      liquidReserveBase: "5000",
+      essentialExpenseMonthlyBase: "0",
+      debtMinimumPaymentBase: "1000",
+      targetMonths: "3",
+      now: Date.UTC(2026, 0, 1),
+    });
+    expect(output.coverageMonths).toBeNull();
+  });
 });
+

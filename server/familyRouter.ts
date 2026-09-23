@@ -65,7 +65,7 @@ import Decimal from "decimal.js";
 import { buildImportRows, detectDuplicate, parseCsv, sha256, validateColumnMapping } from "./bankImportMath";
 import { canPostImportedRow, shouldKeepImportInReview } from "./bankImportWorkflow";
 import { isApprovalExecutable, requiresApproval, type ApprovalActionType } from "./approvalWorkflowMath";
-import { BENCHMARK_SYMBOLS, calculateGold24kGramEgp, checkQuoteSanity, fetchEgxOrYahooQuote, fetchYahooFxQuote } from "./marketData";
+import { BENCHMARK_SYMBOLS, calculateGold24kGramEgp, checkQuoteSanity, clearMubasherCache, fetchEgxOrYahooQuote, fetchYahooFxQuote } from "./marketData";
 import { storageGetSignedUrl, storagePut } from "./storage";
 import { decryptVaultValue, encryptVaultValue } from "./vaultCrypto";
 import { createBackupEnvelope } from "./backupSnapshot";
@@ -965,11 +965,23 @@ export const familyRouter = router({
       }),
 
     previewMarketPrices: protectedProcedure
-      .mutation(async ({ ctx }) => {
+      .input(
+        z
+          .object({
+            forceFresh: z.boolean().optional(),
+          })
+          .optional()
+      )
+      .mutation(async ({ ctx, input }) => {
         const family = await familyContext(ctx.user);
         assertRole(family, "editor");
         const db = await getDb();
         if (!db) throw notAvailable();
+
+        const forceFresh = input?.forceFresh ?? true;
+        if (forceFresh) {
+          clearMubasherCache();
+        }
 
         const instRows = await db
           .select()
@@ -1021,7 +1033,7 @@ export const familyRouter = router({
         for (const inst of instRows) {
           if (!inst.symbol) continue;
           try {
-            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency, undefined, inst.assetType, inst.name);
+            const quote = await fetchEgxOrYahooQuote(inst.symbol, inst.currency, undefined, inst.assetType, inst.name, forceFresh);
             const currentQuote = latestByInst.get(inst.id);
             const currentPriceNum = currentQuote?.price ? Number(currentQuote.price) : null;
             const fetchedPriceNum = Number(quote.price);
@@ -1033,13 +1045,23 @@ export const familyRouter = router({
               changePercent = Math.round(((fetchedPriceNum - currentPriceNum) / currentPriceNum) * 10000) / 100;
             }
 
-            const dateFormatted = new Date(quote.asOf).toLocaleDateString("ar-EG", {
+            const cairoDtf = new Intl.DateTimeFormat("ar-EG", {
+              timeZone: "Africa/Cairo",
               year: "numeric",
-              month: "short",
+              month: "long",
               day: "numeric",
               hour: "2-digit",
               minute: "2-digit",
+              hour12: true,
             });
+            const parts = cairoDtf.formatToParts(new Date(quote.asOf));
+            const day = parts.find((p) => p.type === "day")?.value;
+            const month = parts.find((p) => p.type === "month")?.value;
+            const year = parts.find((p) => p.type === "year")?.value;
+            const hour = parts.find((p) => p.type === "hour")?.value;
+            const minute = parts.find((p) => p.type === "minute")?.value;
+            const dayPeriod = parts.find((p) => p.type === "dayPeriod")?.value || "";
+            const dateFormatted = `${day} ${month} ${year} - ${hour}:${minute} ${dayPeriod}`.trim();
 
             previewList.push({
               instrumentId: inst.id,

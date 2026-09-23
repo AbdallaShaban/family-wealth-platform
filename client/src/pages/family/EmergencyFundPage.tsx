@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Umbrella, Loader2 } from "lucide-react";
+import { Umbrella, Loader2, AlertTriangle } from "lucide-react";
 
 export function EmergencyFundPage() {
   const utils = trpc.useUtils();
@@ -79,6 +79,18 @@ export function EmergencyFundPage() {
           <InlineError message={textError(summary.error)} />
         ) : (
           <>
+            {Number(summary.data?.essentialExpenseMonthlyBase ?? 0) <= 0 && (
+              <Card className="border-amber-500/40 bg-amber-500/10 dark:bg-amber-950/30">
+                <CardContent className="flex items-center gap-3 p-4 text-xs font-semibold text-amber-800 dark:text-amber-300">
+                  <AlertTriangle className="size-5 shrink-0 text-amber-500" />
+                  <div>
+                    <p className="font-bold text-sm text-amber-900 dark:text-amber-200">تنبيه: لم يتم رصد أو تصنيف أي مصروفات أساسية شهرية بعد</p>
+                    <p className="mt-0.5 text-slate-600 dark:text-slate-300">لحساب مدة تغطية واقعية وموثوقة لصندوق الطوارئ، يرجى تفعيل علامة "مصروف أساسي" على بنود وتصنيفات الإنفاق الأساسية أدناه أو تسجيل مصروفات فعلية.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Card>
                 <CardHeader className="pb-3">

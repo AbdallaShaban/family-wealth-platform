@@ -53,9 +53,14 @@ import {
   Trash2,
   ExternalLink,
   ArrowUpRight,
+  Search,
+  Copy,
+  Check,
+  PlusCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
+import { LogExternalTradeModal } from "@/components/trading/LogExternalTradeModal";
 
 export default function QuantitativeHubPage() {
   const [location, setLocation] = useLocation();
@@ -96,6 +101,45 @@ export default function QuantitativeHubPage() {
   }, [location]);
 
   const [targetProfile, setTargetProfile] = useState<"BALANCED" | "CONSERVATIVE" | "GROWTH">("BALANCED");
+  
+  // Search & External Trade State
+  const [catalogQuery, setCatalogQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isExternalTradeOpen, setIsExternalTradeOpen] = useState(false);
+  const [copiedTicker, setCopiedTicker] = useState<string | null>(null);
+
+  const catalogResults = trpc.quant.searchCatalog.useQuery(
+    { query: catalogQuery, limit: 20 },
+    { staleTime: 300_000 }
+  );
+
+  const handleSelectTicker = (ticker: string) => {
+    const formatted = ticker.toUpperCase();
+    setSelectedTicker(formatted);
+    setIsSearchOpen(false);
+    setCatalogQuery("");
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("ticker", formatted);
+      url.searchParams.set("tab", "signals");
+      window.history.replaceState(null, "", url.toString());
+    }
+  };
+
+  const copySignalCard = (signalData: any, displayName: string) => {
+    const text = `📋 بطاقة صفقة استرشادية: ${displayName} (${signalData.ticker})
+• الإجراء المقترح: ${signalData.actionAr || "تجميع"} (ثقة: ${signalData.confidenceScore}%)
+• السعر الاسترشادي: ${signalData.currentPrice} ج.م
+• نطاق الدخول: ${signalData.entryZone.min.toFixed(2)} - ${signalData.entryZone.max.toFixed(2)} ج.م
+• الهدف الأول (TP1): ${signalData.targets.t1.toFixed(2)} ج.م
+• الهدف الثاني (TP2): ${signalData.targets.t2.toFixed(2)} ج.م
+• وقف الخسارة (SL): ${signalData.stopLoss.toFixed(2)} ج.م
+• نسبة العائد للمخاطرة: 1 : ${signalData.riskRewardRatio}`;
+    navigator.clipboard.writeText(text);
+    setCopiedTicker(signalData.ticker);
+    toast.success(`تم نسخ بطاقة الصفقة لـ ${displayName} إلى الحافظة`);
+    setTimeout(() => setCopiedTicker(null), 2500);
+  };
   
   // Simulation Trade Modal
   const [isSimTradeOpen, setIsSimTradeOpen] = useState(false);
@@ -371,17 +415,70 @@ export default function QuantitativeHubPage() {
 
           {/* ================= TAB 1: ADVISORY SIGNALS ================= */}
           <TabsContent value="signals" className="space-y-6">
-            {/* Quick Symbol Selector with Mobile Smooth Horizontal Scroll */}
-            <div className="overflow-x-auto pb-1 scrollbar-none">
-              <div className="flex items-center gap-2 bg-slate-900/90 p-3 rounded-xl border border-slate-800 min-w-max">
-                <span className="text-xs font-bold text-slate-200 ml-2">اختر الأصل للتحليل الكمي:</span>
+            {/* Quick Symbol Selector & Search Combobox */}
+            <div className="bg-[#0B1222] p-4 rounded-2xl border border-slate-800 shadow-md space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="relative flex-1 max-w-lg">
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+                    <Input
+                      type="text"
+                      placeholder="ابحث في كافة أسهم البورصة وصناديق الاستثمار (المنصورة، السويدي، بلتون، AZG...)"
+                      value={catalogQuery}
+                      onChange={(e) => {
+                        setCatalogQuery(e.target.value);
+                        setIsSearchOpen(true);
+                      }}
+                      onFocus={() => setIsSearchOpen(true)}
+                      className="pr-9 pl-3 h-10 text-xs bg-slate-900 border-slate-700 text-white placeholder:text-slate-400 rounded-xl focus:border-amber-500 shadow-inner"
+                    />
+                  </div>
+
+                  {/* Autocomplete Dropdown */}
+                  {isSearchOpen && catalogResults.data && catalogResults.data.length > 0 && (
+                    <div className="absolute z-50 mt-1.5 w-full bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl max-h-64 overflow-y-auto p-1.5 space-y-1">
+                      {catalogResults.data.map((item) => (
+                        <button
+                          key={item.ticker}
+                          type="button"
+                          onClick={() => handleSelectTicker(item.ticker)}
+                          className="w-full text-right p-2.5 rounded-lg hover:bg-slate-800 flex items-center justify-between text-xs transition-colors cursor-pointer"
+                        >
+                          <div>
+                            <span className="font-bold text-white block">{item.nameAr}</span>
+                            <span className="text-[10px] text-slate-400">{item.nameEn} • {item.sector}</span>
+                          </div>
+                          <Badge variant="outline" className="font-mono text-[10px] border-slate-700 text-amber-400 font-bold">
+                            {item.symbol}
+                          </Badge>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-slate-300">
+                  <span className="text-slate-400 font-medium">الأصل المختار:</span>
+                  <Badge className="bg-amber-500 text-slate-950 font-black px-3 py-1 text-xs font-mono shadow-xs">
+                    {selectedTicker}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Quick Popular Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-2 border-t border-slate-800/70">
+                <span className="text-[11px] font-bold text-slate-400 ml-1 shrink-0">أصول شائعة:</span>
                 {egyptMarket?.egxStocks.map((stock) => (
                   <Button
                     key={stock.ticker}
                     variant={selectedTicker === stock.ticker ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setSelectedTicker(stock.ticker)}
-                    className={`text-xs h-8 font-semibold ${selectedTicker === stock.ticker ? "bg-amber-500 text-slate-950 font-black shadow-md" : "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"}`}
+                    onClick={() => handleSelectTicker(stock.ticker)}
+                    className={`text-xs h-7 px-2.5 font-semibold shrink-0 cursor-pointer ${
+                      selectedTicker === stock.ticker
+                        ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                        : "border-slate-700/80 bg-slate-900/80 text-slate-200 hover:bg-slate-800"
+                    }`}
                   >
                     {stock.symbol} ({stock.nameAr.split(" ")[0]})
                   </Button>
@@ -389,8 +486,12 @@ export default function QuantitativeHubPage() {
                 <Button
                   variant={selectedTicker === "AZG" ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedTicker("AZG")}
-                  className={`text-xs h-8 font-semibold ${selectedTicker === "AZG" ? "bg-amber-500 text-slate-950 font-black shadow-md" : "border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"}`}
+                  onClick={() => handleSelectTicker("AZG")}
+                  className={`text-xs h-7 px-2.5 font-semibold shrink-0 cursor-pointer ${
+                    selectedTicker === "AZG"
+                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      : "border-slate-700/80 bg-slate-900/80 text-slate-200 hover:bg-slate-800"
+                  }`}
                 >
                   AZG (صندوق الذهب)
                 </Button>
@@ -501,7 +602,7 @@ export default function QuantitativeHubPage() {
                       <Button
                         onClick={() => setIsSimTradeOpen(true)}
                         variant="outline"
-                        className="w-full border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-100 font-bold gap-1.5 py-2.5 text-xs"
+                        className="w-full border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-100 font-bold gap-1.5 py-2.5 text-xs cursor-pointer"
                       >
                         <Sparkles className="w-4 h-4 text-amber-400" />
                         محاكاة افتراضية
@@ -512,10 +613,39 @@ export default function QuantitativeHubPage() {
                           const swingUrl = `/trading/swing?ticker=${encodeURIComponent(signal.ticker)}&action=swing&entry=${signal.entryZone.min}&tp=${signal.targets.t1}&sl=${signal.stopLoss}&name=${encodeURIComponent(activeInstrument?.nameAr || signal.instrumentNameAr || signal.ticker)}`;
                           setLocation(swingUrl);
                         }}
-                        className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black gap-1.5 py-2.5 text-xs shadow-md"
+                        className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black gap-1.5 py-2.5 text-xs shadow-md cursor-pointer"
                       >
                         <ArrowUpRight className="w-4 h-4 rotate-180" />
                         تداول في السوينج
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <Button
+                        onClick={() => copySignalCard(signal, activeInstrument?.nameAr || signal.instrumentNameAr || signal.ticker)}
+                        variant="outline"
+                        className="w-full border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-200 font-semibold gap-1.5 py-2 text-xs cursor-pointer"
+                      >
+                        {copiedTicker === signal.ticker ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400">تم النسخ</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-slate-400" />
+                            <span>نسخ بطاقة الصفقة</span>
+                          </>
+                        )}
+                      </Button>
+
+                      <Button
+                        onClick={() => setIsExternalTradeOpen(true)}
+                        variant="outline"
+                        className="w-full border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold gap-1.5 py-2 text-xs cursor-pointer"
+                      >
+                        <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
+                        <span>تسجيل تنفيذ خارجي</span>
                       </Button>
                     </div>
                   </CardContent>
@@ -1629,6 +1759,15 @@ export default function QuantitativeHubPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* External Broker Trade Modal */}
+        <LogExternalTradeModal
+          open={isExternalTradeOpen}
+          onOpenChange={setIsExternalTradeOpen}
+          defaultTicker={signal?.ticker || selectedTicker}
+          defaultInstrumentName={activeInstrument?.nameAr || signal?.instrumentNameAr || selectedTicker}
+          defaultPrice={signal?.currentPrice}
+        />
       </div>
     </DashboardLayout>
   );

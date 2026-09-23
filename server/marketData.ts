@@ -157,8 +157,65 @@ let mubasherCache: Array<{
 }> | null = null;
 let mubasherCacheTime = 0;
 
-export async function fetchMubasherEgxPrices(): Promise<NonNullable<typeof mubasherCache>> {
-  if (mubasherCache && Date.now() - mubasherCacheTime < 60_000) {
+/**
+ * Explicitly clears the Mubasher stock & fund in-memory caches to bust stale data.
+ */
+export function clearMubasherCache() {
+  mubasherCache = null;
+  mubasherCacheTime = 0;
+  mubasherFundsCache = null;
+  mubasherFundsCacheTime = 0;
+}
+
+/**
+ * Parses dates/timestamps from Egyptian data providers (Mubasher) as Cairo Local Time (Africa/Cairo / GMT+3)
+ * into exact UTC epoch milliseconds.
+ */
+export function parseCairoDateTimeString(str: string | null | undefined): number {
+  if (!str) return Date.now();
+  const trimmed = str.trim();
+  if (!trimmed) return Date.now();
+  if (/[zZ]|[+-]\d{2}/.test(trimmed)) {
+    const t = new Date(trimmed).getTime();
+    return Number.isFinite(t) ? t : Date.now();
+  }
+  const isoStr = trimmed.replace(" ", "T");
+  try {
+    const d = new Date(isoStr + "Z");
+    if (!Number.isFinite(d.getTime())) return Date.now();
+    const dtf = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Africa/Cairo",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    });
+    const parts = dtf.formatToParts(d);
+    const getVal = (type: string) => parts.find(p => p.type === type)?.value || "0";
+    const cYear = parseInt(getVal("year"), 10);
+    const cMonth = parseInt(getVal("month"), 10) - 1;
+    const cDay = parseInt(getVal("day"), 10);
+    const cHour = parseInt(getVal("hour"), 10);
+    const cMin = parseInt(getVal("minute"), 10);
+    const cSec = parseInt(getVal("second"), 10);
+    const cairoAsUtc = Date.UTC(cYear, cMonth, cDay, cHour, cMin, cSec);
+    const diffMs = cairoAsUtc - d.getTime();
+
+    const [datePart, timePart = "00:00:00"] = trimmed.split(/\s+/);
+    const [yr, mo, da] = datePart.split("-").map(Number);
+    const [hr, mi, se = 0] = timePart.split(":").map(Number);
+    const targetUtc = Date.UTC(yr, mo - 1, da, hr, mi, se);
+    return targetUtc - diffMs;
+  } catch {
+    const fallback = new Date(isoStr + "+03:00").getTime();
+    return Number.isFinite(fallback) ? fallback : Date.now();
+  }
+}
+
+export async function fetchMubasherEgxPrices(forceFresh = false): Promise<NonNullable<typeof mubasherCache>> {
+  if (forceFresh) {
+    mubasherCache = null;
+    mubasherCacheTime = 0;
+  } else if (mubasherCache && Date.now() - mubasherCacheTime < 60_000) {
     return mubasherCache;
   }
   const controller = new AbortController();
@@ -284,7 +341,8 @@ export function checkQuoteSanity(
  */
 export async function fetchEgxStockQuote(
   symbolOrName: string,
-  client: YahooQuoteClient = new YahooFinance()
+  client: YahooQuoteClient = new YahooFinance(),
+  forceFresh = false
 ): Promise<MarketQuote & { resolvedSymbol: string }> {
   const rawInput = symbolOrName.trim();
   if (!rawInput) throw new Error("رمز أو اسم سهم البورصة المصرية غير صالح.");
@@ -298,7 +356,7 @@ export async function fetchEgxStockQuote(
 
   // 1. Tier 1 (Primary Live Feed): Mubasher Info Egypt (231 active EGX stocks)
   try {
-    const list = await fetchMubasherEgxPrices();
+    const list = await fetchMubasherEgxPrices(forceFresh);
     const match = list.find((item) => {
       const codeMatch = item.code.trim().toUpperCase() === targetCode;
       if (codeMatch) return true;
@@ -309,11 +367,8 @@ export async function fetchEgxStockQuote(
 
     if (match && Number(match.value) > 0) {
       const priceNum = Number(match.value);
-      // Parse updatedAt (format: "2026-09-17 11:29:53")
-      const parsedTime = match.updatedAt
-        ? new Date(match.updatedAt.replace(" ", "T")).getTime()
-        : Date.now();
-      const asOf = Number.isFinite(parsedTime) && parsedTime > 0 ? parsedTime : Date.now();
+      // Parse updatedAt strictly as Cairo Local Time
+      const asOf = match.updatedAt ? parseCairoDateTimeString(match.updatedAt) : Date.now();
       const changePercent = parseFloat(match.changePercentage?.replace("%", "") || "0") || 0;
 
       return {
@@ -384,8 +439,11 @@ let mubasherFundsCache: Array<{
 }> | null = null;
 let mubasherFundsCacheTime = 0;
 
-export async function fetchMubasherEgxFunds(): Promise<NonNullable<typeof mubasherFundsCache>> {
-  if (mubasherFundsCache && Date.now() - mubasherFundsCacheTime < 300_000) {
+export async function fetchMubasherEgxFunds(forceFresh = false): Promise<NonNullable<typeof mubasherFundsCache>> {
+  if (forceFresh) {
+    mubasherFundsCache = null;
+    mubasherFundsCacheTime = 0;
+  } else if (mubasherFundsCache && Date.now() - mubasherFundsCacheTime < 300_000) {
     return mubasherFundsCache;
   }
   const controller = new AbortController();
@@ -452,11 +510,12 @@ export function parseArabicDate(str: string | null | undefined): number {
  */
 export async function fetchEgxMutualFundQuote(
   symbol: string,
-  instrumentName?: string
+  instrumentName?: string,
+  forceFresh = false
 ): Promise<(MarketQuote & { resolvedSymbol: string }) | null> {
   const cleanSymbol = symbol.trim().toUpperCase();
   try {
-    const funds = await fetchMubasherEgxFunds();
+    const funds = await fetchMubasherEgxFunds(forceFresh);
     let match: (typeof funds)[number] | undefined;
 
     // 1. Direct match from KNOWN_EGX_FUNDS
@@ -620,14 +679,15 @@ export async function fetchEgxOrYahooQuote(
   instrumentCurrency = "EGP",
   client: YahooQuoteClient = new YahooFinance(),
   assetType?: string,
-  instrumentName?: string
+  instrumentName?: string,
+  forceFresh = false
 ): Promise<MarketQuote & { resolvedSymbol: string }> {
   const normalizedSymbol = symbol.trim().toUpperCase();
   if (!normalizedSymbol) throw new Error("رمز الأداة الاستثمارية غير صالح.");
 
   // 1. Mutual Fund NAV check
   if (assetType === "fund" || KNOWN_EGX_FUNDS[normalizedSymbol]) {
-    const fundQuote = await fetchEgxMutualFundQuote(normalizedSymbol, instrumentName);
+    const fundQuote = await fetchEgxMutualFundQuote(normalizedSymbol, instrumentName, forceFresh);
     if (fundQuote) return fundQuote;
   }
 
@@ -686,7 +746,7 @@ export async function fetchEgxOrYahooQuote(
 
   // 4. Egyptian Pound (EGP) instruments: ALWAYS use direct Egyptian Exchange feeds (Mubasher/TradingView)
   if (instrumentCurrency === "EGP") {
-    return await fetchEgxStockQuote(normalizedSymbol);
+    return await fetchEgxStockQuote(normalizedSymbol, client, forceFresh);
   }
 
   // 5. Foreign currency equities / ETFs: Yahoo Finance

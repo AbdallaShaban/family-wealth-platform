@@ -598,7 +598,7 @@ export default function InvestmentsPageRedesign() {
                 variant="outline"
                 size="sm"
                 disabled={previewMarketPrices.isPending}
-                onClick={() => previewMarketPrices.mutate()}
+                onClick={() => previewMarketPrices.mutate({ forceFresh: true })}
                 className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2.5 rounded-xl border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all flex items-center gap-1.5"
               >
                 <RefreshCw className={`size-3.5 ${previewMarketPrices.isPending ? "animate-spin text-emerald-600 dark:text-emerald-400" : ""}`} />

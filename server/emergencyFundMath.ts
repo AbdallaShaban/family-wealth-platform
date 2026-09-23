@@ -44,7 +44,7 @@ export function calculateEmergencyFund({ liquidReserveBase, essentialExpenseMont
     essentialExpenseMonthlyBase: essentialExpense.toFixed(6),
     debtMinimumPaymentBase: debtMinimum.toFixed(6),
     requiredMonthlyBase: requiredMonthly.toFixed(6),
-    coverageMonths: requiredMonthly.gt(0) ? liquidReserve.div(requiredMonthly).toFixed(2) : null,
+    coverageMonths: (essentialExpense.gt(0) && requiredMonthly.gt(0)) ? liquidReserve.div(requiredMonthly).toFixed(2) : null,
     targetReserveBase: targetReserve?.toFixed(6) ?? null,
     fundingGapBase: fundingGap?.toFixed(6) ?? null,
     monthsToTarget: targetMonthsAway,
