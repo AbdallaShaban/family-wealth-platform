@@ -29,10 +29,10 @@ export function normalizeArabic(text: string): string {
   return text
     .trim()
     .toLowerCase()
-    .replace(/[\u064B-\u065F\u0670]/g, "") // remove tashkeel
-    .replace(/[أإآ]/g, "ا")
-    .replace(/ة/g, "ه")
-    .replace(/ى/g, "ي")
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "") // remove tashkeel & tatweel
+    .replace(/[أإآٱ]/g, "ا") // normalize all Alef forms
+    .replace(/ة/g, "ه") // normalize Taa Marbouta
+    .replace(/[ىي]/g, "ي") // normalize Yaa / Alef Maksoura
     .replace(/[-_.\s]+/g, " ");
 }
 
@@ -40,6 +40,110 @@ export function normalizeArabic(text: string): string {
  * Master Equities and Funds Catalog
  */
 export const EGX_MASTER_CATALOG: EGXMasterEntry[] = [
+  // --- Alexandria Flour Mills & Milling Sector ---
+  {
+    ticker: "AFMC.CA",
+    symbol: "AFMC",
+    nameAr: "مطاحن ومخابز الإسكندرية",
+    nameEn: "Alexandria Flour Mills",
+    sector: "الأغذية والمشروبات والزراعة",
+    assetType: "EGX_STOCK",
+    aliases: [
+      "مطاحن ومخابز الاسكندرية",
+      "مطاحن ومخابز الإسكندرية",
+      "مطاحن ومخابز اسكندرية",
+      "مطاحن ومخابز الاسكندريه",
+      "مطاحن الاسكندرية",
+      "مطاحن اسكندرية",
+      "اسكندرية للمطاحن",
+      "مطاحن",
+      "اف ام سي",
+      "afmc",
+    ],
+    indexMembership: ["EGX70", "EGX100"],
+    typicalDividendYield: 8.5,
+  },
+  {
+    ticker: "MILS.CA",
+    symbol: "MILS",
+    nameAr: "مطاحن ومخابز شمال القاهرة",
+    nameEn: "North Cairo Flour Mills",
+    sector: "الأغذية والمشروبات والزراعة",
+    assetType: "EGX_STOCK",
+    aliases: [
+      "مطاحن شمال القاهرة",
+      "مطاحن ومخابز شمال القاهره",
+      "شمال القاهرة للمطاحن",
+      "مطاحن",
+      "mils",
+    ],
+    indexMembership: ["EGX70", "EGX100"],
+    typicalDividendYield: 7.8,
+  },
+  {
+    ticker: "CEFM.CA",
+    symbol: "CEFM",
+    nameAr: "مطاحن مصر الوسطى",
+    nameEn: "Middle Egypt Flour Mills",
+    sector: "الأغذية والمشروبات والزراعة",
+    assetType: "EGX_STOCK",
+    aliases: [
+      "مصر الوسطى للمطاحن",
+      "مطاحن الوسطى",
+      "مطاحن",
+      "cefm",
+    ],
+    indexMembership: ["EGX70", "EGX100"],
+    typicalDividendYield: 9.1,
+  },
+  {
+    ticker: "EDFM.CA",
+    symbol: "EDFM",
+    nameAr: "مطاحن شرق الدلتا",
+    nameEn: "East Delta Flour Mills",
+    sector: "الأغذية والمشروبات والزراعة",
+    assetType: "EGX_STOCK",
+    aliases: [
+      "شرق الدلتا للمطاحن",
+      "مطاحن الدلتا",
+      "مطاحن",
+      "edfm",
+    ],
+    indexMembership: ["EGX70", "EGX100"],
+    typicalDividendYield: 8.2,
+  },
+  {
+    ticker: "UEFM.CA",
+    symbol: "UEFM",
+    nameAr: "مطاحن مصر العليا",
+    nameEn: "Upper Egypt Flour Mills",
+    sector: "الأغذية والمشروبات والزراعة",
+    assetType: "EGX_STOCK",
+    aliases: [
+      "مصر العليا للمطاحن",
+      "مطاحن الصعيد",
+      "مطاحن",
+      "uefm",
+    ],
+    indexMembership: ["EGX70", "EGX100"],
+    typicalDividendYield: 8.9,
+  },
+  {
+    ticker: "WCDF.CA",
+    symbol: "WCDF",
+    nameAr: "مطاحن وسط وغرب الدلتا",
+    nameEn: "Middle & West Delta Flour Mills",
+    sector: "الأغذية والمشروبات والزراعة",
+    assetType: "EGX_STOCK",
+    aliases: [
+      "وسط وغرب الدلتا للمطاحن",
+      "مطاحن غرب الدلتا",
+      "مطاحن",
+      "wcdf",
+    ],
+    indexMembership: ["EGX70", "EGX100"],
+    typicalDividendYield: 8.4,
+  },
   // --- Poultry, Food & Agriculture ---
   {
     ticker: "MPCO.CA",
@@ -702,6 +806,19 @@ export function resolveEgxAsset(query: string): EGXMasterEntry | null {
   });
   if (partialMatch) return partialMatch;
 
+  // 5. Multi-token match (all words in query exist in Arabic name or aliases)
+  const tokens = normQuery.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    const tokenMatch = EGX_MASTER_CATALOG.find((e) => {
+      const normName = normalizeArabic(e.nameAr);
+      const normAliases = e.aliases.map((a) => normalizeArabic(a));
+      return tokens.every(
+        (token) => normName.includes(token) || normAliases.some((a) => a.includes(token)) || e.nameEn.toLowerCase().includes(token)
+      );
+    });
+    if (tokenMatch) return tokenMatch;
+  }
+
   return null;
 }
 
@@ -710,13 +827,14 @@ export function resolveEgxAsset(query: string): EGXMasterEntry | null {
  */
 export function searchEgxCatalog(query: string, limit = 8): EGXMasterEntry[] {
   if (!query || query.trim().length === 0) {
-    // Return top 8 prominent retail assets
+    // Return top prominent retail assets
     return EGX_MASTER_CATALOG.slice(0, limit);
   }
 
   const raw = query.trim();
-  const upper = raw.toUpperCase();
+  const upper = raw.toUpperCase().replace(/\.CA$/, "");
   const normQuery = normalizeArabic(raw);
+  const tokens = normQuery.split(/\s+/).filter(Boolean);
 
   const results: EGXMasterEntry[] = [];
   const seen = new Set<string>();
@@ -725,11 +843,19 @@ export function searchEgxCatalog(query: string, limit = 8): EGXMasterEntry[] {
     if (seen.has(item.ticker)) continue;
 
     const matchesSymbol = item.symbol.toUpperCase().includes(upper) || item.ticker.toUpperCase().includes(upper);
-    const matchesNameAr = normalizeArabic(item.nameAr).includes(normQuery);
+    const itemNormNameAr = normalizeArabic(item.nameAr);
+    const matchesNameAr = itemNormNameAr.includes(normQuery);
     const matchesNameEn = item.nameEn.toLowerCase().includes(raw.toLowerCase());
     const matchesAlias = item.aliases.some((a) => normalizeArabic(a).includes(normQuery) || a.toUpperCase().includes(upper));
 
-    if (matchesSymbol || matchesNameAr || matchesNameEn || matchesAlias) {
+    // Multi-token match: every word in query must appear in nameAr or aliases or nameEn
+    const matchesTokens = tokens.length > 1 && tokens.every((token) =>
+      itemNormNameAr.includes(token) ||
+      item.aliases.some((a) => normalizeArabic(a).includes(token)) ||
+      item.nameEn.toLowerCase().includes(token.toLowerCase())
+    );
+
+    if (matchesSymbol || matchesNameAr || matchesNameEn || matchesAlias || matchesTokens) {
       results.push(item);
       seen.add(item.ticker);
       if (results.length >= limit) break;

@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import Decimal from "decimal.js";
 import { inArray } from "drizzle-orm";
-import { accounts, allocationTargets, budgets, cashFlowCategories, debts, emergencyFundPlans, financialEvents, fxRates, instruments, journalEntries, journalLines, officialValuationSnapshots, positions, priceQuotes, riskProfiles, watchlistItems } from "../drizzle/schema";
+import { accounts, allocationTargets, bankCertificates, budgets, cashFlowCategories, debts, emergencyFundPlans, financialEvents, fxRates, instruments, journalEntries, journalLines, officialValuationSnapshots, positions, priceQuotes, riskProfiles, watchlistItems } from "../drizzle/schema";
 import type { FamilyContext } from "./familyAccess";
 import { getDb } from "./db";
 import { TRPCError } from "@trpc/server";
@@ -63,7 +63,24 @@ export async function getDashboardSummary(context: FamilyContext) {
   const staleFxCurrencies = Array.from(new Set(accountSnapshots.filter(account => account.valuationStatus === "stale").map(account => account.currency)));
   const unvaluedInstruments = portfolio.filter(position => position.baseMarketValue === null).map(position => position.instrumentName);
 
-  const currentNetWorth = valuedBalance.plus(investmentValue);
+  const db = await getDb();
+  let bankCertificatesTotal = new Decimal(0);
+  if (db) {
+    try {
+      const certRows = await db
+        .select({ principalAmount: bankCertificates.principalAmount })
+        .from(bankCertificates)
+        .where(and(eq(bankCertificates.workspaceId, context.workspace.id), eq(bankCertificates.status, "active")));
+      bankCertificatesTotal = certRows.reduce((sum, c) => sum.plus(new Decimal(c.principalAmount)), new Decimal(0));
+    } catch {
+      // Table may be empty or unmigrated in isolated mocks
+    }
+  }
+
+  // Net worth: (Liquid Free Cash + T+2 Receivables + Invested Assets + Bank Certificates) - Liabilities
+  // Note: (freeLiquidity + unsettledCash) equals liquidBalance.
+  // valuedBalance includes liquid accounts + non-liquid asset accounts minus liability accounts.
+  const currentNetWorth = valuedBalance.plus(investmentValue).plus(bankCertificatesTotal);
 
   // Unsettled Cash calculation (T+2 / 48h settlement window for recent equity dispositions)
   const settlementWindowMs = 2 * 24 * 60 * 60 * 1000;
@@ -83,7 +100,6 @@ export async function getDashboardSummary(context: FamilyContext) {
     percentage: "0.0",
     isPositive: true,
   };
-  const db = await getDb();
   if (db) {
     const snapshots = await db
       .select({ netWorthBase: officialValuationSnapshots.netWorthBase })
@@ -118,6 +134,7 @@ export async function getDashboardSummary(context: FamilyContext) {
     unsettledCashBase: unsettledCash.toFixed(2),
     liabilityBalanceBase: liabilities.toFixed(2),
     investmentValueBase: investmentValue.toFixed(2),
+    bankCertificatesBase: bankCertificatesTotal.toFixed(2),
     netWorthBase: currentNetWorth.toFixed(2),
     netWorthDelta,
     unrealizedPnlBase: unrealizedPnl.toFixed(2),

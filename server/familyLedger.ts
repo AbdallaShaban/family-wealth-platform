@@ -698,6 +698,74 @@ export async function revalueAssetAccount(args: {
   });
 }
 
+export async function reconcileCashAccount(args: {
+  context: FamilyContext;
+  actorUserId: number;
+  accountId: number;
+  actualBalance: string;
+  memo?: string | null;
+  idempotencyKey?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw unavailable();
+  const targetBalance = new Decimal(args.actualBalance.trim());
+  const idempotencyKey = validateIdempotencyKey(args.idempotencyKey || `rec-${args.accountId}-${Date.now()}`);
+
+  return db.transaction(async tx => {
+    const account = await lockAccount(tx, args.context.workspace.id, args.accountId);
+    if (!["cash", "bank", "wallet", "brokerage", "clearing"].includes(account.accountType)) {
+      throw invalid("التسوية السريعة متاحة للحسابات المصرفية والنقدية والمحافظ فقط.");
+    }
+    const currentBalance = await getAccountBalance(tx, args.context.workspace.id, account.id);
+    const diff = targetBalance.minus(currentBalance);
+    if (diff.isZero()) {
+      return { id: 0, status: "posted" as const, duplicate: false, diff: "0.00", newBalance: currentBalance.toFixed(2) };
+    }
+
+    const isGain = diff.gt(0);
+    const amount = diff.abs();
+    const currency = account.currency;
+    const fxRate = await resolveBaseFxRate(tx, args.context, currency, Date.now());
+
+    const counterpartType = isGain ? "income" : "expense";
+    const counterpartCode = isGain ? `RECONCILIATION_GAIN:${currency}` : `RECONCILIATION_LOSS:${currency}`;
+    const counterpartName = isGain ? "تسوية رصيد / عائد دوري" : "تسوية رصيد / فروق تسوية";
+    const counterpart = await ensureSystemAccount(tx, args.context.workspace.id, currency, counterpartCode, counterpartName, counterpartType);
+
+    const userDirection = isGain ? "debit" : "credit";
+    const counterpartDirection = isGain ? "credit" : "debit";
+
+    const defaultMemo = isGain ? "تسوية رصيد / عائد دوري" : "تسوية رصيد / فرق تسوية";
+    const memo = args.memo?.trim() || defaultMemo;
+
+    const event = await createPostedEvent(tx, {
+      context: args.context,
+      actorUserId: args.actorUserId,
+      primaryAccountId: account.id,
+      counterAccountId: counterpart.id,
+      instrumentId: null,
+      eventType: "adjustment",
+      occurredAt: Date.now(),
+      currency,
+      grossAmount: amount,
+      idempotencyKey,
+      source: "manual",
+      memo,
+      lines: [
+        monetaryLine(account.id, userDirection, amount, currency, fxRate),
+        monetaryLine(counterpart.id, counterpartDirection, amount, currency, fxRate),
+      ],
+    });
+
+    return {
+      ...event,
+      priorBalance: currentBalance.toFixed(2),
+      diff: diff.toFixed(2),
+      newBalance: targetBalance.toFixed(2),
+    };
+  });
+}
+
 export async function createDebt(args: {
   context: FamilyContext;
   actorUserId: number;
@@ -711,6 +779,10 @@ export async function createDebt(args: {
   paymentDay?: number | null;
   startDate: number;
   maturityDate?: number | null;
+  creditLimit?: string | null;
+  billingCycleDay?: number | null;
+  gracePeriodDays?: number | null;
+  interestFreeDueDate?: number | null;
   cashAccountId?: number | null;
   cashFlowCategoryId?: number | null;
   memo?: string | null;
@@ -768,6 +840,10 @@ export async function createDebt(args: {
       name,
       lender: normalizeOptionalText(args.lender),
       debtType: args.debtType,
+      creditLimit: args.creditLimit ? new Decimal(args.creditLimit).toFixed(6) : null,
+      billingCycleDay: args.billingCycleDay ?? null,
+      gracePeriodDays: args.gracePeriodDays ?? null,
+      interestFreeDueDate: args.interestFreeDueDate ?? null,
       originalPrincipal: principal.toFixed(6),
       currency,
       annualInterestRate: annualInterestRate.toFixed(6),

@@ -1127,3 +1127,56 @@ export type MarketCandle = typeof marketCandles.$inferSelect;
 export type InsertMarketCandle = typeof marketCandles.$inferInsert;
 export type SwingTrade = typeof swingTrades.$inferSelect;
 export type InsertSwingTrade = typeof swingTrades.$inferInsert;
+
+export const bankCertificates = mysqlTable(
+  "bank_certificates",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    workspaceId: int("workspaceId").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    profileId: int("profileId").notNull().references(() => financialProfiles.id),
+    certificateName: varchar("certificateName", { length: 160 }).notNull(),
+    bankName: varchar("bankName", { length: 160 }).notNull(),
+    principalAmount: decimal("principalAmount", { precision: 20, scale: 6 }).notNull(),
+    interestRate: decimal("interestRate", { precision: 12, scale: 6 }).notNull(),
+    payoutFrequency: mysqlEnum("payoutFrequency", ["monthly", "quarterly", "semi_annual", "annual"]).default("monthly").notNull(),
+    issueDate: bigint("issueDate", { mode: "number" }).notNull(),
+    maturityDate: bigint("maturityDate", { mode: "number" }).notNull(),
+    linkedPayoutAccountId: int("linkedPayoutAccountId").references(() => accounts.id),
+    currency: varchar("currency", { length: 3 }).default("EGP").notNull(),
+    status: mysqlEnum("status", ["active", "matured", "redeemed"]).default("active").notNull(),
+    lastYieldCollectedAt: bigint("lastYieldCollectedAt", { mode: "number" }),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  },
+  table => ({
+    workspaceStatusIndex: index("bank_certificates_workspace_status_idx").on(table.workspaceId, table.status),
+    workspaceIndex: index("bank_certificates_workspace_idx").on(table.workspaceId),
+  })
+);
+
+export const creditCardInstallments = mysqlTable(
+  "credit_card_installments",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    workspaceId: int("workspaceId").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    debtId: int("debtId").notNull().references(() => debts.id, { onDelete: "cascade" }),
+    merchantName: varchar("merchantName", { length: 160 }).notNull(),
+    planName: varchar("planName", { length: 160 }).notNull(),
+    totalAmount: decimal("totalAmount", { precision: 20, scale: 6 }).notNull(),
+    monthlyAmount: decimal("monthlyAmount", { precision: 20, scale: 6 }).notNull(),
+    tenureMonths: int("tenureMonths").notNull(),
+    remainingMonths: int("remainingMonths").notNull(),
+    startDate: bigint("startDate", { mode: "number" }).notNull(),
+    status: mysqlEnum("status", ["active", "completed", "cancelled"]).default("active").notNull(),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    updatedAt: bigint("updatedAt", { mode: "number" }).notNull(),
+  },
+  table => ({
+    workspaceDebtIndex: index("cc_installments_workspace_debt_idx").on(table.workspaceId, table.debtId, table.status),
+  })
+);
+
+export type BankCertificate = typeof bankCertificates.$inferSelect;
+export type InsertBankCertificate = typeof bankCertificates.$inferInsert;
+export type CreditCardInstallment = typeof creditCardInstallments.$inferSelect;
+export type InsertCreditCardInstallment = typeof creditCardInstallments.$inferInsert;
