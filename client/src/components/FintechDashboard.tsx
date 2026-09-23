@@ -280,7 +280,7 @@ export default function FintechDashboard() {
       setPaymentMemo("");
     }
     setPaymentInterest("");
-    const defaultCash = (live?.accounts ?? []).find(a => ["bank", "cash", "wallet"].includes(a.accountType));
+    const defaultCash = (summary.data?.accounts ?? []).find(a => ["bank", "cash", "wallet"].includes(a.accountType));
     setPaymentAccountId(defaultCash ? String(defaultCash.id) : "");
     setDebtPaymentModalOpen(true);
   };
@@ -377,7 +377,7 @@ export default function FintechDashboard() {
     },
   });
 
-  // Safely memoize portfolioMap BEFORE any early returns
+  // Safely memoize portfolioMap and cashAccounts BEFORE any early returns
   type PortfolioItem = NonNullable<typeof summary.data>["portfolio"][number];
   const portfolioMap = useMemo(() => {
     const map = new Map<number, PortfolioItem>();
@@ -386,6 +386,10 @@ export default function FintechDashboard() {
     }
     return map;
   }, [summary.data?.portfolio]);
+
+  const cashAccounts = useMemo(() => {
+    return (summary.data?.accounts ?? []).filter(account => ["bank", "cash", "wallet"].includes(account.accountType));
+  }, [summary.data?.accounts]);
 
   if (summary.isLoading && !isDemoMode) return <DashboardSkeleton />;
   if (summary.error && !isDemoMode) {
@@ -425,10 +429,6 @@ export default function FintechDashboard() {
           value: Number(account.baseValue),
           color: FINTECH_ASSET_PALETTE[index % FINTECH_ASSET_PALETTE.length],
         }));
-
-  const cashAccounts = useMemo(() => {
-    return (live?.accounts ?? []).filter(account => ["bank", "cash", "wallet"].includes(account.accountType));
-  }, [live?.accounts]);
 
   const cashFlow = usingDemo ? [...demoDashboard.cashFlow] : (cashFlowQuery.data ?? []);
 
