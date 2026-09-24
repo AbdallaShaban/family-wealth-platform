@@ -40,7 +40,14 @@ import {
   RefreshCw,
   AlertTriangle,
   Check,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -59,6 +66,14 @@ import { RecordTradeForm } from "@/components/investments/RecordTradeForm";
 import { DividendModal } from "@/components/investments/DividendModal";
 import { InstrumentActionModals } from "@/components/investments/InstrumentActionModals";
 import { TradeActionModals } from "@/components/investments/TradeActionModals";
+
+function formatQuantity(qty: string | number | null | undefined): string {
+  if (qty == null) return "0";
+  const num = Number(qty);
+  if (isNaN(num)) return String(qty);
+  if (Math.abs(num - Math.round(num)) < 0.0001) return Math.round(num).toLocaleString("en-US");
+  return Number(num.toFixed(2)).toLocaleString("en-US");
+}
 
 
 const legacyLabelMap: Record<string, string> = {
@@ -437,7 +452,7 @@ export default function InvestmentsPageRedesign() {
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">سعر السوق</th>
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">القيمة السوقية</th>
                         <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">حالة السعر</th>
-                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-left">إجراء</th>
+                        <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-center">إجراءات</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -456,15 +471,25 @@ export default function InvestmentsPageRedesign() {
                               <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums text-right">{pos.quantity}</td>
-                          <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white tabular-nums text-right">
-                            <SensitiveValue>{formatMoney(pos.averageCost, pos.costCurrency, 2)}</SensitiveValue>
+                          <td className="py-3.5 px-4 text-right">
+                            <span dir="ltr" className="inline-block font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                              {formatQuantity(pos.quantity)}
+                            </span>
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-semibold text-slate-900 dark:text-white tabular-nums text-right">
-                            <SensitiveValue>{pos.marketPrice ? formatMoney(pos.marketPrice, pos.currency, 2) : "—"}</SensitiveValue>
+                          <td className="py-3.5 px-4 text-right">
+                            <span dir="ltr" className="inline-block font-mono text-slate-900 dark:text-white tabular-nums">
+                              <SensitiveValue>{formatMoney(pos.averageCost, pos.costCurrency, 2)}</SensitiveValue>
+                            </span>
                           </td>
-                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900 dark:text-white tabular-nums text-right">
-                            <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
+                          <td className="py-3.5 px-4 text-right">
+                            <span dir="ltr" className="inline-block font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
+                              <SensitiveValue>{pos.marketPrice ? formatMoney(pos.marketPrice, pos.currency, 2) : "—"}</SensitiveValue>
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <span dir="ltr" className="inline-block font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                              <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
+                            </span>
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             {(() => {
@@ -480,32 +505,43 @@ export default function InvestmentsPageRedesign() {
                               );
                             })()}
                           </td>
-                          <td className="py-3.5 px-4 text-left">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {canEdit && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleOpenDividendModal(pos)}
-                                  className="bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                                  title="تسجيل توزيع أرباح نقدية لحساب بنكي"
-                                >
-                                  <CircleDollarSign className="size-3.5" />
-                                  <span>توزيع أرباح</span>
-                                </Button>
-                              )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setPreselectedTradeInstrumentId(String(pos.instrumentId));
-                                  setPreselectedTradeSide("sell");
-                                  setActiveTab("trades");
-                                }}
-                                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all cursor-pointer"
-                              >
-                                تداول
-                              </Button>
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="خيارات الأصل"
+                                  >
+                                    <MoreHorizontal className="size-4" />
+                                    <span className="sr-only">خيارات الأصل</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 bg-white dark:bg-[#0E1420] border-slate-200 dark:border-slate-800 shadow-md">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setPreselectedTradeInstrumentId(String(pos.instrumentId));
+                                      setPreselectedTradeSide("sell");
+                                      setActiveTab("trades");
+                                    }}
+                                    className="cursor-pointer gap-2 text-xs py-2 font-medium"
+                                  >
+                                    <ArrowLeftRight className="size-3.5 text-slate-500" />
+                                    <span>تداول (شراء / بيع)</span>
+                                  </DropdownMenuItem>
+                                  {canEdit && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleOpenDividendModal(pos)}
+                                      className="cursor-pointer gap-2 text-xs py-2 font-medium text-emerald-700 dark:text-emerald-400 focus:text-emerald-800 dark:focus:text-emerald-300"
+                                    >
+                                      <CircleDollarSign className="size-3.5" />
+                                      <span>تسجيل توزيع أرباح</span>
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           </td>
                         </tr>
@@ -532,64 +568,76 @@ export default function InvestmentsPageRedesign() {
                               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{pos.currency}</span>
                             </div>
                           </div>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                            !isAvailable
-                              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40"
-                              : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
-                          }`}>
-                            {!isAvailable ? "يتطلب سعرًا" : "متاح"}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                              !isAvailable
+                                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40"
+                                : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
+                            }`}>
+                              {!isAvailable ? "يتطلب سعرًا" : "متاح"}
+                            </span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                                  title="خيارات الأصل"
+                                >
+                                  <MoreHorizontal className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44 bg-white dark:bg-[#0E1420] border-slate-200 dark:border-slate-800 shadow-md">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setPreselectedTradeInstrumentId(String(pos.instrumentId));
+                                    setPreselectedTradeSide("sell");
+                                    setActiveTab("trades");
+                                  }}
+                                  className="cursor-pointer gap-2 text-xs py-2 font-medium"
+                                >
+                                  <ArrowLeftRight className="size-3.5 text-slate-500" />
+                                  <span>تداول</span>
+                                </DropdownMenuItem>
+                                {canEdit && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleOpenDividendModal(pos)}
+                                    className="cursor-pointer gap-2 text-xs py-2 font-medium text-emerald-700 dark:text-emerald-400"
+                                  >
+                                    <CircleDollarSign className="size-3.5" />
+                                    <span>تسجيل توزيع أرباح</span>
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900/80 rounded-lg p-2.5 border border-slate-200/50 dark:border-slate-800/50">
                           <div>
                             <span className="text-slate-500 dark:text-slate-400 block text-[11px]">الكمية</span>
-                            <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">{pos.quantity}</span>
+                            <span dir="ltr" className="inline-block font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                              {formatQuantity(pos.quantity)}
+                            </span>
                           </div>
                           <div>
                             <span className="text-slate-500 dark:text-slate-400 block text-[11px]">متوسط التكلفة</span>
-                            <span className="font-mono text-slate-900 dark:text-white tabular-nums">
+                            <span dir="ltr" className="inline-block font-mono text-slate-900 dark:text-white tabular-nums">
                               <SensitiveValue>{formatMoney(pos.averageCost, pos.costCurrency, 2)}</SensitiveValue>
                             </span>
                           </div>
                           <div>
                             <span className="text-slate-500 dark:text-slate-400 block text-[11px]">سعر السوق</span>
-                            <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
+                            <span dir="ltr" className="inline-block font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
                               <SensitiveValue>{pos.marketPrice ? formatMoney(pos.marketPrice, pos.currency, 2) : "—"}</SensitiveValue>
                             </span>
                           </div>
                           <div>
                             <span className="text-slate-500 dark:text-slate-400 block text-[11px]">القيمة السوقية</span>
-                            <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                            <span dir="ltr" className="inline-block font-mono font-bold text-slate-900 dark:text-white tabular-nums">
                               <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
                             </span>
                           </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                          {canEdit && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenDividendModal(pos)}
-                              className="bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
-                            >
-                              <CircleDollarSign className="size-3.5" />
-                              <span>توزيع أرباح</span>
-                            </Button>
-                          )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setPreselectedTradeInstrumentId(String(pos.instrumentId));
-                              setPreselectedTradeSide("sell");
-                              setActiveTab("trades");
-                            }}
-                            className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all cursor-pointer"
-                          >
-                            تداول
-                          </Button>
                         </div>
                       </div>
                     );

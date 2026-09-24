@@ -43,8 +43,18 @@ import {
   Wallet,
   Pencil,
   Trash2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
 } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type OperationType =
@@ -625,6 +635,21 @@ export default function TransactionsHubPage() {
     return list;
   }, [recentEvents.data, typeFilter, accountFilter, searchQuery]);
 
+  // Pagination state (15 items per page to eliminate infinite scroll)
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 15;
+  const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [typeFilter, accountFilter, searchQuery]);
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredEvents.slice(startIndex, startIndex + pageSize);
+  }, [filteredEvents, currentPage, pageSize]);
+
   // Operational metrics computed purely from existing loaded data
   const hasActiveFilters = searchQuery !== "" || typeFilter !== "all" || accountFilter !== "all";
 
@@ -743,73 +768,95 @@ export default function TransactionsHubPage() {
           </div>
         </section>
 
-        {/* Compact 1-line Action Dock */}
-        <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0B0F17] py-2.5 px-3.5 sm:px-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-2.5" aria-labelledby="operations-heading">
-          <div className="flex items-center gap-2.5">
-            <Button
-              onClick={() => {
-                setActiveModal("deposit");
-                setReviewStep(false);
-              }}
-              className="gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent shrink-0 cursor-pointer h-auto"
-            >
-              <PlusCircle className="size-3.5 text-white dark:text-slate-950" />
-              <span>تسجيل معاملة جديدة</span>
-            </Button>
-            <span className="hidden lg:inline-block text-xs font-medium text-slate-400 dark:text-slate-500">
-              إجراء سريع:
+        {/* Institutional Consolidated Primary Action Bar */}
+        <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0B0F17] p-3 sm:px-4 shadow-xs flex flex-row items-center justify-between gap-3" aria-labelledby="operations-heading">
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="gap-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-sm transition-all border border-slate-900 dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 dark:border-transparent shrink-0 cursor-pointer h-auto"
+                >
+                  <Plus className="size-4 text-white dark:text-slate-950" />
+                  <span>+ قيد جديد</span>
+                  <ChevronDown className="size-3.5 text-slate-400 dark:text-slate-600 mr-0.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-[#0E1420] border-slate-200 dark:border-slate-800 shadow-lg p-1.5 rounded-xl z-20">
+                <DropdownMenuItem
+                  onClick={() => { setActiveModal("deposit"); setReviewStep(false); }}
+                  className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                    <ArrowDownLeft className="size-3.5" />
+                  </div>
+                  <span>إيداع كاش / سيولة</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => { setActiveModal("withdrawal"); setReviewStep(false); }}
+                  className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/40">
+                    <ArrowUpRight className="size-3.5" />
+                  </div>
+                  <span>سحب / مصروف</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => { setActiveModal("transfer"); setReviewStep(false); }}
+                  className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                    <ArrowLeftRight className="size-3.5" />
+                  </div>
+                  <span>تحويل داخلي بين الحسابات</span>
+                </DropdownMenuItem>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-800/80 my-1" />
+
+                <DropdownMenuItem
+                  onClick={() => { setActiveModal("buy"); setReviewStep(false); }}
+                  className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/40">
+                    <TrendingUp className="size-3.5" />
+                  </div>
+                  <span>شراء أصل أو صندوق استثماري</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  onClick={() => { setActiveModal("sell"); setReviewStep(false); }}
+                  className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/40">
+                    <TrendingDown className="size-3.5" />
+                  </div>
+                  <span>بيع / تسييل استثمار</span>
+                </DropdownMenuItem>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-800/80 my-1" />
+
+                <DropdownMenuItem
+                  onClick={() => { setActiveModal("debt_payment"); setReviewStep(false); }}
+                  className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/70"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/40">
+                    <CreditCard className="size-3.5" />
+                  </div>
+                  <span>سداد التزام / بطاقة ائتمانية</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline-block">
+              تسجيل قيود اليومية المحاسبية المباشرة بحسابات النقدية والمحافظ والديون
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 md:pb-0 scrollbar-none">
-            <button
-              type="button"
-              onClick={() => { setActiveModal("deposit"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition-colors whitespace-nowrap cursor-pointer dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60"
-            >
-              <ArrowDownLeft className="size-3 text-emerald-600 dark:text-emerald-400" />
-              <span>إيداع كاش</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActiveModal("withdrawal"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition-colors whitespace-nowrap cursor-pointer dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60"
-            >
-              <ArrowUpRight className="size-3 text-rose-600 dark:text-rose-400" />
-              <span>سحب / مصروف</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActiveModal("transfer"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition-colors whitespace-nowrap cursor-pointer dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60"
-            >
-              <ArrowLeftRight className="size-3 text-slate-600 dark:text-slate-300" />
-              <span>تحويل داخلي</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActiveModal("buy"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition-colors whitespace-nowrap cursor-pointer dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60"
-            >
-              <TrendingUp className="size-3 text-emerald-600 dark:text-emerald-400" />
-              <span>شراء استثمار</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActiveModal("sell"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition-colors whitespace-nowrap cursor-pointer dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60"
-            >
-              <TrendingDown className="size-3 text-amber-600 dark:text-amber-400" />
-              <span>بيع / تسييل</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => { setActiveModal("debt_payment"); setReviewStep(false); }}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-xl border border-slate-200/90 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 shadow-2xs transition-colors whitespace-nowrap cursor-pointer dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60"
-            >
-              <CreditCard className="size-3 text-slate-600 dark:text-slate-300" />
-              <span>سداد التزام</span>
-            </button>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700/60">
+              {filteredEvents.length} قيد مسجل
+            </span>
           </div>
         </section>
 
@@ -947,21 +994,21 @@ export default function TransactionsHubPage() {
             ) : (
               <>
                 {/* Desktop/Tablet Comprehensive Multi-Column Ledger Table (>= 768px) */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full min-w-[760px] text-right text-sm">
-                    <thead className="bg-slate-100/80 text-slate-800 font-bold text-xs border-b border-slate-200 dark:bg-[#0E1420] dark:text-slate-200 dark:border-slate-800 uppercase tracking-wide">
+                <div className="hidden md:block overflow-x-auto max-h-[calc(100vh-280px)] overflow-y-auto">
+                  <table className="w-full min-w-[760px] text-right text-sm border-separate border-spacing-0">
+                    <thead className="sticky top-0 z-10 bg-white/95 dark:bg-[#0E1420]/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs uppercase tracking-wide shadow-xs">
                       <tr>
-                        <th className="py-3 px-4 pr-5 font-bold text-slate-800 dark:text-slate-200">نوع العملية</th>
-                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">الحساب المالي</th>
-                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">التاريخ والوقت</th>
-                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">البيان والملاحظات</th>
-                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">المبلغ الإجمالي</th>
-                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">حالة القيد</th>
-                        <th className="py-3 px-4 pl-5 font-bold text-slate-800 dark:text-slate-200 text-center">الإجراءات</th>
+                        <th className="py-3 px-4 pr-5 font-bold text-slate-800 dark:text-slate-200 bg-white/95 dark:bg-[#0E1420]/95 border-b border-slate-200 dark:border-slate-800">نوع العملية</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 bg-white/95 dark:bg-[#0E1420]/95 border-b border-slate-200 dark:border-slate-800">الحساب المالي</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 bg-white/95 dark:bg-[#0E1420]/95 border-b border-slate-200 dark:border-slate-800">التاريخ والوقت</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 bg-white/95 dark:bg-[#0E1420]/95 border-b border-slate-200 dark:border-slate-800">البيان والملاحظات</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 bg-white/95 dark:bg-[#0E1420]/95 border-b border-slate-200 dark:border-slate-800">المبلغ الإجمالي</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200 bg-white/95 dark:bg-[#0E1420]/95 border-b border-slate-200 dark:border-slate-800">حالة القيد</th>
+                        <th className="py-3 px-4 pl-5 font-bold text-slate-800 dark:text-slate-200 text-center bg-white/95 dark:bg-[#0E1420]/95 border-b border-slate-200 dark:border-slate-800">الإجراءات</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-[#0B0F17] divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {filteredEvents.map(event => {
+                      {paginatedEvents.map(event => {
                         const meta = eventLabel[event.eventType] || {
                           label: event.eventType,
                           icon: ArrowLeftRight,
@@ -1091,7 +1138,7 @@ export default function TransactionsHubPage() {
 
                 {/* Adaptive Tactile Cards on Mobile (< 768px) to eliminate horizontal scroll */}
                 <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60 p-3 space-y-3">
-                  {filteredEvents.map(event => {
+                  {paginatedEvents.map(event => {
                     const meta = eventLabel[event.eventType] || {
                       label: event.eventType,
                       icon: ArrowLeftRight,
@@ -1185,6 +1232,72 @@ export default function TransactionsHubPage() {
                     );
                   })}
                 </div>
+
+                {/* Pagination Controls Bar */}
+                {totalPages > 1 && (
+                  <div className="p-3 sm:px-4 border-t border-slate-200/90 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                      عرض <span className="font-mono font-semibold text-slate-900 dark:text-white">{(currentPage - 1) * pageSize + 1}</span> إلى{" "}
+                      <span className="font-mono font-semibold text-slate-900 dark:text-white">
+                        {Math.min(currentPage * pageSize, filteredEvents.length)}
+                      </span>{" "}
+                      من إجمالي <span className="font-mono font-semibold text-slate-900 dark:text-white">{filteredEvents.length}</span> معاملة
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className="h-8 px-2.5 text-xs gap-1 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0E1420] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <ChevronRight className="size-3.5" />
+                        <span>السابق</span>
+                      </Button>
+
+                      <div className="flex items-center gap-1 px-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(page => {
+                            if (totalPages <= 7) return true;
+                            if (page === 1 || page === totalPages) return true;
+                            return Math.abs(page - currentPage) <= 1;
+                          })
+                          .map((page, idx, arr) => {
+                            const prev = arr[idx - 1];
+                            const showEllipsis = prev && page - prev > 1;
+                            return (
+                              <React.Fragment key={page}>
+                                {showEllipsis && <span className="text-xs text-slate-400 px-1">…</span>}
+                                <button
+                                  type="button"
+                                  onClick={() => setCurrentPage(page)}
+                                  className={`size-7 text-xs font-mono font-semibold rounded-lg transition-colors cursor-pointer ${
+                                    currentPage === page
+                                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-2xs"
+                                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800"
+                                  }`}
+                                >
+                                  {page}
+                                </button>
+                              </React.Fragment>
+                            );
+                          })}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className="h-8 px-2.5 text-xs gap-1 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0E1420] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <span>التالي</span>
+                        <ChevronLeft className="size-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>

@@ -150,15 +150,15 @@ function getActiveGatewayId(path: string): string {
 function FintechBrand({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="fintech-v2-brand flex items-center gap-3 min-w-0">
-      <div className="relative flex items-center justify-center size-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.25)] shrink-0">
-        <ShieldCheck className="size-5 text-emerald-400" />
+      <div className="relative flex items-center justify-center size-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)] shrink-0">
+        <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400" />
       </div>
       {!collapsed && (
         <div className="min-w-0 flex flex-col justify-center">
-          <strong className="text-white font-extrabold text-[15px] tracking-wider leading-tight">
+          <strong className="text-slate-900 dark:text-white font-extrabold text-[15px] tracking-wider leading-tight">
             FAMILY
           </strong>
-          <span className="text-emerald-400 font-mono text-[10px] tracking-widest leading-tight mt-0.5 font-bold">
+          <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px] tracking-widest leading-tight mt-0.5 font-bold">
             WEALTH INTELLIGENCE
           </span>
         </div>
@@ -267,8 +267,8 @@ function FintechNav({
                       <button
                         className={`size-10 rounded-xl flex items-center justify-center transition-all ${
                           isCurrent
-                            ? "bg-[rgba(16,185,129,0.12)] text-emerald-400 border border-emerald-500/30 shadow-sm"
-                            : "text-slate-400 hover:text-white hover:bg-white/5"
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-300 dark:bg-[rgba(16,185,129,0.12)] dark:text-emerald-400 dark:border-emerald-500/30 shadow-xs"
+                            : "text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5"
                         }`}
                         onClick={() => onNavigate(item.path)}
                         aria-label={item.label}
@@ -280,10 +280,10 @@ function FintechNav({
                     <TooltipContent
                       side="left"
                       sideOffset={12}
-                      className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
+                      className="bg-white border border-slate-200 text-slate-900 dark:bg-[#0B0F17] dark:border-white/10 dark:text-[#F8FAFC] shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
                     >
-                      <p className="font-semibold text-xs text-[#F8FAFC]">{item.label}</p>
-                      <p className="text-[10px] text-[#34D399] font-medium mt-0.5">{group.label}</p>
+                      <p className="font-semibold text-xs text-slate-900 dark:text-[#F8FAFC]">{item.label}</p>
+                      <p className="text-[10px] text-emerald-600 dark:text-[#34D399] font-medium mt-0.5">{group.label}</p>
                     </TooltipContent>
                   </Tooltip>
                 );
@@ -320,16 +320,16 @@ function FintechNav({
               <AccordionTrigger
                 className={`fintech-v2-group-trigger flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
                   hasActiveItem
-                    ? "bg-[rgba(16,185,129,0.12)] text-emerald-400 border border-emerald-500/20"
-                    : "text-slate-300 hover:text-white hover:bg-white/5"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-[rgba(16,185,129,0.12)] dark:text-emerald-400 dark:border-emerald-500/20"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
                 }`}
               >
                 <span className="flex items-center gap-2.5 min-w-0">
                   <span
                     className={`p-1.5 rounded-lg shrink-0 border transition-colors ${
                       hasActiveItem
-                        ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-300"
-                        : "bg-white/5 border-white/10 text-slate-400"
+                        ? "bg-emerald-100 border-emerald-300/80 text-emerald-700 dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-300"
+                        : "bg-slate-100 border-slate-200/90 text-slate-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-400"
                     }`}
                   >
                     <GroupIcon className="size-4" />
@@ -337,7 +337,7 @@ function FintechNav({
                   <span className="truncate text-xs font-bold">{group.label}</span>
                 </span>
               </AccordionTrigger>
-              <AccordionContent className="fintech-v2-group-content pt-1 pb-1.5 pr-2 mr-3 border-r border-dashed border-white/10 space-y-1">
+              <AccordionContent className="fintech-v2-group-content pt-1 pb-1.5 pr-2 mr-3 border-r border-dashed border-slate-300/80 dark:border-white/10 space-y-1">
                 {group.items.map(item => {
                   const Icon = item.icon;
                   const isCurrent =
@@ -348,16 +348,16 @@ function FintechNav({
                       key={item.path}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-150 text-right ${
                         isCurrent
-                          ? "bg-[rgba(16,185,129,0.12)] text-emerald-400 font-semibold border-r-2 border-emerald-500 shadow-sm"
-                          : "text-slate-400 hover:text-slate-100 hover:bg-white/5 font-medium"
+                          ? "bg-emerald-50 text-emerald-800 font-semibold border-r-2 border-emerald-600 shadow-xs dark:bg-[rgba(16,185,129,0.12)] dark:text-emerald-400 dark:border-emerald-500"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-white/5 font-medium"
                       }`}
                       onClick={() => onNavigate(item.path)}
                       aria-current={isCurrent ? "page" : undefined}
                     >
-                      <Icon className={`size-4 shrink-0 ${isCurrent ? "text-emerald-400" : "text-slate-400"}`} />
+                      <Icon className={`size-4 shrink-0 ${isCurrent ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`} />
                       <span className="truncate flex-1">{item.label}</span>
                       {isCurrent && (
-                        <span className="size-1.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_6px_#34d399]" />
+                        <span className="size-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0 shadow-[0_0_6px_#059669] dark:shadow-[0_0_6px_#34d399]" />
                       )}
                     </button>
                   );
@@ -388,32 +388,32 @@ function UserControls({
 
   if (collapsed) {
     return (
-      <div className="fintech-v2-user-zone border-t border-white/5 flex flex-col items-center gap-2 py-3 px-2">
+      <div className="fintech-v2-user-zone border-t border-slate-200/80 dark:border-white/5 flex flex-col items-center gap-2 py-3 px-2">
         <TooltipProvider delayDuration={60}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 cursor-default">
+              <div className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 cursor-default">
                 {initial}
               </div>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] text-xs px-3 py-1.5 shadow-xl">
+            <TooltipContent side="left" className="bg-white border border-slate-200 text-slate-900 dark:bg-[#0B0F17] dark:border-white/10 dark:text-[#F8FAFC] text-xs px-3 py-1.5 shadow-xl">
               <p className="font-bold">{user?.name || "مستخدم FAMILY"}</p>
-              <p className="text-[10px] text-[#34D399]">{roleLabel}</p>
-              <p className="text-[10px] text-[#94A3B8]">{user?.email || "جلسة آمنة"}</p>
+              <p className="text-[10px] text-emerald-600 dark:text-[#34D399] font-medium">{roleLabel}</p>
+              <p className="text-[10px] text-slate-500 dark:text-[#94A3B8]">{user?.email || "جلسة آمنة"}</p>
             </TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                className="size-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all"
                 onClick={toggleTheme}
                 aria-label="تبديل الوضع اللوني"
               >
-                {theme === "dark" ? <Sun className="size-4 text-amber-300" /> : <Moon className="size-4" />}
+                {theme === "dark" ? <Sun className="size-4 text-amber-300" /> : <Moon className="size-4 text-slate-700" />}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] text-xs px-2.5 py-1">
+            <TooltipContent side="left" className="bg-white border border-slate-200 text-slate-900 dark:bg-[#0B0F17] dark:border-white/10 dark:text-[#F8FAFC] text-xs px-2.5 py-1">
               تبديل الوضع اللوني
             </TooltipContent>
           </Tooltip>
@@ -422,13 +422,13 @@ function UserControls({
             <TooltipTrigger asChild>
               <button
                 onClick={onLogout}
-                className="size-8 rounded-lg flex items-center justify-center text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-all"
+                className="size-8 rounded-lg flex items-center justify-center text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-950/40 transition-all"
                 aria-label="تسجيل الخروج"
               >
                 <LogOut className="size-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left" className="bg-[#0B0F17] border border-white/10 text-[#F8FAFC] text-xs px-2.5 py-1">
+            <TooltipContent side="left" className="bg-white border border-slate-200 text-slate-900 dark:bg-[#0B0F17] dark:border-white/10 dark:text-[#F8FAFC] text-xs px-2.5 py-1">
               تسجيل الخروج
             </TooltipContent>
           </Tooltip>
@@ -438,44 +438,44 @@ function UserControls({
   }
 
   return (
-    <div className="fintech-v2-user-zone border-t border-white/5 pt-4 px-3 pb-3 space-y-2.5">
+    <div className="fintech-v2-user-zone border-t border-slate-200/80 dark:border-white/5 pt-4 px-3 pb-3 space-y-2.5">
       <div className="fintech-v2-utility-row flex gap-2">
         <button
           className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-xl border text-[11px] font-medium transition-all ${
             isDemoMode
-              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-300 shadow-sm"
-              : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08] hover:text-white"
+              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-xs"
+              : "border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white"
           }`}
           onClick={toggleDemoMode}
         >
-          <Sparkles className="size-3.5 text-emerald-400" />
+          <Sparkles className="size-3.5 text-emerald-600 dark:text-emerald-400" />
           <span>{isDemoMode ? "العرض التجريبي مفعل" : "معاينة تجريبية"}</span>
         </button>
         <button
-          className="flex items-center justify-center size-8 rounded-xl border border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.08] hover:text-white transition-all shrink-0"
+          className="flex items-center justify-center size-8 rounded-xl border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-all shrink-0"
           onClick={toggleTheme}
           aria-label="تبديل الوضع اللوني"
           title="تبديل الوضع اللوني"
         >
-          {theme === "dark" ? <Sun className="size-3.5 text-amber-300" /> : <Moon className="size-3.5" />}
+          {theme === "dark" ? <Sun className="size-3.5 text-amber-300" /> : <Moon className="size-3.5 text-slate-700" />}
         </button>
       </div>
 
-      <div className="fintech-v2-user-card flex items-center gap-2.5 p-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition-all">
-        <span className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0">
+      <div className="fintech-v2-user-card flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200/90 bg-white/70 hover:bg-white dark:border-white/5 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] transition-all">
+        <span className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shrink-0">
           {initial}
         </span>
         <div className="min-w-0 flex-1">
-          <strong className="block truncate text-xs text-slate-100 font-semibold">
+          <strong className="block truncate text-xs text-slate-900 dark:text-slate-100 font-semibold">
             {user?.name || "مستخدم FAMILY"}
           </strong>
-          <span className="block truncate text-[10px] text-slate-400 font-mono">
+          <span className="block truncate text-[10px] text-slate-500 dark:text-slate-400 font-mono">
             {roleLabel}
           </span>
         </div>
         <button
           onClick={onLogout}
-          className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 transition-colors shrink-0"
+          className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors shrink-0"
           title="تسجيل الخروج"
           aria-label="تسجيل الخروج"
         >
@@ -630,10 +630,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl">
-      {/* Scoped Sidebar Styling: Deep Charcoal Slate (#0B0F17) */}
+      {/* Theme-Adaptive Sidebar Styling: Light (#F8FAFC) / Dark (#0B0F17) */}
       <style>{`
         aside.fintech-v2-sidebar,
         .fintech-v2-mobile-sheet {
+          background-color: #F8FAFC !important;
+          background: #F8FAFC !important;
+          background-image: none !important;
+          border-left: 1px solid rgba(226, 232, 240, 0.85) !important;
+        }
+        .dark aside.fintech-v2-sidebar,
+        .dark .fintech-v2-mobile-sheet {
           background-color: #0B0F17 !important;
           background: #0B0F17 !important;
           background-image: none !important;
@@ -647,18 +654,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       `}</style>
       <aside
         data-sidebar="true"
-        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""}`}
-        style={{
-          backgroundColor: "#0B0F17",
-          background: "#0B0F17",
-          backgroundImage: "none",
-          borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
-        }}
+        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""} bg-[#F8FAFC] border-l border-slate-200/90 dark:bg-[#0B0F17] dark:border-white/10`}
       >
-        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-4 py-3.5 border-b border-white/[0.08] shrink-0 min-h-[68px]">
+        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-4 py-3.5 border-b border-slate-200/80 dark:border-white/[0.08] shrink-0 min-h-[68px]">
           <FintechBrand collapsed={collapsed} />
           <button
-            className="fintech-v2-collapse size-8 rounded-lg flex items-center justify-center border border-white/10 bg-white/5 text-slate-300 hover:text-white hover:bg-white/15 transition-colors shrink-0"
+            className="fintech-v2-collapse size-8 rounded-lg flex items-center justify-center border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/15 transition-colors shrink-0"
             onClick={() => setCollapsed(value => !value)}
             aria-label={collapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
             title={collapsed ? "توسيع القائمة" : "طي القائمة"}
@@ -678,17 +679,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent
           side="right"
-          className="fintech-v2-mobile-sheet"
-          style={{
-            backgroundColor: "#0B0F17",
-            background: "#0B0F17",
-            backgroundImage: "none",
-            borderLeft: "1px solid rgba(255, 255, 255, 0.08)",
-          }}
+          className="fintech-v2-mobile-sheet bg-[#F8FAFC] border-slate-200/90 dark:bg-[#0B0F17] dark:border-white/10"
           dir="rtl"
         >
           <div className="fintech-v2-mobile-body">
-            <div className="p-4 border-b border-white/[0.08]">
+            <div className="p-4 border-b border-slate-200/80 dark:border-white/[0.08]">
               <FintechBrand collapsed={false} />
             </div>
             <FintechNav
