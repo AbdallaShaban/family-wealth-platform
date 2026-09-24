@@ -8,6 +8,7 @@ import { TRPCError } from "@trpc/server";
 import { calculateEmergencyFund } from "./emergencyFundMath";
 import { assetClassForInstrument, calculateAllocation } from "./allocationMath";
 import { isMarketDataStale } from "./marketData";
+import { isEgxTradeSettled } from "./swingTradingMath";
 import { getCachedReadModel } from "./readModelCache";
 
 function unavailable() {
@@ -82,11 +83,10 @@ export async function getDashboardSummary(context: FamilyContext) {
   // valuedBalance includes liquid accounts + non-liquid asset accounts minus liability accounts.
   const currentNetWorth = valuedBalance.plus(investmentValue).plus(bankCertificatesTotal);
 
-  // Unsettled Cash calculation (T+2 / 48h settlement window for recent equity dispositions)
-  const settlementWindowMs = 2 * 24 * 60 * 60 * 1000;
+  // Unsettled Cash calculation (Strict EGX T+2 trading-day settlement window, skipping Friday/Saturday)
   const now = Date.now();
   const unsettledSells = recentEvents.filter(
-    (e) => e.eventType === "sell" && now - e.occurredAt < settlementWindowMs
+    (e) => e.eventType === "sell" && !isEgxTradeSettled(e.occurredAt, now)
   );
   const unsettledCash = unsettledSells.reduce(
     (sum, e) => sum.plus(new Decimal(e.grossAmount ?? 0)),

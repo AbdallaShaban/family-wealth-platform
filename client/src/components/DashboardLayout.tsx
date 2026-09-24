@@ -87,7 +87,8 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { icon: ArrowLeftRight, label: "المعاملات المالية", path: "/transactions", minimumRole: "editor" },
       { icon: WalletCards, label: "التدفق النقدي والسيولة", path: "/cash-flow", minimumRole: "editor" },
-      { icon: CreditCard, label: "الديون والالتزامات", path: "/debts", minimumRole: "editor" },
+      { icon: Landmark, label: "الشهادات والودائع البنكية", path: "/certificates", minimumRole: "viewer" },
+      { icon: CreditCard, label: "الديون وكروت المشتريات", path: "/debts", minimumRole: "editor" },
       { icon: ClipboardCheck, label: "المطابقة والتسوية البنكية", path: "/reconciliation", minimumRole: "editor" },
       { icon: FileSpreadsheet, label: "كشوف الحساب والملفات", path: "/imports", minimumRole: "editor" },
     ],

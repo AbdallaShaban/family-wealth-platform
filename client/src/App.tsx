@@ -16,6 +16,7 @@ const CashFlowPage = lazy(() => import("./pages/family/CashFlowPage"));
 const CashFlowRegisterPage = lazy(() => import("./pages/family/CashFlowRegisterPage"));
 const RecurringRulesPage = lazy(() => import("./pages/family/RecurringRulesPage"));
 const DebtsPage = lazy(() => import("./pages/family/DebtsPage"));
+const CertificatesPage = lazy(() => import("./pages/family/CertificatesPage"));
 const EmergencyFundPage = lazy(() => import("./pages/family/EmergencyFundPage"));
 const TransfersPage = lazy(() => import("./pages/family/TransfersPage"));
 const InvestmentsPage = lazy(() => import("./pages/InvestmentsPageRedesign"));
@@ -83,6 +84,9 @@ function Router() {
       <Route path={"/export"} component={FamilyExportPage} />
       <Route path={"/settlements"} component={SettlementPage} />
       <Route path={"/debts"} component={DebtsPage} />
+      <Route path={"/liabilities"} component={DebtsPage} />
+      <Route path={"/certificates"} component={CertificatesPage} />
+      <Route path={"/banking"} component={CertificatesPage} />
       <Route path={"/emergency-fund"} component={EmergencyFundPage} />
       <Route path={"/transfers"} component={TransfersPage} />
       <Route path={"/investments"} component={InvestmentsPage} />

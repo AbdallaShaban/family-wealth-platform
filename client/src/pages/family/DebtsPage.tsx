@@ -16,7 +16,9 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CreditCard, ArrowUpRight, Building2, Calendar, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CreditCardsHub from "@/components/banking/CreditCardsHub";
+import { CreditCard, ArrowUpRight, Building2, Calendar, Loader2, Percent } from "lucide-react";
 
 export const debtTypeLabel: Record<string, string> = {
   loan: "قرض",
@@ -193,8 +195,27 @@ export function DebtsPage() {
           icon={CreditCard}
         />
 
-        {/* Top Executive Asymmetric Metric Strip (With Semantic Tints) */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+        <Tabs defaultValue="credit_cards" className="w-full">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-6">
+            <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+              <TabsTrigger value="credit_cards" className="rounded-lg text-xs font-bold gap-2 px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-2xs">
+                <CreditCard className="size-3.5 text-rose-500" />
+                كروت المشتريات والتقسيط 0%
+              </TabsTrigger>
+              <TabsTrigger value="loans" className="rounded-lg text-xs font-bold gap-2 px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-2xs">
+                <Building2 className="size-3.5 text-slate-500" />
+                القروض والالتزامات العامة
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="credit_cards" className="m-0 space-y-6">
+            <CreditCardsHub />
+          </TabsContent>
+
+          <TabsContent value="loans" className="m-0 space-y-6">
+            {/* Top Executive Asymmetric Metric Strip (With Semantic Tints) */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
           {/* Cell 1 (إجمالي الالتزامات القائمة - Total Principal Remaining) */}
           <div className="bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
@@ -800,6 +821,8 @@ export function DebtsPage() {
             ) : null}
           </div>
         )}
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

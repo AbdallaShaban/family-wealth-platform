@@ -15,6 +15,7 @@ import {
 import {
   createDebt,
   createFamilyAccount,
+  postCashEvent,
   postDebtPayment,
   reconcileCashAccount,
 } from "../../familyLedger";
@@ -221,39 +222,32 @@ export async function collectCertificateYield(args: {
   const now = Date.now();
   const memo = args.memo?.trim() || `عائد دوري: ${cert.certificateName} (${cert.bankName})`;
 
-  // Reconcile or post cash event as income to linked bank account
-  const result = await reconcileCashAccount({
+  // Strict double-entry ledger posting (Debit: Bank Account, Credit: Investment Income) inside an atomic transaction
+  const event = await postCashEvent({
     context: args.context,
     actorUserId: args.actorUserId,
     accountId: cert.linkedPayoutAccountId,
-    actualBalance: new Decimal(
-      (
-        await db
-          .select({
-            balance: sql<string>`COALESCE(SUM(CASE WHEN ${journalLines.direction} = 'debit' THEN ${journalLines.amount} ELSE -${journalLines.amount} END), 0)`,
-          })
-          .from(journalLines)
-          .where(and(eq(journalLines.accountId, cert.linkedPayoutAccountId), eq(journalLines.workspaceId, args.context.workspace.id)))
-      )[0]?.balance ?? 0
-    )
-      .plus(amountToCollect)
-      .toFixed(2),
+    eventType: "income",
+    amount: amountToCollect.toFixed(6),
+    currency: cert.currency,
+    occurredAt: now,
     memo,
     idempotencyKey: `yield-${cert.id}-${now}`,
+    source: "system_generated",
+    afterPosted: async (tx) => {
+      await tx
+        .update(bankCertificates)
+        .set({ lastYieldCollectedAt: now, updatedAt: now })
+        .where(eq(bankCertificates.id, cert.id));
+    },
   });
-
-  // Update lastYieldCollectedAt
-  await db
-    .update(bankCertificates)
-    .set({ lastYieldCollectedAt: now, updatedAt: now })
-    .where(eq(bankCertificates.id, cert.id));
 
   return {
     success: true,
     collectedAmount: amountToCollect.toFixed(2),
     currency: cert.currency,
     linkedAccountId: cert.linkedPayoutAccountId,
-    eventId: result.id,
+    eventId: event.id,
   };
 }
 

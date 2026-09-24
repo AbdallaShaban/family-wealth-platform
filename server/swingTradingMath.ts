@@ -306,6 +306,38 @@ export function calculateRecommendedPositionSize(
   };
 }
 
+// Determine if a day is an active EGX trading day (Sunday = 0, Mon = 1, Tue = 2, Wed = 3, Thu = 4)
+// Non-trading days: Friday = 5, Saturday = 6
+export const isEgxTradingDay = (d: Date): boolean => {
+  const dayOfWeek = d.getDay();
+  return dayOfWeek !== 5 && dayOfWeek !== 6;
+};
+
+/**
+ * Calculates T+2 settlement date for an EGX trade, skipping Friday and Saturday.
+ * e.g., Thursday trade -> Friday (skip), Saturday (skip) -> Sunday (+1), Monday (+2).
+ */
+export function calculateEgxT2SettlementDate(tradeDate: Date | number): Date {
+  const cursor = new Date(tradeDate);
+  let settlementTradingDays = 0;
+  while (settlementTradingDays < 2) {
+    cursor.setDate(cursor.getDate() + 1);
+    if (isEgxTradingDay(cursor)) {
+      settlementTradingDays++;
+    }
+  }
+  return cursor;
+}
+
+/**
+ * Determines whether an EGX trade has settled by the specified timestamp (now).
+ */
+export function isEgxTradeSettled(tradeDate: Date | number, now: Date | number = Date.now()): boolean {
+  const settlementDate = calculateEgxT2SettlementDate(tradeDate);
+  const nowMs = typeof now === "number" ? now : now.getTime();
+  return nowMs >= settlementDate.getTime();
+}
+
 /**
  * Calculates the exit timeline and T+2 settlement timeline for Egyptian Stock Exchange (EGX).
  * EGX active trading days: Sunday through Thursday (skips Friday and Saturday).
@@ -316,13 +348,6 @@ export function calculateExitTimeline(
 ): ExitTimelineResult {
   const start = new Date(startDate);
   const days = Math.max(1, Math.floor(Number(holdingTradingDays) || 10));
-
-  // Determine if a day is an active EGX trading day (Sunday = 0, Mon = 1, Tue = 2, Wed = 3, Thu = 4)
-  // Non-trading days: Friday = 5, Saturday = 6
-  const isEgxTradingDay = (d: Date): boolean => {
-    const dayOfWeek = d.getDay();
-    return dayOfWeek !== 5 && dayOfWeek !== 6;
-  };
 
   const cursor = new Date(start.getTime());
   let accumulatedTradingDays = 0;
@@ -337,18 +362,7 @@ export function calculateExitTimeline(
   }
 
   const deadline = new Date(cursor.getTime());
-
-  // Calculate settlement Date T+2 (2 additional trading days after deadline)
-  const settlementCursor = new Date(deadline.getTime());
-  let settlementTradingDays = 0;
-  while (settlementTradingDays < 2) {
-    settlementCursor.setDate(settlementCursor.getDate() + 1);
-    if (isEgxTradingDay(settlementCursor)) {
-      settlementTradingDays++;
-    }
-  }
-
-  const settlementDate = new Date(settlementCursor.getTime());
+  const settlementDate = calculateEgxT2SettlementDate(deadline);
 
   return {
     deadline,

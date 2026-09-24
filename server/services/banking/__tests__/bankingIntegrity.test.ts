@@ -55,4 +55,33 @@ describe("Strict Ledger & Financial Equations Integrity (Zero Double-Counting)",
     expect(warningRatio).toBe(40);
     expect(warningRatio > 30).toBe(true);
   });
+
+  it("strictly enforces EGX T+2 trading-day settlement calendar (skips Friday and Saturday)", async () => {
+    const { calculateEgxT2SettlementDate, isEgxTradeSettled } = await import("../../../swingTradingMath");
+
+    // Thursday trade: Sep 17, 2026, 12:00 PM
+    const thursdayTrade = new Date(2026, 8, 17, 12, 0, 0); // Month 8 is September
+    expect(thursdayTrade.getDay()).toBe(4); // Thursday
+
+    const settlementDate = calculateEgxT2SettlementDate(thursdayTrade);
+    // Friday (Sep 18, day 5) is skipped
+    // Saturday (Sep 19, day 6) is skipped
+    // Sunday (Sep 20, day 0) is Trading Day +1
+    // Monday (Sep 21, day 1) is Trading Day +2 (Settlement Date)
+    expect(settlementDate.getDay()).toBe(1); // Monday
+    expect(settlementDate.getDate()).toBe(21);
+
+    // 48 calendar hours after trade is Saturday Sep 19 at 12:00 PM
+    const saturday48HoursLater = new Date(2026, 8, 19, 12, 0, 0);
+    // With strict EGX T+2, the trade is STILL UNSETTLED on Saturday!
+    expect(isEgxTradeSettled(thursdayTrade, saturday48HoursLater)).toBe(false);
+
+    // Sunday Sep 20 at 12:00 PM is still T+1 -> STILL UNSETTLED!
+    const sundayTPlus1 = new Date(2026, 8, 20, 12, 0, 0);
+    expect(isEgxTradeSettled(thursdayTrade, sundayTPlus1)).toBe(false);
+
+    // Monday Sep 21 at 12:00 PM -> SETTLED!
+    const mondayTPlus2 = new Date(2026, 8, 21, 12, 0, 0);
+    expect(isEgxTradeSettled(thursdayTrade, mondayTPlus2)).toBe(true);
+  });
 });
