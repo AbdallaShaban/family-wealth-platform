@@ -12,12 +12,11 @@ import {
 } from "./familyShared";
 import { ShieldCheck } from "lucide-react";
 
-export function AuditPage() {
+export function AuditPage({ embedded = false }: { embedded?: boolean }) {
   const audit = trpc.family.audit.recent.useQuery();
 
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-6xl space-y-6">
+  const content = (
+    <div dir="rtl" className="mx-auto max-w-6xl space-y-6">
         <PageHeader
           title="سجل التدقيق الرقابي"
           description="أثر التغييرات والعمليات المالية والرقابية الموثقة زمنياً ضمن مساحتك المالية."
@@ -93,8 +92,10 @@ export function AuditPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }
 
 export default AuditPage;

@@ -46,7 +46,7 @@ function ExtBadge({ mimeType }: { mimeType: string }) {
   );
 }
 
-export default function VaultPage() {
+export default function VaultPage({ embedded = false }: { embedded?: boolean }) {
   const utils = trpc.useUtils();
   const documents = trpc.family.vault.list.useQuery({});
   const [file, setFile] = useState<File | null>(null);
@@ -94,9 +94,8 @@ export default function VaultPage() {
     });
   };
 
-  return (
-    <DashboardLayout>
-      <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
+  const content = (
+    <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
         <PageHeader
           title="خزنة الوثائق والمستندات"
           description="أرشفة وتخزين آمن للوثائق والعقود القانونية المشفرة مع توثيق سجلات الوصول والتحميل رقابياً."
@@ -300,6 +299,8 @@ export default function VaultPage() {
           </div>
         </div>
       </main>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }

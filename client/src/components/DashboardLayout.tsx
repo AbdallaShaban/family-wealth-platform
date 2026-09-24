@@ -64,86 +64,112 @@ const roleArabicLabels: Record<MinimumRole, string> = {
 const navigationGroups: NavigationGroup[] = [
   {
     id: "overview",
-    label: "النظرة المالية العامة",
+    label: "النظرة التنفيذية",
     icon: LayoutDashboard,
     items: [
-      { icon: LayoutDashboard, label: "النظرة المالية العامة", path: "/", minimumRole: "viewer" },
-      { icon: Globe2, label: "النظرة المالية والتقييم", path: "/valuation", minimumRole: "advisor" },
-      { icon: Sparkles, label: "الصحة المالية", path: "/wealth-health", minimumRole: "viewer" },
+      { icon: LayoutDashboard, label: "النظرة التنفيذية وصافي الثروة", path: "/", minimumRole: "viewer" },
     ],
   },
   {
-    id: "wealth_assets",
-    label: "الثروة والأصول",
+    id: "banking",
+    label: "البنوك والسيولة والتخطيط",
     icon: Landmark,
     items: [
-      { icon: Landmark, label: "الحسابات والأرصدة", path: "/accounts", minimumRole: "viewer" },
-      { icon: TrendingUp, label: "الاستثمارات والمحافظ", path: "/investments", minimumRole: "viewer" },
-      { icon: BriefcaseBusiness, label: "الأصول الخاصة والتأمين", path: "/assets-insurance", minimumRole: "viewer" },
+      { icon: Landmark, label: "الحسابات البنكية والمحافظ", path: "/banking", minimumRole: "viewer" },
+      { icon: Landmark, label: "الشهادات والودائع", path: "/banking?tab=certificates", minimumRole: "viewer" },
+      { icon: WalletCards, label: "السيولة والتخطيط المالي", path: "/banking?tab=liquidity", minimumRole: "editor" },
+      { icon: CreditCard, label: "الالتزامات والديون", path: "/banking?tab=debts", minimumRole: "editor" },
     ],
   },
   {
-    id: "cash_liabilities",
-    label: "النقد والالتزامات",
-    icon: WalletCards,
-    items: [
-      { icon: ArrowLeftRight, label: "المعاملات المالية", path: "/transactions", minimumRole: "editor" },
-      { icon: WalletCards, label: "التدفق النقدي والسيولة", path: "/cash-flow", minimumRole: "editor" },
-      { icon: Landmark, label: "الشهادات والودائع البنكية", path: "/certificates", minimumRole: "viewer" },
-      { icon: CreditCard, label: "الديون وكروت المشتريات", path: "/debts", minimumRole: "editor" },
-      { icon: ClipboardCheck, label: "المطابقة والتسوية البنكية", path: "/reconciliation", minimumRole: "editor" },
-      { icon: FileSpreadsheet, label: "كشوف الحساب والملفات", path: "/imports", minimumRole: "editor" },
-    ],
-  },
-  {
-    id: "analysis_strategy",
-    label: "التحليل والاستراتيجية",
+    id: "investments",
+    label: "المحافظ والاستثمارات",
     icon: TrendingUp,
     items: [
-      { icon: Sparkles, label: "الاستخبارات الكمية والذهب", path: "/quant", minimumRole: "viewer" },
-      { icon: TrendingUp, label: "الأداء الاستثماري", path: "/performance", minimumRole: "viewer" },
-      { icon: BarChart3, label: "تداول السوينج والمستشار", path: "/trading/swing", minimumRole: "viewer" },
-      { icon: ArrowLeftRight, label: "المخاطر والتخصيص", path: "/risk", minimumRole: "viewer" },
-      { icon: ShieldCheck, label: "اختبارات الإجهاد", path: "/stress-testing", minimumRole: "viewer" },
-      { icon: Target, label: "الأهداف والتقاعد", path: "/goals", minimumRole: "viewer" },
-      { icon: ReceiptText, label: "العمليات", path: "/operations", minimumRole: "editor" },
+      { icon: TrendingUp, label: "الأصول والمحفظة الحية", path: "/investments", minimumRole: "viewer" },
+      { icon: BarChart3, label: "الأداء والأرباح المحققة", path: "/investments?tab=realized", minimumRole: "viewer" },
+      { icon: ArrowLeftRight, label: "التوزيع الجغرافي والمخاطر", path: "/investments?tab=allocation", minimumRole: "viewer" },
     ],
   },
   {
-    id: "governance_admin",
-    label: "الحوكمة والإدارة",
-    icon: ShieldCheck,
+    id: "quant",
+    label: "أسواق المال والتحليل الكمي",
+    icon: Sparkles,
     items: [
-      { icon: FileChartColumn, label: "كشوف الحساب والتقارير", path: "/reports", minimumRole: "viewer" },
-      { icon: Building2, label: "التوحيد المالي", path: "/consolidation", minimumRole: "viewer" },
-      { icon: CheckCircle2, label: "الموافقات", path: "/approvals", minimumRole: "editor" },
-      { icon: FileLock2, label: "الخزنة", path: "/vault", minimumRole: "editor" },
-      { icon: Download, label: "النسخ الاحتياطي والتعافي", path: "/export", minimumRole: "advisor" },
-      { icon: UsersRound, label: "الأعضاء", path: "/members", minimumRole: "advisor" },
-      { icon: BookOpenCheck, label: "سجل التدقيق", path: "/audit", minimumRole: "advisor" },
-      { icon: UsersRound, label: "إدارة المستخدمين", path: "/admin/users", minimumRole: "advisor" },
-      { icon: ShieldCheck, label: "بوابة المدقق الخارجي", path: "/auditor-portal", minimumRole: "advisor" },
+      { icon: Sparkles, label: "الإشارات الكمية والفنية", path: "/quant", minimumRole: "viewer" },
+      { icon: ShieldCheck, label: "اختبارات الضغط والسيناريوهات", path: "/quant?tab=stress", minimumRole: "viewer" },
+    ],
+  },
+  {
+    id: "governance",
+    label: "التقارير والحوكمة",
+    icon: FileChartColumn,
+    items: [
+      { icon: FileChartColumn, label: "القوائم المالية والميزانية", path: "/governance", minimumRole: "viewer" },
+      { icon: BookOpenCheck, label: "سجل التدقيق المحاسبي", path: "/governance?tab=audit", minimumRole: "advisor" },
+      { icon: FileLock2, label: "الخزنة وإدارة الصلاحيات", path: "/governance?tab=vault", minimumRole: "editor" },
     ],
   },
 ];
+
+// Legacy route → hub ID mapping for backward compatibility
+const routeToHubMap: Record<string, string> = {
+  "/accounts": "banking",
+  "/certificates": "banking",
+  "/cash-flow": "banking",
+  "/emergency-fund": "banking",
+  "/budget": "banking",
+  "/debts": "banking",
+  "/reconciliation": "banking",
+  "/transactions": "banking",
+  "/imports": "banking",
+  "/performance": "investments",
+  "/risk": "investments",
+  "/assets-insurance": "investments",
+  "/stress-testing": "quant",
+  "/trading/swing": "quant",
+  "/goals": "quant",
+  "/operations": "quant",
+  "/valuation": "overview",
+  "/wealth-health": "overview",
+  "/reports": "governance",
+  "/audit": "governance",
+  "/vault": "governance",
+  "/consolidation": "governance",
+  "/approvals": "governance",
+  "/export": "governance",
+  "/members": "governance",
+  "/admin/users": "governance",
+  "/auditor-portal": "governance",
+};
 
 const allItems = navigationGroups.flatMap(group => group.items);
 
 function getActiveGatewayId(path: string): string {
   const normalized = path.startsWith("/family/") ? path.replace("/family", "") : path;
   if (normalized === "/") return "overview";
+
+  // Check direct hub routes first
   for (const group of navigationGroups) {
     if (
       group.items.some(
         item =>
           item.path === path ||
           item.path === normalized ||
-          (item.path !== "/" && (path.startsWith(item.path + "/") || normalized.startsWith(item.path + "/")))
+          (item.path !== "/" && (path.startsWith(item.path.split("?")[0] + "/") || normalized.startsWith(item.path.split("?")[0] + "/")))
       )
     ) {
       return group.id;
     }
   }
+
+  // Fall through to legacy route map
+  for (const [legacyPath, hubId] of Object.entries(routeToHubMap)) {
+    if (normalized === legacyPath || normalized.startsWith(legacyPath + "/")) {
+      return hubId;
+    }
+  }
+
   return "overview";
 }
 

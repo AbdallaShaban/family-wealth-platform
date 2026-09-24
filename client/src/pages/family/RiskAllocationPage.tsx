@@ -39,7 +39,7 @@ export const allocationClasses: AllocationDraft["assetClass"][] = ["cash", "equi
 export const emptyAllocationDraft = (): AllocationDraft[] =>
   allocationClasses.map(assetClass => ({ assetClass, targetPercent: "", driftThresholdPercent: "" }));
 
-export default function RiskAllocationPage() {
+export default function RiskAllocationPage({ embedded = false }: { embedded?: boolean }) {
   const utils = trpc.useUtils();
   const access = useFamilyPermissions();
   const summary = trpc.family.risk.summary.useQuery();
@@ -103,9 +103,8 @@ export default function RiskAllocationPage() {
     saveTargets.mutate({ targets });
   };
 
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
+  const content = (
+    <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="ملف المخاطر والتخصيص"
           description="التوزيع الفعلي يجمع السيولة والحيازات ذات الأسعار وسعر الصرف الموثقين فقط. «راجع الانحراف» تنبيه تحليلي لمراجعة الهدف، ولا ينفذ صفقة أو يقدم توصية شراء وبيع."
@@ -240,7 +239,9 @@ export default function RiskAllocationPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }
 export { RiskAllocationPage };

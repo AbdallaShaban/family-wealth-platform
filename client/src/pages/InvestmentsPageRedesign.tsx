@@ -66,6 +66,7 @@ import { RecordTradeForm } from "@/components/investments/RecordTradeForm";
 import { DividendModal } from "@/components/investments/DividendModal";
 import { InstrumentActionModals } from "@/components/investments/InstrumentActionModals";
 import { TradeActionModals } from "@/components/investments/TradeActionModals";
+import RiskAllocationPage from "./family/RiskAllocationPage";
 
 function formatQuantity(qty: string | number | null | undefined): string {
   if (qty == null) return "0";
@@ -127,11 +128,18 @@ export default function InvestmentsPageRedesign() {
   const baseCurrency = access.data?.workspace.baseCurrency || "EGP";
   const instrumentMap = useMemo(() => new Map((instruments.data ?? []).map((i) => [i.id, i.name])), [instruments.data]);
 
-  // Tab State
+  // Tab State – synced to URL
   const [activeTab, setActiveTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("tab") || "holdings";
   });
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", tab);
+    window.history.pushState({}, "", url.pathname + url.search);
+  };
 
   // Preselected trade values when navigating from holdings
   const [preselectedTradeInstrumentId, setPreselectedTradeInstrumentId] = useState("");
@@ -397,7 +405,7 @@ export default function InvestmentsPageRedesign() {
         </section>
 
         {/* 6 Unified Tabs with Bank-Grade Segmented Control */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1 mb-6 h-auto w-full justify-start">
             <TabsTrigger value="holdings" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
               الأصول الاستثمارية
@@ -416,6 +424,9 @@ export default function InvestmentsPageRedesign() {
             </TabsTrigger>
             <TabsTrigger value="lots" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
               حزم FIFO
+            </TabsTrigger>
+            <TabsTrigger value="allocation" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
+              التوزيع والمخاطر
             </TabsTrigger>
           </TabsList>
 
@@ -1304,6 +1315,11 @@ export default function InvestmentsPageRedesign() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* TAB 7: Asset Allocation & Risk */}
+          <TabsContent value="allocation">
+            <RiskAllocationPage embedded />
           </TabsContent>
         </Tabs>
 

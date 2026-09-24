@@ -90,7 +90,7 @@ const PREDEFINED_SCENARIOS_META: Array<{
   },
 ];
 
-export default function StressTestingPage() {
+export default function StressTestingPage({ embedded = false }: { embedded?: boolean }) {
   const [selectedTab, setSelectedTab] = useState<string>("macro");
   const [selectedScenarioId, setSelectedScenarioId] = useState<PredefinedScenarioKey>("gfc_2008_inspired");
 
@@ -286,9 +286,8 @@ export default function StressTestingPage() {
   const cashAllocation = profile?.portfolio.allocations.find((a) => a.assetClass === "cash");
   const marketableAllocation = profile?.portfolio.allocations.find((a) => a.assetClass === "equity");
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-6 pb-12" dir="rtl">
+  const content = (
+    <div className="space-y-6 pb-12" dir="rtl">
         {/* Header Section */}
         <PageHeader
           title="محرك اختبارات الضغط والصلابة المالية ومحاكاة الأزمات"
@@ -1458,6 +1457,8 @@ export default function StressTestingPage() {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }

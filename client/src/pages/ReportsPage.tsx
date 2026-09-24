@@ -22,7 +22,7 @@ import {
   Coins,
 } from "lucide-react";
 
-export function ReportsPage() {
+export function ReportsPage({ embedded = false }: { embedded?: boolean }) {
   // Date modes: "period_key" | "point_in_time" | "period"
   const [dateMode, setDateMode] = useState<"period_key" | "point_in_time" | "period">("period_key");
   const [periodKey, setPeriodKey] = useState<string>("2026-08");
@@ -80,9 +80,8 @@ export function ReportsPage() {
     return `${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr}`;
   };
 
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-7xl space-y-6 pb-12">
+  const content = (
+    <div dir="rtl" className="mx-auto max-w-7xl space-y-6 pb-12">
         <PageHeader
           title="كشوف الحساب والتقارير"
           description="قوائم مالية متوافقة مع القيد المزدوج، وجسر تحليلي لصافي الثروة الاقتصادي، ومطابقة تدفقات نقدية مدققة."
@@ -1023,8 +1022,10 @@ export function ReportsPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }
 
 export default ReportsPage;

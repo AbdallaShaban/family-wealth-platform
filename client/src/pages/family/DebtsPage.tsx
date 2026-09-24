@@ -28,7 +28,7 @@ export const debtTypeLabel: Record<string, string> = {
   other: "أخرى",
 };
 
-export function DebtsPage() {
+export function DebtsPage({ embedded = false }: { embedded?: boolean }) {
   const utils = trpc.useUtils();
   const access = useFamilyPermissions();
   const debts = trpc.family.debts.list.useQuery();
@@ -181,9 +181,8 @@ export function DebtsPage() {
   const inputClass =
     "bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl font-medium text-xs py-2.5 px-3 focus:outline-hidden focus:border-slate-800 dark:focus:border-slate-400 focus:ring-1 focus:ring-slate-800 dark:focus:ring-slate-400 transition-all h-auto";
 
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
+  const content = (
+    <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="الديون والالتزامات"
           description="الرصيد المستحق معروض من الحساب الالتزامي المقيد، لا من حقل قابل للتعديل. يحسب النموذج جدول التكلفة من معدل الفائدة والقسط المدخلين، ولا يقارن بعوائد استثمارية مفترضة."
@@ -824,8 +823,10 @@ export function DebtsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }
 
 export default DebtsPage;

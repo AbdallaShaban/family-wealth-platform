@@ -50,6 +50,8 @@ const TransactionsHubPage = lazy(() => import("./pages/TransactionsHubPage"));
 const FxManagementPage = lazy(() => import("./pages/FxManagementPage"));
 const SwingTradingPage = lazy(() => import("./pages/SwingTradingPage"));
 const QuantitativeHubPage = lazy(() => import("./pages/QuantitativeHubPage"));
+const BankingHubPage = lazy(() => import("./pages/BankingHubPage"));
+const GovernanceHubPage = lazy(() => import("./pages/GovernanceHubPage"));
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -70,24 +72,24 @@ function Router() {
       <Route path={"/swing"} component={SwingTradingPage} />
       <Route path={"/transactions"} component={TransactionsHubPage} />
       <Route path={"/family/transactions"} component={TransactionsHubPage} />
-      <Route path={"/accounts"} component={AccountsPage} />
+      <Route path={"/accounts"}>{() => <AccountsPage />}</Route>
       <Route path={"/ledger"} component={LedgerPage} />
-      <Route path={"/cash-flow"} component={CashFlowPage} />
-      <Route path={"/cashflow"} component={CashFlowPage} />
+      <Route path={"/cash-flow"}>{() => <CashFlowPage />}</Route>
+      <Route path={"/cashflow"}>{() => <CashFlowPage />}</Route>
       <Route path={"/cash-flow/record"} component={CashFlowRegisterPage} />
       <Route path={"/cash-flow/recurring"} component={RecurringRulesPage} />
       <Route path={"/imports"} component={BankImportInbox} />
       <Route path={"/approvals"} component={GovernanceApprovals} />
       <Route path={"/scenarios"} component={ScenarioPlanning} />
       <Route path={"/operations"} component={OperationsCenter} />
-      <Route path={"/vault"} component={VaultPage} />
+      <Route path={"/vault"}>{() => <VaultPage />}</Route>
       <Route path={"/export"} component={FamilyExportPage} />
       <Route path={"/settlements"} component={SettlementPage} />
-      <Route path={"/debts"} component={DebtsPage} />
-      <Route path={"/liabilities"} component={DebtsPage} />
+      <Route path={"/debts"}>{() => <DebtsPage />}</Route>
+      <Route path={"/liabilities"}>{() => <DebtsPage />}</Route>
       <Route path={"/certificates"} component={CertificatesPage} />
-      <Route path={"/banking"} component={CertificatesPage} />
-      <Route path={"/emergency-fund"} component={EmergencyFundPage} />
+      <Route path={"/banking"}>{() => <BankingHubPage />}</Route>
+      <Route path={"/emergency-fund"}>{() => <EmergencyFundPage />}</Route>
       <Route path={"/transfers"} component={TransfersPage} />
       <Route path={"/investments"} component={InvestmentsPage} />
       <Route path={"/trades"} component={TradingPage} />
@@ -98,25 +100,26 @@ function Router() {
       <Route path={"/goals"} component={GoalsPlanningPage} />
       <Route path={"/budget"} component={GoalsPlanningPage} />
       <Route path={"/budgets"} component={GoalsPlanningPage} />
-      <Route path={"/risk"} component={RiskAllocationPage} />
+      <Route path={"/risk"}>{() => <RiskAllocationPage />}</Route>
       <Route path={"/fee-tax"} component={FeeTaxRulesPage} />
       <Route path={"/tax"} component={FeeTaxRulesPage} />
       <Route path={"/assets-insurance"} component={AssetsInsurancePage} />
       <Route path={"/risk/rebalance"} component={RebalanceReviewPage} />
       <Route path={"/members"} component={MembersPage} />
-      <Route path={"/reports"} component={ReportsPage} />
-      <Route path={"/family/reports"} component={ReportsPage} />
+      <Route path={"/governance"}>{() => <GovernanceHubPage />}</Route>
+      <Route path={"/reports"}>{() => <ReportsPage />}</Route>
+      <Route path={"/family/reports"}>{() => <ReportsPage />}</Route>
       <Route path={"/wealth-health"} component={WealthHealthPage} />
       <Route path={"/family/wealth-health"} component={WealthHealthPage} />
       <Route path={"/performance"} component={PerformancePage} />
       <Route path={"/family/performance"} component={PerformancePage} />
-      <Route path={"/stress-testing"} component={StressTestingPage} />
-      <Route path={"/family/stress-testing"} component={StressTestingPage} />
+      <Route path={"/stress-testing"}>{() => <StressTestingPage />}</Route>
+      <Route path={"/family/stress-testing"}>{() => <StressTestingPage />}</Route>
       <Route path={"/consolidation"} component={ConsolidationPage} />
       <Route path={"/family/consolidation"} component={ConsolidationPage} />
       <Route path={"/auditor"} component={AuditorPortalPage} />
       <Route path={"/auditor-portal"} component={AuditorPortalPage} />
-      <Route path={"/audit"} component={AuditPage} />
+      <Route path={"/audit"}>{() => <AuditPage />}</Route>
       <Route path={"/settings/fx"} component={FxManagementPage} />
       <Route path={"/exchange-rates"} component={FxManagementPage} />
       <Route path={"/admin/users"} component={PlatformAdministrationPage} />

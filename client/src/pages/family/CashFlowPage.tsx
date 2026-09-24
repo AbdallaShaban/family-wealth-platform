@@ -24,7 +24,7 @@ function currentPeriodKey() {
   return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", timeZone: "UTC" }).format(new Date());
 }
 
-export function CashFlowPage() {
+export function CashFlowPage({ embedded = false }: { embedded?: boolean }) {
   const utils = trpc.useUtils();
   const access = useFamilyPermissions();
   const [periodKey, setPeriodKey] = useState(currentPeriodKey);
@@ -86,9 +86,8 @@ export function CashFlowPage() {
   const actualExpense = Number(summary.data?.expenseActualBase || 0);
   const budgetExecutionRate = totalPlannedExpense > 0 ? Math.round((actualExpense / totalPlannedExpense) * 100) : null;
 
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
+  const content = (
+    <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="التدفق النقدي والسيولة"
           description="المقارنة هنا تعتمد على مبالغ المعاملات المعتمدة والقيم الأساسية في دفتر القيود. لن يظهر فعلي أو مخطط بلا بيانات مسجلة."
@@ -384,8 +383,10 @@ export function CashFlowPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }
 
 export default CashFlowPage;

@@ -26,7 +26,7 @@ import {
   textError,
 } from "./familyShared";
 
-export default function AccountsPage() {
+export default function AccountsPage({ embedded = false }: { embedded?: boolean }) {
   const [, setLocation] = useLocation();
   const query = trpc.family.accounts.list.useQuery();
   const workspace = trpc.family.bootstrap.useQuery();
@@ -66,9 +66,8 @@ export default function AccountsPage() {
 
   const activeCount = activeAccounts.length;
 
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-6xl space-y-6">
+  const content = (
+    <div dir="rtl" className="mx-auto max-w-6xl space-y-6">
         <PageHeader
           title="الحسابات والأرصدة"
           description="الأرصدة هنا ناتج قيود الدفتر، وليست حقولًا قابلة للتعديل يدويًا."
@@ -306,7 +305,9 @@ export default function AccountsPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }
 export { AccountsPage };

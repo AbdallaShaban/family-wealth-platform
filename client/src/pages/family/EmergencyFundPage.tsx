@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Umbrella, Loader2, AlertTriangle } from "lucide-react";
 
-export function EmergencyFundPage() {
+export function EmergencyFundPage({ embedded = false }: { embedded?: boolean }) {
   const utils = trpc.useUtils();
   const access = useFamilyPermissions();
   const summary = trpc.family.emergencyFund.summary.useQuery();
@@ -58,9 +58,8 @@ export function EmergencyFundPage() {
     setTargetDate(plan.targetDate ? new Date(plan.targetDate).toISOString().slice(0, 10) : "");
   }, [plan?.targetMonths, plan?.lookbackMonths, plan?.targetDate]);
 
-  return (
-    <DashboardLayout>
-      <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
+  const content = (
+    <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
         <PageHeader
           title="صندوق الطوارئ"
           description="تُقاس التغطية بالسيولة المقيمة مقابل متوسط المصروفات الأساسية المسجلة خلال فترة النظر، مضافًا إليه الحد الأدنى للديون. لا تفترض المنصة دخلًا أو عائدًا لم يُسجل."
@@ -297,8 +296,10 @@ export function EmergencyFundPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }
 
 export default EmergencyFundPage;
