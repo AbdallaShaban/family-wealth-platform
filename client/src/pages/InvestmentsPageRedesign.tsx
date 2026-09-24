@@ -48,77 +48,18 @@ import { trpc } from "@/lib/trpc";
 import { formatMoney } from "@/lib/financialDisplay";
 import CreatableCombobox from "@/components/CreatableCombobox";
 
-type AssetType = "equity" | "fund" | "bond" | "gold" | "real_estate" | "cash_equivalent" | "other";
-const assetTypeLabel: Record<AssetType, string> = {
-  equity: "أسهم",
-  fund: "صناديق استثمار",
-  bond: "سندات وصكوك",
-  gold: "ذهب ومعادن ثمينة",
-  real_estate: "أصول عقارية",
-  cash_equivalent: "أشباه النقد والسيولة",
-  other: "أخرى",
-};
+import {
+  AssetType,
+  assetTypeLabel,
+  subCategoriesByAssetType,
+  egxSectors,
+  CreateInstrumentForm,
+} from "@/components/investments/CreateInstrumentForm";
+import { RecordTradeForm } from "@/components/investments/RecordTradeForm";
+import { DividendModal } from "@/components/investments/DividendModal";
+import { InstrumentActionModals } from "@/components/investments/InstrumentActionModals";
+import { TradeActionModals } from "@/components/investments/TradeActionModals";
 
-const subCategoriesByAssetType: Record<AssetType, string[]> = {
-  equity: [
-    "أسهم مدرجة مباشرة",
-    "أسهم شركات خاصة",
-    "وثائق حقوق أولوية",
-    "أخرى",
-  ],
-  fund: [
-    "صندوق نقد يومي (سيولة)",
-    "صندوق أسهم",
-    "صندوق ذهب",
-    "صندوق استثمار متوازن",
-    "صندوق استثمار عقاري",
-    "صندوق مؤشرات متداولة (ETF)",
-    "أخرى",
-  ],
-  gold: [
-    "سبائك معتمدة (عيار 24)",
-    "جنيهات ذهب (عيار 21)",
-    "ذهب عيني / كسر",
-    "فضة ومعادن ثمينة",
-    "أخرى",
-  ],
-  real_estate: [
-    "عقار سكني",
-    "عقار تجاري / إداري",
-    "أراضي استثمارية",
-    "أخرى",
-  ],
-  bond: [
-    "سندات حكومية وأذون خزانة",
-    "سندات توريق وشركات",
-    "صكوك تمويلية",
-    "أخرى",
-  ],
-  cash_equivalent: [
-    "أذون خزانة قصيرة الأجل",
-    "شهادات ادخار بنكية",
-    "ودائع لأجل",
-    "أخرى",
-  ],
-  other: [
-    "عام / غير مصنف",
-  ],
-};
-
-const egxSectors: string[] = [
-  "البنوك والخدمات المالية غير المصرفية",
-  "العقارات والتطوير العقاري",
-  "الرعاية الصحية والأدوية",
-  "البناء ومواد التشييد",
-  "الأغذية والمشروبات والتبغ",
-  "الاتصالات والإعلام والتكنولوجيا",
-  "الصناعة والسلع المعمرة والمنسوجات",
-  "الموارد الأساسية والبتروكيماويات",
-  "السياحة والفنادق والترفيه",
-  "الخدمات والنقل والشحن",
-  "الطاقة المتجددة والمرافق",
-  "قطاع آخر / غير مصنف",
-];
 
 const legacyLabelMap: Record<string, string> = {
   "DIRECT_EQUITY": "أسهم مدرجة مباشرة",
@@ -177,41 +118,17 @@ export default function InvestmentsPageRedesign() {
     return params.get("tab") || "holdings";
   });
 
-  // Instrument Creation State
-  const [name, setName] = useState("");
-  const [symbol, setSymbol] = useState("");
-  const [currency, setCurrency] = useState("EGP");
-  const [assetType, setAssetType] = useState<AssetType>("equity");
-  const [subCategory, setSubCategory] = useState("أسهم مدرجة مباشرة");
-  const [sector, setSector] = useState("البنوك والخدمات المالية غير المصرفية");
-
-  const showSector = assetType === "equity" || (assetType === "fund" && (subCategory === "صندوق أسهم" || subCategory === "EQUITY_FUND"));
-
-  const handleAssetTypeChange = (newType: AssetType) => {
-    setAssetType(newType);
-    const available = subCategoriesByAssetType[newType] || [];
-    setSubCategory(available[0] ?? "أخرى");
-  };
+  // Preselected trade values when navigating from holdings
+  const [preselectedTradeInstrumentId, setPreselectedTradeInstrumentId] = useState("");
+  const [preselectedTradeSide, setPreselectedTradeSide] = useState<"buy" | "sell">("buy");
 
   // Instrument Edit & Delete State
   const [editInstrumentModalOpen, setEditInstrumentModalOpen] = useState(false);
   const [deleteInstrumentModalOpen, setDeleteInstrumentModalOpen] = useState(false);
   const [selectedInstrumentForAction, setSelectedInstrumentForAction] = useState<any | null>(null);
 
-  const [editName, setEditName] = useState("");
-  const [editSymbol, setEditSymbol] = useState("");
-  const [editAssetType, setEditAssetType] = useState<AssetType>("equity");
-  const [editSubCategory, setEditSubCategory] = useState("أسهم مدرجة مباشرة");
-  const [editSector, setEditSector] = useState("البنوك والخدمات المالية غير المصرفية");
-
   const handleOpenEditInstrument = (inst: any) => {
     setSelectedInstrumentForAction(inst);
-    setEditName(inst.name || "");
-    setEditSymbol(inst.symbol || "");
-    const aType = (inst.assetType || "equity") as AssetType;
-    setEditAssetType(aType);
-    setEditSubCategory(formatTaxonomyLabel(inst.subCategory));
-    setEditSector(formatTaxonomyLabel(inst.sector));
     setEditInstrumentModalOpen(true);
   };
 
@@ -220,42 +137,13 @@ export default function InvestmentsPageRedesign() {
     setDeleteInstrumentModalOpen(true);
   };
 
-  // Trade Record State
-  const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [transactionDate, setTransactionDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [tradeAccountId, setTradeAccountId] = useState("");
-  const [tradeInstrumentId, setTradeInstrumentId] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [unitPrice, setUnitPrice] = useState("");
-  const [feeAmount, setFeeAmount] = useState("");
-  const [taxAmount, setTaxAmount] = useState("");
-  const [memo, setMemo] = useState("");
-  const [confirmTradeOpen, setConfirmTradeOpen] = useState(false);
-
   // Trade Edit & Delete State
   const [editTradeModalOpen, setEditTradeModalOpen] = useState(false);
   const [deleteTradeModalOpen, setDeleteTradeModalOpen] = useState(false);
   const [selectedTradeForAction, setSelectedTradeForAction] = useState<any | null>(null);
 
-  const [editTradeDate, setEditTradeDate] = useState("");
-  const [editTradeQuantity, setEditTradeQuantity] = useState("");
-  const [editTradeUnitPrice, setEditTradeUnitPrice] = useState("");
-  const [editTradeAccountId, setEditTradeAccountId] = useState("");
-  const [editTradeFeeAmount, setEditTradeFeeAmount] = useState("");
-  const [editTradeTaxAmount, setEditTradeTaxAmount] = useState("");
-  const [editTradeMemo, setEditTradeMemo] = useState("");
-
   const handleOpenEditTrade = (trItem: any) => {
     setSelectedTradeForAction(trItem);
-    const dateObj = new Date(trItem.occurredAt);
-    const localIso = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    setEditTradeDate(localIso);
-    setEditTradeQuantity(trItem.quantity ? String(trItem.quantity) : "");
-    setEditTradeUnitPrice(trItem.unitPrice ? String(trItem.unitPrice) : "");
-    setEditTradeAccountId(trItem.primaryAccountId ? String(trItem.primaryAccountId) : "");
-    setEditTradeFeeAmount(trItem.feeAmount ? String(trItem.feeAmount) : "");
-    setEditTradeTaxAmount(trItem.taxAmount ? String(trItem.taxAmount) : "");
-    setEditTradeMemo(trItem.memo || "");
     setEditTradeModalOpen(true);
   };
 
@@ -271,142 +159,21 @@ export default function InvestmentsPageRedesign() {
   const role = access.data?.membership.role || "viewer";
   const canAdvise = ["owner", "advisor"].includes(role);
   const canEdit = ["owner", "advisor", "editor"].includes(role);
+
   // Dividend Recording State
   const [dividendModalOpen, setDividendModalOpen] = useState(false);
   const [selectedDividendPos, setSelectedDividendPos] = useState<any | null>(null);
-  const [dividendAccountId, setDividendAccountId] = useState("");
-  const [dividendAmount, setDividendAmount] = useState("");
-  const [dividendMemo, setDividendMemo] = useState("");
 
   const handleOpenDividendModal = (pos: any) => {
     setSelectedDividendPos(pos);
-    setDividendAmount("");
-    setDividendMemo(`توزيع أرباح نقدية: ${pos.instrumentName || pos.symbol || ""}`);
-    const firstBank = (accounts.data ?? []).find(
-      (a) => ["bank", "cash", "wallet"].includes(a.accountType) && a.status === "active"
-    ) || (accounts.data ?? [])[0];
-    if (firstBank) {
-      setDividendAccountId(String(firstBank.id));
-    }
     setDividendModalOpen(true);
-  };
-
-  const postDividendMutation = trpc.family.ledger.postDividend.useMutation({
-    onSuccess: () => {
-      toast.success("تم تسجيل توزيع الأرباح وترحيله إلى الحساب المصرفي ودفتر الأستاذ بنجاح.");
-      setDividendModalOpen(false);
-      setSelectedDividendPos(null);
-      setDividendAmount("");
-      void utils.family.accounts.list.invalidate();
-      void utils.family.dashboard.invalidate();
-      void utils.family.cashFlow.invalidate();
-      void utils.family.portfolio.list.invalidate();
-      void utils.family.ledger.recent.invalidate();
-    },
-    onError: (error) => toast.error(errorText(error)),
-  });
-
-  const handleRecordDividend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDividendPos || !dividendAccountId || !dividendAmount) {
-      toast.error("يرجى تحديد الحساب البنكي وإدخال قيمة التوزيعات.");
-      return;
-    }
-    const val = Number(dividendAmount);
-    if (isNaN(val) || val <= 0) {
-      toast.error("يرجى إدخال مبلغ صحيح أكبر من الصفر.");
-      return;
-    }
-    await postDividendMutation.mutateAsync({
-      accountId: Number(dividendAccountId),
-      instrumentId: selectedDividendPos.instrumentId,
-      amount: val.toFixed(2),
-      currency: selectedDividendPos.currency || baseCurrency,
-      occurredAt: Date.now(),
-      memo: dividendMemo || `توزيع أرباح نقدية: ${selectedDividendPos.instrumentName}`,
-      idempotencyKey: `dividend-${selectedDividendPos.instrumentId}-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    });
   };
 
   const tradeAccounts = (accounts.data ?? []).filter(
     (account) => ["cash", "bank", "brokerage", "wallet"].includes(account.accountType) && account.status === "active"
   );
-  const selectedAccount = tradeAccounts.find((account) => String(account.id) === tradeAccountId);
-  const selectedInstrument = instruments.data?.find((item) => String(item.id) === tradeInstrumentId);
 
   // Mutations
-  const createInstrument = trpc.family.instruments.create.useMutation({
-    onSuccess: () => {
-      toast.success("تمت إضافة الأداة الاستثمارية بنجاح.");
-      setName("");
-      setSymbol("");
-      setSubCategory("أسهم مدرجة مباشرة");
-      setSector("البنوك والخدمات المالية غير المصرفية");
-      void utils.family.instruments.list.invalidate();
-    },
-    onError: (error) => {
-      toast.error(error.message || "فشل حفظ الأداة الاستثمارية.");
-    },
-  });
-
-  const updateInstrumentMutation = trpc.family.instruments.update.useMutation({
-    onSuccess: () => {
-      toast.success("تم تعديل الأداة الاستثمارية بنجاح.");
-      setEditInstrumentModalOpen(false);
-      void utils.family.instruments.list.invalidate();
-      void utils.family.portfolio.list.invalidate();
-    },
-    onError: (error) => toast.error(errorText(error)),
-  });
-
-  const deleteInstrumentMutation = trpc.family.instruments.delete.useMutation({
-    onSuccess: () => {
-      toast.success("تم حذف الأداة الاستثمارية بنجاح.");
-      setDeleteInstrumentModalOpen(false);
-      void utils.family.instruments.list.invalidate();
-      void utils.family.portfolio.list.invalidate();
-    },
-    onError: (error) => {
-      setDeleteInstrumentModalOpen(false);
-      toast.error(error.message || "فشل حذف الأداة الاستثمارية.");
-    },
-  });
-
-  const updateTradeMutation = trpc.family.investments.updateTransaction.useMutation({
-    onSuccess: () => {
-      toast.success("تم تعديل الصفقة وعكس القيود السابقة في دفتر الأستاذ بنجاح.");
-      setEditTradeModalOpen(false);
-      void utils.family.investments.transactions.invalidate();
-      void utils.family.ledger.recent.invalidate();
-      void utils.family.portfolio.list.invalidate();
-      void utils.family.lots.list.invalidate();
-      void utils.family.accounts.list.invalidate();
-      void utils.family.realizedPnl.summary.invalidate();
-      void utils.family.realizedPnl.list.invalidate();
-      void utils.family.dashboard.invalidate();
-    },
-    onError: (error) => toast.error(errorText(error)),
-  });
-
-  const deleteTradeMutation = trpc.family.investments.deleteTransaction.useMutation({
-    onSuccess: () => {
-      toast.success("تم حذف الصفقة وعكس قيودها المحاسبية بنجاح.");
-      setDeleteTradeModalOpen(false);
-      void utils.family.investments.transactions.invalidate();
-      void utils.family.ledger.recent.invalidate();
-      void utils.family.portfolio.list.invalidate();
-      void utils.family.lots.list.invalidate();
-      void utils.family.accounts.list.invalidate();
-      void utils.family.realizedPnl.summary.invalidate();
-      void utils.family.realizedPnl.list.invalidate();
-      void utils.family.dashboard.invalidate();
-    },
-    onError: (error) => {
-      setDeleteTradeModalOpen(false);
-      toast.error(errorText(error));
-    },
-  });
-
   const recordQuote = trpc.family.prices.recordManual.useMutation({
     onSuccess: () => {
       toast.success("تم حفظ السعر السوقي وتحديث القيمة السوقية للمركز.");
@@ -458,70 +225,6 @@ export default function InvestmentsPageRedesign() {
     },
   });
 
-  const handleSaveEditInstrument = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedInstrumentForAction) return;
-    updateInstrumentMutation.mutate({
-      id: selectedInstrumentForAction.id,
-      name: editName,
-      symbol: editSymbol.trim() ? editSymbol.trim() : null,
-      assetType: editAssetType,
-      subCategory: editSubCategory.trim() ? editSubCategory.trim() : null,
-      sector: editSector.trim() ? editSector.trim() : null,
-    });
-  };
-
-  const handleConfirmDeleteInstrument = () => {
-    if (!selectedInstrumentForAction) return;
-    deleteInstrumentMutation.mutate({ id: selectedInstrumentForAction.id });
-  };
-
-  const handleSaveEditTrade = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTradeForAction) return;
-    const occurredAtMs = editTradeDate ? new Date(editTradeDate).getTime() : selectedTradeForAction.occurredAt;
-    updateTradeMutation.mutate({
-      id: selectedTradeForAction.id,
-      accountId: editTradeAccountId ? Number(editTradeAccountId) : undefined,
-      quantity: editTradeQuantity,
-      unitPrice: editTradeUnitPrice,
-      feeAmount: editTradeFeeAmount || null,
-      taxAmount: editTradeTaxAmount || null,
-      occurredAt: occurredAtMs,
-      memo: editTradeMemo || null,
-    });
-  };
-
-  const handleConfirmDeleteTrade = () => {
-    if (!selectedTradeForAction) return;
-    deleteTradeMutation.mutate({ id: selectedTradeForAction.id });
-  };
-
-  const trade = trpc.family.ledger.trade.useMutation({
-    onSuccess: () => {
-      toast.success("تم نشر الصفقة وتحديث الحيازة ومتوسط التكلفة وسجلات FIFO في معاملة واحدة.");
-      setTransactionDate(new Date().toISOString().split("T")[0]);
-      setQuantity("");
-      setUnitPrice("");
-      setFeeAmount("");
-      setTaxAmount("");
-      setMemo("");
-      setConfirmTradeOpen(false);
-      void utils.family.dashboard.invalidate();
-      void utils.family.accounts.list.invalidate();
-      void utils.family.ledger.recent.invalidate();
-      void utils.family.investments.transactions.invalidate();
-      void utils.family.portfolio.list.invalidate();
-      void utils.family.lots.list.invalidate();
-      void utils.family.realizedPnl.summary.invalidate();
-      void utils.family.realizedPnl.list.invalidate();
-    },
-    onError: (error) => {
-      setConfirmTradeOpen(false);
-      toast.error(errorText(error));
-    },
-  });
-
   const holdings = portfolio.data ?? [];
   const valuedHoldings = holdings.filter((item) => item.marketValue !== null && item.marketValue !== undefined);
   const needsQuote = holdings.filter((item) => item.quoteStatus === "unavailable");
@@ -532,47 +235,6 @@ export default function InvestmentsPageRedesign() {
       return sum + (isNaN(val) ? 0 : val);
     }, 0);
   }, [holdings, baseCurrency]);
-
-  const submitInstrument = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!name.trim()) {
-      return toast.error("يرجى إدخال اسم الأداة الاستثمارية.");
-    }
-    createInstrument.mutate({
-      name: name.trim(),
-      symbol: symbol.trim() || null,
-      currency: currency.trim() || "EGP",
-      assetType,
-      subCategory: subCategory || null,
-      sector: showSector ? sector : null,
-      isin: null,
-    });
-  };
-
-  const submitTrade = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!selectedAccount || !selectedInstrument) return toast.error("اختر حساب تسوية وأداة استثمارية أولًا.");
-    setConfirmTradeOpen(true);
-  };
-
-  const executeConfirmedTrade = () => {
-    if (!selectedAccount || !selectedInstrument) return;
-    const dateObj = new Date(transactionDate + "T12:00:00Z");
-    const occurredAtMs = isNaN(dateObj.getTime()) ? Date.now() : dateObj.getTime();
-    trade.mutate({
-      side,
-      accountId: selectedAccount.id,
-      instrumentId: selectedInstrument.id,
-      quantity,
-      unitPrice,
-      feeAmount: feeAmount || null,
-      taxAmount: taxAmount || null,
-      occurredAt: occurredAtMs,
-      date: transactionDate,
-      memo: memo || null,
-      idempotencyKey: crypto.randomUUID(),
-    });
-  };
 
   const submitQuote = (event: React.FormEvent) => {
     event.preventDefault();
@@ -763,7 +425,8 @@ export default function InvestmentsPageRedesign() {
                     الكمية ومتوسط التكلفة والقيمة تُستمد من الصفقات المعتمدة والأسعار الموثقة بالسوق.
                   </p>
                 </div>
-                <div className="overflow-x-auto">
+                {/* Desktop View */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full min-w-[720px] text-right text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-800">
@@ -835,8 +498,8 @@ export default function InvestmentsPageRedesign() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setTradeInstrumentId(String(pos.instrumentId));
-                                  setSide("sell");
+                                  setPreselectedTradeInstrumentId(String(pos.instrumentId));
+                                  setPreselectedTradeSide("sell");
                                   setActiveTab("trades");
                                 }}
                                 className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all cursor-pointer"
@@ -849,6 +512,88 @@ export default function InvestmentsPageRedesign() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Tactile Cards View */}
+                <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60 p-3 space-y-3">
+                  {holdings.map((pos) => {
+                    const isAvailable = pos.quoteStatus !== "unavailable" || (pos.marketPrice && Number(pos.marketPrice) > 0);
+                    return (
+                      <div key={pos.id} className="pt-3 first:pt-0 bg-slate-50/70 dark:bg-slate-900/40 rounded-xl p-3.5 border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <strong className="text-slate-900 dark:text-slate-100 font-bold text-sm block">{pos.instrumentName}</strong>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {pos.symbol ? (
+                                <span className="font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-[11px] border border-slate-200/60 dark:border-slate-700/60">
+                                  {pos.symbol}
+                                </span>
+                              ) : null}
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">{pos.currency}</span>
+                            </div>
+                          </div>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                            !isAvailable
+                              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200/60 dark:border-amber-800/40"
+                              : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
+                          }`}>
+                            {!isAvailable ? "يتطلب سعرًا" : "متاح"}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900/80 rounded-lg p-2.5 border border-slate-200/50 dark:border-slate-800/50">
+                          <div>
+                            <span className="text-slate-500 dark:text-slate-400 block text-[11px]">الكمية</span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">{pos.quantity}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 dark:text-slate-400 block text-[11px]">متوسط التكلفة</span>
+                            <span className="font-mono text-slate-900 dark:text-white tabular-nums">
+                              <SensitiveValue>{formatMoney(pos.averageCost, pos.costCurrency, 2)}</SensitiveValue>
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 dark:text-slate-400 block text-[11px]">سعر السوق</span>
+                            <span className="font-mono font-semibold text-slate-900 dark:text-white tabular-nums">
+                              <SensitiveValue>{pos.marketPrice ? formatMoney(pos.marketPrice, pos.currency, 2) : "—"}</SensitiveValue>
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 dark:text-slate-400 block text-[11px]">القيمة السوقية</span>
+                            <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
+                              <SensitiveValue>{pos.marketValue ? formatMoney(pos.marketValue, pos.currency, 2) : "—"}</SensitiveValue>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-1">
+                          {canEdit && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenDividendModal(pos)}
+                              className="bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 font-semibold text-xs px-2.5 py-1.5 rounded-lg border border-emerald-200/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50 shadow-2xs transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              <CircleDollarSign className="size-3.5" />
+                              <span>توزيع أرباح</span>
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setPreselectedTradeInstrumentId(String(pos.instrumentId));
+                              setPreselectedTradeSide("sell");
+                              setActiveTab("trades");
+                            }}
+                            className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3 py-1.5 rounded-lg border border-slate-200/90 shadow-2xs dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:text-slate-200 dark:border-slate-700/60 transition-all cursor-pointer"
+                          >
+                            تداول
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -877,110 +622,7 @@ export default function InvestmentsPageRedesign() {
           {/* TAB 2: Instruments */}
           <TabsContent value="instruments">
             <section className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
-              <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
-                <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
-                  <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
-                    <Plus className="size-5 text-sky-600 dark:text-sky-400" />
-                    إضافة أداة استثمارية
-                  </CardTitle>
-                  <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">تقتصر إضافة الأدوات وأسعارها على دور المالك أو المستشار.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-5">
-                  <form onSubmit={submitInstrument} className="grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="instrument-name" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الاسم</Label>
-                      <Input
-                        id="instrument-name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        disabled={!canAdvise}
-                        required
-                        minLength={2}
-                        placeholder="اسم الأداة الاستثمارية"
-                        className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto"
-                      />
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="grid gap-2">
-                        <Label htmlFor="instrument-symbol" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الرمز (Ticker)</Label>
-                        <Input
-                          id="instrument-symbol"
-                          value={symbol}
-                          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                          disabled={!canAdvise}
-                          maxLength={48}
-                          placeholder="مثال: GC=F أو AAPL"
-                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto uppercase font-mono"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="instrument-currency" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">العملة</Label>
-                        <Input
-                          id="instrument-currency"
-                          value={currency}
-                          onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                          disabled={!canAdvise}
-                          minLength={3}
-                          maxLength={3}
-                          required
-                          placeholder="SAR"
-                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto uppercase font-mono"
-                        />
-                      </div>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="grid gap-2">
-                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">الفئة الرئيسية (Asset Class)</Label>
-                        <Select value={assetType} onValueChange={(val) => handleAssetTypeChange(val as AssetType)} disabled={!canEdit}>
-                          <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
-                            <SelectValue placeholder="اختر الفئة" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
-                            {Object.entries(assetTypeLabel).map(([val, lbl]) => (
-                              <SelectItem key={val} value={val}>{lbl}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid gap-2">
-                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">التصنيف الفرعي</Label>
-                        <CreatableCombobox
-                          id="instrument-subcategory"
-                          value={subCategory}
-                          onChange={setSubCategory}
-                          options={subCategoriesByAssetType[assetType] || []}
-                          placeholder="اختر التصنيف الفرعي أو اكتب مخصصاً..."
-                          disabled={!canEdit}
-                        />
-                      </div>
-                    </div>
-
-                    {showSector && (
-                      <div className="grid gap-2">
-                        <Label className="text-slate-800 dark:text-slate-200 font-bold text-xs">القطاع الاقتصادي</Label>
-                        <CreatableCombobox
-                          id="instrument-sector"
-                          value={sector}
-                          onChange={setSector}
-                          options={egxSectors}
-                          placeholder="اختر القطاع أو اكتب قطاعاً جديداً..."
-                          disabled={!canEdit}
-                        />
-                      </div>
-                    )}
-
-                    <Button
-                      type="submit"
-                      disabled={!canEdit || createInstrument.isPending}
-                      className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                    >
-                      {createInstrument.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
-                      {canEdit ? "حفظ الأداة" : "تتطلب صلاحية محرر أو مستشار"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+              <CreateInstrumentForm canEdit={canEdit} baseCurrency={baseCurrency} />
 
               <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
                 <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
@@ -999,85 +641,146 @@ export default function InvestmentsPageRedesign() {
                       {errorText(instruments.error)}
                     </div>
                   ) : instruments.data?.length ? (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[560px] text-right text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-200/90 dark:border-slate-800">
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">اسم الأداة</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الرمز (Ticker)</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الفئة الأساسية</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">التصنيف الفرعي</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">القطاع</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">العملة</th>
-                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-left w-24">الإجراءات</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                          {instruments.data.map((item) => (
-                            <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                              <td className="py-3.5 px-4 text-right">
-                                <span className="text-slate-900 dark:text-white font-bold text-sm block">{item.name}</span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                {item.symbol ? (
-                                  <span className="font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs border border-slate-200/60 dark:border-slate-700/60">
-                                    {item.symbol}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                <span className="inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60">
-                                  {assetTypeLabel[item.assetType as AssetType] || item.assetType}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                  {formatTaxonomyLabel(item.subCategory)}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                  {formatTaxonomyLabel(item.sector)}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-200/60 dark:border-slate-700/60">
-                                  {item.currency}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-left">
-                                <div className="flex items-center gap-1.5 justify-end">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    disabled={!canEdit}
-                                    onClick={() => handleOpenEditInstrument(item)}
-                                    title="تعديل الأداة المالية"
-                                    aria-label="تعديل الأداة المالية"
-                                    className="size-8 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
-                                  >
-                                    <Pencil className="size-3.5" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    disabled={!canEdit}
-                                    onClick={() => handleOpenDeleteInstrument(item)}
-                                    title="حذف الأداة المالية"
-                                    aria-label="حذف الأداة المالية"
-                                    className="size-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-500 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors"
-                                  >
-                                    <Trash2 className="size-3.5" />
-                                  </Button>
-                                </div>
-                              </td>
+                    <>
+                      {/* Desktop View */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full min-w-[560px] text-right text-sm">
+                          <thead>
+                            <tr className="border-b border-slate-200/90 dark:border-slate-800">
+                              <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">اسم الأداة</th>
+                              <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الرمز (Ticker)</th>
+                              <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">الفئة الأساسية</th>
+                              <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">التصنيف الفرعي</th>
+                              <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">القطاع</th>
+                              <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-right">العملة</th>
+                              <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs border-b border-slate-200 dark:border-slate-800 py-3.5 px-4 text-left w-24">الإجراءات</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                            {instruments.data.map((item) => (
+                              <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                <td className="py-3.5 px-4 text-right">
+                                  <span className="text-slate-900 dark:text-white font-bold text-sm block">{item.name}</span>
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  {item.symbol ? (
+                                    <span className="font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded text-xs border border-slate-200/60 dark:border-slate-700/60">
+                                      {item.symbol}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">—</span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  <span className="inline-flex w-fit items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60">
+                                    {assetTypeLabel[item.assetType as AssetType] || item.assetType}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                                    {formatTaxonomyLabel(item.subCategory)}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                                    {formatTaxonomyLabel(item.sector)}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-right">
+                                  <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-200/60 dark:border-slate-700/60">
+                                    {item.currency}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-left">
+                                  <div className="flex items-center gap-1.5 justify-end">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      disabled={!canEdit}
+                                      onClick={() => handleOpenEditInstrument(item)}
+                                      title="تعديل الأداة المالية"
+                                      aria-label="تعديل الأداة المالية"
+                                      className="size-8 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+                                    >
+                                      <Pencil className="size-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      disabled={!canEdit}
+                                      onClick={() => handleOpenDeleteInstrument(item)}
+                                      title="حذف الأداة المالية"
+                                      aria-label="حذف الأداة المالية"
+                                      className="size-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-500 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors"
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Tactile Cards View */}
+                      <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60 p-3 space-y-3">
+                        {instruments.data.map((item) => (
+                          <div key={item.id} className="pt-3 first:pt-0 bg-slate-50/70 dark:bg-slate-900/40 rounded-xl p-3.5 border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <strong className="text-slate-900 dark:text-slate-100 font-bold text-sm block">{item.name}</strong>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  {item.symbol ? (
+                                    <span className="font-mono font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-[11px] border border-slate-200/60 dark:border-slate-700/60">
+                                      {item.symbol}
+                                    </span>
+                                  ) : null}
+                                  <span className="font-mono text-xs text-slate-600 dark:text-slate-300 font-bold">{item.currency}</span>
+                                </div>
+                              </div>
+                              <span className="inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60">
+                                {assetTypeLabel[item.assetType as AssetType] || item.assetType}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs bg-white dark:bg-slate-900/80 rounded-lg p-2.5 border border-slate-200/50 dark:border-slate-800/50">
+                              <div>
+                                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">التصنيف الفرعي</span>
+                                <span className="font-medium text-slate-800 dark:text-slate-200">{formatTaxonomyLabel(item.subCategory)}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">القطاع</span>
+                                <span className="font-medium text-slate-800 dark:text-slate-200">{formatTaxonomyLabel(item.sector)}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={!canEdit}
+                                onClick={() => handleOpenEditInstrument(item)}
+                                className="h-8 px-2.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg gap-1"
+                              >
+                                <Pencil className="size-3.5" />
+                                <span>تعديل</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={!canEdit}
+                                onClick={() => handleOpenDeleteInstrument(item)}
+                                className="h-8 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-950/30 rounded-lg gap-1"
+                              >
+                                <Trash2 className="size-3.5" />
+                                <span>حذف</span>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
                   ) : (
                     <div className="p-8 text-center">
                       <div className="flex size-12 items-center justify-center rounded-2xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-3">
@@ -1095,155 +798,13 @@ export default function InvestmentsPageRedesign() {
           {/* TAB 3: Trades & Orders */}
           <TabsContent value="trades">
             <section className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
-              <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
-                <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 p-5">
-                  <CardTitle className="text-slate-900 dark:text-white font-bold text-base">مراجعة وتسجيل صفقة شراء أو بيع</CardTitle>
-                  <CardDescription className="text-slate-500 dark:text-slate-400 text-xs mt-1">
-                    الرسوم والضرائب تُسجل مع القيد المتوازن. لا يتم تعديل أي رصيد خارج دفتر الأستاذ. الأرباح المحققة تُحسب وفق منهجية FIFO ومقيدة بدفتر الأستاذ المزدوج.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-5">
-                  {accounts.isLoading || instruments.isLoading ? (
-                    <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تجهيز نموذج الصفقة…</p>
-                  ) : tradeAccounts.length && instruments.data?.length ? (
-                    <form onSubmit={submitTrade} className="grid gap-4">
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <div className="grid gap-2">
-                          <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">نوع الصفقة</Label>
-                          <Select value={side} onValueChange={(v) => setSide(v as "buy" | "sell")}>
-                            <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
-                              <SelectItem value="buy">شراء</SelectItem>
-                              <SelectItem value="sell">بيع</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="trade-date" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">تاريخ العملية</Label>
-                          <Input
-                            id="trade-date"
-                            type="date"
-                            value={transactionDate}
-                            onChange={(e) => setTransactionDate(e.target.value)}
-                            required
-                            className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2 px-3 h-auto font-mono text-right"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">حساب التسوية</Label>
-                          <Select value={tradeAccountId} onValueChange={setTradeAccountId}>
-                            <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
-                              <SelectValue placeholder="اختر حسابًا" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
-                              {tradeAccounts.map((acc) => (
-                                <SelectItem key={acc.id} value={String(acc.id)}>
-                                  {acc.name} — {acc.currency}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الأداة الاستثمارية</Label>
-                          <Select value={tradeInstrumentId} onValueChange={setTradeInstrumentId}>
-                            <SelectTrigger className="w-full bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto">
-                              <SelectValue placeholder="اختر أداة" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-800">
-                              {instruments.data.map((item) => (
-                                <SelectItem key={item.id} value={String(item.id)}>
-                                  {item.name} — {item.currency}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="grid gap-2">
-                          <Label htmlFor="trade-quantity" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الكمية</Label>
-                          <Input
-                            id="trade-quantity"
-                            inputMode="decimal"
-                            value={quantity}
-                            onChange={(e) => setQuantity(e.target.value)}
-                            required
-                            placeholder="0.00"
-                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="trade-price" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">سعر الوحدة</Label>
-                          <Input
-                            id="trade-price"
-                            inputMode="decimal"
-                            value={unitPrice}
-                            onChange={(e) => setUnitPrice(e.target.value)}
-                            required
-                            placeholder="0.00"
-                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="trade-fee" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الرسوم (اختياري)</Label>
-                          <Input
-                            id="trade-fee"
-                            inputMode="decimal"
-                            value={feeAmount}
-                            onChange={(e) => setFeeAmount(e.target.value)}
-                            placeholder="0.00"
-                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="trade-tax" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">الضرائب (اختياري)</Label>
-                          <Input
-                            id="trade-tax"
-                            inputMode="decimal"
-                            value={taxAmount}
-                            onChange={(e) => setTaxAmount(e.target.value)}
-                            placeholder="0.00"
-                            className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3 h-auto font-mono"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid gap-2">
-                        <Label htmlFor="trade-memo" className="text-slate-700 dark:text-slate-300 font-semibold text-xs">مذكرة العملية</Label>
-                        <Textarea
-                          id="trade-memo"
-                          value={memo}
-                          onChange={(e) => setMemo(e.target.value)}
-                          maxLength={2000}
-                          placeholder="ملاحظات أو مذكرة العملية (اختياري)..."
-                          className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-slate-800 focus:ring-1 focus:ring-slate-800 rounded-xl font-medium text-sm py-2.5 px-3"
-                        />
-                      </div>
-
-                      <Button
-                        type="submit"
-                        disabled={trade.isPending || !canAdvise}
-                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm py-2.5 px-6 rounded-xl shadow-sm transition-all dark:bg-white dark:hover:bg-slate-100 dark:text-slate-950 border border-slate-900 dark:border-transparent disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                      >
-                        {trade.isPending && <Loader2 className="ml-2 size-4 animate-spin" />}
-                        {canAdvise ? "تسجيل واعتماد الصفقة" : "تتطلب صلاحية مستشار"}
-                      </Button>
-                    </form>
-                  ) : (
-                    <div className="p-8 text-center">
-                      <div className="flex size-12 items-center justify-center rounded-2xl border bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 dark:border-slate-700/60 mx-auto mb-3">
-                        <Landmark className="size-6" />
-                      </div>
-                      <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">جهّز الحساب والأداة أولًا</h3>
-                      <p className="text-slate-600 dark:text-slate-400 text-xs max-w-md mx-auto mb-2">يلزم حساب تسوية نشط وأداة استثمارية قبل تسجيل صفقة فعلية.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <RecordTradeForm
+                canAdvise={canAdvise}
+                tradeAccounts={tradeAccounts}
+                instruments={instruments.data ?? []}
+                preselectedInstrumentId={preselectedTradeInstrumentId}
+                preselectedSide={preselectedTradeSide}
+              />
 
               {/* Manual Quote Card */}
               <Card className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
@@ -1322,92 +883,168 @@ export default function InvestmentsPageRedesign() {
                 {recentTrades.isLoading ? (
                   <p className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الصفقات…</p>
                 ) : recentTrades.data?.length ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[760px] text-right text-sm">
-                      <thead>
-                        <tr className="border-b border-slate-200 dark:border-slate-800">
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">نوع الصفقة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الأداة الاستثمارية</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">حساب التسوية</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">التاريخ والوقت</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الكمية</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">سعر الوحدة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الإجمالي الصافي</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الحالة</th>
-                          <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-left">الإجراءات</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                        {recentTrades.data.map((trItem) => {
-                          const inst = instruments.data?.find((i) => i.id === trItem.instrumentId);
-                          const acc = accounts.data?.find((a) => a.id === trItem.primaryAccountId);
-                          const isBuy = trItem.eventType === "buy";
-                          return (
-                            <tr key={trItem.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
-                              <td className="py-3.5 px-4">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                  <>
+                    {/* Desktop View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full min-w-[760px] text-right text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-800">
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">نوع الصفقة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الأداة الاستثمارية</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">حساب التسوية</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">التاريخ والوقت</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الكمية</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">سعر الوحدة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الإجمالي الصافي</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-right">الحالة</th>
+                            <th className="bg-slate-100/80 dark:bg-[#0E1420] text-slate-800 dark:text-slate-200 font-bold text-xs py-3.5 px-4 text-left">الإجراءات</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                          {recentTrades.data.map((trItem) => {
+                            const inst = instruments.data?.find((i) => i.id === trItem.instrumentId);
+                            const acc = accounts.data?.find((a) => a.id === trItem.primaryAccountId);
+                            const isBuy = trItem.eventType === "buy";
+                            return (
+                              <tr key={trItem.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+                                <td className="py-3.5 px-4">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                    isBuy ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" : "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
+                                  }`}>
+                                    {isBuy ? "شراء" : "بيع"}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
+                                  {inst?.name || `أداة #${trItem.instrumentId}`}
+                                  {inst?.symbol && (
+                                    <span className="font-mono text-xs text-slate-500 mr-1.5">({inst.symbol})</span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 text-xs text-slate-600 dark:text-slate-300">
+                                  {acc?.name || "حساب المعاملة"}
+                                </td>
+                                <td className="py-3.5 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">
+                                  {new Date(trItem.occurredAt).toLocaleString("en-GB")}
+                                </td>
+                                <td className="py-3.5 px-4 font-mono font-bold text-xs">
+                                  {trItem.quantity ? Number(trItem.quantity).toLocaleString() : "—"}
+                                </td>
+                                <td className="py-3.5 px-4 font-mono text-xs">
+                                  {trItem.unitPrice ? formatMoney(trItem.unitPrice, trItem.currency, 2) : "—"}
+                                </td>
+                                <td className="py-3.5 px-4 font-mono font-bold text-xs text-slate-900 dark:text-white">
+                                  {formatMoney(trItem.grossAmount, trItem.currency, 2)}
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  <span className="inline-flex items-center text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                    <CheckCircle2 className="size-3.5 ml-1 inline" />
+                                    مرحّل
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 text-left">
+                                  <div className="flex items-center gap-1.5 justify-end">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={!canEdit}
+                                      onClick={() => handleOpenEditTrade(trItem)}
+                                      className="h-8 px-2.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg gap-1"
+                                    >
+                                      <Pencil className="size-3.5" />
+                                      <span>تعديل</span>
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={!canEdit}
+                                      onClick={() => handleOpenDeleteTrade(trItem)}
+                                      className="h-8 px-2.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30 rounded-lg gap-1"
+                                    >
+                                      <Trash2 className="size-3.5" />
+                                      <span>حذف</span>
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile Tactile Cards View */}
+                    <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60 p-3 space-y-3">
+                      {recentTrades.data.map((trItem) => {
+                        const inst = instruments.data?.find((i) => i.id === trItem.instrumentId);
+                        const acc = accounts.data?.find((a) => a.id === trItem.primaryAccountId);
+                        const isBuy = trItem.eventType === "buy";
+                        return (
+                          <div key={trItem.id} className="pt-3 first:pt-0 bg-slate-50/70 dark:bg-slate-900/40 rounded-xl p-3.5 border border-slate-200/60 dark:border-slate-800/60 space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold mb-1 ${
                                   isBuy ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" : "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300"
                                 }`}>
                                   {isBuy ? "شراء" : "بيع"}
                                 </span>
-                              </td>
-                              <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
-                                {inst?.name || `أداة #${trItem.instrumentId}`}
-                                {inst?.symbol && (
-                                  <span className="font-mono text-xs text-slate-500 mr-1.5">({inst.symbol})</span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 text-xs text-slate-600 dark:text-slate-300">
-                                {acc?.name || "حساب المعاملة"}
-                              </td>
-                              <td className="py-3.5 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">
-                                {new Date(trItem.occurredAt).toLocaleString("en-GB")}
-                              </td>
-                              <td className="py-3.5 px-4 font-mono font-bold text-xs">
-                                {trItem.quantity ? Number(trItem.quantity).toLocaleString() : "—"}
-                              </td>
-                              <td className="py-3.5 px-4 font-mono text-xs">
-                                {trItem.unitPrice ? formatMoney(trItem.unitPrice, trItem.currency, 2) : "—"}
-                              </td>
-                              <td className="py-3.5 px-4 font-mono font-bold text-xs text-slate-900 dark:text-white">
-                                {formatMoney(trItem.grossAmount, trItem.currency, 2)}
-                              </td>
-                              <td className="py-3.5 px-4">
-                                <span className="inline-flex items-center text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                                  <CheckCircle2 className="size-3.5 ml-1 inline" />
-                                  مرحّل
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-left">
-                                <div className="flex items-center gap-1.5 justify-end">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    disabled={!canEdit}
-                                    onClick={() => handleOpenEditTrade(trItem)}
-                                    className="h-8 px-2.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg gap-1"
-                                  >
-                                    <Pencil className="size-3.5" />
-                                    <span>تعديل</span>
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    disabled={!canEdit}
-                                    onClick={() => handleOpenDeleteTrade(trItem)}
-                                    className="h-8 px-2.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30 rounded-lg gap-1"
-                                  >
-                                    <Trash2 className="size-3.5" />
-                                    <span>حذف</span>
-                                  </Button>
+                                <div className="font-bold text-slate-900 dark:text-white text-sm">
+                                  {inst?.name || `أداة #${trItem.instrumentId}`}
+                                  {inst?.symbol && (
+                                    <span className="font-mono text-xs text-slate-500 mr-1.5">({inst.symbol})</span>
+                                  )}
                                 </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                  {acc?.name || "حساب المعاملة"} · <span className="font-mono">{new Date(trItem.occurredAt).toLocaleDateString("en-GB")}</span>
+                                </div>
+                              </div>
+                              <span className="inline-flex items-center text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                <CheckCircle2 className="size-3.5 ml-1 inline" />
+                                مرحّل
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 text-xs bg-white dark:bg-slate-900/80 rounded-lg p-2.5 border border-slate-200/50 dark:border-slate-800/50">
+                              <div>
+                                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">الكمية</span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">{trItem.quantity ? Number(trItem.quantity).toLocaleString() : "—"}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">سعر الوحدة</span>
+                                <span className="font-mono text-slate-900 dark:text-white">{trItem.unitPrice ? formatMoney(trItem.unitPrice, trItem.currency, 2) : "—"}</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">الصافي</span>
+                                <span className="font-mono font-bold text-slate-900 dark:text-white">{formatMoney(trItem.grossAmount, trItem.currency, 2)}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={!canEdit}
+                                onClick={() => handleOpenEditTrade(trItem)}
+                                className="h-8 px-2.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 rounded-lg gap-1"
+                              >
+                                <Pencil className="size-3.5" />
+                                <span>تعديل</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={!canEdit}
+                                onClick={() => handleOpenDeleteTrade(trItem)}
+                                className="h-8 px-2.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/30 rounded-lg gap-1"
+                              >
+                                <Trash2 className="size-3.5" />
+                                <span>حذف</span>
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 ) : (
                   <p className="py-8 text-center text-sm text-slate-500">لا توجد صفقات منفذة مسجلة حتى الآن.</p>
                 )}
@@ -1622,256 +1259,25 @@ export default function InvestmentsPageRedesign() {
           </TabsContent>
         </Tabs>
 
-        {/* Confirmation Dialog for Trades */}
-        <ConfirmDialog
-          open={confirmTradeOpen}
-          onOpenChange={setConfirmTradeOpen}
-          title={`تأكيد تسجيل صفقة ${side === "buy" ? "شراء" : "بيع"}`}
-          description={`أنت على وشك تسجيل صفقة ${side === "buy" ? "شراء" : "بيع"} لـ ${quantity} وحدة من أداة "${selectedInstrument?.name}" عبر حساب "${selectedAccount?.name}" بتاريخ ${transactionDate}. سيتم قيد العملية في دفتر الأستاذ وتحديث متوسط التكلفة والحيازات وحزم FIFO.`}
-          confirmText={`تأكيد تسجيل صفقة الـ ${side === "buy" ? "شراء" : "بيع"}`}
-          cancelText="إلغاء والعودة"
-          isLoading={trade.isPending}
-          onConfirm={executeConfirmedTrade}
+        {/* Instrument Action Modals (Edit & Delete) */}
+        <InstrumentActionModals
+          editOpen={editInstrumentModalOpen}
+          onEditOpenChange={setEditInstrumentModalOpen}
+          deleteOpen={deleteInstrumentModalOpen}
+          onDeleteOpenChange={setDeleteInstrumentModalOpen}
+          instrument={selectedInstrumentForAction}
         />
 
-        {/* Edit Instrument Dialog */}
-        <Dialog open={editInstrumentModalOpen} onOpenChange={setEditInstrumentModalOpen}>
-          <DialogContent className="max-w-md w-full bg-white text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 border border-slate-200/90 dark:border-slate-800 shadow-2xl rounded-2xl p-6" dir="rtl">
-            <DialogHeader className="space-y-1 text-right">
-              <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-900/50">
-                  <Landmark className="size-4" />
-                </div>
-                <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">تعديل بيانات الأداة الاستثمارية</DialogTitle>
-              </div>
-              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 mr-10">
-                تحديث الاسم، الرمز، والتصنيفات للأداة المالية
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSaveEditInstrument} className="grid gap-3.5 mt-2">
-              <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">اسم الأداة</Label>
-                <Input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  required
-                  placeholder="مثال: البنك التجاري الدولي"
-                  className="rounded-xl text-sm border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">رمز التداول (Ticker)</Label>
-                <Input
-                  value={editSymbol}
-                  onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
-                  placeholder="مثال: COMI"
-                  className="rounded-xl text-sm font-mono border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">الفئة الأساسية</Label>
-                <Select
-                  value={editAssetType}
-                  onValueChange={(val) => {
-                    const nextType = val as AssetType;
-                    setEditAssetType(nextType);
-                    const avail = subCategoriesByAssetType[nextType] || [];
-                    setEditSubCategory(avail[0] ?? "أخرى");
-                  }}
-                >
-                  <SelectTrigger className="rounded-xl text-sm border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0E1420] text-slate-900 dark:text-slate-100">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-[#0B0F17] border-slate-200 dark:border-slate-800">
-                    {Object.entries(assetTypeLabel).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="edit-instrument-subcategory" className="text-xs font-semibold">التصنيف الفرعي</Label>
-                <CreatableCombobox
-                  id="edit-instrument-subcategory"
-                  value={editSubCategory}
-                  onChange={setEditSubCategory}
-                  options={subCategoriesByAssetType[editAssetType] || []}
-                  placeholder="اختر التصنيف الفرعي أو اكتب مخصصاً..."
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="edit-instrument-sector" className="text-xs font-semibold">القطاع</Label>
-                <CreatableCombobox
-                  id="edit-instrument-sector"
-                  value={editSector}
-                  onChange={setEditSector}
-                  options={egxSectors}
-                  placeholder="اختر القطاع أو اكتب مخصصاً..."
-                />
-              </div>
-              <DialogFooter className="mt-3 gap-2 flex-row-reverse">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditInstrumentModalOpen(false)}
-                  className="rounded-xl text-xs"
-                >
-                  إلغاء
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={updateInstrumentMutation.isPending}
-                  className="rounded-xl text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
-                >
-                  {updateInstrumentMutation.isPending && <Loader2 className="ml-2 size-3.5 animate-spin" />}
-                  حفظ التعديلات
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Instrument ConfirmDialog */}
-        <ConfirmDialog
-          open={deleteInstrumentModalOpen}
-          onOpenChange={setDeleteInstrumentModalOpen}
-          title="حذف الأداة الاستثمارية"
-          description={`هل أنت متأكد من حذف الأداة "${selectedInstrumentForAction?.name}" (${selectedInstrumentForAction?.symbol || "بدون رمز"})؟ سيتم التحقق من عدم وجود عمليات محاسبية أو حيازات مفتوحة مرتبطة بها.`}
-          confirmText={deleteInstrumentMutation.isPending ? "جارٍ الحذف..." : "تأكيد الحذف"}
-          cancelText="إلغاء"
-          variant="destructive"
-          isLoading={deleteInstrumentMutation.isPending}
-          onConfirm={handleConfirmDeleteInstrument}
+        {/* Trade Action Modals (Edit & Delete) */}
+        <TradeActionModals
+          editOpen={editTradeModalOpen}
+          onEditOpenChange={setEditTradeModalOpen}
+          deleteOpen={deleteTradeModalOpen}
+          onDeleteOpenChange={setDeleteTradeModalOpen}
+          tradeItem={selectedTradeForAction}
+          tradeAccounts={tradeAccounts}
         />
 
-        {/* Edit Trade Modal */}
-        <Dialog open={editTradeModalOpen} onOpenChange={setEditTradeModalOpen}>
-          <DialogContent className="max-w-lg w-full bg-white text-slate-900 dark:bg-[#0B0F17] dark:text-slate-100 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white">
-                تعديل بيانات الصفقة #{selectedTradeForAction?.id}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-                سيتم عكس القيد المحاسبي وحسابات FIFO السابقة تلقائياً وإعادة تسجيل الصفقة بالقيم المعدلة لضمان توازن دفتر الأستاذ بنسبة 100%.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSaveEditTrade} className="grid gap-3.5 mt-2">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="grid gap-1.5">
-                  <Label className="text-xs font-semibold">حساب التسوية</Label>
-                  <Select value={editTradeAccountId} onValueChange={setEditTradeAccountId}>
-                    <SelectTrigger className="rounded-xl text-sm">
-                      <SelectValue placeholder="اختر الحساب" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-white dark:bg-[#0B0F17]">
-                      {tradeAccounts.map((acc) => (
-                        <SelectItem key={acc.id} value={String(acc.id)}>
-                          {acc.name} ({acc.currency})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-xs font-semibold">التاريخ والوقت</Label>
-                  <Input
-                    type="datetime-local"
-                    value={editTradeDate}
-                    onChange={(e) => setEditTradeDate(e.target.value)}
-                    required
-                    className="rounded-xl text-sm font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="grid gap-1.5">
-                  <Label className="text-xs font-semibold">الكمية</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={editTradeQuantity}
-                    onChange={(e) => setEditTradeQuantity(e.target.value)}
-                    required
-                    className="rounded-xl text-sm font-mono"
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-xs font-semibold">سعر الوحدة</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={editTradeUnitPrice}
-                    onChange={(e) => setEditTradeUnitPrice(e.target.value)}
-                    required
-                    className="rounded-xl text-sm font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="grid gap-1.5">
-                  <Label className="text-xs font-semibold">الرسوم (اختياري)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={editTradeFeeAmount}
-                    onChange={(e) => setEditTradeFeeAmount(e.target.value)}
-                    className="rounded-xl text-sm font-mono"
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label className="text-xs font-semibold">الضرائب (اختياري)</Label>
-                  <Input
-                    inputMode="decimal"
-                    value={editTradeTaxAmount}
-                    onChange={(e) => setEditTradeTaxAmount(e.target.value)}
-                    className="rounded-xl text-sm font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-1.5">
-                <Label className="text-xs font-semibold">ملاحظات / مذكرة</Label>
-                <Textarea
-                  value={editTradeMemo}
-                  onChange={(e) => setEditTradeMemo(e.target.value)}
-                  maxLength={2000}
-                  className="rounded-xl text-sm"
-                />
-              </div>
-
-              <DialogFooter className="mt-3 gap-2 flex-row-reverse">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEditTradeModalOpen(false)}
-                  className="rounded-xl text-xs"
-                >
-                  إلغاء
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={updateTradeMutation.isPending}
-                  className="rounded-xl text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
-                >
-                  {updateTradeMutation.isPending && <Loader2 className="ml-2 size-3.5 animate-spin" />}
-                  حفظ التعديلات وعكس القيود
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Delete Trade ConfirmDialog */}
-        <ConfirmDialog
-          open={deleteTradeModalOpen}
-          onOpenChange={setDeleteTradeModalOpen}
-          title="حذف الصفقة الاستثمارية وعكس القيد"
-          description={`هل أنت متأكد من حذف هذه الصفقة #${selectedTradeForAction?.id}؟ سيتم إلغاء العملية وعكس قيود اليومية المحاسبية واستعادة رصيد النقدية وسجلات FIFO آلياً.`}
-          confirmText={deleteTradeMutation.isPending ? "جارٍ الحذف والعكس..." : "تأكيد الحذف والعكس"}
-          cancelText="إلغاء"
-          variant="destructive"
-          isLoading={deleteTradeMutation.isPending}
-          onConfirm={handleConfirmDeleteTrade}
-        />
         {/* Market Price Review & Override Modal */}
         <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
           <DialogContent className="max-w-5xl w-[92vw] sm:max-w-5xl max-h-[85vh] flex flex-col p-6 rounded-2xl bg-white dark:bg-[#0B0F17] border border-slate-200 dark:border-slate-800 shadow-2xl text-right" dir="rtl">
@@ -2072,120 +1478,14 @@ export default function InvestmentsPageRedesign() {
         </Dialog>
 
         {/* Dividend Recording Modal */}
-        <Dialog open={dividendModalOpen} onOpenChange={setDividendModalOpen}>
-          <DialogContent className="max-w-md text-right" dir="rtl">
-            <form onSubmit={handleRecordDividend}>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
-                  <CircleDollarSign className="size-5 text-emerald-600 dark:text-emerald-400" />
-                  <span>تسجيل توزيع أرباح نقدية (Cash Dividend)</span>
-                </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-                  إيداع التوزيعات النقدية لحيازتك مباشرة في أحد الحسابات البنكية مع إنشاء القيد في دفتر الأستاذ.
-                </DialogDescription>
-              </DialogHeader>
+        <DividendModal
+          open={dividendModalOpen}
+          onOpenChange={setDividendModalOpen}
+          selectedPos={selectedDividendPos}
+          baseCurrency={baseCurrency}
+          accounts={accounts.data ?? []}
+        />
 
-              {selectedDividendPos && (
-                <div className="space-y-4 py-4">
-                  {/* Holding Summary */}
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-900 dark:text-white">
-                        {selectedDividendPos.instrumentName}
-                      </span>
-                      <span className="font-mono text-slate-500 dark:text-slate-400">
-                        {selectedDividendPos.symbol || "بدون رمز"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-                      <span>الكمية المملوكة: <b className="font-mono text-slate-800 dark:text-slate-200">{selectedDividendPos.quantity}</b></span>
-                      <span>العملة: <b className="font-mono text-slate-800 dark:text-slate-200">{selectedDividendPos.currency || baseCurrency}</b></span>
-                    </div>
-                  </div>
-
-                  {/* Destination Bank Account */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="dividend-account" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      الحساب المودع به (حساب بنكي / نقدي)
-                    </Label>
-                    <Select value={dividendAccountId} onValueChange={setDividendAccountId}>
-                      <SelectTrigger id="dividend-account" className="w-full text-right text-xs rounded-xl">
-                        <SelectValue placeholder="اختر الحساب البنكي المستقبل" />
-                      </SelectTrigger>
-                      <SelectContent dir="rtl">
-                        {(accounts.data ?? [])
-                          .filter((a) => ["bank", "cash", "wallet"].includes(a.accountType) && a.status === "active")
-                          .map((acc) => (
-                            <SelectItem key={acc.id} value={String(acc.id)} className="text-xs">
-                              {acc.name} ({acc.institution || acc.accountType}) · {acc.currency}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Dividend Amount */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="dividend-amount" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      إجمالي مبلغ التوزيع ({selectedDividendPos.currency || baseCurrency})
-                    </Label>
-                    <Input
-                      id="dividend-amount"
-                      type="number"
-                      step="any"
-                      min="0.01"
-                      required
-                      placeholder="0.00"
-                      value={dividendAmount}
-                      onChange={(e) => setDividendAmount(e.target.value)}
-                      className="text-right font-mono text-sm rounded-xl"
-                      dir="ltr"
-                    />
-                  </div>
-
-                  {/* Memo */}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="dividend-memo" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      البيان / ملاحظات القيد
-                    </Label>
-                    <Input
-                      id="dividend-memo"
-                      type="text"
-                      placeholder="توزيع أرباح نقدية عن الفترة..."
-                      value={dividendMemo}
-                      onChange={(e) => setDividendMemo(e.target.value)}
-                      className="text-right text-xs rounded-xl"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <DialogFooter className="gap-2 flex-row-reverse justify-between items-center border-t border-slate-150 dark:border-slate-800 pt-3">
-                <Button
-                  type="submit"
-                  disabled={postDividendMutation.isPending || !dividendAmount || !dividendAccountId}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
-                >
-                  {postDividendMutation.isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Check className="size-3.5" />
-                  )}
-                  <span>تأكيد وتسجيل التوزيع</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setDividendModalOpen(false)}
-                  className="rounded-xl text-xs px-4"
-                >
-                  إلغاء
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </main>
     </DashboardLayout>
   );

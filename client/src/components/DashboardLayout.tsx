@@ -45,6 +45,8 @@ import { useLocation } from "wouter";
 import { startLogin } from "@/const";
 import { Button } from "./ui/button";
 import NotificationCenter from "./NotificationCenter";
+import OmniCommandBar from "./OmniCommandBar";
+import { Command } from "lucide-react";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
 type MenuItem = { icon: LucideIcon; label: string; path: string; minimumRole: MinimumRole };
@@ -557,7 +559,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [quickConfirmOpen, setQuickConfirmOpen] = useState(false);
+  const [omniOpen, setOmniOpen] = useState(false);
   const { isPrivate } = usePrivacyMode();
+
+  // Global Interactive Command Palette (Ctrl + K / Cmd + K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOmniOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
   const role = (workspace.data?.membership.role ?? "viewer") as MinimumRole;
   const normalizedLocation = location.startsWith("/family/") ? location.replace("/family", "") : location;
   const routeItem = allItems.find(item => item.path === location || item.path === normalizedLocation);
@@ -707,7 +722,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <TopbarControls />
+            <TopbarControls onOpenOmni={() => setOmniOpen(true)} />
           </div>
         </header>
         <div className="fintech-content-shell" data-route={location}>
@@ -730,6 +745,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         onOpenMore={() => setMobileOpen(true)}
         onQuickCapture={() => setQuickConfirmOpen(true)}
       />
+
+      <OmniCommandBar open={omniOpen} onOpenChange={setOmniOpen} />
 
       <Dialog open={quickConfirmOpen} onOpenChange={setQuickConfirmOpen}>
         <DialogContent dir="rtl" className="sm:max-w-md">
@@ -758,12 +775,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 
-function TopbarControls() {
+function TopbarControls({ onOpenOmni }: { onOpenOmni?: () => void }) {
   const { theme, toggleTheme } = useTheme();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { isPrivate, togglePrivacy } = usePrivacyMode();
   return (
     <>
+      <button
+        onClick={onOpenOmni}
+        className="fintech-topbar-button flex items-center gap-1.5 px-2 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all"
+        title="لوحة الأوامر الشاملة (Ctrl + K)"
+        aria-label="فتح لوحة الأوامر الشاملة"
+      >
+        <Command className="size-3.5 text-emerald-400" />
+        <span className="hidden md:inline text-[11px] font-mono text-slate-400">Ctrl+K</span>
+      </button>
       <NotificationCenter />
       <button
         onClick={toggleDemoMode}

@@ -945,147 +945,247 @@ export default function TransactionsHubPage() {
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-right text-sm">
-                  <thead className="bg-slate-100/80 text-slate-800 font-bold text-xs border-b border-slate-200 dark:bg-[#0E1420] dark:text-slate-200 dark:border-slate-800 uppercase tracking-wide">
-                    <tr>
-                      <th className="py-3 px-4 pr-5 font-bold text-slate-800 dark:text-slate-200">نوع العملية</th>
-                      <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">الحساب المالي</th>
-                      <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">التاريخ والوقت</th>
-                      <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">البيان والملاحظات</th>
-                      <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">المبلغ الإجمالي</th>
-                      <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">حالة القيد</th>
-                      <th className="py-3 px-4 pl-5 font-bold text-slate-800 dark:text-slate-200 text-center">الإجراءات</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-[#0B0F17] divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {filteredEvents.map(event => {
-                      const meta = eventLabel[event.eventType] || {
-                        label: event.eventType,
-                        icon: ArrowLeftRight,
-                        color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60",
-                        sign: "",
-                        amountColor: "text-slate-900 dark:text-slate-200",
-                      };
-                      const Icon = meta.icon;
-                      const formattedAmount = formatMoney(event.grossAmount, event.currency, 2);
-                      const accountInfo = event.primaryAccountId ? accountMap.get(event.primaryAccountId) : null;
-                      const isTrade = event.eventType === "buy" || event.eventType === "sell";
-                      const isVoid = event.status === "void";
+              <>
+                {/* Desktop/Tablet Comprehensive Multi-Column Ledger Table (>= 768px) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full min-w-[760px] text-right text-sm">
+                    <thead className="bg-slate-100/80 text-slate-800 font-bold text-xs border-b border-slate-200 dark:bg-[#0E1420] dark:text-slate-200 dark:border-slate-800 uppercase tracking-wide">
+                      <tr>
+                        <th className="py-3 px-4 pr-5 font-bold text-slate-800 dark:text-slate-200">نوع العملية</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">الحساب المالي</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">التاريخ والوقت</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">البيان والملاحظات</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">المبلغ الإجمالي</th>
+                        <th className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">حالة القيد</th>
+                        <th className="py-3 px-4 pl-5 font-bold text-slate-800 dark:text-slate-200 text-center">الإجراءات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-[#0B0F17] divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {filteredEvents.map(event => {
+                        const meta = eventLabel[event.eventType] || {
+                          label: event.eventType,
+                          icon: ArrowLeftRight,
+                          color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60",
+                          sign: "",
+                          amountColor: "text-slate-900 dark:text-slate-200",
+                        };
+                        const Icon = meta.icon;
+                        const formattedAmount = formatMoney(event.grossAmount, event.currency, 2);
+                        const accountInfo = event.primaryAccountId ? accountMap.get(event.primaryAccountId) : null;
+                        const isTrade = event.eventType === "buy" || event.eventType === "sell";
+                        const isVoid = event.status === "void";
 
-                      return (
-                        <tr
-                          key={event.id}
-                          className="hover:bg-slate-50/90 border-b border-slate-100 text-slate-900 dark:hover:bg-slate-800/40 dark:border-slate-800/60 dark:text-slate-100 transition-colors last:border-b-0"
-                        >
-                          {/* Type Column */}
-                          <td className="py-3 px-4 pr-5">
-                            <div className="flex items-center gap-2.5">
-                              <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${meta.color}`}>
-                                <Icon className="size-4" />
+                        return (
+                          <tr
+                            key={event.id}
+                            className="hover:bg-slate-50/90 border-b border-slate-100 text-slate-900 dark:hover:bg-slate-800/40 dark:border-slate-800/60 dark:text-slate-100 transition-colors last:border-b-0"
+                          >
+                            {/* Type Column */}
+                            <td className="py-3 px-4 pr-5">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${meta.color}`}>
+                                  <Icon className="size-4" />
+                                </div>
+                                <div>
+                                  <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                                    {meta.label}
+                                  </p>
+                                  <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                    #{event.id}
+                                  </p>
+                                </div>
                               </div>
+                            </td>
+
+                            {/* Account Column */}
+                            <td className="py-3 px-4">
                               <div>
                                 <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                                  {meta.label}
+                                  {accountInfo?.name || "حساب المعاملة"}
                                 </p>
                                 <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                  #{event.id}
+                                  {event.currency}
                                 </p>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Account Column */}
-                          <td className="py-3 px-4">
-                            <div>
-                              <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                                {accountInfo?.name || "حساب المعاملة"}
-                              </p>
-                              <p className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                                {event.currency}
-                              </p>
-                            </div>
-                          </td>
+                            {/* Date Column */}
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
+                                <Clock className="size-3 text-slate-500 dark:text-slate-400 shrink-0" />
+                                <span>{new Date(event.occurredAt).toLocaleString("en-GB")}</span>
+                              </div>
+                            </td>
 
-                          {/* Date Column */}
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-slate-600 dark:text-slate-400">
-                              <Clock className="size-3 text-slate-500 dark:text-slate-400 shrink-0" />
-                              <span>{new Date(event.occurredAt).toLocaleString("en-GB")}</span>
-                            </div>
-                          </td>
-
-                          {/* Memo Column */}
-                          <td className="max-w-xs py-3 px-4 text-xs text-slate-600 dark:text-slate-300">
-                            <span className="truncate block" title={event.memo || ""}>
-                              {event.memo || "—"}
-                            </span>
-                          </td>
-
-                          {/* Amount Column */}
-                          <td className="py-3 px-4">
-                            <div className="font-mono text-sm sm:text-base font-bold tracking-tight" dir="ltr">
-                              <span className={`${meta.amountColor} font-bold font-mono text-sm sm:text-base tabular-nums`}>
-                                {meta.sign} <SensitiveValue>{formattedAmount}</SensitiveValue>
+                            {/* Memo Column */}
+                            <td className="max-w-xs py-3 px-4 text-xs text-slate-600 dark:text-slate-300">
+                              <span className="truncate block" title={event.memo || ""}>
+                                {event.memo || "—"}
                               </span>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Status Badge */}
-                          <td className="py-3 px-4">
-                            {event.status === "posted" ? (
-                              <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-950 border border-emerald-300 font-semibold text-xs px-2.5 py-1 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block ml-1.5 shrink-0" />
-                                <span>مرحّل</span>
-                              </span>
-                            ) : event.status === "void" ? (
-                              <span className="inline-flex items-center rounded-full bg-rose-50 text-rose-950 border border-rose-300 font-semibold text-xs px-2.5 py-1 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400 inline-block ml-1.5 shrink-0" />
-                                <span>ملغاة (معكوسة)</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-950 border border-amber-300 font-semibold text-xs px-2.5 py-1 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60 whitespace-nowrap">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 inline-block ml-1.5 shrink-0" />
-                                <span>معلق</span>
-                              </span>
-                            )}
-                          </td>
+                            {/* Amount Column */}
+                            <td className="py-3 px-4">
+                              <div className="font-mono text-sm sm:text-base font-bold tracking-tight" dir="ltr">
+                                <span className={`${meta.amountColor} font-bold font-mono text-sm sm:text-base tabular-nums`}>
+                                  {meta.sign} <SensitiveValue>{formattedAmount}</SensitiveValue>
+                                </span>
+                              </div>
+                            </td>
 
-                          {/* Actions Column */}
-                          <td className="py-3 px-4 pl-5 text-center">
-                            {canEdit && !isVoid ? (
-                              <div className="flex items-center justify-center gap-1.5">
-                                {isTrade && (
+                            {/* Status Badge */}
+                            <td className="py-3 px-4">
+                              {event.status === "posted" ? (
+                                <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-950 border border-emerald-300 font-semibold text-xs px-2.5 py-1 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60 whitespace-nowrap">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 inline-block ml-1.5 shrink-0" />
+                                  <span>مرحّل</span>
+                                </span>
+                              ) : event.status === "void" ? (
+                                <span className="inline-flex items-center rounded-full bg-rose-50 text-rose-950 border border-rose-300 font-semibold text-xs px-2.5 py-1 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-800/60 whitespace-nowrap">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400 inline-block ml-1.5 shrink-0" />
+                                  <span>ملغاة (معكوسة)</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-950 border border-amber-300 font-semibold text-xs px-2.5 py-1 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60 whitespace-nowrap">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 inline-block ml-1.5 shrink-0" />
+                                  <span>معلق</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Actions Column */}
+                            <td className="py-3 px-4 pl-5 text-center">
+                              {canEdit && !isVoid ? (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  {isTrade && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleOpenEditTrade(event)}
+                                      className="h-8 w-8 p-0 rounded-lg text-slate-600 hover:text-sky-600 hover:bg-sky-50 dark:text-slate-400 dark:hover:text-sky-400 dark:hover:bg-sky-950/50"
+                                      title="تعديل الصفقة"
+                                    >
+                                      <Pencil className="size-3.5" />
+                                    </Button>
+                                  )}
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleOpenEditTrade(event)}
-                                    className="h-8 w-8 p-0 rounded-lg text-slate-600 hover:text-sky-600 hover:bg-sky-50 dark:text-slate-400 dark:hover:text-sky-400 dark:hover:bg-sky-950/50"
-                                    title="تعديل الصفقة"
+                                    onClick={() => handleOpenDelete(event)}
+                                    className="h-8 w-8 p-0 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/50"
+                                    title="حذف / إلغاء القيد"
                                   >
-                                    <Pencil className="size-3.5" />
+                                    <Trash2 className="size-3.5" />
                                   </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleOpenDelete(event)}
-                                  className="h-8 w-8 p-0 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/50"
-                                  title="حذف / إلغاء القيد"
-                                >
-                                  <Trash2 className="size-3.5" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400 text-xs">—</span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-xs">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Adaptive Tactile Cards on Mobile (< 768px) to eliminate horizontal scroll */}
+                <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800/60 p-3 space-y-3">
+                  {filteredEvents.map(event => {
+                    const meta = eventLabel[event.eventType] || {
+                      label: event.eventType,
+                      icon: ArrowLeftRight,
+                      color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60",
+                      sign: "",
+                      amountColor: "text-slate-900 dark:text-slate-200",
+                    };
+                    const Icon = meta.icon;
+                    const formattedAmount = formatMoney(event.grossAmount, event.currency, 2);
+                    const accountInfo = event.primaryAccountId ? accountMap.get(event.primaryAccountId) : null;
+                    const isTrade = event.eventType === "buy" || event.eventType === "sell";
+                    const isVoid = event.status === "void";
+
+                    return (
+                      <div
+                        key={`mob-${event.id}`}
+                        className="p-3.5 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#0B0F17] shadow-xs space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${meta.color}`}>
+                              <Icon className="size-4" />
+                            </div>
+                            <div>
+                              <span className="font-bold text-slate-900 dark:text-white text-sm block">
+                                {meta.label}
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-400">
+                                #{event.id} · {new Date(event.occurredAt).toLocaleDateString("en-GB")}
+                              </span>
+                            </div>
+                          </div>
+
+                          {event.status === "posted" ? (
+                            <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-900 border border-emerald-300 text-[10px] font-semibold px-2 py-0.5 dark:bg-emerald-950/50 dark:text-emerald-300">
+                              مرحّل
+                            </span>
+                          ) : event.status === "void" ? (
+                            <span className="inline-flex items-center rounded-full bg-rose-50 text-rose-900 border border-rose-300 text-[10px] font-semibold px-2 py-0.5 dark:bg-rose-950/50 dark:text-rose-300">
+                              ملغاة
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-semibold px-2 py-0.5 dark:bg-amber-950/50 dark:text-amber-300">
+                              معلق
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-baseline justify-between pt-1">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {accountInfo?.name || "حساب المعاملة"} ({event.currency})
+                          </span>
+                          <div className="font-mono font-bold text-base tabular-nums" dir="ltr">
+                            <span className={meta.amountColor}>
+                              {meta.sign} <SensitiveValue>{formattedAmount}</SensitiveValue>
+                            </span>
+                          </div>
+                        </div>
+
+                        {event.memo && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                            {event.memo}
+                          </p>
+                        )}
+
+                        {canEdit && !isVoid && (
+                          <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                            {isTrade && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenEditTrade(event)}
+                                className="h-7 px-2.5 text-xs text-slate-600 hover:text-sky-600 dark:text-slate-400"
+                              >
+                                <Pencil className="size-3 ml-1" />
+                                تعديل
+                              </Button>
                             )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenDelete(event)}
+                              className="h-7 px-2.5 text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400"
+                            >
+                              <Trash2 className="size-3 ml-1" />
+                              حذف وعكس
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </section>

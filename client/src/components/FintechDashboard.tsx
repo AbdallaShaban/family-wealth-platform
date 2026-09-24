@@ -83,6 +83,8 @@ import OnboardingChecklist from "./OnboardingChecklist";
 import { OnboardingWizard } from "./OnboardingWizard";
 import WealthCoPilotCard from "./dashboard/WealthCoPilotCard";
 import RetailSignalsWidget from "./dashboard/RetailSignalsWidget";
+import ReconciliationModal from "@/components/modals/ReconciliationModal";
+import DebtPaymentModal from "@/components/modals/DebtPaymentModal";
 
 const eventLabels: Record<string, string> = {
   opening_balance: "رصيد افتتاحي",
@@ -277,111 +279,23 @@ export default function FintechDashboard() {
   const setTriggerMutation = trpc.family.market.setPriceTriggers.useMutation();
   const postDividendMutation = trpc.family.ledger.postDividend.useMutation();
   const reconcileAccountMutation = trpc.family.accounts.reconcile.useMutation();
-  // State: Reconciliation Modal
+  // State: Reconciliation Modal (Isolated in memoized component)
   const [reconcileModalOpen, setReconcileModalOpen] = useState(false);
   const [selectedAccountForReconcile, setSelectedAccountForReconcile] = useState<any>(null);
-  const [actualReconcileBalance, setActualReconcileBalance] = useState("");
-  const [reconcileMemo, setReconcileMemo] = useState("");
-  const [isSubmittingReconcile, setIsSubmittingReconcile] = useState(false);
 
-  // Dialog state: Debt Payment
+  // Dialog state: Debt Payment (Isolated in memoized component)
   const [debtPaymentModalOpen, setDebtPaymentModalOpen] = useState(false);
   const [selectedDebtId, setSelectedDebtId] = useState<number | null>(null);
-  const [paymentAccountId, setPaymentAccountId] = useState<string>("");
-  const [paymentPrincipal, setPaymentPrincipal] = useState<string>("");
-  const [paymentInterest, setPaymentInterest] = useState<string>("");
-  const [paymentMemo, setPaymentMemo] = useState<string>("");
-  const [isSubmittingDebtPayment, setIsSubmittingDebtPayment] = useState(false);
 
   const openDebtPaymentModal = (debtId?: number) => {
     const activeList = (debts.data ?? []).filter(d => d.status === "active");
-    const targetId = debtId || activeList[0]?.id || null;
-    setSelectedDebtId(targetId);
-    const targetDebt = activeList.find(d => d.id === targetId);
-    if (targetDebt) {
-      setPaymentPrincipal(String(targetDebt.minimumPayment || ""));
-      setPaymentMemo(`سداد دفعة: ${targetDebt.name}`);
-    } else {
-      setPaymentPrincipal("");
-      setPaymentMemo("");
-    }
-    setPaymentInterest("");
-    const defaultCash = (summary.data?.accounts ?? []).find(a => ["bank", "cash", "wallet"].includes(a.accountType));
-    setPaymentAccountId(defaultCash ? String(defaultCash.id) : "");
+    setSelectedDebtId(debtId || activeList[0]?.id || null);
     setDebtPaymentModalOpen(true);
-  };
-
-  const handlePostDebtPayment = async () => {
-    if (!selectedDebtId) {
-      toast.error("يرجى اختيار الالتزام أو الدين");
-      return;
-    }
-    const accId = parseInt(paymentAccountId, 10);
-    if (!accId) {
-      toast.error("يرجى اختيار الحساب البنكي أو النقدي للسداد");
-      return;
-    }
-    const principalNum = parseFloat(paymentPrincipal);
-    if (!principalNum || principalNum <= 0) {
-      toast.error("يرجى إدخال مبلغ سداد أصل دين صحيح");
-      return;
-    }
-    try {
-      setIsSubmittingDebtPayment(true);
-      await postDebtPaymentMutation.mutateAsync({
-        debtId: selectedDebtId,
-        cashAccountId: accId,
-        principalAmount: Number(principalNum).toFixed(6),
-        interestAmount: paymentInterest.trim() ? Number(paymentInterest).toFixed(6) : null,
-        feeAmount: null,
-        occurredAt: Date.now(),
-        memo: paymentMemo.trim() || null,
-        idempotencyKey: `debt_pay_${selectedDebtId}_${Date.now()}`,
-      });
-      await utils.family.dashboard.invalidate();
-      await utils.family.debts.invalidate();
-      toast.success("تم قيد وتسجيل سداد دفعة الدين بنجاح");
-      setDebtPaymentModalOpen(false);
-      setPaymentPrincipal("");
-      setPaymentInterest("");
-      setPaymentMemo("");
-    } catch (err: any) {
-      toast.error(err.message || "تعذر قيد سداد الدين");
-    } finally {
-      setIsSubmittingDebtPayment(false);
-    }
   };
 
   const openReconcileModal = (account: any) => {
     setSelectedAccountForReconcile(account);
-    setActualReconcileBalance(String(account.value || ""));
-    setReconcileMemo(`تسوية رصيد: ${account.name}`);
     setReconcileModalOpen(true);
-  };
-
-  const handleReconcileAccount = async () => {
-    if (!selectedAccountForReconcile) return;
-    const target = parseFloat(actualReconcileBalance);
-    if (isNaN(target) || target < 0) {
-      toast.error("يرجى إدخال رصيد فعلي صحيح");
-      return;
-    }
-    try {
-      setIsSubmittingReconcile(true);
-      await reconcileAccountMutation.mutateAsync({
-        accountId: Number(selectedAccountForReconcile.id),
-        actualBalance: target.toFixed(2),
-        memo: reconcileMemo.trim() || undefined,
-      });
-      await utils.family.dashboard.invalidate();
-      await utils.family.accounts.invalidate();
-      toast.success(`تمت تسوية رصيد ${selectedAccountForReconcile.name} بنجاح وتحديث السجلات الدفترية.`);
-      setReconcileModalOpen(false);
-    } catch (err: any) {
-      toast.error(err.message || "تعذر إتمام التسوية");
-    } finally {
-      setIsSubmittingReconcile(false);
-    }
   };
 
 
@@ -1698,250 +1612,23 @@ export default function FintechDashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Debt Paydown Modal */}
-        <Dialog open={debtPaymentModalOpen} onOpenChange={setDebtPaymentModalOpen}>
-          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 text-right" dir="rtl">
-            <DialogHeader className="text-right space-y-1">
-              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <BadgeDollarSign className="size-5 text-rose-500" />
-                تسجيل سداد دفعة دين / التزام مالي
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                قيد محاسبي مزدوج يخفض رصيد الدين القائم ويسحب الدفعة من حسابك النقدي أو البنكي.
-              </DialogDescription>
-            </DialogHeader>
+        {/* Standalone Memoized Debt Payment Modal */}
+        <DebtPaymentModal
+          open={debtPaymentModalOpen}
+          onOpenChange={setDebtPaymentModalOpen}
+          debtId={selectedDebtId}
+          debtsList={debts.data ?? []}
+          accountsList={summary.data?.accounts ?? []}
+          defaultCurrency={currency}
+        />
 
-            <div className="py-4 space-y-3.5">
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  العقد أو الدين المستهدف
-                </Label>
-                <Select
-                  value={selectedDebtId ? String(selectedDebtId) : ""}
-                  onValueChange={(val) => {
-                    const id = Number(val);
-                    setSelectedDebtId(id);
-                    const target = (debts.data ?? []).find(d => d.id === id);
-                    if (target) {
-                      setPaymentPrincipal(String(target.minimumPayment || ""));
-                      setPaymentMemo(`سداد دفعة: ${target.name}`);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-xs text-right">
-                    <SelectValue placeholder="اختر الدين المراد سداده" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                    {(debts.data ?? [])
-                      .filter(d => d.status === "active")
-                      .map((debt) => (
-                        <SelectItem key={debt.id} value={String(debt.id)} className="text-xs text-right">
-                          {debt.name} (قائم: {formatMoney(debt.outstanding, debt.currency, 0)})
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  الحساب المصرفي / النقدي المسحوب منه
-                </Label>
-                <Select value={paymentAccountId} onValueChange={setPaymentAccountId}>
-                  <SelectTrigger className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-xs text-right">
-                    <SelectValue placeholder="اختر الحساب المسحوب منه السداد" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                    {cashAccounts.map((acc) => (
-                      <SelectItem key={acc.id} value={String(acc.id)} className="text-xs text-right">
-                        {acc.name} (رصيد: {formatMoney(acc.baseValue ?? acc.balance, acc.currency, 0)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    سداد أصل الدين (EGP)
-                  </Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    step="any"
-                    placeholder="0.00"
-                    value={paymentPrincipal}
-                    onChange={(e) => setPaymentPrincipal(e.target.value)}
-                    className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-xs font-mono font-bold"
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    فوائد أو مصاريف (اختياري)
-                  </Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    placeholder="0.00"
-                    value={paymentInterest}
-                    onChange={(e) => setPaymentInterest(e.target.value)}
-                    className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-xs font-mono"
-                    dir="ltr"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  ملاحظات القيد
-                </Label>
-                <Input
-                  type="text"
-                  placeholder="ملاحظات توضيحية لعملية السداد"
-                  value={paymentMemo}
-                  onChange={(e) => setPaymentMemo(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-xs"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 sm:justify-start pt-2 border-t border-slate-100 dark:border-slate-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDebtPaymentModalOpen(false)}
-                className="rounded-xl text-xs"
-              >
-                إلغاء
-              </Button>
-              <Button
-                type="button"
-                disabled={isSubmittingDebtPayment || !paymentPrincipal || parseFloat(paymentPrincipal) <= 0}
-                onClick={handlePostDebtPayment}
-                className="rounded-xl text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold"
-              >
-                {isSubmittingDebtPayment ? "جارٍ تسجيل السداد..." : "تأكيد وقيد السداد"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* DIALOG 1: QUICK BALANCE RECONCILIATION MODAL (تسوية ومطابقة الرصيد الفعلي) */}
-        <Dialog open={reconcileModalOpen} onOpenChange={setReconcileModalOpen}>
-          <DialogContent className="max-w-md rounded-2xl p-6 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 text-right" dir="rtl">
-            <DialogHeader className="text-right space-y-1">
-              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <RefreshCw className="size-5 text-emerald-600 animate-spin-reverse" />
-                تسوية ومطابقة الرصيد الفعلي (Account Reconciliation)
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-                أدخل رصيدك الحقيقي الآن (مثل رصيد تيلدا أو الحساب البنكي الفعلي). سيقوم النظام باحتساب الفارق وقيد تسوية دفتري فوري.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="py-4 space-y-4">
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-xs space-y-1">
-                <div className="flex items-center justify-between text-slate-500">
-                  <span>الحساب المستهدف:</span>
-                  <strong className="text-slate-900 dark:text-white font-bold">{selectedAccountForReconcile?.name}</strong>
-                </div>
-                <div className="flex items-center justify-between text-slate-500">
-                  <span>الرصيد الدفتري المسجل حالياً:</span>
-                  <b className="font-mono font-bold text-slate-900 dark:text-white" dir="ltr">
-                    {formatMoney(selectedAccountForReconcile?.value || 0, selectedAccountForReconcile?.currency || currency, 2)}
-                  </b>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  الرصيد الفعلي الحقيقي الحالي ({selectedAccountForReconcile?.currency || currency})
-                </Label>
-                <Input
-                  type="number"
-                  step="any"
-                  placeholder="0.00"
-                  value={actualReconcileBalance}
-                  onChange={(e) => setActualReconcileBalance(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-sm font-mono font-bold"
-                  dir="ltr"
-                />
-              </div>
-
-              {/* Dynamic Difference Calculation Display */}
-              {actualReconcileBalance && !isNaN(parseFloat(actualReconcileBalance)) && (
-                (() => {
-                  const target = parseFloat(actualReconcileBalance);
-                  const current = Number(selectedAccountForReconcile?.value || 0);
-                  const diff = target - current;
-                  const isGain = diff > 0;
-                  const isZero = Math.abs(diff) < 0.001;
-
-                  return (
-                    <div
-                      className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
-                        isZero
-                          ? "bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300"
-                          : isGain
-                          ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200"
-                          : "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">
-                          {isZero
-                            ? "الرصيد متطابق تماماً"
-                            : isGain
-                            ? "فارق إيجابي (تسوية رصيد / عائد دوري)"
-                            : "فارق سالب (تسوية رصيد / فرق تسوية)"}
-                        </span>
-                      </div>
-                      <b className="font-mono font-bold text-sm" dir="ltr">
-                        {isGain ? "+ " : isZero ? "" : "- "}
-                        {formatMoney(Math.abs(diff), selectedAccountForReconcile?.currency || currency, 2)}
-                      </b>
-                    </div>
-                  );
-                })()
-              )}
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  ملاحظات أو بيان التسوية (اختياري)
-                </Label>
-                <Input
-                  type="text"
-                  placeholder="مثال: تسوية رصيد تيلدا / إضافة عائد الصندوق اليومي"
-                  value={reconcileMemo}
-                  onChange={(e) => setReconcileMemo(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-xs"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 sm:justify-start pt-2 border-t border-slate-100 dark:border-slate-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setReconcileModalOpen(false)}
-                className="rounded-xl text-xs"
-              >
-                إلغاء
-              </Button>
-              <Button
-                type="button"
-                disabled={isSubmittingReconcile || !actualReconcileBalance}
-                onClick={handleReconcileAccount}
-                className="rounded-xl text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-              >
-                {isSubmittingReconcile ? "جارٍ تسجيل قيد التسوية..." : "تأكيد التسوية وتحديث الدفتر"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Standalone Memoized Quick Balance Reconciliation Modal */}
+        <ReconciliationModal
+          open={reconcileModalOpen}
+          onOpenChange={setReconcileModalOpen}
+          account={selectedAccountForReconcile}
+          defaultCurrency={currency}
+        />
       </div>
     </DashboardLayout>
   );

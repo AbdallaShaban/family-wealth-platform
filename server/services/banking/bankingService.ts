@@ -235,6 +235,10 @@ export async function collectCertificateYield(args: {
     idempotencyKey: `yield-${cert.id}-${now}`,
     source: "system_generated",
     afterPosted: async (tx) => {
+      // Enforce transactional row-level lock on the certificate record
+      await tx.execute(
+        sql`SELECT id FROM ${bankCertificates} WHERE ${bankCertificates.id} = ${cert.id} AND ${bankCertificates.workspaceId} = ${args.context.workspace.id} FOR UPDATE`
+      );
       await tx
         .update(bankCertificates)
         .set({ lastYieldCollectedAt: now, updatedAt: now })

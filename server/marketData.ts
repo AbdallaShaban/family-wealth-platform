@@ -211,6 +211,29 @@ export function parseCairoDateTimeString(str: string | null | undefined): number
   }
 }
 
+// --- Single-Flight Promise Deduping & Circuit Breaker ---
+const inFlightPromises = new Map<string, Promise<any>>();
+
+export function singleFlight<T>(key: string, fn: () => Promise<T>): Promise<T> {
+  const existing = inFlightPromises.get(key);
+  if (existing) {
+    return existing as Promise<T>;
+  }
+  const promise = fn().finally(() => {
+    inFlightPromises.delete(key);
+  });
+  inFlightPromises.set(key, promise);
+  return promise;
+}
+
+// In-memory store for Last-Known-Good prices (Circuit Breaker fallback)
+const lastKnownGoodStockQuotes = new Map<string, MarketQuote & { resolvedSymbol: string }>();
+
+export function getLastKnownGoodQuote(symbol: string) {
+  const clean = symbol.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
+  return lastKnownGoodStockQuotes.get(clean) || null;
+}
+
 export async function fetchMubasherEgxPrices(forceFresh = false): Promise<NonNullable<typeof mubasherCache>> {
   if (forceFresh) {
     mubasherCache = null;
@@ -218,33 +241,39 @@ export async function fetchMubasherEgxPrices(forceFresh = false): Promise<NonNul
   } else if (mubasherCache && Date.now() - mubasherCacheTime < 60_000) {
     return mubasherCache;
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5_000);
-  try {
-    const res = await fetch("https://www.mubasher.info/api/1/stocks/prices?country=eg&period=1D", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "application/json, text/plain, */*",
-        "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
-      },
-      signal: controller.signal,
-    });
-    if (!res.ok) throw new Error(`فشل استجابة مباشر مصر (HTTP ${res.status})`);
-    const data = await res.json();
-    const prices = data.prices || [];
-    if (!Array.isArray(prices) || prices.length === 0) {
-      throw new Error("لم يتم العثور على بيانات في قائمة أسعار مباشر مصر.");
+
+  return singleFlight("mubasher-egx-prices", async () => {
+    if (!forceFresh && mubasherCache && Date.now() - mubasherCacheTime < 60_000) {
+      return mubasherCache;
     }
-    mubasherCache = prices;
-    mubasherCacheTime = Date.now();
-    return prices;
-  } finally {
-    clearTimeout(timeout);
-  }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5_000);
+    try {
+      const res = await fetch("https://www.mubasher.info/api/1/stocks/prices?country=eg&period=1D", {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "application/json, text/plain, */*",
+          "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
+        },
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`فشل استجابة مباشر مصر (HTTP ${res.status})`);
+      const data = await res.json();
+      const prices = data.prices || [];
+      if (!Array.isArray(prices) || prices.length === 0) {
+        throw new Error("لم يتم العثور على بيانات في قائمة أسعار مباشر مصر.");
+      }
+      mubasherCache = prices;
+      mubasherCacheTime = Date.now();
+      return prices;
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
 }
 
 /**
- * Secondary Fallback: Fetch price from TradingView Egypt scanner API
+ * Secondary Fallback: Fetch price from TradingView Egypt scanner API with single-flight deduping
  */
 export async function fetchTradingViewEgxScan(symbol: string): Promise<{
   price: number;
@@ -254,35 +283,38 @@ export async function fetchTradingViewEgxScan(symbol: string): Promise<{
 } | null> {
   const cleanCode = symbol.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
   const ticker = `EGX:${cleanCode}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5_000);
-  try {
-    const res = await fetch("https://scanner.tradingview.com/egypt/scan", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        symbols: { tickers: [ticker] },
-        columns: ["name", "close", "change", "description", "currency"],
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    const row = json.data?.[0];
-    if (row && Array.isArray(row.d) && Number(row.d[1]) > 0) {
-      return {
-        price: Number(row.d[1]),
-        changePercent: Number(row.d[2]) || 0,
-        description: String(row.d[3] || cleanCode),
-        ticker,
-      };
+
+  return singleFlight(`tv-scan-${cleanCode}`, async () => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5_000);
+    try {
+      const res = await fetch("https://scanner.tradingview.com/egypt/scan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbols: { tickers: [ticker] },
+          columns: ["name", "close", "change", "description", "currency"],
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      const row = json.data?.[0];
+      if (row && Array.isArray(row.d) && Number(row.d[1]) > 0) {
+        return {
+          price: Number(row.d[1]),
+          changePercent: Number(row.d[2]) || 0,
+          description: String(row.d[3] || cleanCode),
+          ticker,
+        };
+      }
+      return null;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(timeout);
     }
-    return null;
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
+  });
 }
 
 /**
@@ -354,77 +386,95 @@ export async function fetchEgxStockQuote(
     : rawInput.replace(/^EGX:/i, "").replace(/\.CA$/i, "").trim().toUpperCase();
   const targetNameAr = catalogEntry?.nameAr;
 
-  // 1. Tier 1 (Primary Live Feed): Mubasher Info Egypt (231 active EGX stocks)
-  try {
-    const list = await fetchMubasherEgxPrices(forceFresh);
-    const match = list.find((item) => {
-      const codeMatch = item.code.trim().toUpperCase() === targetCode;
-      if (codeMatch) return true;
-      if (targetNameAr && normalizeArabic(item.name) === normalizeArabic(targetNameAr)) return true;
-      if (normalizeArabic(item.name) === normalizeArabic(rawInput)) return true;
-      return false;
-    });
+  return singleFlight(`egx-quote-${targetCode}`, async () => {
+    // 1. Tier 1 (Primary Live Feed): Mubasher Info Egypt (231 active EGX stocks)
+    try {
+      const list = await fetchMubasherEgxPrices(forceFresh);
+      const match = list.find((item) => {
+        const codeMatch = item.code.trim().toUpperCase() === targetCode;
+        if (codeMatch) return true;
+        if (targetNameAr && normalizeArabic(item.name) === normalizeArabic(targetNameAr)) return true;
+        if (normalizeArabic(item.name) === normalizeArabic(rawInput)) return true;
+        return false;
+      });
 
-    if (match && Number(match.value) > 0) {
-      const priceNum = Number(match.value);
-      // Parse updatedAt strictly as Cairo Local Time
-      const asOf = match.updatedAt ? parseCairoDateTimeString(match.updatedAt) : Date.now();
-      const changePercent = parseFloat(match.changePercentage?.replace("%", "") || "0") || 0;
+      if (match && Number(match.value) > 0) {
+        const priceNum = Number(match.value);
+        // Parse updatedAt strictly as Cairo Local Time
+        const asOf = match.updatedAt ? parseCairoDateTimeString(match.updatedAt) : Date.now();
+        const changePercent = parseFloat(match.changePercentage?.replace("%", "") || "0") || 0;
 
+        const quote: MarketQuote & { resolvedSymbol: string } = {
+          price: priceNum.toFixed(8),
+          currency: "EGP",
+          asOf,
+          source: "البورصة المصرية (مباشر / EGX Feed)",
+          quoteStatus: "delayed",
+          resolvedSymbol: match.code,
+          changePercent,
+          arabicName: match.name || targetNameAr,
+        };
+        lastKnownGoodStockQuotes.set(targetCode, quote);
+        return quote;
+      }
+    } catch (err) {
+      // Continue to Tier 1.5 & Tier 2
+    }
+
+    // 1.5 Tier 1.5: TradingView Egypt Scanner
+    try {
+      const tv = await fetchTradingViewEgxScan(targetCode);
+      if (tv && tv.price > 0) {
+        const quote: MarketQuote & { resolvedSymbol: string } = {
+          price: tv.price.toFixed(8),
+          currency: "EGP",
+          asOf: Date.now(),
+          source: "TradingView (EGX)",
+          quoteStatus: "delayed",
+          resolvedSymbol: targetCode,
+          changePercent: tv.changePercent,
+          arabicName: tv.description || targetNameAr,
+        };
+        lastKnownGoodStockQuotes.set(targetCode, quote);
+        return quote;
+      }
+    } catch {}
+
+    // 2. Tier 2: Yahoo Finance Fallback (with 5000ms timeout race)
+    try {
+      const yahooTicker = targetCode.includes(".") ? targetCode : `${targetCode}.CA`;
+      const quotePromise = client.quote(yahooTicker);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("مهلة استجابة Yahoo Finance انتهت")), 5_000)
+      );
+      const raw = await Promise.race([quotePromise, timeoutPromise]);
+      if (raw && Number(raw.regularMarketPrice) > 0) {
+        const norm = normalizeYahooQuote(raw, "EGP");
+        const quote: MarketQuote & { resolvedSymbol: string } = {
+          ...norm,
+          source: "Yahoo Finance (.CA)",
+          resolvedSymbol: targetCode,
+          arabicName: targetNameAr,
+        };
+        lastKnownGoodStockQuotes.set(targetCode, quote);
+        return quote;
+      }
+    } catch {}
+
+    // Circuit Breaker: Fallback to last-known-good price if available
+    const lkg = lastKnownGoodStockQuotes.get(targetCode);
+    if (lkg) {
       return {
-        price: priceNum.toFixed(8),
-        currency: "EGP",
-        asOf,
-        source: "البورصة المصرية (مباشر / EGX Feed)",
+        ...lkg,
         quoteStatus: "delayed",
-        resolvedSymbol: match.code,
-        changePercent,
-        arabicName: match.name || targetNameAr,
+        source: `${lkg.source} (سعر سابق محفوظ / Circuit Breaker)`,
+        isStaleDate: true,
       };
     }
-  } catch (err) {
-    // Continue to Tier 1.5 & Tier 2
-  }
 
-  // 1.5 Tier 1.5: TradingView Egypt Scanner
-  try {
-    const tv = await fetchTradingViewEgxScan(targetCode);
-    if (tv && tv.price > 0) {
-      return {
-        price: tv.price.toFixed(8),
-        currency: "EGP",
-        asOf: Date.now(),
-        source: "TradingView (EGX)",
-        quoteStatus: "delayed",
-        resolvedSymbol: targetCode,
-        changePercent: tv.changePercent,
-        arabicName: tv.description || targetNameAr,
-      };
-    }
-  } catch {}
-
-  // 2. Tier 2: Yahoo Finance Fallback (with 5000ms timeout race)
-  try {
-    const yahooTicker = targetCode.includes(".") ? targetCode : `${targetCode}.CA`;
-    const quotePromise = client.quote(yahooTicker);
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("مهلة استجابة Yahoo Finance انتهت")), 5_000)
-    );
-    const raw = await Promise.race([quotePromise, timeoutPromise]);
-    if (raw && Number(raw.regularMarketPrice) > 0) {
-      const norm = normalizeYahooQuote(raw, "EGP");
-      return {
-        ...norm,
-        source: "Yahoo Finance (.CA)",
-        resolvedSymbol: targetCode,
-        arabicName: targetNameAr,
-      };
-    }
-  } catch {}
-
-
-  // Fail-Safe: No mock numbers
-  throw new Error(`تعذر جلب السعر اللحظي حالياً من البورصة المصرية لـ "${rawInput}".`);
+    // Fail-Safe: No mock numbers
+    throw new Error(`تعذر جلب السعر اللحظي حالياً من البورصة المصرية لـ "${rawInput}".`);
+  });
 }
 
 
@@ -446,26 +496,32 @@ export async function fetchMubasherEgxFunds(forceFresh = false): Promise<NonNull
   } else if (mubasherFundsCache && Date.now() - mubasherFundsCacheTime < 300_000) {
     return mubasherFundsCache;
   }
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 5_000);
-  try {
-    const res = await fetch("https://www.mubasher.info/api/1/funds?country=eg&size=250", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "application/json, text/plain, */*",
-        "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
-      },
-      signal: controller.signal,
-    });
-    if (!res.ok) throw new Error(`فشل جلب صناديق استثمار مباشر مصر (HTTP ${res.status})`);
-    const data = await res.json();
-    const rows = data.rows || [];
-    mubasherFundsCache = rows;
-    mubasherFundsCacheTime = Date.now();
-    return rows;
-  } finally {
-    clearTimeout(timeout);
-  }
+
+  return singleFlight("mubasher-egx-funds", async () => {
+    if (!forceFresh && mubasherFundsCache && Date.now() - mubasherFundsCacheTime < 300_000) {
+      return mubasherFundsCache;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5_000);
+    try {
+      const res = await fetch("https://www.mubasher.info/api/1/funds?country=eg&size=250", {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "application/json, text/plain, */*",
+          "Accept-Language": "ar,en-US;q=0.9,en;q=0.8",
+        },
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`فشل جلب صناديق استثمار مباشر مصر (HTTP ${res.status})`);
+      const data = await res.json();
+      const rows = data.rows || [];
+      mubasherFundsCache = rows;
+      mubasherFundsCacheTime = Date.now();
+      return rows;
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
 }
 
 export const KNOWN_EGX_FUNDS: Record<string, { fundId: number; name: string; keywords: string[]; defaultNav?: number }> = {

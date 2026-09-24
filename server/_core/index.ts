@@ -15,6 +15,7 @@ import { startMarketAutomationDaemon } from "../marketScheduler";
 import { sql } from "drizzle-orm";
 import { ensurePasswordHashColumn, getDb, startDbHeartbeat } from "../db";
 import { validateProductionJwtSecret } from "../auditorTokenService";
+import { authRateLimiter, trpcApiRateLimiter } from "./rateLimiter";
 
 const operationalMetrics = { startedAt: Date.now(), requests: 0, responses5xx: 0, totalResponseMs: 0, lastRequestAt: null as number | null };
 
@@ -132,6 +133,10 @@ async function startServer() {
   app.post("/api/scheduled/market-refresh", handleScheduledMarketRefresh);
   app.post("/api/accounts", handleCreateAccount);
   app.get("/api/accounts", handleListAccounts);
+  // Rate limiters for security hardening & concurrency protection
+  app.use(authRateLimiter);
+  app.use("/api/trpc", trpcApiRateLimiter);
+
   // tRPC API
   app.use(
     "/api/trpc",
