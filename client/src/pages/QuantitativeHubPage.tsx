@@ -527,9 +527,9 @@ export default function QuantitativeHubPage() {
                   <CardContent className="space-y-4">
                     {/* Confidence Meter */}
                     <div>
-                      <div className="flex justify-between text-xs mb-1.5 font-bold">
-                        <span className="text-slate-300">نسبة الثقة الكمية:</span>
-                        <span className="text-amber-400">{signal.confidenceScore}%</span>
+                      <div className="flex justify-between items-center text-xs mb-1.5 font-bold" dir="rtl">
+                        <span className="text-slate-300"><bdi>نسبة الثقة الكمية:</bdi></span>
+                        <span className="text-amber-400 font-mono" dir="ltr">{signal.confidenceScore}%</span>
                       </div>
                       <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700">
                         <div
@@ -546,9 +546,9 @@ export default function QuantitativeHubPage() {
                       const isNeutral = !isBullish && !isBearish;
 
                       return (
-                        <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                        <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 space-y-2" dir="rtl">
                           <div className="flex items-center justify-between text-xs font-bold">
-                            <span className="text-slate-300">مؤشر الاتجاه والزخم:</span>
+                            <span className="text-slate-300"><bdi>مؤشر الاتجاه والزخم:</bdi></span>
                             <span className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
                               isBullish
                                 ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
@@ -575,26 +575,26 @@ export default function QuantitativeHubPage() {
                     })()}
 
                     {/* Price Targets Box */}
-                    <div className="bg-slate-950/70 rounded-xl p-4 space-y-3 text-xs border border-slate-800 font-semibold">
+                    <div className="bg-slate-950/70 rounded-xl p-4 space-y-3 text-xs border border-slate-800 font-semibold" dir="rtl">
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-300">نطاق الدخول / التجميع:</span>
-                        <span className="font-bold text-emerald-400">{signal.entryZone.min} - {signal.entryZone.max} ج.م</span>
+                        <span className="text-slate-300"><bdi>نطاق الدخول / التجميع:</bdi></span>
+                        <span className="font-bold font-mono text-emerald-400" dir="ltr">{signal.entryZone.min} - {signal.entryZone.max} ج.م</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-300">الهدف الأول (T1 محافظ):</span>
-                        <span className="font-bold text-cyan-400">{signal.targets.t1} ج.م</span>
+                        <span className="text-slate-300"><bdi>الهدف الأول (T1 محافظ):</bdi></span>
+                        <span className="font-bold font-mono text-cyan-400" dir="ltr">{signal.targets.t1} ج.م</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-300">الهدف الثاني (T2 طموح):</span>
-                        <span className="font-bold text-purple-300">{signal.targets.t2} ج.م</span>
+                        <span className="text-slate-300"><bdi>الهدف الثاني (T2 طموح):</bdi></span>
+                        <span className="font-bold font-mono text-purple-300" dir="ltr">{signal.targets.t2} ج.م</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-300">وقف الخسارة المرجعي:</span>
-                        <span className="font-bold text-rose-400">{signal.stopLoss} ج.م</span>
+                        <span className="text-slate-300"><bdi>وقف الخسارة المرجعي:</bdi></span>
+                        <span className="font-bold font-mono text-rose-400" dir="ltr">{signal.stopLoss} ج.م</span>
                       </div>
                       <div className="flex justify-between items-center pt-2 border-t border-slate-800">
-                        <span className="text-slate-300">نسبة العائد للمخاطرة (R/R):</span>
-                        <span className="font-bold text-amber-300">1 : {signal.riskRewardRatio}</span>
+                        <span className="text-slate-300"><bdi>نسبة العائد للمخاطرة (R/R):</bdi></span>
+                        <span className="font-bold font-mono text-amber-300" dir="ltr">1 : {signal.riskRewardRatio}</span>
                       </div>
                     </div>
 
@@ -667,7 +667,7 @@ export default function QuantitativeHubPage() {
                     {/* Indicators Metric Badges */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 text-center">
-                        <p className="text-xs text-slate-300 font-bold">مؤشر القوة RSI (14)</p>
+                        <p className="text-xs text-slate-300 font-bold" dir="rtl"><bdi>مؤشر القوة (14) RSI</bdi></p>
                         <p className={`text-xl font-black mt-1 ${
                           (signal.indicators.rsi ?? 50) <= 35 ? "text-emerald-400" : (signal.indicators.rsi ?? 50) >= 65 ? "text-rose-400" : "text-amber-300"
                         }`}>
@@ -679,7 +679,7 @@ export default function QuantitativeHubPage() {
                       </div>
 
                       <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 text-center">
-                        <p className="text-xs text-slate-300 font-bold">زخم MACD</p>
+                        <p className="text-xs text-slate-300 font-bold" dir="rtl"><bdi>زخم MACD</bdi></p>
                         <p className={`text-xl font-black mt-1 ${
                           signal.indicators.macdTrend === "BULLISH" ? "text-emerald-400" : signal.indicators.macdTrend === "BEARISH" ? "text-rose-400" : "text-slate-300"
                         }`}>
@@ -691,7 +691,7 @@ export default function QuantitativeHubPage() {
                       </div>
 
                       <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 text-center">
-                        <p className="text-xs text-slate-300 font-bold">بولينجر باندز</p>
+                        <p className="text-xs text-slate-300 font-bold" dir="rtl"><bdi>بولينجر باندز</bdi></p>
                         <p className={`text-xl font-black mt-1 ${
                           signal.indicators.bollingerPosition === "OVERSOLD" ? "text-emerald-400" : signal.indicators.bollingerPosition === "OVERBOUGHT" ? "text-rose-400" : "text-blue-400"
                         }`}>
@@ -703,7 +703,7 @@ export default function QuantitativeHubPage() {
                       </div>
 
                       <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 text-center">
-                        <p className="text-xs text-slate-300 font-bold">المتوسط المتحرك EMA</p>
+                        <p className="text-xs text-slate-300 font-bold" dir="rtl"><bdi>المتوسط المتحرك EMA</bdi></p>
                         <p className={`text-xl font-black mt-1 ${
                           signal.indicators.trendEMA === "UPTREND" ? "text-emerald-400" : signal.indicators.trendEMA === "DOWNTREND" ? "text-rose-400" : "text-yellow-400"
                         }`}>
@@ -714,15 +714,15 @@ export default function QuantitativeHubPage() {
                     </div>
 
                     {/* Explanatory Points */}
-                    <div className="bg-[#1f1908] border border-amber-500/50 rounded-xl p-4 space-y-2.5">
+                    <div className="bg-[#1f1908] border border-amber-500/50 rounded-xl p-4 space-y-2.5" dir="rtl">
                       <p className="text-xs font-black text-amber-300 flex items-center gap-1.5 mb-2">
                         <Info className="w-4 h-4 text-amber-400" />
-                        خلاصة التحليل الاسترشادي التفسيري:
+                        <bdi>خلاصة التحليل الاسترشادي التفسيري:</bdi>
                       </p>
                       {signal.arabicAnalysis.keyPoints.map((pt, idx) => (
-                        <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-100 font-semibold leading-relaxed">
-                          <span className="text-amber-400 font-bold mt-0.5">•</span>
-                          <span>{pt}</span>
+                        <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-100 font-semibold leading-relaxed text-right" dir="rtl">
+                          <span className="text-amber-400 font-bold mt-0.5 shrink-0">•</span>
+                          <span className="text-right leading-relaxed"><bdi>{pt}</bdi></span>
                         </div>
                       ))}
                     </div>

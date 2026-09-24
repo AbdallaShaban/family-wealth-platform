@@ -1164,9 +1164,9 @@ export default function TransactionsHubPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleOpenEditTrade(event)}
-                                className="h-7 px-2.5 text-xs text-slate-600 hover:text-sky-600 dark:text-slate-400"
+                                className="h-9 px-3.5 text-xs font-semibold text-slate-700 hover:text-sky-600 hover:bg-sky-50 dark:text-slate-300 dark:hover:text-sky-400 dark:hover:bg-sky-950/40 rounded-xl active:scale-95 transition-all"
                               >
-                                <Pencil className="size-3 ml-1" />
+                                <Pencil className="size-3.5 ml-1.5" />
                                 تعديل
                               </Button>
                             )}
@@ -1174,9 +1174,9 @@ export default function TransactionsHubPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleOpenDelete(event)}
-                              className="h-7 px-2.5 text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400"
+                              className="h-9 px-3.5 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40 rounded-xl active:scale-95 transition-all"
                             >
-                              <Trash2 className="size-3 ml-1" />
+                              <Trash2 className="size-3.5 ml-1.5" />
                               حذف وعكس
                             </Button>
                           </div>

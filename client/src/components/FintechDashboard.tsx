@@ -633,7 +633,7 @@ export default function FintechDashboard() {
         />
 
         {!usingDemo && decisions.data?.length ? (
-          <section className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm" aria-label="مركز القرارات">
+          <section className="bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm" aria-label="مركز القرارات">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-3">
               <div>
                 <p className="text-amber-800 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">مركز القرار</p>
@@ -1268,7 +1268,7 @@ export default function FintechDashboard() {
               >
                 {/* Compact Certificate Card */}
                 {(certificatesQuery.data?.length ?? 0) > 0 && (
-                  <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4">
+                  <div className="bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
                         <Landmark className="size-5" />
@@ -1299,7 +1299,7 @@ export default function FintechDashboard() {
 
                 {/* Compact Credit Card Card */}
                 {(creditCardsQuery.data?.length ?? 0) > 0 && (
-                  <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4">
+                  <div className="bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="flex size-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
                         <CreditCard className="size-5" />

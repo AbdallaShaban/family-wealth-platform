@@ -96,8 +96,11 @@ function Router() {
       <Route path={"/reconciliation"} component={ReconciliationPage} />
       <Route path={"/lot-accounting"} component={LotAccountingPage} />
       <Route path={"/goals"} component={GoalsPlanningPage} />
+      <Route path={"/budget"} component={GoalsPlanningPage} />
+      <Route path={"/budgets"} component={GoalsPlanningPage} />
       <Route path={"/risk"} component={RiskAllocationPage} />
       <Route path={"/fee-tax"} component={FeeTaxRulesPage} />
+      <Route path={"/tax"} component={FeeTaxRulesPage} />
       <Route path={"/assets-insurance"} component={AssetsInsurancePage} />
       <Route path={"/risk/rebalance"} component={RebalanceReviewPage} />
       <Route path={"/members"} component={MembersPage} />
