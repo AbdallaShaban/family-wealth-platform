@@ -534,6 +534,8 @@ export function CreditCardsHub() {
                 <Label className="text-xs font-semibold mb-1 block">الحد الائتماني الإجمالي (EGP)</Label>
                 <Input
                   type="number"
+                  step="0.01"
+                  min="0"
                   placeholder="50000"
                   value={cardLimit}
                   onChange={(e) => setCardLimit(e.target.value)}
@@ -548,6 +550,8 @@ export function CreditCardsHub() {
                 <Label className="text-xs font-semibold mb-1 block">المديونية الحالية (إن وجدت)</Label>
                 <Input
                   type="number"
+                  step="0.01"
+                  min="0"
                   placeholder="0"
                   value={cardBalance}
                   onChange={(e) => setCardBalance(e.target.value)}
@@ -663,6 +667,8 @@ export function CreditCardsHub() {
                 <Label className="text-xs font-semibold mb-1 block">إجمالي مبلغ الشراء (EGP)</Label>
                 <Input
                   type="number"
+                  step="0.01"
+                  min="0"
                   placeholder="24000"
                   value={installmentTotal}
                   onChange={(e) => {
@@ -706,6 +712,8 @@ export function CreditCardsHub() {
               <Label className="text-xs font-semibold mb-1 block">القسط الشهري (EGP)</Label>
               <Input
                 type="number"
+                step="0.01"
+                min="0"
                 placeholder="2000"
                 value={installmentMonthly}
                 onChange={(e) => setInstallmentMonthly(e.target.value)}
@@ -766,6 +774,8 @@ export function CreditCardsHub() {
                 <Label className="text-xs font-semibold mb-1 block">المبلغ المراد سداده (EGP)</Label>
                 <Input
                   type="number"
+                  step="0.01"
+                  min="0.01"
                   placeholder="المبلغ"
                   value={payDueAmount}
                   onChange={(e) => setPayDueAmount(e.target.value)}

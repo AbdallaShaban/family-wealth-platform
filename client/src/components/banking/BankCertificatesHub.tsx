@@ -338,6 +338,8 @@ export function BankCertificatesHub() {
                 <Label className="text-xs font-semibold mb-1 block">مبلغ أصل الشهادة (EGP)</Label>
                 <Input
                   type="number"
+                  step="0.01"
+                  min="0"
                   placeholder="100000"
                   value={certPrincipal}
                   onChange={(e) => setCertPrincipal(e.target.value)}
@@ -352,7 +354,8 @@ export function BankCertificatesHub() {
                 <Label className="text-xs font-semibold mb-1 block">نسبة الفائدة السنوية (%)</Label>
                 <Input
                   type="number"
-                  step="0.1"
+                  step="0.01"
+                  min="0"
                   placeholder="23.5"
                   value={certRate}
                   onChange={(e) => setCertRate(e.target.value)}

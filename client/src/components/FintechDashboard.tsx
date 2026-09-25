@@ -36,6 +36,7 @@ import { demoDashboard, getDashboardPreviewMode } from "@/lib/demoDashboard";
 import { useDemoMode } from "@/contexts/DemoModeContext";
 import { trpc } from "@/lib/trpc";
 import { TransactionAdvisorWidget } from "@/components/TransactionAdvisorWidget";
+import { RealPurchasingPowerEngine } from "@/components/wealth/RealPurchasingPowerEngine";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -624,6 +625,11 @@ export default function FintechDashboard() {
           baseCurrency={currency}
           isDemo={usingDemo}
         />
+
+        {/* Module P4: مؤشر الحفاظ على الثروة الحقيقية ودرع التضخم */}
+        <section aria-label="مؤشر درع التضخم">
+          <RealPurchasingPowerEngine />
+        </section>
 
         <OnboardingChecklist
           hasAccounts={hasAccounts}

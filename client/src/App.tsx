@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import { lazy, Suspense } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { DemoModeProvider } from "./contexts/DemoModeContext";
@@ -61,7 +61,30 @@ function Router() {
       <Route path={"/overview"} component={FamilyHomeGate} />
       <Route path={"/login"} component={LoginPage} />
       <Route path={"/auth"} component={LoginPage} />
+
+      {/* 5 Primary Gateways / Hubs */}
+      <Route path={"/banking"}>{() => <BankingHubPage />}</Route>
+      <Route path={"/investments"} component={InvestmentsPage} />
       <Route path={"/quant"} component={QuantitativeHubPage} />
+      <Route path={"/governance"}>{() => <GovernanceHubPage />}</Route>
+
+      {/* Legacy Route Redirects to 5-Hub Architecture */}
+      <Route path={"/debts"}>{() => <Redirect to="/banking?tab=debts" replace />}</Route>
+      <Route path={"/liabilities"}>{() => <Redirect to="/banking?tab=debts" replace />}</Route>
+      <Route path={"/certificates"}>{() => <Redirect to="/banking?tab=certificates" replace />}</Route>
+      <Route path={"/cashflow"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
+      <Route path={"/cash-flow"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
+      <Route path={"/budget"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
+      <Route path={"/budgets"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
+      <Route path={"/emergency-fund"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
+      <Route path={"/transactions"}>{() => <Redirect to="/banking?tab=accounts" replace />}</Route>
+      <Route path={"/family/transactions"}>{() => <Redirect to="/banking?tab=accounts" replace />}</Route>
+      <Route path={"/accounts"}>{() => <Redirect to="/banking?tab=accounts" replace />}</Route>
+      <Route path={"/members"}>{() => <Redirect to="/governance?tab=members" replace />}</Route>
+      <Route path={"/family/members"}>{() => <Redirect to="/governance?tab=members" replace />}</Route>
+      <Route path={"/backup"}>{() => <Redirect to="/governance?tab=backup" replace />}</Route>
+      <Route path={"/family/backup"}>{() => <Redirect to="/governance?tab=backup" replace />}</Route>
+
       <Route path={"/gold"} component={QuantitativeHubPage} />
       <Route path={"/intelligence"} component={QuantitativeHubPage} />
       <Route path={"/advisory"} component={QuantitativeHubPage} />
@@ -70,43 +93,29 @@ function Router() {
       <Route path={"/trading/swing"} component={SwingTradingPage} />
       <Route path={"/family/trading/swing"} component={SwingTradingPage} />
       <Route path={"/swing"} component={SwingTradingPage} />
-      <Route path={"/transactions"} component={TransactionsHubPage} />
-      <Route path={"/family/transactions"} component={TransactionsHubPage} />
-      <Route path={"/accounts"}>{() => <AccountsPage />}</Route>
       <Route path={"/ledger"} component={LedgerPage} />
-      <Route path={"/cash-flow"}>{() => <CashFlowPage />}</Route>
-      <Route path={"/cashflow"}>{() => <CashFlowPage />}</Route>
       <Route path={"/cash-flow/record"} component={CashFlowRegisterPage} />
       <Route path={"/cash-flow/recurring"} component={RecurringRulesPage} />
       <Route path={"/imports"} component={BankImportInbox} />
-      <Route path={"/approvals"} component={GovernanceApprovals} />
+      <Route path={"/approvals"}>{() => <GovernanceApprovals />}</Route>
       <Route path={"/scenarios"} component={ScenarioPlanning} />
       <Route path={"/operations"} component={OperationsCenter} />
       <Route path={"/vault"}>{() => <VaultPage />}</Route>
-      <Route path={"/export"} component={FamilyExportPage} />
+      <Route path={"/export"}>{() => <FamilyExportPage />}</Route>
       <Route path={"/settlements"} component={SettlementPage} />
-      <Route path={"/debts"}>{() => <DebtsPage />}</Route>
-      <Route path={"/liabilities"}>{() => <DebtsPage />}</Route>
-      <Route path={"/certificates"} component={CertificatesPage} />
-      <Route path={"/banking"}>{() => <BankingHubPage />}</Route>
-      <Route path={"/emergency-fund"}>{() => <EmergencyFundPage />}</Route>
       <Route path={"/transfers"} component={TransfersPage} />
-      <Route path={"/investments"} component={InvestmentsPage} />
       <Route path={"/trades"} component={TradingPage} />
       <Route path={"/valuation"} component={ValuationPage} />
       <Route path={"/data-quality"} component={MarketDataQualityPage} />
       <Route path={"/reconciliation"} component={ReconciliationPage} />
       <Route path={"/lot-accounting"} component={LotAccountingPage} />
       <Route path={"/goals"} component={GoalsPlanningPage} />
-      <Route path={"/budget"} component={GoalsPlanningPage} />
-      <Route path={"/budgets"} component={GoalsPlanningPage} />
       <Route path={"/risk"}>{() => <RiskAllocationPage />}</Route>
       <Route path={"/fee-tax"} component={FeeTaxRulesPage} />
       <Route path={"/tax"} component={FeeTaxRulesPage} />
       <Route path={"/assets-insurance"} component={AssetsInsurancePage} />
       <Route path={"/risk/rebalance"} component={RebalanceReviewPage} />
-      <Route path={"/members"} component={MembersPage} />
-      <Route path={"/governance"}>{() => <GovernanceHubPage />}</Route>
+      <Route path={"/members"}>{() => <MembersPage />}</Route>
       <Route path={"/reports"}>{() => <ReportsPage />}</Route>
       <Route path={"/family/reports"}>{() => <ReportsPage />}</Route>
       <Route path={"/wealth-health"} component={WealthHealthPage} />

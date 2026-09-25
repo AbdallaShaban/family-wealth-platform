@@ -875,10 +875,13 @@ export default function WealthHealthPage() {
                   <Input
                     id="custom-spending"
                     type="number"
+                    step="0.01"
+                    min="0"
                     placeholder="مثال: 120000"
                     value={customSpending}
                     onChange={e => setCustomSpending(e.target.value)}
                     className="bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 rounded-xl font-medium text-xs py-2 px-3 font-mono focus:ring-1 focus:ring-slate-800"
+                    dir="ltr"
                   />
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     سيتم حساب مستهدف رأس المال المطلوب بناءً على هذا الرقم ومعدل السحب السنوي الآمن لتحقيق نمط الاستقلال المالي الشامل أو ميزانية تقاعد مستهدفة.

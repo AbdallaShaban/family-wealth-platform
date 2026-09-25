@@ -14,7 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ReceiptText, Loader2 } from "lucide-react";
+import { ReceiptText, Loader2, Smartphone } from "lucide-react";
+import { SmartSmsPasteModal } from "@/components/banking/SmartSmsPasteModal";
 
 export function CashFlowRegisterCard({ onComplete }: { onComplete?: () => void }) {
   const utils = trpc.useUtils();
@@ -67,14 +68,30 @@ export function CashFlowRegisterCard({ onComplete }: { onComplete?: () => void }
   const inputClass =
     "bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl font-medium text-xs py-2.5 px-3 focus:outline-hidden focus:border-slate-800 dark:focus:border-slate-400 focus:ring-1 focus:ring-slate-800 dark:focus:ring-slate-400 transition-all h-auto";
 
+  const [smartPasteOpen, setSmartPasteOpen] = useState(false);
+
   return (
     <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">تسجيل تدفق جديد</h3>
-        <p className="text-slate-500 dark:text-slate-400 text-xs">
-          اختر الفئة أولًا؛ لا تقبل المنصة فئة دخل لمصروف أو فئة مصروف لدخل.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-slate-900 dark:text-white font-bold text-base mb-1">تسجيل تدفق جديد</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-xs">
+            اختر الفئة أولًا؛ لا تقبل المنصة فئة دخل لمصروف أو فئة مصروف لدخل.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setSmartPasteOpen(true)}
+          className="gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/30 hover:bg-emerald-500/20 shrink-0"
+        >
+          <Smartphone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span>لصق رسالة بنكية / إنستاباي</span>
+        </Button>
       </div>
+
+      <SmartSmsPasteModal open={smartPasteOpen} onOpenChange={setSmartPasteOpen} onSuccess={onComplete} />
 
       {accounts.isLoading || categories.isLoading ? (
         <Skeleton className="h-72 rounded-xl" />

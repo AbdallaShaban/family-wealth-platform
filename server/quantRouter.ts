@@ -7,10 +7,11 @@
 
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, inArray } from "drizzle-orm";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { ensurePersonalFamilyContext } from "./familyAccess";
+import { nextRecurringRunAt } from "./familyRecurring";
 import {
   listAccountSnapshots,
   listPortfolioPositions,
@@ -43,7 +44,12 @@ import {
   PaperPortfolioState,
   resolveEgxAsset,
   searchEgxCatalog,
+  calculateForwardRunway,
+  calculateShariaZakatDashboard,
+  calculateInflationDrag,
 } from "./services/quant";
+import { parseFinancialSms } from "./smsParser";
+import { listBankCertificates } from "./services/banking/bankingService";
 
 function dbUnavailable() {
   return new TRPCError({
@@ -466,20 +472,45 @@ export const quantRouter = router({
 
     // 4. Recurring Subscriptions strictly from database
     const userRules = await db
-      .select()
+      .select({
+        rule: recurringRules,
+        accountName: accounts.name,
+      })
       .from(recurringRules)
-      .where(and(eq(recurringRules.workspaceId, familyContext.workspace.id), eq(recurringRules.status, "active")));
+      .leftJoin(accounts, eq(recurringRules.accountId, accounts.id))
+      .where(
+        and(
+          eq(recurringRules.workspaceId, familyContext.workspace.id),
+          inArray(recurringRules.status, ["active", "paused"])
+        )
+      );
 
     const recurringInput = userRules.map((r) => ({
-      ruleId: r.id,
-      memo: r.memo || "اشتراك دوري",
-      subscriptionTag: r.subscriptionTag || undefined,
-      amountEGP: Number(r.amount || 0),
-      cadence: r.cadence as any,
-      nextRunAtMs: r.nextRunAt,
+      ruleId: r.rule.id,
+      memo: r.rule.memo || "اشتراك دوري",
+      subscriptionTag: r.rule.subscriptionTag || undefined,
+      amountEGP: Number(r.rule.amount || 0),
+      cadence: r.rule.cadence,
+      nextRunAtMs: r.rule.nextRunAt,
+      status: r.rule.status as "active" | "paused" | "completed",
+      accountId: r.rule.accountId,
+      accountName: r.accountName || "الحساب الافتراضي",
     }));
 
     const subscriptionData = calculateSubscriptionCountdowns(recurringInput);
+
+    // List available active accounts for subscription selection/editing
+    const availableAccounts = await db
+      .select({
+        id: accounts.id,
+        name: accounts.name,
+        accountType: accounts.accountType,
+        currency: accounts.currency,
+        institution: accounts.institution,
+      })
+      .from(accounts)
+      .where(and(eq(accounts.workspaceId, familyContext.workspace.id), eq(accounts.status, "active")))
+      .orderBy(accounts.name);
 
     // 5. Diagnostics Ratios strictly from actual posted cash flows and account balances
     let monthlyAverageIncomeEGP = 0;
@@ -511,6 +542,7 @@ export const quantRouter = router({
       creditCards: creditCardsList,
       budgetVariances,
       subscriptions: subscriptionData,
+      accounts: availableAccounts,
       generatedAt: new Date().toISOString(),
     };
   }),
@@ -849,11 +881,24 @@ export const quantRouter = router({
   createSubscription: protectedProcedure
     .input(
       z.object({
-        memo: z.string().min(2, "اسم الخدمة أو الاشتراك مطلوب"),
-        subscriptionTag: z.string().default("خدمات دورية"),
+        memo: z.string().trim().min(2, "اسم الخدمة أو الاشتراك مطلوب"),
+        subscriptionTag: z.string().trim().default("خدمات دورية"),
         amount: z.number().positive("المبلغ يجب أن يكون أكبر من 0"),
-        cadence: z.enum(["weekly", "monthly", "quarterly", "yearly"]).default("monthly"),
+        cadence: z.enum([
+          "WEEKLY",
+          "MONTHLY",
+          "QUARTERLY",
+          "SEMI_ANNUAL",
+          "ANNUALLY",
+          "weekly",
+          "monthly",
+          "quarterly",
+          "semi_annual",
+          "yearly",
+        ]).default("MONTHLY"),
         currency: z.string().default("EGP"),
+        accountId: z.number().int().positive().optional(),
+        nextRenewalDate: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -861,15 +906,32 @@ export const quantRouter = router({
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
 
-      const [anyAcc] = await db
-        .select()
-        .from(accounts)
-        .where(and(eq(accounts.workspaceId, familyContext.workspace.id), eq(accounts.status, "active")))
-        .limit(1);
+      let accountId = input.accountId;
+      if (accountId) {
+        const [acc] = await db
+          .select()
+          .from(accounts)
+          .where(and(eq(accounts.id, accountId), eq(accounts.workspaceId, familyContext.workspace.id)))
+          .limit(1);
+        if (!acc) accountId = undefined;
+      }
 
-      const accountId = anyAcc?.id || 1;
+      if (!accountId) {
+        const [anyAcc] = await db
+          .select()
+          .from(accounts)
+          .where(and(eq(accounts.workspaceId, familyContext.workspace.id), eq(accounts.status, "active")))
+          .limit(1);
+        accountId = anyAcc?.id || 1;
+      }
+
       const now = Date.now();
-      const nextRunAt = now + 30 * 24 * 60 * 60 * 1000;
+      let nextRunAt: number;
+      if (input.nextRenewalDate && !isNaN(new Date(input.nextRenewalDate).getTime())) {
+        nextRunAt = new Date(input.nextRenewalDate + "T12:00:00Z").getTime();
+      } else {
+        nextRunAt = nextRecurringRunAt(now, input.cadence);
+      }
 
       await db.insert(recurringRules).values({
         workspaceId: familyContext.workspace.id,
@@ -878,7 +940,7 @@ export const quantRouter = router({
         eventType: "expense",
         amount: String(input.amount),
         currency: input.currency,
-        cadence: input.cadence,
+        cadence: input.cadence as any,
         subscriptionTag: input.subscriptionTag,
         renewalNotificationDays: 3,
         nextRunAt,
@@ -893,5 +955,388 @@ export const quantRouter = router({
         success: true,
         messageAr: `تمت إضافة الاشتراك الدوري (${input.memo}) بنجاح.`,
       };
+    }),
+
+  /**
+   * 11. Update Recurring Subscription
+   */
+  updateSubscription: protectedProcedure
+    .input(
+      z.object({
+        ruleId: z.number().int().positive(),
+        memo: z.string().trim().min(2, "اسم الخدمة أو الاشتراك مطلوب"),
+        subscriptionTag: z.string().trim().default("خدمات دورية"),
+        amount: z.number().positive("المبلغ يجب أن يكون أكبر من 0"),
+        cadence: z.enum([
+          "WEEKLY",
+          "MONTHLY",
+          "QUARTERLY",
+          "SEMI_ANNUAL",
+          "ANNUALLY",
+          "weekly",
+          "monthly",
+          "quarterly",
+          "semi_annual",
+          "yearly",
+        ]),
+        currency: z.string().default("EGP"),
+        accountId: z.number().int().positive().optional(),
+        nextRenewalDate: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+
+      const [existing] = await db
+        .select()
+        .from(recurringRules)
+        .where(and(eq(recurringRules.id, input.ruleId), eq(recurringRules.workspaceId, familyContext.workspace.id)))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الاشتراك الدوري المطلوب غير موجود.",
+        });
+      }
+
+      let accountId = existing.accountId;
+      if (input.accountId) {
+        const [acc] = await db
+          .select()
+          .from(accounts)
+          .where(and(eq(accounts.id, input.accountId), eq(accounts.workspaceId, familyContext.workspace.id)))
+          .limit(1);
+        if (acc) {
+          accountId = acc.id;
+        }
+      }
+
+      let nextRunAt = existing.nextRunAt;
+      if (input.nextRenewalDate && !isNaN(new Date(input.nextRenewalDate).getTime())) {
+        nextRunAt = new Date(input.nextRenewalDate + "T12:00:00Z").getTime();
+      }
+
+      await db
+        .update(recurringRules)
+        .set({
+          memo: input.memo,
+          subscriptionTag: input.subscriptionTag,
+          amount: String(input.amount),
+          cadence: input.cadence as any,
+          accountId,
+          nextRunAt,
+          updatedAt: Date.now(),
+        })
+        .where(eq(recurringRules.id, existing.id));
+
+      return {
+        success: true,
+        messageAr: `تم تحديث بيانات الاشتراك (${input.memo}) بنجاح.`,
+      };
+    }),
+
+  /**
+   * 12. Toggle Subscription Status (Pause / Activate)
+   */
+  toggleSubscriptionStatus: protectedProcedure
+    .input(
+      z.object({
+        ruleId: z.number().int().positive(),
+        status: z.enum(["active", "paused"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+
+      const [existing] = await db
+        .select()
+        .from(recurringRules)
+        .where(and(eq(recurringRules.id, input.ruleId), eq(recurringRules.workspaceId, familyContext.workspace.id)))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الاشتراك الدوري المطلوب غير موجود.",
+        });
+      }
+
+      await db
+        .update(recurringRules)
+        .set({
+          status: input.status,
+          updatedAt: Date.now(),
+        })
+        .where(eq(recurringRules.id, existing.id));
+
+      return {
+        success: true,
+        messageAr: input.status === "active" ? "تم تفعيل الاشتراك بنجاح." : "تم إيقاف الاشتراك مؤقتاً بنجاح.",
+      };
+    }),
+
+  /**
+   * 13. Delete Recurring Subscription
+   */
+  deleteSubscription: protectedProcedure
+    .input(
+      z.object({
+        ruleId: z.number().int().positive(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+
+      const [existing] = await db
+        .select()
+        .from(recurringRules)
+        .where(and(eq(recurringRules.id, input.ruleId), eq(recurringRules.workspaceId, familyContext.workspace.id)))
+        .limit(1);
+
+      if (!existing) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "الاشتراك الدوري المطلوب غير موجود.",
+        });
+      }
+
+      await db.delete(recurringRules).where(eq(recurringRules.id, existing.id));
+
+      return {
+        success: true,
+        messageAr: `تم حذف الاشتراك الدوري (${existing.memo || ""}) بنجاح.`,
+      };
+    }),
+
+  /**
+   * 14. Module P1: Parse Financial SMS / InstaPay
+   */
+  parseFinancialSms: protectedProcedure
+    .input(
+      z.object({
+        text: z.string().min(1, "نص الرسالة مطلوب."),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = parseFinancialSms(input.text);
+      return result;
+    }),
+
+  /**
+   * 15. Module P2: Multi-Currency 6-Month Forward Runway & Cash Flow Engine
+   */
+  getForwardRunway: protectedProcedure
+    .input(
+      z
+        .object({
+          horizonMonths: z.number().int().min(1).max(24).optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const family = await ensurePersonalFamilyContext(ctx.user);
+
+      // 1. Accounts
+      const accRows = await listAccountSnapshots(family);
+      // 2. Bank Certificates
+      const certRows = await listBankCertificates(family);
+      // 3. Active Recurring Rules
+      const recurring = await db
+        .select()
+        .from(recurringRules)
+        .where(and(eq(recurringRules.workspaceId, family.workspace.id), eq(recurringRules.status, "active")));
+      // 4. Active Debts
+      const debtRows = await db
+        .select()
+        .from(debts)
+        .where(and(eq(debts.workspaceId, family.workspace.id), eq(debts.status, "active")));
+
+      const horizon = input?.horizonMonths ?? 6;
+
+      const runwayReport = calculateForwardRunway({
+        horizonMonths: horizon,
+        accounts: accRows.map((a) => ({
+          id: a.id,
+          name: a.name,
+          currency: a.currency,
+          currentBalance: Number(a.balance) || 0,
+          accountType: a.accountType,
+        })),
+        certificates: certRows.map((c) => ({
+          id: c.id,
+          certificateName: c.certificateName,
+          bankName: c.bankName,
+          principalAmount: Number(c.principalAmount) || 0,
+          interestRate: Number(c.interestRate) || 0,
+          payoutFrequency: c.payoutFrequency as "monthly" | "quarterly" | "semi_annual" | "annual",
+          issueDate: c.issueDate,
+          maturityDate: c.maturityDate,
+          currency: c.currency || "EGP",
+        })),
+        subscriptions: recurring.map((r) => ({
+          id: r.id,
+          memo: r.memo || "اشتراك دوري",
+          amount: Number(r.amount) || 0,
+          currency: r.currency || "EGP",
+          cadence: r.cadence as any,
+          nextRunAt: r.nextRunAt || Date.now(),
+          category: "subscription",
+        })),
+        debts: debtRows.map((d) => ({
+          id: d.id,
+          name: d.name,
+          debtType: (d.debtType as any) || "other",
+          currency: d.currency || "EGP",
+          currentBalance: Number(d.originalPrincipal) || 0,
+          minimumPayment: Number(d.minimumPayment) || 0,
+          paymentDay: d.paymentDay || 1,
+        })),
+      });
+
+      return runwayReport;
+    }),
+
+  /**
+   * 16. Module P3: Automated Sharia Zakat & Gold Hawl Engine
+   */
+  getShariaZakat: protectedProcedure
+    .input(
+      z
+        .object({
+          customGoldPrice24k: z.number().positive().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const family = await ensurePersonalFamilyContext(ctx.user);
+
+      // 1. Live 24k gold price
+      let goldPrice24k = input?.customGoldPrice24k;
+      if (!goldPrice24k) {
+        try {
+          const live = await fetchLiveGoldGramPrice();
+          if (live && live.pricePerGramEgp > 0) {
+            goldPrice24k = live.pricePerGramEgp;
+          }
+        } catch {
+          // fallback handled inside engine
+        }
+      }
+
+      // 2. Liquid accounts balances in base currency
+      const accRows = await listAccountSnapshots(family);
+      const liquidTotalEgp = accRows.reduce((sum, a) => {
+        const bal = Number(a.balance) || 0;
+        return sum + Math.max(0, bal);
+      }, 0);
+
+      // 3. Portfolio positions breakdown
+      const posRows = await listPortfolioPositions(family);
+      let goldValueEgp = 0;
+      let tradingStocksEgp = 0;
+      let longTermStocksEgp = 0;
+
+      for (const p of posRows) {
+        const val = Number(p.baseMarketValue || p.marketValue || 0);
+        const symbolUpper = (p.symbol || "").toUpperCase();
+        const assetType = p.assetType || "";
+
+        if (symbolUpper.includes("GOLD") || assetType === "gold") {
+          goldValueEgp += val;
+        } else if (symbolUpper.includes("TRADING") || p.instrumentName?.includes("مضاربة")) {
+          tradingStocksEgp += val;
+        } else {
+          longTermStocksEgp += val;
+        }
+      }
+
+      // 4. Immediate debts due
+      const debtRows = await db
+        .select()
+        .from(debts)
+        .where(and(eq(debts.workspaceId, family.workspace.id), eq(debts.status, "active")));
+
+      const immediateDebtsEgp = debtRows.reduce((sum, d) => {
+        const minDue = Number(d.minimumPayment) || Number(d.originalPrincipal) * 0.05 || 0;
+        return sum + minDue;
+      }, 0);
+
+      const zakatDashboard = calculateShariaZakatDashboard({
+        goldGramPrice24k: goldPrice24k,
+        cashAndBankBalancesEgp: liquidTotalEgp,
+        monetaryGoldValueEgp: goldValueEgp,
+        tradingStocksMarketValueEgp: tradingStocksEgp,
+        longTermStocksMarketValueEgp: longTermStocksEgp,
+        immediateDebtsDueEgp: immediateDebtsEgp,
+      });
+
+      return zakatDashboard;
+    }),
+
+  /**
+   * 17. Module P4: Purchasing Power & Inflation Drag Engine
+   */
+  getInflationAnalytics: protectedProcedure
+    .input(
+      z
+        .object({
+          baselineInflationPct: z.number().positive().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw dbUnavailable();
+      const family = await ensurePersonalFamilyContext(ctx.user);
+
+      // 1. Liquid Accounts
+      const accRows = await listAccountSnapshots(family);
+      const cashTotalEgp = accRows.reduce((sum, a) => {
+        return sum + Math.max(0, Number(a.balance) || 0);
+      }, 0);
+
+      // 2. Bank Certificates
+      const certRows = await listBankCertificates(family);
+      const fixedIncomeTotalEgp = certRows.reduce((sum, c) => {
+        return sum + Math.max(0, Number(c.principalAmount) || 0);
+      }, 0);
+
+      // 3. Portfolio Positions
+      const posRows = await listPortfolioPositions(family);
+      let goldValueEgp = 0;
+      let equitiesValueEgp = 0;
+
+      for (const p of posRows) {
+        const val = Number(p.baseMarketValue || p.marketValue || 0);
+        const symbolUpper = (p.symbol || "").toUpperCase();
+        const assetType = p.assetType || "";
+
+        if (symbolUpper.includes("GOLD") || assetType === "gold") {
+          goldValueEgp += val;
+        } else {
+          equitiesValueEgp += val;
+        }
+      }
+
+      const report = calculateInflationDrag({
+        baselineInflationPct: input?.baselineInflationPct,
+        goldValueEgp,
+        equitiesValueEgp,
+        fixedIncomeValueEgp: fixedIncomeTotalEgp,
+        cashValueEgp: cashTotalEgp,
+      });
+
+      return report;
     }),
 });

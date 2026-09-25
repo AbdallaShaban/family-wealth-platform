@@ -67,6 +67,7 @@ import { DividendModal } from "@/components/investments/DividendModal";
 import { InstrumentActionModals } from "@/components/investments/InstrumentActionModals";
 import { TradeActionModals } from "@/components/investments/TradeActionModals";
 import RiskAllocationPage from "./family/RiskAllocationPage";
+import { RealPurchasingPowerEngine } from "@/components/wealth/RealPurchasingPowerEngine";
 
 function formatQuantity(qty: string | number | null | undefined): string {
   if (qty == null) return "0";
@@ -130,16 +131,33 @@ export default function InvestmentsPageRedesign() {
 
   // Tab State – synced to URL
   const [activeTab, setActiveTab] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("tab") || "holdings";
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("tab") || "holdings";
+    }
+    return "holdings";
   });
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", tab);
-    window.history.pushState({}, "", url.pathname + url.search);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.pushState({}, "", url.pathname + url.search);
+    }
   };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab) {
+        setActiveTab(tab);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Preselected trade values when navigating from holdings
   const [preselectedTradeInstrumentId, setPreselectedTradeInstrumentId] = useState("");
@@ -1318,7 +1336,8 @@ export default function InvestmentsPageRedesign() {
           </TabsContent>
 
           {/* TAB 7: Asset Allocation & Risk */}
-          <TabsContent value="allocation">
+          <TabsContent value="allocation" className="space-y-6">
+            <RealPurchasingPowerEngine />
             <RiskAllocationPage embedded />
           </TabsContent>
         </Tabs>

@@ -15,6 +15,7 @@ import {
   Building2,
   CheckCircle2,
   ClipboardCheck,
+  Coins,
   CreditCard,
   Download,
   EyeOff,
@@ -46,7 +47,8 @@ import { startLogin } from "@/const";
 import { Button } from "./ui/button";
 import NotificationCenter from "./NotificationCenter";
 import OmniCommandBar from "./OmniCommandBar";
-import { Command } from "lucide-react";
+import { SmartSmsPasteModal } from "./banking/SmartSmsPasteModal";
+import { Command, Smartphone } from "lucide-react";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
 type MenuItem = { icon: LucideIcon; label: string; path: string; minimumRole: MinimumRole };
@@ -107,7 +109,11 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { icon: FileChartColumn, label: "القوائم المالية والميزانية", path: "/governance", minimumRole: "viewer" },
       { icon: BookOpenCheck, label: "سجل التدقيق المحاسبي", path: "/governance?tab=audit", minimumRole: "advisor" },
-      { icon: FileLock2, label: "الخزنة وإدارة الصلاحيات", path: "/governance?tab=vault", minimumRole: "editor" },
+      { icon: FileLock2, label: "الخزنة والمستندات", path: "/governance?tab=vault", minimumRole: "editor" },
+      { icon: Coins, label: "الزكاة الشرعية وحول الذهب", path: "/governance?tab=zakat", minimumRole: "viewer" },
+      { icon: UsersRound, label: "أفراد العائلة والصلاحيات", path: "/governance?tab=members", minimumRole: "viewer" },
+      { icon: CheckCircle2, label: "مركز الموافقات والاعتمادات", path: "/governance?tab=approvals", minimumRole: "editor" },
+      { icon: Download, label: "النسخ الاحتياطي والتصدير", path: "/governance?tab=backup", minimumRole: "owner" },
     ],
   },
 ];
@@ -139,7 +145,11 @@ const routeToHubMap: Record<string, string> = {
   "/approvals": "governance",
   "/export": "governance",
   "/members": "governance",
+  "/family/members": "governance",
   "/admin/users": "governance",
+  "/backup": "governance",
+  "/family/backup": "governance",
+  "/zakat": "governance",
   "/auditor-portal": "governance",
 };
 
@@ -346,16 +356,16 @@ function FintechNav({
               <AccordionTrigger
                 className={`fintech-v2-group-trigger flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
                   hasActiveItem
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-[rgba(16,185,129,0.12)] dark:text-emerald-400 dark:border-emerald-500/20"
-                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
+                    ? "bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-[rgba(16,185,129,0.12)] dark:text-emerald-400 dark:border-emerald-500/20"
+                    : "text-slate-800 hover:text-slate-950 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/5"
                 }`}
               >
                 <span className="flex items-center gap-2.5 min-w-0">
                   <span
                     className={`p-1.5 rounded-lg shrink-0 border transition-colors ${
                       hasActiveItem
-                        ? "bg-emerald-100 border-emerald-300/80 text-emerald-700 dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-300"
-                        : "bg-slate-100 border-slate-200/90 text-slate-500 dark:bg-white/5 dark:border-white/10 dark:text-slate-400"
+                        ? "bg-emerald-100 border-emerald-300/80 text-emerald-800 dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-300"
+                        : "bg-slate-200/80 border-slate-300/80 text-slate-700 dark:bg-white/5 dark:border-white/10 dark:text-slate-400"
                     }`}
                   >
                     <GroupIcon className="size-4" />
@@ -374,13 +384,13 @@ function FintechNav({
                       key={item.path}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-150 text-right ${
                         isCurrent
-                          ? "bg-emerald-50 text-emerald-800 font-semibold border-r-2 border-emerald-600 shadow-xs dark:bg-[rgba(16,185,129,0.12)] dark:text-emerald-400 dark:border-emerald-500"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/70 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-white/5 font-medium"
+                          ? "bg-emerald-50 text-emerald-900 font-bold border-r-2 border-emerald-600 shadow-xs dark:bg-[rgba(16,185,129,0.12)] dark:text-emerald-400 dark:border-emerald-500"
+                          : "text-slate-800 hover:text-slate-950 hover:bg-slate-200/60 dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-white/5 font-semibold"
                       }`}
                       onClick={() => onNavigate(item.path)}
                       aria-current={isCurrent ? "page" : undefined}
                     >
-                      <Icon className={`size-4 shrink-0 ${isCurrent ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`} />
+                      <Icon className={`size-4 shrink-0 ${isCurrent ? "text-emerald-700 dark:text-emerald-400" : "text-slate-600 dark:text-slate-400"}`} />
                       <span className="truncate flex-1">{item.label}</span>
                       {isCurrent && (
                         <span className="size-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0 shadow-[0_0_6px_#059669] dark:shadow-[0_0_6px_#34d399]" />
@@ -401,10 +411,12 @@ function UserControls({
   collapsed,
   role,
   onLogout,
+  onNavigate,
 }: {
   collapsed: boolean;
   role: MinimumRole;
   onLogout: () => void;
+  onNavigate?: (path: string) => void;
 }) {
   const { theme, toggleTheme } = useTheme();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
@@ -426,6 +438,21 @@ function UserControls({
               <p className="font-bold">{user?.name || "مستخدم FAMILY"}</p>
               <p className="text-[10px] text-emerald-600 dark:text-[#34D399] font-medium">{roleLabel}</p>
               <p className="text-[10px] text-slate-500 dark:text-[#94A3B8]">{user?.email || "جلسة آمنة"}</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="size-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-all"
+                onClick={() => onNavigate?.("/governance?tab=members")}
+                aria-label="أفراد العائلة والصلاحيات"
+              >
+                <UsersRound className="size-4 text-emerald-600 dark:text-emerald-400" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="bg-white border border-slate-200 text-slate-900 dark:bg-[#0B0F17] dark:border-white/10 dark:text-[#F8FAFC] text-xs px-2.5 py-1">
+              أفراد العائلة والصلاحيات
             </TooltipContent>
           </Tooltip>
 
@@ -467,40 +494,47 @@ function UserControls({
     <div className="fintech-v2-user-zone border-t border-slate-200/80 dark:border-white/5 pt-4 px-3 pb-3 space-y-2.5">
       <div className="fintech-v2-utility-row flex gap-2">
         <button
-          className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-xl border text-[11px] font-medium transition-all ${
+          className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-xl border text-[11px] font-bold transition-all ${
             isDemoMode
-              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 shadow-xs"
-              : "border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white"
+              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 shadow-xs"
+              : "border-slate-300/90 bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-950 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white"
           }`}
           onClick={toggleDemoMode}
         >
-          <Sparkles className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          <Sparkles className="size-3.5 text-emerald-700 dark:text-emerald-400" />
           <span>{isDemoMode ? "العرض التجريبي مفعل" : "معاينة تجريبية"}</span>
         </button>
         <button
-          className="flex items-center justify-center size-8 rounded-xl border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-all shrink-0"
+          className="flex items-center justify-center size-8 rounded-xl border border-slate-300/90 bg-white text-slate-800 hover:bg-slate-100 hover:text-slate-950 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.08] dark:hover:text-white transition-all shrink-0"
           onClick={toggleTheme}
           aria-label="تبديل الوضع اللوني"
           title="تبديل الوضع اللوني"
         >
-          {theme === "dark" ? <Sun className="size-3.5 text-amber-300" /> : <Moon className="size-3.5 text-slate-700" />}
+          {theme === "dark" ? <Sun className="size-3.5 text-amber-300" /> : <Moon className="size-3.5 text-slate-800" />}
         </button>
       </div>
 
-      <div className="fintech-v2-user-card flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200/90 bg-white/70 hover:bg-white dark:border-white/5 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] transition-all">
-        <span className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 shrink-0">
+      <div
+        onClick={() => onNavigate?.("/governance?tab=members")}
+        className="fintech-v2-user-card flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200/90 bg-white/80 hover:bg-white dark:border-white/5 dark:bg-white/[0.02] dark:hover:bg-white/[0.05] transition-all cursor-pointer group"
+        title="إدارة أفراد العائلة والصلاحيات ومساحات العمل"
+      >
+        <span className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-800 dark:text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
           {initial}
         </span>
         <div className="min-w-0 flex-1">
-          <strong className="block truncate text-xs text-slate-900 dark:text-slate-100 font-semibold">
+          <strong className="block truncate text-xs text-slate-950 dark:text-slate-100 font-bold group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
             {user?.name || "مستخدم FAMILY"}
           </strong>
-          <span className="block truncate text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-            {roleLabel}
+          <span className="block truncate text-[10px] text-slate-600 dark:text-slate-400 font-mono font-medium">
+            {roleLabel} · إدارة الصلاحيات
           </span>
         </div>
         <button
-          onClick={onLogout}
+          onClick={(e) => {
+            e.stopPropagation();
+            onLogout();
+          }}
           className="size-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors shrink-0"
           title="تسجيل الخروج"
           aria-label="تسجيل الخروج"
@@ -586,6 +620,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const [quickConfirmOpen, setQuickConfirmOpen] = useState(false);
   const [omniOpen, setOmniOpen] = useState(false);
+  const [smartPasteOpen, setSmartPasteOpen] = useState(false);
   const { isPrivate } = usePrivacyMode();
 
   // Global Interactive Command Palette (Ctrl + K / Cmd + K)
@@ -664,6 +699,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           background: #F8FAFC !important;
           background-image: none !important;
           border-left: 1px solid rgba(226, 232, 240, 0.85) !important;
+          color: #0F172A !important;
         }
         .dark aside.fintech-v2-sidebar,
         .dark .fintech-v2-mobile-sheet {
@@ -671,6 +707,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           background: #0B0F17 !important;
           background-image: none !important;
           border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+          color: #F8FAFC !important;
         }
         aside.fintech-v2-sidebar::before,
         aside.fintech-v2-sidebar::after {
@@ -699,7 +736,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           location={location}
           onNavigate={navigate}
         />
-        <UserControls collapsed={collapsed} role={role} onLogout={logout} />
+        <UserControls collapsed={collapsed} role={role} onLogout={logout} onNavigate={navigate} />
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -718,7 +755,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               location={location}
               onNavigate={navigate}
             />
-            <UserControls collapsed={false} role={role} onLogout={logout} />
+            <UserControls collapsed={false} role={role} onLogout={logout} onNavigate={navigate} />
           </div>
         </SheetContent>
       </Sheet>
@@ -743,7 +780,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <TopbarControls onOpenOmni={() => setOmniOpen(true)} />
+            <TopbarControls
+              onOpenOmni={() => setOmniOpen(true)}
+              onOpenSmartPaste={() => setSmartPasteOpen(true)}
+            />
           </div>
         </header>
         <div className="fintech-content-shell" data-route={location}>
@@ -768,6 +808,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       />
 
       <OmniCommandBar open={omniOpen} onOpenChange={setOmniOpen} />
+
+      <SmartSmsPasteModal open={smartPasteOpen} onOpenChange={setSmartPasteOpen} />
 
       <Dialog open={quickConfirmOpen} onOpenChange={setQuickConfirmOpen}>
         <DialogContent dir="rtl" className="sm:max-w-md">
@@ -796,12 +838,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 
-function TopbarControls({ onOpenOmni }: { onOpenOmni?: () => void }) {
+function TopbarControls({
+  onOpenOmni,
+  onOpenSmartPaste,
+}: {
+  onOpenOmni?: () => void;
+  onOpenSmartPaste?: () => void;
+}) {
   const { theme, toggleTheme } = useTheme();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { isPrivate, togglePrivacy } = usePrivacyMode();
   return (
     <>
+      <button
+        onClick={onOpenSmartPaste}
+        className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
+        title="لصق رسالة بنكية / إنستاباي (تسجيل سريع)"
+        aria-label="لصق رسالة بنكية أو إشعار إنستاباي"
+      >
+        <Smartphone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+        <span className="hidden xl:inline text-[11px]">لصق رسالة بنكية / إنستاباي</span>
+      </button>
       <button
         onClick={onOpenOmni}
         className="fintech-topbar-button flex items-center gap-1.5 px-2 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all"

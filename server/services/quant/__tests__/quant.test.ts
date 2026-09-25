@@ -219,6 +219,88 @@ describe("Financial Health Diagnostics & Credit Card Engine", () => {
     expect(subs.totalAnnualDrainEGP).toBe(290 * 12);
     expect(subs.subscriptions[0].daysRemaining).toBeLessThanOrEqual(6);
   });
+
+  it("accurately normalizes 5 billing cycles (weekly, monthly, quarterly, semi_annual, annually) and handles paused rules", () => {
+    const now = Date.now();
+    const subs = calculateSubscriptionCountdowns([
+      {
+        ruleId: 1,
+        memo: "Weekly Groceries App",
+        amountEGP: 250,
+        cadence: "WEEKLY",
+        nextRunAtMs: now + 2 * 24 * 60 * 60 * 1000, // 2 days -> urgent renewal
+        status: "active",
+      },
+      {
+        ruleId: 2,
+        memo: "Cloud Storage",
+        amountEGP: 209.99,
+        cadence: "MONTHLY",
+        nextRunAtMs: now + 15 * 24 * 60 * 60 * 1000,
+        status: "active",
+      },
+      {
+        ruleId: 3,
+        memo: "Gym Membership",
+        amountEGP: 1500,
+        cadence: "QUARTERLY",
+        nextRunAtMs: now + 45 * 24 * 60 * 60 * 1000,
+        status: "active",
+      },
+      {
+        ruleId: 4,
+        memo: "Vehicle Insurance",
+        amountEGP: 6000,
+        cadence: "SEMI_ANNUAL",
+        nextRunAtMs: now + 80 * 24 * 60 * 60 * 1000,
+        status: "active",
+      },
+      {
+        ruleId: 5,
+        memo: "Annual Domain & Hosting",
+        amountEGP: 3600,
+        cadence: "ANNUALLY",
+        nextRunAtMs: now + 200 * 24 * 60 * 60 * 1000,
+        status: "active",
+      },
+      {
+        ruleId: 6,
+        memo: "Paused Streaming",
+        amountEGP: 500,
+        cadence: "MONTHLY",
+        nextRunAtMs: now + 10 * 24 * 60 * 60 * 1000,
+        status: "paused",
+      },
+    ]);
+
+    expect(subs.activeCount).toBe(5);
+    expect(subs.urgentRenewalCount).toBe(1); // Weekly sub is within 2 days <= 3 days
+
+    // Weekly sub checks
+    const weeklySub = subs.subscriptions.find((s) => s.ruleId === 1)!;
+    expect(weeklySub.annualCostEGP).toBe(250 * 52); // 13,000
+    expect(weeklySub.monthlyCostEGP).toBe(Number(((250 * 52) / 12).toFixed(2))); // 1083.33
+    expect(weeklySub.isUrgentRenewal).toBe(true);
+
+    // Quarterly sub checks
+    const quarterlySub = subs.subscriptions.find((s) => s.ruleId === 3)!;
+    expect(quarterlySub.annualCostEGP).toBe(1500 * 4); // 6,000
+    expect(quarterlySub.monthlyCostEGP).toBe(500); // 1500 / 3
+
+    // Semi-annual sub checks
+    const semiSub = subs.subscriptions.find((s) => s.ruleId === 4)!;
+    expect(semiSub.annualCostEGP).toBe(6000 * 2); // 12,000
+    expect(semiSub.monthlyCostEGP).toBe(1000); // 6000 / 6
+
+    // Annually sub checks
+    const annualSub = subs.subscriptions.find((s) => s.ruleId === 5)!;
+    expect(annualSub.annualCostEGP).toBe(3600);
+    expect(annualSub.monthlyCostEGP).toBe(300); // 3600 / 12
+
+    // Paused sub checks: not counted in totalAnnualDrainEGP or totalMonthlyDrainEGP
+    const pausedSub = subs.subscriptions.find((s) => s.ruleId === 6)!;
+    expect(pausedSub.status).toBe("paused");
+  });
 });
 
 describe("Paper Trading Simulation Engine", () => {

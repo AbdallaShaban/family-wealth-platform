@@ -32,7 +32,7 @@ function LtrDate({ value }: { value: string | number | null | undefined }) {
   return <span dir="ltr" className="font-mono tabular-nums text-xs">{iso.slice(0, 10)}</span>;
 }
 
-export default function FamilyExportPage() {
+export default function FamilyExportPage({ embedded = false }: { embedded?: boolean }) {
   const [selectedBackupJson, setSelectedBackupJson] = useState<any | null>(null);
   const [validationResult, setValidationResult] = useState<any | null>(null);
   const [restoreMode, setRestoreMode] = useState<"clone" | "overwrite">("clone");
@@ -131,9 +131,8 @@ export default function FamilyExportPage() {
     });
   };
 
-  return (
-    <DashboardLayout>
-      <main className="mx-auto max-w-5xl space-y-6" dir="rtl">
+  const content = (
+    <main className="mx-auto max-w-5xl space-y-6" dir="rtl">
         <PageHeader
           title="مركز الاستعادة والنسخ الاحتياطي المؤسسي"
           description="إدارة شاملة لاستمرارية العمليات المالية والتعافي من الكوارث (Disaster Recovery) تشمل حزم التداول لكافة الجداول مع بصمة SHA-256."
@@ -426,6 +425,8 @@ export default function FamilyExportPage() {
           onConfirm={executeRestore}
         />
       </main>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }

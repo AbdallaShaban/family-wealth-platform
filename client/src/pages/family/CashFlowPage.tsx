@@ -11,6 +11,7 @@ import {
 } from "./familyShared";
 import { CashFlowRegisterCard } from "./CashFlowRegisterPage";
 import { RecurringRulesCard } from "./RecurringRulesPage";
+import { ForwardRunwayMatrix } from "@/components/banking/ForwardRunwayMatrix";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -205,6 +206,12 @@ export function CashFlowPage({ embedded = false }: { embedded?: boolean }) {
               ملخص التدفق والميزانية
             </TabsTrigger>
             <TabsTrigger
+              value="runway"
+              className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none"
+            >
+              مدرج السيولة والتوقعات (Forward Runway)
+            </TabsTrigger>
+            <TabsTrigger
               value="record"
               className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none"
             >
@@ -372,6 +379,10 @@ export function CashFlowPage({ embedded = false }: { embedded?: boolean }) {
                 </div>
               </div>
             </section>
+          </TabsContent>
+
+          <TabsContent value="runway" className="space-y-6">
+            <ForwardRunwayMatrix />
           </TabsContent>
 
           <TabsContent value="record" className="space-y-6">

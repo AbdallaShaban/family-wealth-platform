@@ -4,7 +4,17 @@ import type { FamilyContext } from "./familyAccess";
 import { getDb } from "./db";
 import { postCashEvent } from "./familyLedger";
 
-export type RecurringCadence = "weekly" | "monthly" | "quarterly" | "yearly";
+export type RecurringCadence =
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "semi_annual"
+  | "yearly"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "QUARTERLY"
+  | "SEMI_ANNUAL"
+  | "ANNUALLY";
 
 /** A stable key makes retries, concurrent callbacks, and recovery after a crash harmless. */
 export function recurringRunKey(ruleId: number, scheduledFor: number) {
@@ -16,15 +26,23 @@ function daysInUtcMonth(year: number, month: number) {
 }
 
 /** Advance a rule without JavaScript month-overflow (e.g. 31 Jan -> 28/29 Feb). */
-export function nextRecurringRunAt(scheduledFor: number, cadence: RecurringCadence) {
+export function nextRecurringRunAt(scheduledFor: number, cadence: RecurringCadence | string) {
   const current = new Date(scheduledFor);
   const result = new Date(scheduledFor);
-  if (cadence === "weekly") {
+  const normalized = String(cadence).toLowerCase();
+  if (normalized === "weekly") {
     result.setUTCDate(result.getUTCDate() + 7);
     return result.getTime();
   }
 
-  const increment = cadence === "monthly" ? 1 : cadence === "quarterly" ? 3 : 12;
+  const increment =
+    normalized === "monthly"
+      ? 1
+      : normalized === "quarterly"
+      ? 3
+      : normalized === "semi_annual" || normalized === "semiannual"
+      ? 6
+      : 12;
   const originalDay = current.getUTCDate();
   result.setUTCDate(1);
   result.setUTCMonth(result.getUTCMonth() + increment);

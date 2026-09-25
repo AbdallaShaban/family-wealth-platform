@@ -39,7 +39,7 @@ function DecisionStatusBadge({ decision }: { decision: string }) {
   );
 }
 
-export default function ApprovalsPage() {
+export default function ApprovalsPage({ embedded = false }: { embedded?: boolean }) {
   const utils = trpc.useUtils();
   const requests = trpc.family.governance.requests.useQuery();
   const history = trpc.family.governance.decisionHistory.useQuery();
@@ -62,9 +62,8 @@ export default function ApprovalsPage() {
   };
   const isExecuting = executeCash.isPending || executeTransfer.isPending || executeTrade.isPending || executeBudget.isPending || closePeriod.isPending;
 
-  return (
-    <DashboardLayout>
-      <main className="mx-auto max-w-7xl space-y-6" dir="rtl">
+  const content = (
+    <main className="mx-auto max-w-7xl space-y-6" dir="rtl">
         <PageHeader
           title="الموافقات وقرارات الاعتماد"
           description="إدارة ومراجعة العمليات المجمدة المشروطة باعتماد مزدوج قبل النفاذ المالي."
@@ -296,6 +295,8 @@ export default function ApprovalsPage() {
           )}
         </div>
       </main>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }

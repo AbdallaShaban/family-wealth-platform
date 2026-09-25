@@ -57,19 +57,49 @@ import {
   Copy,
   Check,
   PlusCircle,
+  Pencil,
+  Play,
+  Pause,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { LogExternalTradeModal } from "@/components/trading/LogExternalTradeModal";
 import StressTestingPage from "./StressTestingPage";
 
+const CADENCE_OPTIONS = [
+  { value: "WEEKLY", label: "أسبوعياً (WEEKLY)" },
+  { value: "MONTHLY", label: "شهرياً (MONTHLY)" },
+  { value: "QUARTERLY", label: "كل 3 شهور - ربع سنوي (QUARTERLY)" },
+  { value: "SEMI_ANNUAL", label: "كل 6 شهور - نصف سنوي (SEMI_ANNUAL)" },
+  { value: "ANNUALLY", label: "سنوياً (ANNUALLY)" },
+];
+
+function getCadenceBadgeLabel(cadence: string) {
+  const norm = (cadence || "").toUpperCase();
+  if (norm === "WEEKLY") return "أسبوعياً";
+  if (norm === "MONTHLY") return "شهرياً";
+  if (norm === "QUARTERLY") return "ربع سنوي (3 شهور)";
+  if (norm === "SEMI_ANNUAL" || norm === "SEMIANNUAL") return "نصف سنوي (6 شهور)";
+  if (norm === "ANNUALLY" || norm === "YEARLY" || norm === "ANNUAL") return "سنوياً";
+  return cadence;
+}
+
 export default function QuantitativeHubPage() {
   const [location, setLocation] = useLocation();
+  const normalizeTab = (tab: string | null): string => {
+    if (!tab) return "signals";
+    if (tab === "stress-testing" || tab === "stress") return "stress";
+    if (tab === "diagnostics" || tab === "subscriptions" || tab === "health") return "health";
+    return tab;
+  };
+
   const [activeTab, setActiveTab] = useState(() => {
     if (typeof window !== "undefined") {
       if (window.location.pathname.includes("/gold")) return "market";
       const params = new URLSearchParams(window.location.search);
-      return params.get("tab") || (params.get("ticker") ? "signals" : "signals");
+      return normalizeTab(params.get("tab")) || (params.get("ticker") ? "signals" : "signals");
     }
     return "signals";
   });
@@ -96,7 +126,7 @@ export default function QuantitativeHubPage() {
       }
       const tabParam = params.get("tab");
       if (tabParam) {
-        setActiveTab(tabParam);
+        setActiveTab(normalizeTab(tabParam));
       }
     }
   }, [location]);
@@ -161,8 +191,23 @@ export default function QuantitativeHubPage() {
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [subMemo, setSubMemo] = useState("");
   const [subTag, setSubTag] = useState("خدمات دورية");
-  const [subAmount, setSubAmount] = useState<number>(250);
-  const [subCadence, setSubCadence] = useState<"monthly" | "yearly">("monthly");
+  const [subAmount, setSubAmount] = useState<number | string>(250);
+  const [subCadence, setSubCadence] = useState<"WEEKLY" | "MONTHLY" | "QUARTERLY" | "SEMI_ANNUAL" | "ANNUALLY">("MONTHLY");
+  const [subAccountId, setSubAccountId] = useState<string>("default");
+  const [subNextRenewalDate, setSubNextRenewalDate] = useState<string>("");
+
+  // Subscription Edit Modal
+  const [isEditSubModalOpen, setIsEditSubModalOpen] = useState(false);
+  const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
+  const [editSubMemo, setEditSubMemo] = useState("");
+  const [editSubTag, setEditSubTag] = useState("خدمات دورية");
+  const [editSubAmount, setEditSubAmount] = useState<number | string>(250);
+  const [editSubCadence, setEditSubCadence] = useState<"WEEKLY" | "MONTHLY" | "QUARTERLY" | "SEMI_ANNUAL" | "ANNUALLY">("MONTHLY");
+  const [editSubAccountId, setEditSubAccountId] = useState<string>("default");
+  const [editSubNextRenewalDate, setEditSubNextRenewalDate] = useState<string>("");
+
+  // Subscription Deletion ConfirmDialog
+  const [subToDelete, setSubToDelete] = useState<{ id: number; memo: string } | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -229,10 +274,47 @@ export default function QuantitativeHubPage() {
       setIsSubModalOpen(false);
       setSubMemo("");
       setSubAmount(250);
+      setSubTag("خدمات دورية");
+      setSubCadence("MONTHLY");
+      setSubAccountId("default");
+      setSubNextRenewalDate("");
       utils.quant.getFinancialHealth.invalidate();
     },
     onError: (err) => {
       toast.error(err.message || "تعذر إضافة الاشتراك");
+    },
+  });
+
+  const updateSubMutation = trpc.quant.updateSubscription.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.messageAr);
+      setIsEditSubModalOpen(false);
+      setEditingRuleId(null);
+      utils.quant.getFinancialHealth.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "تعذر تحديث الاشتراك");
+    },
+  });
+
+  const toggleSubMutation = trpc.quant.toggleSubscriptionStatus.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.messageAr);
+      utils.quant.getFinancialHealth.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "تعذر تعديل حالة الاشتراك");
+    },
+  });
+
+  const deleteSubMutation = trpc.quant.deleteSubscription.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.messageAr);
+      setSubToDelete(null);
+      utils.quant.getFinancialHealth.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "تعذر حذف الاشتراك");
     },
   });
 
@@ -274,19 +356,60 @@ export default function QuantitativeHubPage() {
     });
   };
 
+  const handleOpenEditSub = (sub: any) => {
+    setEditingRuleId(sub.ruleId);
+    setEditSubMemo(sub.memo);
+    setEditSubTag(sub.subscriptionTag || "خدمات دورية");
+    setEditSubAmount(sub.amountEGP);
+    const norm = (sub.cadence || "MONTHLY").toUpperCase() as any;
+    setEditSubCadence(["WEEKLY", "MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUALLY"].includes(norm) ? norm : "MONTHLY");
+    setEditSubAccountId(sub.accountId ? String(sub.accountId) : "default");
+    setEditSubNextRenewalDate(sub.nextRenewalDate || "");
+    setIsEditSubModalOpen(true);
+  };
+
   const handleCreateSubSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!subMemo.trim() || subAmount <= 0) {
+    const parsedAmount = typeof subAmount === "number" ? subAmount : parseFloat(String(subAmount));
+    if (!subMemo.trim() || isNaN(parsedAmount) || parsedAmount <= 0) {
       toast.error("يرجى إدخال اسم الخدمة وقيمة الاشتراك");
       return;
     }
     createSubMutation.mutate({
       memo: subMemo.trim(),
       subscriptionTag: subTag.trim(),
-      amount: subAmount,
+      amount: parsedAmount,
       cadence: subCadence,
+      accountId: subAccountId !== "default" ? parseInt(subAccountId, 10) : undefined,
+      nextRenewalDate: subNextRenewalDate || undefined,
       currency: "EGP",
     });
+  };
+
+  const handleUpdateSubSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRuleId) return;
+    const parsedAmount = typeof editSubAmount === "number" ? editSubAmount : parseFloat(String(editSubAmount));
+    if (!editSubMemo.trim() || isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast.error("يرجى إدخال اسم الخدمة وقيمة الاشتراك");
+      return;
+    }
+    updateSubMutation.mutate({
+      ruleId: editingRuleId,
+      memo: editSubMemo.trim(),
+      subscriptionTag: editSubTag.trim(),
+      amount: parsedAmount,
+      cadence: editSubCadence,
+      accountId: editSubAccountId !== "default" ? parseInt(editSubAccountId, 10) : undefined,
+      nextRenewalDate: editSubNextRenewalDate || undefined,
+      currency: "EGP",
+    });
+  };
+
+  const handleConfirmDeleteSub = () => {
+    if (subToDelete) {
+      deleteSubMutation.mutate({ ruleId: subToDelete.id });
+    }
   };
 
   return (
@@ -1424,29 +1547,188 @@ export default function QuantitativeHubPage() {
                 </CardHeader>
                 <CardContent>
                   {health?.subscriptions && health.subscriptions.subscriptions.length > 0 ? (
-                    <div className="space-y-3">
-                      <div className="p-3 bg-purple-500/10 rounded-xl border border-purple-500/30 flex justify-between items-center text-xs">
-                        <span className="text-slate-300 font-semibold">إجمالي الاستنزاف السنوي للاشتراكات:</span>
-                        <span className="font-black text-purple-300 text-sm">{formatMoney(health.subscriptions.totalAnnualDrainEGP)}</span>
-                      </div>
-                      {health.subscriptions.subscriptions.map((sub) => (
-                        <div key={sub.ruleId} className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                    <div className="space-y-4">
+                      {/* Compact Executive Summary Strip */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-gradient-to-r from-purple-950/30 via-slate-900/60 to-purple-950/30 rounded-xl border border-purple-500/20 shadow-inner">
+                        <div className="p-3 bg-slate-950/80 rounded-lg border border-slate-800/80 flex items-center justify-between">
                           <div>
-                            <p className="font-bold text-white text-sm">{sub.memo}</p>
-                            <p className="text-xs text-slate-400 mt-0.5 font-medium">
-                              {formatMoney(sub.amountEGP)} ({sub.cadence === "monthly" ? "شهرياً" : "سنوياً"})
-                            </p>
+                            <span className="text-[11px] text-slate-400 font-semibold block">إجمالي الالتزام الشهري</span>
+                            <span className="text-base font-black text-emerald-400">
+                              {formatMoney(health.subscriptions.totalMonthlyDrainEGP || 0)}
+                            </span>
                           </div>
-                          <div className="text-left">
-                            <Badge className={`text-xs font-bold ${
-                              sub.daysRemaining <= 5 ? "bg-amber-500 text-slate-950" : "bg-slate-800 text-slate-200 border border-slate-700"
-                            }`}>
-                              تجديد خلال {sub.daysRemaining} يوم
-                            </Badge>
-                            <p className="text-[11px] text-slate-400 mt-1 font-medium">{sub.nextRenewalDate}</p>
+                          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <DollarSign className="w-4 h-4" />
                           </div>
                         </div>
-                      ))}
+
+                        <div className="p-3 bg-slate-950/80 rounded-lg border border-slate-800/80 flex items-center justify-between">
+                          <div>
+                            <span className="text-[11px] text-slate-400 font-semibold block">الاستنزاف السنوي التقديري</span>
+                            <span className="text-base font-black text-purple-300">
+                              {formatMoney(health.subscriptions.totalAnnualDrainEGP || 0)}
+                            </span>
+                          </div>
+                          <div className="p-2 rounded-lg bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                            <TrendingUp className="w-4 h-4" />
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-slate-950/80 rounded-lg border border-slate-800/80 flex items-center justify-between">
+                          <div>
+                            <span className="text-[11px] text-slate-400 font-semibold block">الاشتراكات النشطة</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-base font-black text-white">
+                                {health.subscriptions.activeCount ?? health.subscriptions.subscriptions.filter(s => s.status !== "paused").length}
+                              </span>
+                              <span className="text-[11px] text-slate-400 font-medium">
+                                من أصل {health.subscriptions.subscriptions.length}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                            <Clock className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Subscriptions List */}
+                      <div className="space-y-2.5">
+                        {health.subscriptions.subscriptions.map((sub) => {
+                          const isUrgent = sub.isUrgentRenewal || (sub.status === "active" && sub.daysRemaining <= 3);
+                          const isPaused = sub.status === "paused";
+
+                          return (
+                            <div
+                              key={sub.ruleId}
+                              className={`p-3.5 rounded-xl border transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                                isPaused
+                                  ? "bg-slate-950/40 border-slate-800/60 opacity-80"
+                                  : isUrgent
+                                  ? "bg-rose-950/20 border-rose-500/40 shadow-sm shadow-rose-950/30"
+                                  : "bg-slate-950/70 border-slate-800 hover:border-slate-700"
+                              }`}
+                            >
+                              <div className="space-y-1.5 flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span
+                                    className={`w-2 h-2 rounded-full shrink-0 ${
+                                      isPaused ? "bg-slate-500" : "bg-emerald-400 animate-pulse"
+                                    }`}
+                                  />
+                                  <p className="font-bold text-white text-sm truncate">{sub.memo}</p>
+                                  {sub.subscriptionTag && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-slate-800/90 text-slate-300 border-slate-700 text-[10px] px-2 py-0.5 font-medium"
+                                    >
+                                      {sub.subscriptionTag}
+                                    </Badge>
+                                  )}
+                                  {isPaused && (
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-amber-500/10 border-amber-500/30 text-amber-300 text-[10px] font-bold"
+                                    >
+                                      موقوف مؤقتاً
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-slate-400 text-xs font-medium">
+                                  <span className="text-slate-200 font-bold">
+                                    {formatMoney(sub.amountEGP)} ({getCadenceBadgeLabel(sub.cadence)})
+                                  </span>
+                                  <span>·</span>
+                                  <span>
+                                    الاستنزاف الشهري: <strong className="text-emerald-300">{formatMoney(sub.monthlyCostEGP)}</strong>
+                                  </span>
+                                  <span>·</span>
+                                  <span>
+                                    السنوي: <strong className="text-purple-300">{formatMoney(sub.annualCostEGP)}</strong>
+                                  </span>
+                                  {sub.accountName && (
+                                    <>
+                                      <span>·</span>
+                                      <span className="text-slate-400 text-[11px] bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                                        💳 {sub.accountName}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 justify-between sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800/60">
+                                <div className="text-right sm:text-left">
+                                  {isUrgent ? (
+                                    <Badge className="text-xs font-bold bg-rose-500/20 border border-rose-500/50 text-rose-300 gap-1 animate-pulse shadow-sm">
+                                      <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                                      تجديد وشيك ({sub.daysRemaining === 0 ? "اليوم" : `خلال ${sub.daysRemaining} يوم`})
+                                    </Badge>
+                                  ) : isPaused ? (
+                                    <Badge className="text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                                      التجديد متوقف
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700">
+                                      تجديد خلال {sub.daysRemaining} يوم
+                                    </Badge>
+                                  )}
+                                  <p className="text-[11px] text-slate-400 mt-1 font-medium text-left" dir="ltr">
+                                    {sub.nextRenewalDate}
+                                  </p>
+                                </div>
+
+                                {/* Inline Action Buttons */}
+                                <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800">
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleOpenEditSub(sub)}
+                                    className="h-7 w-7 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md"
+                                    title="تعديل الاشتراك"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      toggleSubMutation.mutate({
+                                        ruleId: sub.ruleId,
+                                        status: isPaused ? "active" : "paused",
+                                      })
+                                    }
+                                    disabled={toggleSubMutation.isPending}
+                                    className={`h-7 w-7 hover:bg-slate-800 rounded-md ${
+                                      isPaused
+                                        ? "text-emerald-400 hover:text-emerald-300"
+                                        : "text-amber-400 hover:text-amber-300"
+                                    }`}
+                                    title={isPaused ? "تفعيل الاشتراك" : "إيقاف مؤقت"}
+                                  >
+                                    {isPaused ? (
+                                      <Play className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <Pause className="w-3.5 h-3.5" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => setSubToDelete({ id: sub.ruleId, memo: sub.memo })}
+                                    disabled={deleteSubMutation.isPending}
+                                    className="h-7 w-7 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-md"
+                                    title="حذف الاشتراك"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-10 border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
@@ -1470,6 +1752,9 @@ export default function QuantitativeHubPage() {
 
           {/* TAB: Macro Stress Testing & Simulations */}
           <TabsContent value="stress" className="space-y-6">
+            <StressTestingPage embedded />
+          </TabsContent>
+          <TabsContent value="stress-testing" className="space-y-6">
             <StressTestingPage embedded />
           </TabsContent>
         </Tabs>
@@ -1528,10 +1813,12 @@ export default function QuantitativeHubPage() {
                 <Label className="text-xs font-semibold text-slate-200">الكمية المطلوبة (سهم / جرام / وثيقة)</Label>
                 <Input
                   type="number"
-                  min={1}
+                  step="any"
+                  min="0.0001"
                   value={simQty}
                   onChange={(e) => setSimQty(Number(e.target.value))}
-                  className="bg-slate-950 border-slate-700 text-xs font-bold text-white"
+                  className="bg-slate-950 border-slate-700 text-xs font-bold text-white font-mono"
+                  dir="ltr"
                 />
               </div>
 
@@ -1614,7 +1901,8 @@ export default function QuantitativeHubPage() {
                   <Label className="text-xs font-semibold text-slate-200">الحد الائتماني (ج.م)</Label>
                   <Input
                     type="number"
-                    min={1000}
+                    step="0.01"
+                    min={0}
                     value={cardLimit}
                     onChange={(e) => setCardLimit(Number(e.target.value))}
                     required
@@ -1626,6 +1914,7 @@ export default function QuantitativeHubPage() {
                   <Label className="text-xs font-semibold text-slate-200">الرصيد المستغل الحالي (ج.م)</Label>
                   <Input
                     type="number"
+                    step="0.01"
                     min={0}
                     value={cardUtilized}
                     onChange={(e) => setCardUtilized(Number(e.target.value))}
@@ -1687,14 +1976,14 @@ export default function QuantitativeHubPage() {
 
         {/* Modal 3: Add Recurring Subscription */}
         <Dialog open={isSubModalOpen} onOpenChange={setIsSubModalOpen}>
-          <DialogContent className="sm:max-w-[425px] bg-slate-900 text-white border-slate-800" dir="rtl">
+          <DialogContent className="sm:max-w-[460px] bg-slate-900 text-white border-slate-800" dir="rtl">
             <DialogHeader>
               <DialogTitle className="text-lg font-bold flex items-center gap-2 text-white">
                 <Clock className="w-5 h-5 text-purple-400" />
                 إضافة اشتراك دوري جديد
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-300 font-medium">
-                إدراج خدمة دورية لتتبع مواعيد التجديد والاستنزاف السنوي.
+                إدراج خدمة دورية لتتبع مواعيد التجديد والاستنزاف الشهري والسنوي التلقائي.
               </DialogDescription>
             </DialogHeader>
 
@@ -1702,7 +1991,7 @@ export default function QuantitativeHubPage() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-slate-200">اسم الخدمة أو الاشتراك</Label>
                 <Input
-                  placeholder="مثال: Netflix Premium أو Google One"
+                  placeholder="مثال: Netflix Premium أو Google One أو اشتراك الجيم"
                   value={subMemo}
                   onChange={(e) => setSubMemo(e.target.value)}
                   required
@@ -1728,23 +2017,58 @@ export default function QuantitativeHubPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-900 border-slate-800 text-white">
-                      <SelectItem value="monthly">شهرياً</SelectItem>
-                      <SelectItem value="yearly">سنوياً</SelectItem>
+                      {CADENCE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-200">قيمة الاشتراك (ج.م)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={subAmount}
+                    onChange={(e) => setSubAmount(e.target.value)}
+                    required
+                    className="bg-slate-950 border-slate-700 text-xs text-white font-bold"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-200">تاريخ التجديد القادم</Label>
+                  <Input
+                    type="date"
+                    value={subNextRenewalDate}
+                    onChange={(e) => setSubNextRenewalDate(e.target.value)}
+                    className="bg-slate-950 border-slate-700 text-xs text-white font-medium"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-200">قيمة الاشتراك (ج.م)</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={subAmount}
-                  onChange={(e) => setSubAmount(Number(e.target.value))}
-                  required
-                  className="bg-slate-950 border-slate-700 text-xs text-white font-bold"
-                />
+                <Label className="text-xs font-semibold text-slate-200">حساب السداد / الدفع</Label>
+                <Select value={subAccountId} onValueChange={setSubAccountId}>
+                  <SelectTrigger className="bg-slate-950 border-slate-700 text-xs text-white font-semibold">
+                    <SelectValue placeholder="اختر حساب السداد..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                    <SelectItem value="default">الحساب الافتراضي الرئيسي</SelectItem>
+                    {health?.accounts?.map((acc) => (
+                      <SelectItem key={acc.id} value={String(acc.id)}>
+                        {acc.name} ({acc.currency || "EGP"}){acc.institution ? ` - ${acc.institution}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <DialogFooter className="pt-3">
@@ -1769,6 +2093,151 @@ export default function QuantitativeHubPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Modal 4: Edit Recurring Subscription */}
+        <Dialog open={isEditSubModalOpen} onOpenChange={setIsEditSubModalOpen}>
+          <DialogContent className="sm:max-w-[460px] bg-slate-900 text-white border-slate-800" dir="rtl">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold flex items-center gap-2 text-white">
+                <Pencil className="w-5 h-5 text-purple-400" />
+                تعديل بيانات الاشتراك الدوري
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-300 font-medium">
+                تحديث تفاصيل الاشتراك، دورية التجديد، المبلغ وحساب السداد المرتبط.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleUpdateSubSubmit} className="space-y-3.5 py-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-200">اسم الخدمة أو الاشتراك</Label>
+                <Input
+                  placeholder="مثال: Netflix Premium أو Google One"
+                  value={editSubMemo}
+                  onChange={(e) => setEditSubMemo(e.target.value)}
+                  required
+                  className="bg-slate-950 border-slate-700 text-xs text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-200">تصنيف الاشتراك</Label>
+                  <Input
+                    placeholder="مثال: ترفيه، تقنية، رياضة"
+                    value={editSubTag}
+                    onChange={(e) => setEditSubTag(e.target.value)}
+                    className="bg-slate-950 border-slate-700 text-xs text-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-200">دورية التجديد</Label>
+                  <Select value={editSubCadence} onValueChange={(val: any) => setEditSubCadence(val)}>
+                    <SelectTrigger className="bg-slate-950 border-slate-700 text-xs text-white font-semibold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                      {CADENCE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-200">قيمة الاشتراك (ج.م)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editSubAmount}
+                    onChange={(e) => setEditSubAmount(e.target.value)}
+                    required
+                    className="bg-slate-950 border-slate-700 text-xs text-white font-bold"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-200">تاريخ التجديد القادم</Label>
+                  <Input
+                    type="date"
+                    value={editSubNextRenewalDate}
+                    onChange={(e) => setEditSubNextRenewalDate(e.target.value)}
+                    className="bg-slate-950 border-slate-700 text-xs text-white font-medium"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-slate-200">حساب السداد / الدفع</Label>
+                <Select value={editSubAccountId} onValueChange={setEditSubAccountId}>
+                  <SelectTrigger className="bg-slate-950 border-slate-700 text-xs text-white font-semibold">
+                    <SelectValue placeholder="اختر حساب السداد..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-800 text-white">
+                    <SelectItem value="default">الحساب الافتراضي الرئيسي</SelectItem>
+                    {health?.accounts?.map((acc) => (
+                      <SelectItem key={acc.id} value={String(acc.id)}>
+                        {acc.name} ({acc.currency || "EGP"}){acc.institution ? ` - ${acc.institution}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <DialogFooter className="pt-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditSubModalOpen(false)}
+                  className="border-slate-700 text-slate-300 hover:bg-slate-800 text-xs font-semibold"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={updateSubMutation.isPending}
+                  className="bg-purple-600 hover:bg-purple-500 text-white font-black text-xs"
+                >
+                  {updateSubMutation.isPending ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal 5: Confirm Delete Subscription */}
+        <ConfirmDialog
+          open={Boolean(subToDelete)}
+          onOpenChange={(open) => {
+            if (!open) setSubToDelete(null);
+          }}
+          title="حذف الاشتراك الدوري"
+          description={
+            <div className="space-y-2 text-slate-300 text-xs">
+              <p>
+                هل أنت متأكد من رغبتك في حذف الاشتراك الدوري{" "}
+                <strong className="text-white">"{subToDelete?.memo}"</strong> نهائياً؟
+              </p>
+              <p className="text-rose-400">
+                سيتم حذف قاعدة التجديد التلقائي وإزالتها من حسابات الاستنزاف السنوي والشهري.
+              </p>
+            </div>
+          }
+          confirmText={deleteSubMutation.isPending ? "جارٍ الحذف..." : "نعم، حذف الاشتراك"}
+          cancelText="إلغاء"
+          variant="destructive"
+          isLoading={deleteSubMutation.isPending}
+          onConfirm={handleConfirmDeleteSub}
+        />
 
         {/* External Broker Trade Modal */}
         <LogExternalTradeModal

@@ -38,7 +38,7 @@ const AVAILABLE_SCOPES = [
   { id: "lot_accounting", label: "سجل اللوتات وتكلفة الأصول" },
 ] as const;
 
-export default function MembersPageRedesign() {
+export default function MembersPageRedesign({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const bootstrap = trpc.family.bootstrap.useQuery();
@@ -126,9 +126,8 @@ export default function MembersPageRedesign() {
     toast.success(`تم نسخ ${label} إلى الحافظة.`);
   };
 
-  return (
-    <DashboardLayout>
-      <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
+  const content = (
+    <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
         <PageHeader
           title="الأعضاء ومساحات العمل (Workspaces & Members)"
           description="العضوية والصلاحية تُفرضان من الخادم. يُقبل البريد المدعو عند تسجيل صاحبه الدخول، ولا تمنح الدعوة الوصول قبل ذلك."
@@ -613,6 +612,8 @@ export default function MembersPageRedesign() {
           }}
         />
       </main>
-    </DashboardLayout >
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }

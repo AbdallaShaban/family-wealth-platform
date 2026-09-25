@@ -1,10 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileChartColumn, ShieldCheck, FileLock2, Scale } from "lucide-react";
+import { FileChartColumn, ShieldCheck, FileLock2, Scale, UsersRound, CheckCircle2, HardDriveDownload } from "lucide-react";
 import { ReportsPage } from "./ReportsPage";
 import { AuditPage } from "./family/AuditPage";
 import VaultPage from "./VaultPage";
+import MembersPageRedesign from "./MembersPageRedesign";
+import ApprovalsPage from "./ApprovalsPage";
+import FamilyExportPage from "./FamilyExportPage";
+import { ShariaZakatHawlHub } from "@/components/governance/ShariaZakatHawlHub";
+import { Coins } from "lucide-react";
 
 const TAB_TRIGGER_CLS =
   "gap-1.5 py-2 px-4 rounded-xl text-xs font-medium transition-colors border border-transparent " +
@@ -14,18 +19,42 @@ const TAB_TRIGGER_CLS =
   "data-[state=active]:font-bold data-[state=active]:shadow-xs " +
   "data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60";
 
+const normalizeGovTab = (tab: string | null): string => {
+  if (!tab) return "reports";
+  if (tab === "statements" || tab === "reports") return "reports";
+  if (tab === "audit" || tab === "vault" || tab === "members" || tab === "approvals" || tab === "backup" || tab === "export" || tab === "zakat") {
+    if (tab === "export") return "backup";
+    return tab;
+  }
+  return "reports";
+};
+
 export default function GovernanceHubPage() {
   const [activeTab, setActiveTab] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("tab") || "reports";
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return normalizeGovTab(params.get("tab"));
+    }
+    return "reports";
   });
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    const url = new URL(window.location.href);
-    url.searchParams.set("tab", tab);
-    window.history.pushState({}, "", url.pathname + url.search);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.pushState({}, "", url.pathname + url.search);
+    }
   };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setActiveTab(normalizeGovTab(params.get("tab")));
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   return (
     <DashboardLayout>
@@ -41,7 +70,7 @@ export default function GovernanceHubPage() {
                 التقارير والحوكمة
               </h1>
               <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
-                القوائم المالية المدققة · سجل التدقيق · الخزنة وإدارة الصلاحيات
+                القوائم المالية المدققة · سجل التدقيق · الخزنة والمستندات · أفراد العائلة والصلاحيات · مركز الاعتمادات
               </p>
             </div>
           </div>
@@ -60,12 +89,31 @@ export default function GovernanceHubPage() {
             </TabsTrigger>
             <TabsTrigger value="vault" className={TAB_TRIGGER_CLS}>
               <FileLock2 className="w-3.5 h-3.5" />
-              الخزنة والصلاحيات
+              الخزنة والمستندات
+            </TabsTrigger>
+            <TabsTrigger value="zakat" className={TAB_TRIGGER_CLS}>
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              الزكاة الشرعية وحول الذهب
+            </TabsTrigger>
+            <TabsTrigger value="members" className={TAB_TRIGGER_CLS}>
+              <UsersRound className="w-3.5 h-3.5" />
+              أفراد العائلة والصلاحيات
+            </TabsTrigger>
+            <TabsTrigger value="approvals" className={TAB_TRIGGER_CLS}>
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              مركز الموافقات والاعتمادات
+            </TabsTrigger>
+            <TabsTrigger value="backup" className={TAB_TRIGGER_CLS}>
+              <HardDriveDownload className="w-3.5 h-3.5" />
+              النسخ الاحتياطي والتصدير
             </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: Financial Statements & Balance Sheet */}
           <TabsContent value="reports">
+            <ReportsPage embedded />
+          </TabsContent>
+          <TabsContent value="statements">
             <ReportsPage embedded />
           </TabsContent>
 
@@ -77,6 +125,29 @@ export default function GovernanceHubPage() {
           {/* TAB 3: Vault & Administration */}
           <TabsContent value="vault">
             <VaultPage embedded />
+          </TabsContent>
+
+          {/* TAB: Sharia Zakat & Gold Hawl Engine */}
+          <TabsContent value="zakat" className="space-y-6">
+            <ShariaZakatHawlHub />
+          </TabsContent>
+
+          {/* TAB 4: Family Members & Workspaces */}
+          <TabsContent value="members">
+            <MembersPageRedesign embedded />
+          </TabsContent>
+
+          {/* TAB 5: Approvals Workflow */}
+          <TabsContent value="approvals">
+            <ApprovalsPage embedded />
+          </TabsContent>
+
+          {/* TAB 6: Backup & Data Export */}
+          <TabsContent value="backup">
+            <FamilyExportPage embedded />
+          </TabsContent>
+          <TabsContent value="export">
+            <FamilyExportPage embedded />
           </TabsContent>
         </Tabs>
       </div>

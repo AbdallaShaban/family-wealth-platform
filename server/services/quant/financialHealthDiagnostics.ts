@@ -52,6 +52,11 @@ export interface RecurringSubscriptionCountdown {
   nextRenewalDate: string;
   daysRemaining: number;
   annualCostEGP: number;
+  monthlyCostEGP: number;
+  status: "active" | "paused" | "completed";
+  accountId?: number;
+  accountName?: string;
+  isUrgentRenewal: boolean;
 }
 
 /**
@@ -287,7 +292,7 @@ export function checkBudgetVariances(
 }
 
 /**
- * Calculate Recurring Subscriptions Countdown and Annual Drain
+ * Calculate Recurring Subscriptions Countdown, Monthly/Annual Normalization, and Drain
  */
 export function calculateSubscriptionCountdowns(
   rules: {
@@ -295,29 +300,58 @@ export function calculateSubscriptionCountdowns(
     memo: string;
     subscriptionTag?: string;
     amountEGP: number;
-    cadence: "weekly" | "monthly" | "quarterly" | "yearly";
+    cadence: string;
     nextRunAtMs: number;
+    status?: "active" | "paused" | "completed";
+    accountId?: number;
+    accountName?: string;
   }[]
 ): {
   subscriptions: RecurringSubscriptionCountdown[];
   totalAnnualDrainEGP: number;
+  totalMonthlyDrainEGP: number;
+  activeCount: number;
+  urgentRenewalCount: number;
 } {
   const now = Date.now();
   let totalAnnualDrainEGP = 0;
+  let totalMonthlyDrainEGP = 0;
+  let activeCount = 0;
+  let urgentRenewalCount = 0;
 
   const subscriptions: RecurringSubscriptionCountdown[] = rules.map((r) => {
+    const rawCadence = (r.cadence || "monthly").toUpperCase();
     let multiplier = 12;
-    if (r.cadence === "weekly") multiplier = 52;
-    else if (r.cadence === "monthly") multiplier = 12;
-    else if (r.cadence === "quarterly") multiplier = 4;
-    else if (r.cadence === "yearly") multiplier = 1;
+
+    if (rawCadence === "WEEKLY") {
+      multiplier = 52;
+    } else if (rawCadence === "MONTHLY") {
+      multiplier = 12;
+    } else if (rawCadence === "QUARTERLY") {
+      multiplier = 4;
+    } else if (rawCadence === "SEMI_ANNUAL" || rawCadence === "SEMIANNUAL") {
+      multiplier = 2;
+    } else if (rawCadence === "ANNUALLY" || rawCadence === "YEARLY" || rawCadence === "ANNUAL") {
+      multiplier = 1;
+    }
 
     const annualCost = Number((r.amountEGP * multiplier).toFixed(2));
-    totalAnnualDrainEGP += annualCost;
+    const monthlyCost = Number((annualCost / 12).toFixed(2));
+
+    const status = (r.status || "active") as "active" | "paused" | "completed";
+    if (status === "active") {
+      totalAnnualDrainEGP += annualCost;
+      totalMonthlyDrainEGP += monthlyCost;
+      activeCount += 1;
+    }
 
     const diffMs = r.nextRunAtMs - now;
     const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     const nextRenewalDate = new Date(r.nextRunAtMs).toISOString().split("T")[0];
+    const isUrgentRenewal = status === "active" && daysRemaining <= 3;
+    if (isUrgentRenewal) {
+      urgentRenewalCount += 1;
+    }
 
     return {
       ruleId: r.ruleId,
@@ -328,6 +362,11 @@ export function calculateSubscriptionCountdowns(
       nextRenewalDate,
       daysRemaining,
       annualCostEGP: annualCost,
+      monthlyCostEGP: monthlyCost,
+      status,
+      accountId: r.accountId,
+      accountName: r.accountName,
+      isUrgentRenewal,
     };
   });
 
@@ -336,5 +375,8 @@ export function calculateSubscriptionCountdowns(
   return {
     subscriptions,
     totalAnnualDrainEGP: Number(totalAnnualDrainEGP.toFixed(2)),
+    totalMonthlyDrainEGP: Number(totalMonthlyDrainEGP.toFixed(2)),
+    activeCount,
+    urgentRenewalCount,
   };
 }
