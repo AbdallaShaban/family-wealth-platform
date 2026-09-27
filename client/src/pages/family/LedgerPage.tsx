@@ -18,8 +18,10 @@ import {
   BookOpenCheck,
   Landmark,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   CashEvent,
@@ -46,6 +48,18 @@ export default function LedgerPage() {
   const [memo, setMemo] = useState("");
   const [vaultDocId, setVaultDocId] = useState<number | null>(null);
   const selected = accounts.data?.find(account => String(account.id) === accountId);
+
+  // Pagination state (Limit 25/50)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const allEvents = events.data ?? [];
+  const totalEvents = allEvents.length;
+  const totalPages = Math.max(1, Math.ceil(totalEvents / pageSize));
+
+  const paginatedEvents = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return allEvents.slice(startIndex, startIndex + pageSize);
+  }, [allEvents, currentPage, pageSize]);
 
   const post = trpc.family.ledger.postCash.useMutation({
     onSuccess: result => {
@@ -91,7 +105,7 @@ export default function LedgerPage() {
           icon={BadgeDollarSign}
         />
         <div className="grid gap-6 lg:grid-cols-[.75fr_1.25fr]">
-          <Card>
+          <Card className="border border-border/50 shadow-xs rounded-2xl bg-white dark:bg-[#0E1420] overflow-hidden">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BadgeDollarSign className="size-5 text-emerald-700" />
@@ -148,47 +162,98 @@ export default function LedgerPage() {
               )}
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ArrowLeftRight className="size-5 text-emerald-700" />
-                العمليات المنشورة
-              </CardTitle>
-              <CardDescription>العمليات الحديثة تُقرأ مباشرة من دفتر نطاقك.</CardDescription>
+          <Card className="border border-border/50 shadow-xs rounded-2xl bg-white dark:bg-[#0E1420] overflow-hidden">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-border/40">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-base font-bold">
+                  <ArrowLeftRight className="size-5 text-emerald-700 dark:text-emerald-400" />
+                  <span>العمليات المنشورة</span>
+                </CardTitle>
+                <CardDescription className="text-xs">العمليات الحديثة تُقرأ مباشرة من دفتر نطاقك المحاسبي.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg border border-border/50">
+                  {totalEvents} قيد
+                </span>
+                <Select value={String(pageSize)} onValueChange={(val) => { setPageSize(Number(val)); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-7 text-xs w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15 صف</SelectItem>
+                    <SelectItem value="25">25 صف</SelectItem>
+                    <SelectItem value="50">50 صف</SelectItem>
+                    <SelectItem value="100">100 صف</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-5">
               {events.isLoading ? (
                 <Skeleton className="h-64" />
               ) : events.error ? (
                 <InlineError message={textError(events.error)} />
-              ) : events.data?.length ? (
-                <div className="divide-y">
-                  {events.data.map(event => (
-                    <div className="flex items-center justify-between gap-4 py-4" key={event.id}>
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-full bg-emerald-50 p-2 text-emerald-700">
-                          {["withdrawal", "expense", "sell"].includes(event.eventType) ? (
-                            <ArrowUpRight className="size-4" />
-                          ) : (
-                            <ArrowDownLeft className="size-4" />
-                          )}
+              ) : allEvents.length ? (
+                <div className="space-y-4">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                    {paginatedEvents.map(event => (
+                      <div className="flex items-center justify-between gap-4 py-3.5 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 px-2 rounded-xl transition-colors" key={event.id}>
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 p-2 text-emerald-700 dark:text-emerald-400">
+                            {["withdrawal", "expense", "sell"].includes(event.eventType) ? (
+                              <ArrowUpRight className="size-4" />
+                            ) : (
+                              <ArrowDownLeft className="size-4" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm text-slate-900 dark:text-slate-100">{eventLabel[event.eventType] || event.eventType}</p>
+                            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                              {dateTime(event.occurredAt)}
+                              {event.memo ? ` · ${event.memo}` : ""}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold">{eventLabel[event.eventType] || event.eventType}</p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            {dateTime(event.occurredAt)}
-                            {event.memo ? ` · ${event.memo}` : ""}
-                          </p>
+                        <div className="text-left" dir="ltr">
+                          <p className="font-semibold font-mono text-sm text-slate-900 dark:text-slate-100">{money(event.grossAmount, event.currency)}</p>
+                          <Badge className="mt-0.5" variant={event.status === "posted" ? "secondary" : "outline"}>
+                            {event.status}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="text-left">
-                        <p className="font-semibold">{money(event.grossAmount, event.currency)}</p>
-                        <Badge className="mt-1" variant={event.status === "posted" ? "secondary" : "outline"}>
-                          {event.status}
-                        </Badge>
+                    ))}
+                  </div>
+
+                  {/* Responsive Pagination Bar */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-3 border-t border-border/40 text-xs">
+                      <span className="text-slate-500 font-medium">
+                        صفحة {currentPage} من {totalPages} ({totalEvents} إجمالي)
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={currentPage <= 1}
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          className="h-8 px-2.5 text-xs gap-1"
+                        >
+                          <ChevronRight className="size-3.5" />
+                          <span>السابق</span>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={currentPage >= totalPages}
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          className="h-8 px-2.5 text-xs gap-1"
+                        >
+                          <span>التالي</span>
+                          <ChevronLeft className="size-3.5" />
+                        </Button>
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               ) : (
                 <EmptyState icon={ReceiptTextIcon} title="دفترك جاهز لبدء التسجيل" description="بعد نشر أول إيداع أو مصروف أو تحويل ستظهر العملية هنا مع تاريخها وحالتها." />

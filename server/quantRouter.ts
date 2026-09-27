@@ -744,7 +744,7 @@ export const quantRouter = router({
       z.object({
         name: z.string().min(2, "اسم البطاقة مطلوب"),
         lender: z.string().min(2, "اسم البنك أو الجهة المصدرة مطلوب"),
-        creditLimit: z.number().positive("الحد الائتماني يجب أن يكون موجباً"),
+        creditLimit: z.number().min(0, "الحد الائتماني يجب أن يكون 0 أو أكثر"),
         utilizedBalance: z.number().min(0, "الرصيد المستغل يجب أن يكون 0 أو أكثر"),
         billingCycleDay: z.number().min(1).max(31).default(28),
         gracePeriodDays: z.number().min(1).max(60).default(25),

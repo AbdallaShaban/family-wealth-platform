@@ -103,6 +103,10 @@ export function CreditCardsHub() {
       toast.error("يرجى إدخال الحد الائتماني للكارت");
       return;
     }
+    if (balNum < 0) {
+      toast.error("المديونية الحالية لا يمكن أن تكون سالبة");
+      return;
+    }
 
     try {
       setIsSubmittingCard(true);

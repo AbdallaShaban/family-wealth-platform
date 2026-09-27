@@ -793,10 +793,10 @@ export async function createDebt(args: {
   const name = args.name.trim();
   if (name.length < 2 || name.length > 160) throw invalid("اسم الدين يجب أن يتكون من 2 إلى 160 حرفًا.");
   const currency = normalizeCurrency(args.currency);
-  const principal = parsePositiveAmount(args.originalPrincipal, "أصل الدين");
+  const principal = parseNonNegativeAmount(args.originalPrincipal, "أصل الدين");
   const annualInterestRate = parseNonNegativeAmount(args.annualInterestRate, "معدل الفائدة السنوي");
   if (annualInterestRate.gt(1000)) throw invalid("معدل الفائدة السنوي غير منطقي.");
-  const minimumPayment = parsePositiveAmount(args.minimumPayment, "الحد الأدنى للقسط");
+  const minimumPayment = parseNonNegativeAmount(args.minimumPayment, "الحد الأدنى للقسط");
   if (args.paymentDay !== null && args.paymentDay !== undefined && (!Number.isInteger(args.paymentDay) || args.paymentDay < 1 || args.paymentDay > 31)) throw invalid("يوم الاستحقاق يجب أن يكون بين 1 و31.");
   if (args.maturityDate !== null && args.maturityDate !== undefined && args.maturityDate < args.startDate) throw invalid("تاريخ الاستحقاق لا يمكن أن يسبق تاريخ البداية.");
   const idempotencyKey = validateIdempotencyKey(args.idempotencyKey);

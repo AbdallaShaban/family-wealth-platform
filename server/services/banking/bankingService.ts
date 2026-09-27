@@ -393,9 +393,15 @@ export async function createCreditCard(args: {
   annualInterestRate?: string | null;
   currency?: string;
 }) {
-  const creditLimit = new Decimal(args.creditLimit.trim());
-  const initialBalance = new Decimal(args.currentBalance?.trim() || 0);
-  const minPayment = new Decimal(args.minPaymentDue?.trim() || initialBalance.mul(0.05).toFixed(2));
+  const creditLimit = new Decimal(args.creditLimit?.toString().trim() || 0);
+  const initialBalance = new Decimal(args.currentBalance?.toString().trim() || 0);
+  if (initialBalance.lt(0)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "المديونية الحالية يجب أن تكون 0 أو أكثر." });
+  }
+  if (creditLimit.lt(0)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "الحد الائتماني يجب أن يكون 0 أو أكثر." });
+  }
+  const minPayment = new Decimal(args.minPaymentDue?.toString().trim() || initialBalance.mul(0.05).toFixed(2));
   const curr = args.currency || "EGP";
 
   return createDebt({

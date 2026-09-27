@@ -76,9 +76,8 @@ function Router() {
       <Route path={"/cash-flow"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
       <Route path={"/budget"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
       <Route path={"/budgets"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
-      <Route path={"/emergency-fund"}>{() => <Redirect to="/banking?tab=liquidity" replace />}</Route>
-      <Route path={"/transactions"}>{() => <Redirect to="/banking?tab=accounts" replace />}</Route>
-      <Route path={"/family/transactions"}>{() => <Redirect to="/banking?tab=accounts" replace />}</Route>
+      <Route path={"/transactions"} component={TransactionsHubPage} />
+      <Route path={"/family/transactions"} component={TransactionsHubPage} />
       <Route path={"/accounts"}>{() => <Redirect to="/banking?tab=accounts" replace />}</Route>
       <Route path={"/members"}>{() => <Redirect to="/governance?tab=members" replace />}</Route>
       <Route path={"/family/members"}>{() => <Redirect to="/governance?tab=members" replace />}</Route>

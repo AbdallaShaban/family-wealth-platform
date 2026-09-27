@@ -635,9 +635,9 @@ export default function TransactionsHubPage() {
     return list;
   }, [recentEvents.data, typeFilter, accountFilter, searchQuery]);
 
-  // Pagination state (15 items per page to eliminate infinite scroll)
+  // Pagination state (default 25 items per page to prevent thread freezing)
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 15;
+  const [pageSize, setPageSize] = useState(25);
   const totalPages = Math.max(1, Math.ceil(filteredEvents.length / pageSize));
 
   // Reset to page 1 whenever filters change
@@ -934,6 +934,18 @@ export default function TransactionsHubPage() {
                   <span className="sr-only sm:not-sr-only sm:mr-1">إعادة ضبط</span>
                 </Button>
               )}
+
+              <Select value={String(pageSize)} onValueChange={(val) => { setPageSize(Number(val)); setCurrentPage(1); }}>
+                <SelectTrigger className="h-8.5 w-24 text-xs bg-white text-slate-900 border border-slate-300 placeholder:text-slate-400 focus:border-slate-500 dark:bg-[#0E1420] dark:text-slate-100 dark:border-slate-700/80">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="end" className="dark:bg-[#0E1420] dark:border-slate-800 dark:text-slate-100">
+                  <SelectItem value="15">15 صف</SelectItem>
+                  <SelectItem value="25">25 صف</SelectItem>
+                  <SelectItem value="50">50 صف</SelectItem>
+                  <SelectItem value="100">100 صف</SelectItem>
+                </SelectContent>
+              </Select>
 
               <Badge variant="outline" className="h-8.5 border-slate-300 dark:border-slate-700/80 bg-slate-50 dark:bg-[#0E1420] px-2.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {filteredEvents.length} عملية
