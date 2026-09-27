@@ -41,6 +41,15 @@ export function invalidateReadModelCache(prefix?: string) {
   });
 }
 
+export function invalidateFamilyWorkspaceCache(workspaceId: number) {
+  invalidateReadModelCache(`dashboard:${workspaceId}`);
+  invalidateReadModelCache(`market-overview:${workspaceId}`);
+  invalidateReadModelCache(`cashflow:${workspaceId}`);
+  invalidateReadModelCache(`wealth-health:score:${workspaceId}`);
+  invalidateReadModelCache(`stress-testing:${workspaceId}`);
+  invalidateReadModelCache(`fx:${workspaceId}`);
+}
+
 export function readModelCacheSize() {
   return cache.size;
 }

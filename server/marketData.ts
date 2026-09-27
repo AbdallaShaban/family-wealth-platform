@@ -140,10 +140,55 @@ export function normalizeYahooQuote(raw: Awaited<ReturnType<YahooQuoteClient["qu
   return { price: price!.toFixed(8), currency, asOf, source: "Yahoo Finance via yahoo-finance2", quoteStatus: "delayed" };
 }
 
-export async function fetchYahooQuote(symbol: string, client: YahooQuoteClient = new YahooFinance(), fallbackCurrency?: string) {
+export const MARKET_DATA_NETWORK_TIMEOUT_MS = 1_500; // 1.5s fast timeout to prevent blocking
+export const YAHOO_QUOTE_CACHE_TTL_MS = 60_000; // 60s cache TTL
+export const GOLD_PRICE_CACHE_TTL_MS = 60_000; // 60s cache TTL
+
+/**
+ * Executes a quote request with a strict 1.5-second timeout to prevent WAN hang spikes.
+ */
+export async function quoteWithFastTimeout(
+  client: YahooQuoteClient,
+  symbol: string,
+  timeoutMs = MARKET_DATA_NETWORK_TIMEOUT_MS
+): Promise<Awaited<ReturnType<YahooQuoteClient["quote"]>>> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`Market data timeout (${timeoutMs}ms) for ${symbol}`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([client.quote(symbol), timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+const yahooQuoteMemoryCache = new Map<string, { quote: MarketQuote; cachedAt: number }>();
+
+export async function fetchYahooQuote(
+  symbol: string,
+  client: YahooQuoteClient = new YahooFinance(),
+  fallbackCurrency?: string,
+  forceFresh = false
+) {
   const normalizedSymbol = symbol.trim().toUpperCase();
   if (!normalizedSymbol || normalizedSymbol.length > 48) throw new Error("رمز الأداة الاستثمارية غير صالح للتحديث.");
-  return normalizeYahooQuote(await client.quote(normalizedSymbol), fallbackCurrency);
+
+  const cacheKey = `${normalizedSymbol}:${fallbackCurrency ?? ""}`;
+  if (!forceFresh) {
+    const existing = yahooQuoteMemoryCache.get(cacheKey);
+    if (existing && Date.now() - existing.cachedAt < YAHOO_QUOTE_CACHE_TTL_MS) {
+      return existing.quote;
+    }
+  }
+
+  const raw = await quoteWithFastTimeout(client, normalizedSymbol);
+  const quote = normalizeYahooQuote(raw, fallbackCurrency);
+  yahooQuoteMemoryCache.set(cacheKey, { quote, cachedAt: Date.now() });
+  return quote;
 }
 
 // In-memory cache for Mubasher Egypt stock prices (60 seconds TTL)
@@ -157,6 +202,28 @@ let mubasherCache: Array<{
 }> | null = null;
 let mubasherCacheTime = 0;
 
+interface GoldCacheEntry {
+  data: {
+    pricePerGramEgp: number;
+    karat: number;
+    goldOunceUsd: number;
+    usdEgpRate: number;
+    asOf: number;
+    source: string;
+  };
+  cachedAt: number;
+}
+
+const goldPriceMemoryCache: Record<24 | 21, GoldCacheEntry | null> = {
+  24: null,
+  21: null,
+};
+
+export function clearGoldPriceCache() {
+  goldPriceMemoryCache[24] = null;
+  goldPriceMemoryCache[21] = null;
+}
+
 /**
  * Explicitly clears the Mubasher stock & fund in-memory caches to bust stale data.
  */
@@ -165,6 +232,8 @@ export function clearMubasherCache() {
   mubasherCacheTime = 0;
   mubasherFundsCache = null;
   mubasherFundsCacheTime = 0;
+  yahooQuoteMemoryCache.clear();
+  clearGoldPriceCache();
 }
 
 /**
@@ -680,7 +749,8 @@ export async function fetchEgxMutualFundQuote(
  */
 export async function fetchLiveGoldGramPrice(
   karat: 24 | 21 = 24,
-  client: YahooQuoteClient = new YahooFinance()
+  client: YahooQuoteClient = new YahooFinance(),
+  forceFresh = false
 ): Promise<{
   pricePerGramEgp: number;
   karat: number;
@@ -689,10 +759,18 @@ export async function fetchLiveGoldGramPrice(
   asOf: number;
   source: string;
 }> {
+  // 1. Fast in-memory cache check (60s TTL)
+  if (!forceFresh) {
+    const cached = goldPriceMemoryCache[karat];
+    if (cached && Date.now() - cached.cachedAt < GOLD_PRICE_CACHE_TTL_MS) {
+      return cached.data;
+    }
+  }
+
   try {
     const [goldQuote, fxQuote] = await Promise.all([
-      client.quote("GC=F"),
-      client.quote("USDEGP=X"),
+      quoteWithFastTimeout(client, "GC=F"),
+      quoteWithFastTimeout(client, "USDEGP=X"),
     ]);
     const goldUsd = goldQuote?.regularMarketPrice;
     const usdEgp = fxQuote?.regularMarketPrice;
@@ -700,7 +778,7 @@ export async function fetchLiveGoldGramPrice(
       const calc = calculateGold24kGramEgp({ goldOunceUsd: goldUsd, usdEgpRate: usdEgp });
       const p24 = parseFloat(calc.pricePerGramEgp);
       const price = karat === 21 ? Math.round((p24 * 21) / 24) : p24;
-      return {
+      const liveResult = {
         pricePerGramEgp: price,
         karat,
         goldOunceUsd: goldUsd,
@@ -708,14 +786,21 @@ export async function fetchLiveGoldGramPrice(
         asOf: Date.now(),
         source: "Yahoo Finance (GC=F * USDEGP=X)",
       };
+      goldPriceMemoryCache[karat] = { data: liveResult, cachedAt: Date.now() };
+      return liveResult;
     }
-  } catch (err) {
-    console.warn("[MarketData] Live gold calculation notice:", err);
+  } catch (err: any) {
+    console.warn("[MarketData] Live gold calculation notice (using fast fallback):", err?.message || err);
+  }
+
+  // If recent cached entry exists (even if past 60s), prefer it over hardcoded baseline
+  if (goldPriceMemoryCache[karat]) {
+    return goldPriceMemoryCache[karat]!.data;
   }
 
   // Graceful institutional benchmark fallback (4650 EGP for 24k, 4068 for 21k)
   const fallback24k = 4650;
-  return {
+  const fallbackResult = {
     pricePerGramEgp: karat === 21 ? Math.round((fallback24k * 21) / 24) : fallback24k,
     karat,
     goldOunceUsd: 2650,
@@ -723,6 +808,8 @@ export async function fetchLiveGoldGramPrice(
     asOf: Date.now(),
     source: "سوق الذهب المصري (عيار 24 الاسترشادي)",
   };
+  goldPriceMemoryCache[karat] = { data: fallbackResult, cachedAt: Date.now() };
+  return fallbackResult;
 }
 
 /**

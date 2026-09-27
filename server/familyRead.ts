@@ -50,102 +50,105 @@ export async function listAccountSnapshots(context: FamilyContext) {
 }
 
 export async function getDashboardSummary(context: FamilyContext) {
-  const [accountSnapshots, recentEvents, portfolio] = await Promise.all([
-    listAccountSnapshots(context),
-    listRecentEvents(context, 12),
-    listPortfolioPositions(context),
-  ]);
-  const valuedBalance = accountSnapshots.reduce((total, account) => total.plus(account.baseValue ?? "0"), new Decimal(0));
-  const liquidBalance = accountSnapshots.filter(account => ["cash", "bank", "brokerage", "wallet"].includes(account.accountType)).reduce((total, account) => total.plus(account.baseValue ?? "0"), new Decimal(0));
-  const liabilities = accountSnapshots.filter(account => ["credit", "loan"].includes(account.accountType)).reduce((total, account) => total.plus(new Decimal(account.baseValue ?? "0").abs()), new Decimal(0));
-  const investmentValue = portfolio.reduce((total, position) => total.plus(position.baseMarketValue ?? "0"), new Decimal(0));
-  const unrealizedPnl = portfolio.reduce((total, position) => total.plus(position.baseUnrealizedPnl ?? "0"), new Decimal(0));
-  const unvaluedCurrencies = Array.from(new Set(accountSnapshots.filter(account => account.baseValue === null).map(account => account.currency)));
-  const staleFxCurrencies = Array.from(new Set(accountSnapshots.filter(account => account.valuationStatus === "stale").map(account => account.currency)));
-  const unvaluedInstruments = portfolio.filter(position => position.baseMarketValue === null).map(position => position.instrumentName);
+  const cacheKey = `dashboard:summary:${context.workspace.id}:${context.profile.id}`;
+  return getCachedReadModel(cacheKey, async () => {
+    const [accountSnapshots, recentEvents, portfolio] = await Promise.all([
+      listAccountSnapshots(context),
+      listRecentEvents(context, 12),
+      listPortfolioPositions(context),
+    ]);
+    const valuedBalance = accountSnapshots.reduce((total, account) => total.plus(account.baseValue ?? "0"), new Decimal(0));
+    const liquidBalance = accountSnapshots.filter(account => ["cash", "bank", "brokerage", "wallet"].includes(account.accountType)).reduce((total, account) => total.plus(account.baseValue ?? "0"), new Decimal(0));
+    const liabilities = accountSnapshots.filter(account => ["credit", "loan"].includes(account.accountType)).reduce((total, account) => total.plus(new Decimal(account.baseValue ?? "0").abs()), new Decimal(0));
+    const investmentValue = portfolio.reduce((total, position) => total.plus(position.baseMarketValue ?? "0"), new Decimal(0));
+    const unrealizedPnl = portfolio.reduce((total, position) => total.plus(position.baseUnrealizedPnl ?? "0"), new Decimal(0));
+    const unvaluedCurrencies = Array.from(new Set(accountSnapshots.filter(account => account.baseValue === null).map(account => account.currency)));
+    const staleFxCurrencies = Array.from(new Set(accountSnapshots.filter(account => account.valuationStatus === "stale").map(account => account.currency)));
+    const unvaluedInstruments = portfolio.filter(position => position.baseMarketValue === null).map(position => position.instrumentName);
 
-  const db = await getDb();
-  let bankCertificatesTotal = new Decimal(0);
-  if (db) {
-    try {
-      const certRows = await db
-        .select({ principalAmount: bankCertificates.principalAmount })
-        .from(bankCertificates)
-        .where(and(eq(bankCertificates.workspaceId, context.workspace.id), eq(bankCertificates.status, "active")));
-      bankCertificatesTotal = certRows.reduce((sum, c) => sum.plus(new Decimal(c.principalAmount)), new Decimal(0));
-    } catch {
-      // Table may be empty or unmigrated in isolated mocks
+    const db = await getDb();
+    let bankCertificatesTotal = new Decimal(0);
+    if (db) {
+      try {
+        const certRows = await db
+          .select({ principalAmount: bankCertificates.principalAmount })
+          .from(bankCertificates)
+          .where(and(eq(bankCertificates.workspaceId, context.workspace.id), eq(bankCertificates.status, "active")));
+        bankCertificatesTotal = certRows.reduce((sum, c) => sum.plus(new Decimal(c.principalAmount)), new Decimal(0));
+      } catch {
+        // Table may be empty or unmigrated in isolated mocks
+      }
     }
-  }
 
-  // Net worth: (Liquid Free Cash + T+2 Receivables + Invested Assets + Bank Certificates) - Liabilities
-  // Note: (freeLiquidity + unsettledCash) equals liquidBalance.
-  // valuedBalance includes liquid accounts + non-liquid asset accounts minus liability accounts.
-  const currentNetWorth = valuedBalance.plus(investmentValue).plus(bankCertificatesTotal);
+    // Net worth: (Liquid Free Cash + T+2 Receivables + Invested Assets + Bank Certificates) - Liabilities
+    // Note: (freeLiquidity + unsettledCash) equals liquidBalance.
+    // valuedBalance includes liquid accounts + non-liquid asset accounts minus liability accounts.
+    const currentNetWorth = valuedBalance.plus(investmentValue).plus(bankCertificatesTotal);
 
-  // Unsettled Cash calculation (Strict EGX T+2 trading-day settlement window, skipping Friday/Saturday)
-  const now = Date.now();
-  const unsettledSells = recentEvents.filter(
-    (e) => e.eventType === "sell" && !isEgxTradeSettled(e.occurredAt, now)
-  );
-  const unsettledCash = unsettledSells.reduce(
-    (sum, e) => sum.plus(new Decimal(e.grossAmount ?? 0)),
-    new Decimal(0)
-  );
-  const freeLiquidity = Decimal.max(0, liquidBalance.minus(unsettledCash));
+    // Unsettled Cash calculation (Strict EGX T+2 trading-day settlement window, skipping Friday/Saturday)
+    const now = Date.now();
+    const unsettledSells = recentEvents.filter(
+      (e) => e.eventType === "sell" && !isEgxTradeSettled(e.occurredAt, now)
+    );
+    const unsettledCash = unsettledSells.reduce(
+      (sum, e) => sum.plus(new Decimal(e.grossAmount ?? 0)),
+      new Decimal(0)
+    );
+    const freeLiquidity = Decimal.max(0, liquidBalance.minus(unsettledCash));
 
-  // Prior Period Comparison for Net Worth Delta
-  let netWorthDelta = {
-    absolute: "0.00",
-    percentage: "0.0",
-    isPositive: true,
-  };
-  if (db) {
-    const snapshots = await db
-      .select({ netWorthBase: officialValuationSnapshots.netWorthBase })
-      .from(officialValuationSnapshots)
-      .where(eq(officialValuationSnapshots.workspaceId, context.workspace.id))
-      .orderBy(desc(officialValuationSnapshots.valuationAsOf))
-      .limit(2);
-    if (snapshots.length >= 2 && snapshots[1].netWorthBase) {
-      const prev = new Decimal(snapshots[1].netWorthBase);
-      const diff = currentNetWorth.minus(prev);
-      const pct = prev.gt(0) ? diff.div(prev).mul(100) : new Decimal(0);
-      netWorthDelta = {
-        absolute: diff.abs().toFixed(2),
-        percentage: pct.abs().toFixed(1),
-        isPositive: diff.gte(0),
-      };
-    } else if (unrealizedPnl.abs().gt(0) && currentNetWorth.gt(0)) {
-      const pct = unrealizedPnl.div(currentNetWorth).mul(100);
-      netWorthDelta = {
-        absolute: unrealizedPnl.abs().toFixed(2),
-        percentage: pct.abs().toFixed(1),
-        isPositive: unrealizedPnl.gte(0),
-      };
+    // Prior Period Comparison for Net Worth Delta
+    let netWorthDelta = {
+      absolute: "0.00",
+      percentage: "0.0",
+      isPositive: true,
+    };
+    if (db) {
+      const snapshots = await db
+        .select({ netWorthBase: officialValuationSnapshots.netWorthBase })
+        .from(officialValuationSnapshots)
+        .where(eq(officialValuationSnapshots.workspaceId, context.workspace.id))
+        .orderBy(desc(officialValuationSnapshots.valuationAsOf))
+        .limit(2);
+      if (snapshots.length >= 2 && snapshots[1].netWorthBase) {
+        const prev = new Decimal(snapshots[1].netWorthBase);
+        const diff = currentNetWorth.minus(prev);
+        const pct = prev.gt(0) ? diff.div(prev).mul(100) : new Decimal(0);
+        netWorthDelta = {
+          absolute: diff.abs().toFixed(2),
+          percentage: pct.abs().toFixed(1),
+          isPositive: diff.gte(0),
+        };
+      } else if (unrealizedPnl.abs().gt(0) && currentNetWorth.gt(0)) {
+        const pct = unrealizedPnl.div(currentNetWorth).mul(100);
+        netWorthDelta = {
+          absolute: unrealizedPnl.abs().toFixed(2),
+          percentage: pct.abs().toFixed(1),
+          isPositive: unrealizedPnl.gte(0),
+        };
+      }
     }
-  }
 
-  return {
-    workspace: { id: context.workspace.id, name: context.workspace.name, baseCurrency: context.workspace.baseCurrency },
-    membershipRole: context.membership.role,
-    liquidBalanceBase: liquidBalance.toFixed(2),
-    freeLiquidityBase: freeLiquidity.toFixed(2),
-    unsettledCashBase: unsettledCash.toFixed(2),
-    liabilityBalanceBase: liabilities.toFixed(2),
-    investmentValueBase: investmentValue.toFixed(2),
-    bankCertificatesBase: bankCertificatesTotal.toFixed(2),
-    netWorthBase: currentNetWorth.toFixed(2),
-    netWorthDelta,
-    unrealizedPnlBase: unrealizedPnl.toFixed(2),
-    accountCount: accountSnapshots.length,
-    unvaluedCurrencies,
-    staleFxCurrencies,
-    unvaluedInstruments,
-    accounts: accountSnapshots,
-    portfolio,
-    recentEvents,
-  };
+    return {
+      workspace: { id: context.workspace.id, name: context.workspace.name, baseCurrency: context.workspace.baseCurrency },
+      membershipRole: context.membership.role,
+      liquidBalanceBase: liquidBalance.toFixed(2),
+      freeLiquidityBase: freeLiquidity.toFixed(2),
+      unsettledCashBase: unsettledCash.toFixed(2),
+      liabilityBalanceBase: liabilities.toFixed(2),
+      investmentValueBase: investmentValue.toFixed(2),
+      bankCertificatesBase: bankCertificatesTotal.toFixed(2),
+      netWorthBase: currentNetWorth.toFixed(2),
+      netWorthDelta,
+      unrealizedPnlBase: unrealizedPnl.toFixed(2),
+      accountCount: accountSnapshots.length,
+      unvaluedCurrencies,
+      staleFxCurrencies,
+      unvaluedInstruments,
+      accounts: accountSnapshots,
+      portfolio,
+      recentEvents,
+    };
+  }, 20_000);
 }
 
 export async function listRecentEvents(context: FamilyContext, limit = 25) {
@@ -209,43 +212,85 @@ export async function getCashFlowSummary(context: FamilyContext, periodKey: stri
 
 export async function getCashFlowHistory(context: FamilyContext, months = 6) {
   const safeMonths = Math.min(Math.max(1, months), 24);
-  const now = new Date();
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const periods: Array<{ year: number; month: number; periodKey: string; monthLabel: string }> = [];
+  const cacheKey = `cashflow:history:${context.workspace.id}:${safeMonths}`;
+  return getCachedReadModel(cacheKey, async () => {
+    const now = new Date();
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const periods: Array<{ year: number; month: number; periodKey: string; monthLabel: string }> = [];
 
-  for (let i = safeMonths - 1; i >= 0; i--) {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
-    const year = d.getUTCFullYear();
-    const month = d.getUTCMonth() + 1;
-    const periodKey = `${year}-${String(month).padStart(2, "0")}`;
-    const monthLabel = `${monthNames[d.getUTCMonth()]}`;
-    periods.push({ year, month, periodKey, monthLabel });
-  }
+    for (let i = safeMonths - 1; i >= 0; i--) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const year = d.getUTCFullYear();
+      const month = d.getUTCMonth() + 1;
+      const periodKey = `${year}-${String(month).padStart(2, "0")}`;
+      const monthLabel = `${monthNames[d.getUTCMonth()]}`;
+      periods.push({ year, month, periodKey, monthLabel });
+    }
 
-  const results = await Promise.all(
-    periods.map(async (p) => {
-      try {
-        const summary = await getCashFlowSummary(context, p.periodKey);
-        return {
-          month: p.monthLabel,
-          periodKey: p.periodKey,
-          income: Number(summary.incomeActualBase || 0),
-          expense: Number(summary.expenseActualBase || 0),
-          net: Number(summary.netCashFlowBase || 0),
-        };
-      } catch {
-        return {
-          month: p.monthLabel,
-          periodKey: p.periodKey,
-          income: 0,
-          expense: 0,
-          net: 0,
-        };
+    const db = await getDb();
+    if (!db) {
+      return periods.map(p => ({ month: p.monthLabel, periodKey: p.periodKey, income: 0, expense: 0, net: 0 }));
+    }
+
+    const windowStart = Date.parse(`${periods[0].periodKey}-01T00:00:00.000Z`);
+    const lastPeriodStart = Date.parse(`${periods[periods.length - 1].periodKey}-01T00:00:00.000Z`);
+    const lastPeriodEndDate = new Date(lastPeriodStart);
+    lastPeriodEndDate.setUTCMonth(lastPeriodEndDate.getUTCMonth() + 1);
+    const windowEnd = lastPeriodEndDate.getTime();
+
+    try {
+      const actualRows = await db.select({
+        occurredAt: financialEvents.occurredAt,
+        direction: cashFlowCategories.direction,
+        baseAmount: journalLines.baseAmount,
+      }).from(financialEvents)
+        .innerJoin(cashFlowCategories, eq(financialEvents.categoryId, cashFlowCategories.id))
+        .innerJoin(journalEntries, eq(journalEntries.eventId, financialEvents.id))
+        .innerJoin(journalLines, and(eq(journalLines.entryId, journalEntries.id), eq(journalLines.accountId, financialEvents.primaryAccountId!)))
+        .where(and(
+          eq(financialEvents.workspaceId, context.workspace.id),
+          eq(financialEvents.status, "posted"),
+          sql`${financialEvents.eventType} IN ('income', 'expense', 'debt_payment')`,
+          sql`${financialEvents.occurredAt} >= ${windowStart}`,
+          sql`${financialEvents.occurredAt} < ${windowEnd}`
+        ));
+
+      const monthlyTotals = new Map<string, { income: Decimal; expense: Decimal }>();
+      for (const p of periods) {
+        monthlyTotals.set(p.periodKey, { income: new Decimal(0), expense: new Decimal(0) });
       }
-    })
-  );
 
-  return results;
+      for (const row of actualRows) {
+        const d = new Date(row.occurredAt);
+        const periodKey = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+        const bucket = monthlyTotals.get(periodKey);
+        if (bucket) {
+          const amount = new Decimal(row.baseAmount ?? "0");
+          if (row.direction === "income") {
+            bucket.income = bucket.income.plus(amount);
+          } else {
+            bucket.expense = bucket.expense.plus(amount);
+          }
+        }
+      }
+
+      return periods.map(p => {
+        const bucket = monthlyTotals.get(p.periodKey) ?? { income: new Decimal(0), expense: new Decimal(0) };
+        const inc = Number(bucket.income.toFixed(2));
+        const exp = Number(bucket.expense.toFixed(2));
+        return {
+          month: p.monthLabel,
+          periodKey: p.periodKey,
+          income: inc,
+          expense: exp,
+          net: Number((inc - exp).toFixed(2)),
+        };
+      });
+    } catch (err) {
+      console.warn("[CashFlowHistory] Consolidated query notice:", err);
+      return periods.map(p => ({ month: p.monthLabel, periodKey: p.periodKey, income: 0, expense: 0, net: 0 }));
+    }
+  }, 25_000);
 }
 
 async function currentBaseRates(context: FamilyContext) {
@@ -413,37 +458,40 @@ export function marketOverviewQuoteStatus(quote: { quoteStatus: string; asOf: nu
  * need to conceal the requested price-monitoring view.
  */
 export async function getDashboardMarketOverview(context: FamilyContext) {
-  const db = await getDb();
-  if (!db) throw unavailable();
-  const [ownedRows, watchRows, quoteRows] = await Promise.all([
-    db.select({ instrumentId: positions.instrumentId, quantity: positions.quantity }).from(positions).where(eq(positions.workspaceId, context.workspace.id)),
-    db.select({ instrumentId: watchlistItems.instrumentId }).from(watchlistItems).where(and(eq(watchlistItems.workspaceId, context.workspace.id), eq(watchlistItems.profileId, context.profile.id), eq(watchlistItems.status, "active"))),
-    db.select().from(priceQuotes).where(eq(priceQuotes.workspaceId, context.workspace.id)).orderBy(desc(priceQuotes.asOf)),
-  ]);
-  const ownedIds = new Set(ownedRows.filter(row => new Decimal(row.quantity).gt(0)).map(row => row.instrumentId));
-  const watchIds = new Set(watchRows.map(row => row.instrumentId));
-  const monitoredIds = Array.from(new Set(Array.from(ownedIds).concat(Array.from(watchIds))));
-  if (!monitoredIds.length) return { generatedAt: Date.now(), staleAfterHours: 48, entries: [] };
-  const instrumentRows = await db.select({ id: instruments.id, name: instruments.name, symbol: instruments.symbol, assetType: instruments.assetType, currency: instruments.currency }).from(instruments).where(and(eq(instruments.workspaceId, context.workspace.id), inArray(instruments.id, monitoredIds)));
-  const latestQuote = new Map<number, typeof quoteRows[number]>();
-  quoteRows.forEach(quote => { if (!latestQuote.has(quote.instrumentId)) latestQuote.set(quote.instrumentId, quote); });
-  const entries = instrumentRows.map(instrument => {
-    const quote = latestQuote.get(instrument.id);
-    const ownership = classifyMarketOverviewOwnership(ownedIds.has(instrument.id), watchIds.has(instrument.id));
-    return {
-      instrumentId: instrument.id,
-      name: instrument.name,
-      symbol: instrument.symbol,
-      assetType: instrument.assetType,
-      currency: instrument.currency,
-      ownership,
-      price: quote?.price ?? null,
-      source: quote?.source ?? null,
-      quoteStatus: marketOverviewQuoteStatus(quote),
-      asOf: quote?.asOf ?? null,
-    };
-  });
-  return { generatedAt: Date.now(), staleAfterHours: 48, entries: entries.sort((left, right) => left.name.localeCompare(right.name, "ar")) };
+  const cacheKey = `market-overview:${context.workspace.id}:${context.profile.id}`;
+  return getCachedReadModel(cacheKey, async () => {
+    const db = await getDb();
+    if (!db) throw unavailable();
+    const [ownedRows, watchRows, quoteRows] = await Promise.all([
+      db.select({ instrumentId: positions.instrumentId, quantity: positions.quantity }).from(positions).where(eq(positions.workspaceId, context.workspace.id)),
+      db.select({ instrumentId: watchlistItems.instrumentId }).from(watchlistItems).where(and(eq(watchlistItems.workspaceId, context.workspace.id), eq(watchlistItems.profileId, context.profile.id), eq(watchlistItems.status, "active"))),
+      db.select().from(priceQuotes).where(eq(priceQuotes.workspaceId, context.workspace.id)).orderBy(desc(priceQuotes.asOf)),
+    ]);
+    const ownedIds = new Set(ownedRows.filter(row => new Decimal(row.quantity).gt(0)).map(row => row.instrumentId));
+    const watchIds = new Set(watchRows.map(row => row.instrumentId));
+    const monitoredIds = Array.from(new Set(Array.from(ownedIds).concat(Array.from(watchIds))));
+    if (!monitoredIds.length) return { generatedAt: Date.now(), staleAfterHours: 48, entries: [] };
+    const instrumentRows = await db.select({ id: instruments.id, name: instruments.name, symbol: instruments.symbol, assetType: instruments.assetType, currency: instruments.currency }).from(instruments).where(and(eq(instruments.workspaceId, context.workspace.id), inArray(instruments.id, monitoredIds)));
+    const latestQuote = new Map<number, typeof quoteRows[number]>();
+    quoteRows.forEach(quote => { if (!latestQuote.has(quote.instrumentId)) latestQuote.set(quote.instrumentId, quote); });
+    const entries = instrumentRows.map(instrument => {
+      const quote = latestQuote.get(instrument.id);
+      const ownership = classifyMarketOverviewOwnership(ownedIds.has(instrument.id), watchIds.has(instrument.id));
+      return {
+        instrumentId: instrument.id,
+        name: instrument.name,
+        symbol: instrument.symbol,
+        assetType: instrument.assetType,
+        currency: instrument.currency,
+        ownership,
+        price: quote?.price ?? null,
+        source: quote?.source ?? null,
+        quoteStatus: marketOverviewQuoteStatus(quote),
+        asOf: quote?.asOf ?? null,
+      };
+    });
+    return { generatedAt: Date.now(), staleAfterHours: 48, entries: entries.sort((left, right) => left.name.localeCompare(right.name, "ar")) };
+  }, 30_000);
 }
 
 /**

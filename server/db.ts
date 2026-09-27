@@ -41,6 +41,9 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _heartbeatTimer: NodeJS.Timeout | null = null;
 let _isPinging = false;
 
+let _consecutivePingFailures = 0;
+const MAX_CONSECUTIVE_PING_FAILURES = 3;
+
 export async function resetDb(): Promise<void> {
   if (_pool) {
     try {
@@ -51,10 +54,12 @@ export async function resetDb(): Promise<void> {
   }
   _pool = null;
   _db = null;
+  _consecutivePingFailures = 0;
 }
 
 /**
- * Pings the active database connection to keep TiDB Serverless warm and detect silent disconnects
+ * Pings the active database connection to keep TiDB Serverless warm and detect silent disconnects.
+ * Uses a resilient 10s timeout and requires 3 consecutive failures before cycling the pool.
  */
 export async function pingDb(): Promise<boolean> {
   if (_isPinging) return false;
@@ -67,19 +72,27 @@ export async function pingDb(): Promise<boolean> {
     }
     if (!pool) return false;
 
-    // Strict 4-second timeout for the ping query itself
+    // Resilient 10-second timeout for the ping query over international WAN
     await Promise.race([
       pool.query("SELECT 1 as heartbeat"),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Heartbeat query timeout (4000ms)")), 4000)
+        setTimeout(() => reject(new Error("Heartbeat query timeout (10000ms)")), 10000)
       ),
     ]);
+    _consecutivePingFailures = 0;
     return true;
   } catch (err: any) {
+    _consecutivePingFailures++;
     console.warn(
-      `[Database Heartbeat] Ping failed (${err?.code || err?.message}). Cycling pool for auto-reconnect.`
+      `[Database Heartbeat] Ping failed (${err?.code || err?.message}) [${_consecutivePingFailures}/${MAX_CONSECUTIVE_PING_FAILURES}].`
     );
-    await resetDb();
+    if (_consecutivePingFailures >= MAX_CONSECUTIVE_PING_FAILURES) {
+      console.warn(
+        `[Database Heartbeat] Max consecutive ping failures reached (${_consecutivePingFailures}). Cycling pool for auto-reconnect.`
+      );
+      _consecutivePingFailures = 0;
+      await resetDb();
+    }
     return false;
   } finally {
     _isPinging = false;
