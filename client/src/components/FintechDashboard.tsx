@@ -170,29 +170,24 @@ export default function FintechDashboard() {
     <DashboardLayout>
       <div className="w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6" dir="rtl">
         {/* Top Executive Header (Midday-Style) */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-800 pb-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-950 dark:text-zinc-50">
-                مرحباً، {user?.name || "Abdalla"}
-              </h1>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                مساحة العمل المباشرة
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 mt-1">
-              نظرة مالية تنفيذية مركزة: صافي الثروة، وتطور المحفظة، وسجل العمليات البنكية
-            </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-1">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-zinc-950 dark:text-zinc-50">
+              مرحباً، {user?.name || "Abdalla"}
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              مساحة العمل المباشرة
+            </span>
           </div>
 
           {/* Quick Action Buttons */}
           <div className="flex items-center flex-wrap gap-2">
             <Button
               onClick={() => setLocation("/transactions")}
-              className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold h-9 px-4 text-xs gap-1.5 shadow-xs transition-all"
+              className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-bold h-8 px-3.5 text-xs gap-1.5 shadow-xs transition-all"
             >
-              <PlusCircle className="size-4" />
+              <PlusCircle className="size-3.5" />
               <span>تسجيل عملية جديدة</span>
             </Button>
 
@@ -200,9 +195,9 @@ export default function FintechDashboard() {
               variant="outline"
               size="sm"
               onClick={() => setReconciliationOpen(true)}
-              className="border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-bold h-9 text-xs gap-1.5"
+              className="border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold h-8 text-xs gap-1.5"
             >
-              <ArrowLeftRight className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+              <ArrowLeftRight className="size-3 text-emerald-600 dark:text-emerald-400" />
               <span>تسوية رصيد</span>
             </Button>
 
@@ -210,9 +205,9 @@ export default function FintechDashboard() {
               variant="outline"
               size="sm"
               onClick={() => setDebtPaymentOpen(true)}
-              className="border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-800 dark:text-zinc-200 font-bold h-9 text-xs gap-1.5"
+              className="border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-bold h-8 text-xs gap-1.5"
             >
-              <CreditCard className="size-3.5 text-rose-600 dark:text-rose-400" />
+              <CreditCard className="size-3 text-rose-600 dark:text-rose-400" />
               <span>سداد دين / بطاقة</span>
             </Button>
 
@@ -220,7 +215,7 @@ export default function FintechDashboard() {
               variant="ghost"
               size="sm"
               onClick={toggleDemoMode}
-              className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100"
+              className="h-8 text-xs font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100"
             >
               {isDemoMode ? "إيقاف المعاينة" : "تجربة العرض"}
             </Button>

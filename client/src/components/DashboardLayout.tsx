@@ -686,43 +686,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl">
-      {/* Theme-Adaptive Sidebar Styling: Light (#F8FAFC) / Dark (#0c0a09) */}
-      <style>{`
-        aside.fintech-v2-sidebar,
-        .fintech-v2-mobile-sheet {
-          background-color: #F8FAFC !important;
-          background: #F8FAFC !important;
-          background-image: none !important;
-          border-left: 1px solid rgba(226, 232, 240, 0.85) !important;
-          color: #0F172A !important;
-        }
-        .dark aside.fintech-v2-sidebar,
-        .dark .fintech-v2-mobile-sheet {
-          background-color: #0c0a09 !important;
-          background: #0c0a09 !important;
-          background-image: none !important;
-          border-left: 1px solid #27272a !important;
-          color: #fafafa !important;
-        }
-        aside.fintech-v2-sidebar::before,
-        aside.fintech-v2-sidebar::after {
-          display: none !important;
-          content: none !important;
-        }
-      `}</style>
       <aside
         data-sidebar="true"
-        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""} bg-[#F8FAFC] border-l border-slate-200/90 dark:bg-[#0c0a09] dark:border-[#27272a]`}
+        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""} bg-white border-l border-zinc-200 dark:bg-[#09090b] dark:border-zinc-800`}
       >
-        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-4 py-3.5 border-b border-slate-200/80 dark:border-[#27272a] shrink-0 min-h-[68px] bg-transparent">
+        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-3.5 py-3 border-b border-zinc-200 dark:border-zinc-800 shrink-0 min-h-[60px] bg-transparent">
           <FintechBrand collapsed={collapsed} />
           <button
-            className="fintech-v2-collapse size-8 rounded-lg flex items-center justify-center border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:border-[#27272a] dark:bg-[#18181b] dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors shrink-0"
+            className="fintech-v2-collapse size-7 rounded-lg flex items-center justify-center border border-zinc-200 bg-zinc-50 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors shrink-0"
             onClick={() => setCollapsed(value => !value)}
             aria-label={collapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
             title={collapsed ? "توسيع القائمة" : "طي القائمة"}
           >
-            {collapsed ? <PanelRightOpen className="size-4" /> : <PanelRightClose className="size-4" />}
+            {collapsed ? <PanelRightOpen className="size-3.5" /> : <PanelRightClose className="size-3.5" />}
           </button>
         </header>
         <FintechNav
