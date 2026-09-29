@@ -258,10 +258,12 @@ export const quantRouter = router({
    */
   getEgyptMarket: protectedProcedure.query(async () => {
     let gold24Price = 4650;
+    let liveFeedData: any = null;
     try {
-      const live24 = await fetchLiveGoldGramPrice(24);
-      if (live24 && live24.pricePerGramEgp > 1000) {
-        gold24Price = live24.pricePerGramEgp;
+      const { getLiveGoldAndFxRates } = await import("./services/goldFxLiveFeedService");
+      liveFeedData = await getLiveGoldAndFxRates();
+      if (liveFeedData && liveFeedData.karat24 > 1000) {
+        gold24Price = liveFeedData.karat24;
       }
     } catch {
       // fallback to 4650
@@ -271,10 +273,17 @@ export const quantRouter = router({
     return {
       egxStocks: EGX_TOP_INSTRUMENTS,
       gold: goldQuotes,
+      fx: {
+        usdEgp: liveFeedData?.usdEgpRate || 49.5,
+        eurEgp: liveFeedData?.eurEgpRate || 53.2,
+        isLive: liveFeedData?.isLive ?? false,
+        source: liveFeedData?.source || "سوق المال والعملات",
+        asOf: liveFeedData?.asOf || Date.now(),
+      },
       mutualFunds: EGYPTIAN_MUTUAL_FUNDS,
       dividendCalendar: EGX_DIVIDEND_CALENDAR,
-      marketStatusAr: "سوق المال المصري والذهب (تحديث أسعار إرشادي مباشر)",
-      lastUpdated: new Date().toISOString(),
+      marketStatusAr: liveFeedData?.isLive ? "سوق المال المصري والذهب (تحديث لحظي مباشر)" : "سوق المال المصري والذهب (آخر تسعير مسجل ومعتمد)",
+      lastUpdated: liveFeedData?.lastUpdatedFormattedAr || new Date().toISOString(),
     };
   }),
 
@@ -1225,9 +1234,10 @@ export const quantRouter = router({
       let goldPrice24k = input?.customGoldPrice24k;
       if (!goldPrice24k) {
         try {
-          const live = await fetchLiveGoldGramPrice();
-          if (live && live.pricePerGramEgp > 0) {
-            goldPrice24k = live.pricePerGramEgp;
+          const { getLiveGoldAndFxRates } = await import("./services/goldFxLiveFeedService");
+          const feed = await getLiveGoldAndFxRates();
+          if (feed && feed.karat24 > 0) {
+            goldPrice24k = feed.karat24;
           }
         } catch {
           // fallback handled inside engine

@@ -85,6 +85,12 @@ export async function executeLockedMarketRefresh(): Promise<{
 
   try {
     const refreshResult = await refreshYahooMarketData();
+    try {
+      const { executeAutomatedGoldFxRefresh } = await import("./services/goldFxLiveFeedService");
+      await executeAutomatedGoldFxRefresh();
+    } catch (goldErr) {
+      console.warn("[MarketScheduler] Gold & FX background refresh notice:", goldErr);
+    }
     lastExecutionTimestamp = Date.now();
     lastExecutionResult = refreshResult;
     return { executed: true, lockAcquired: true, result: refreshResult };

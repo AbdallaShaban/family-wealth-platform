@@ -66,6 +66,7 @@ import { RecordTradeForm } from "@/components/investments/RecordTradeForm";
 import { DividendModal } from "@/components/investments/DividendModal";
 import { InstrumentActionModals } from "@/components/investments/InstrumentActionModals";
 import { TradeActionModals } from "@/components/investments/TradeActionModals";
+import { LiveGoldFxTicker } from "@/components/investments/LiveGoldFxTicker";
 import RiskAllocationPage from "./family/RiskAllocationPage";
 import { RealPurchasingPowerEngine } from "@/components/wealth/RealPurchasingPowerEngine";
 
@@ -421,6 +422,9 @@ export default function InvestmentsPageRedesign() {
             </span>
           </div>
         </section>
+
+        {/* Live Gold & FX Ticker Feed */}
+        <LiveGoldFxTicker />
 
         {/* 6 Unified Tabs with Bank-Grade Segmented Control */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">

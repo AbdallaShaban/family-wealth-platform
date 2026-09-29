@@ -1115,6 +1115,18 @@ export const familyRouter = router({
   }),
 
   market: router({
+    liveGoldAndFx: protectedProcedure
+      .input(z.object({ forceFresh: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        const { getLiveGoldAndFxRates } = await import("./services/goldFxLiveFeedService");
+        return getLiveGoldAndFxRates(input?.forceFresh);
+      }),
+    refreshLiveFeed: protectedProcedure.mutation(async ({ ctx }) => {
+      const family = await familyContext(ctx.user);
+      assertRole(family, "editor");
+      const { executeAutomatedGoldFxRefresh } = await import("./services/goldFxLiveFeedService");
+      return executeAutomatedGoldFxRefresh();
+    }),
     getDerivedGoldPrice: protectedProcedure.query(async ({ ctx }) => {
       const family = await familyContext(ctx.user);
       const db = await getDb();

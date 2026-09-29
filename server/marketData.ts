@@ -3,7 +3,7 @@ import Decimal from "decimal.js";
 import { resolveEgxAsset, normalizeArabic } from "./services/quant/egxCatalog";
 
 
-type YahooQuoteClient = {
+export type YahooQuoteClient = {
   quote(symbol: string): Promise<{
     regularMarketPrice?: number | null;
     currency?: string | null;
