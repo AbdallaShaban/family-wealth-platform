@@ -46,41 +46,41 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
   const growthRate = Math.round(((currentTotal - startTotal) / (startTotal || 1)) * 100);
 
   return (
-    <Card className="border border-border/60 bg-card/60 backdrop-blur-md shadow-xs">
-      <CardHeader className="flex flex-col gap-3 space-y-0 pb-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/40">
+    <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl">
+      <CardHeader className="flex flex-col gap-3 space-y-0 pb-3 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-800">
         <div>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-base font-bold text-foreground">
+            <CardTitle className="text-base font-bold text-zinc-950 dark:text-zinc-50">
               النظرة المالية وتطور المحفظة
             </CardTitle>
-            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/30">
               <TrendingUp className="size-3" />
               +{growthRate}% نمو
             </span>
           </div>
-          <CardDescription className="text-xs text-muted-foreground mt-0.5">
+          <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
             تطور إجمالي صافي الأصول المجمعة مقارنة بالفترة المماثلة
           </CardDescription>
         </div>
 
         {/* Range Selector */}
-        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/40 self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 self-start sm:self-auto">
           <button
             onClick={() => setSelectedRange("6m")}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
               selectedRange === "6m"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700/60 font-bold"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50"
             }`}
           >
             آخر 6 أشهر
           </button>
           <button
             onClick={() => setSelectedRange("1y")}
-            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
               selectedRange === "1y"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700/60 font-bold"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50"
             }`}
           >
             سنة كاملة
@@ -90,18 +90,18 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
 
       <CardContent className="pt-4">
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 text-xs mb-3 text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-4 text-xs mb-3 text-zinc-600 dark:text-zinc-400">
           <div className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
             <span>العام الحالي:</span>
-            <strong className="text-foreground font-semibold">
+            <strong className="text-zinc-950 dark:text-zinc-50 font-bold">
               {formatMoney(currentTotal, currency)}
             </strong>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full bg-muted-foreground/40" />
+            <span className="size-2.5 rounded-full bg-zinc-400 dark:bg-zinc-600" />
             <span>العام السابق:</span>
-            <span className="text-muted-foreground font-medium">
+            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
               {formatMoney(chartData[chartData.length - 1]?.lastYear || 0, currency)}
             </span>
           </div>
@@ -113,43 +113,43 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
             <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 10 }}>
               <defs>
                 <linearGradient id="fillCurrentFintech" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10B981" stopOpacity={0.25} />
-                  <stop offset="100%" stopColor="#10B981" stopOpacity={0.0} />
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-border/40" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border, #e4e4e7)" opacity={0.6} />
               <XAxis
                 dataKey="month"
                 tickLine={false}
                 axisLine={false}
                 fontSize={11}
                 tickMargin={8}
-                stroke="currentColor"
-                className="text-muted-foreground font-sans"
+                stroke="#71717a"
+                className="font-sans"
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 fontSize={10}
                 tickMargin={6}
-                stroke="currentColor"
-                className="text-muted-foreground font-sans"
+                stroke="#71717a"
+                className="font-sans"
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
               />
               <Tooltip
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="rounded-lg border border-border bg-popover/95 p-2.5 shadow-xl text-xs backdrop-blur-md" dir="rtl">
-                        <p className="font-bold text-foreground mb-1">{label}</p>
-                        <div className="flex items-center justify-between gap-3 text-emerald-600 dark:text-emerald-400 font-semibold">
+                      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] p-3 shadow-xl text-xs" dir="rtl">
+                        <p className="font-bold text-zinc-950 dark:text-zinc-50 mb-1.5">{label}</p>
+                        <div className="flex items-center justify-between gap-4 text-emerald-600 dark:text-emerald-400 font-bold">
                           <span>العام الحالي:</span>
-                          <span>{formatMoney(Number(payload[0]?.value), currency)}</span>
+                          <span className="tabular-nums">{formatMoney(Number(payload[0]?.value), currency)}</span>
                         </div>
                         {payload[1] && (
-                          <div className="flex items-center justify-between gap-3 text-muted-foreground mt-0.5">
+                          <div className="flex items-center justify-between gap-4 text-zinc-500 dark:text-zinc-400 font-medium mt-1">
                             <span>العام السابق:</span>
-                            <span>{formatMoney(Number(payload[1]?.value), currency)}</span>
+                            <span className="tabular-nums">{formatMoney(Number(payload[1]?.value), currency)}</span>
                           </div>
                         )}
                       </div>
@@ -161,8 +161,7 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
               <Area
                 dataKey="lastYear"
                 type="monotone"
-                stroke="currentColor"
-                className="text-muted-foreground/30"
+                stroke="#71717a"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
                 fill="transparent"
@@ -170,7 +169,7 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
               <Area
                 dataKey="currentYear"
                 type="monotone"
-                stroke="#10B981"
+                stroke="#10b981"
                 strokeWidth={2.5}
                 fill="url(#fillCurrentFintech)"
               />

@@ -32,6 +32,7 @@ import {
   PanelRightOpen,
   PlusCircle,
   ReceiptText,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Sun,
@@ -66,55 +67,48 @@ const roleArabicLabels: Record<MinimumRole, string> = {
 const navigationGroups: NavigationGroup[] = [
   {
     id: "overview",
-    label: "النظرة التنفيذية",
+    label: "المركز المالي وصافي الثروة",
     icon: LayoutDashboard,
     items: [
       { icon: LayoutDashboard, label: "النظرة التنفيذية وصافي الثروة", path: "/", minimumRole: "viewer" },
+      { icon: ShieldCheck, label: "صحة الثروة ودرع التضخم", path: "/wealth-health", minimumRole: "viewer" },
+      { icon: FileChartColumn, label: "القوائم المالية والميزانية المجمعة", path: "/reports", minimumRole: "viewer" },
     ],
   },
   {
     id: "banking",
-    label: "البنوك والسيولة والتخطيط",
+    label: "البنوك والسيولة والتدفقات",
     icon: Landmark,
     items: [
       { icon: Landmark, label: "الحسابات البنكية والمحافظ", path: "/banking", minimumRole: "viewer" },
       { icon: ArrowLeftRight, label: "المعاملات المالية والقيود", path: "/transactions", minimumRole: "viewer" },
-      { icon: Landmark, label: "الشهادات والودائع", path: "/banking?tab=certificates", minimumRole: "viewer" },
-      { icon: WalletCards, label: "السيولة والتخطيط المالي", path: "/banking?tab=liquidity", minimumRole: "editor" },
-      { icon: CreditCard, label: "الالتزامات والديون", path: "/banking?tab=debts", minimumRole: "editor" },
+      { icon: Landmark, label: "الشهادات والودائع الادخارية", path: "/banking?tab=certificates", minimumRole: "viewer" },
+      { icon: WalletCards, label: "السيولة والتخطيط والاحتياطي", path: "/banking?tab=liquidity", minimumRole: "editor" },
+      { icon: CreditCard, label: "الالتزامات والديون والبطاقات", path: "/banking?tab=debts", minimumRole: "editor" },
     ],
   },
   {
     id: "investments",
-    label: "المحافظ والاستثمارات",
+    label: "المحافظ وأسواق المال والذهب",
     icon: TrendingUp,
     items: [
-      { icon: TrendingUp, label: "الأصول والمحفظة الحية", path: "/investments", minimumRole: "viewer" },
-      { icon: BarChart3, label: "الأداء والأرباح المحققة", path: "/investments?tab=realized", minimumRole: "viewer" },
+      { icon: TrendingUp, label: "الأصول والمحفظة الاستثمارية", path: "/investments", minimumRole: "viewer" },
+      { icon: Coins, label: "أسعار الذهب والسبائك بالعيارات", path: "/investments?tab=instruments", minimumRole: "viewer" },
+      { icon: Sparkles, label: "تداول الأسهم والإشارات الكمية", path: "/quant", minimumRole: "viewer" },
+      { icon: BarChart3, label: "الأداء والأرباح المحققة (FIFO)", path: "/investments?tab=realized", minimumRole: "viewer" },
       { icon: ArrowLeftRight, label: "التوزيع الجغرافي والمخاطر", path: "/investments?tab=allocation", minimumRole: "viewer" },
     ],
   },
   {
-    id: "quant",
-    label: "أسواق المال والتحليل الكمي",
-    icon: Sparkles,
-    items: [
-      { icon: Sparkles, label: "الإشارات الكمية والفنية", path: "/quant", minimumRole: "viewer" },
-      { icon: ShieldCheck, label: "اختبارات الضغط والسيناريوهات", path: "/quant?tab=stress", minimumRole: "viewer" },
-    ],
-  },
-  {
     id: "governance",
-    label: "التقارير والحوكمة",
-    icon: FileChartColumn,
+    label: "الحوكمة وإدارة المخاطر والزكاة",
+    icon: ShieldAlert,
     items: [
-      { icon: FileChartColumn, label: "القوائم المالية والميزانية", path: "/governance", minimumRole: "viewer" },
-      { icon: BookOpenCheck, label: "سجل التدقيق المحاسبي", path: "/governance?tab=audit", minimumRole: "advisor" },
-      { icon: FileLock2, label: "الخزنة والمستندات", path: "/governance?tab=vault", minimumRole: "editor" },
-      { icon: Coins, label: "الزكاة الشرعية وحول الذهب", path: "/governance?tab=zakat", minimumRole: "viewer" },
-      { icon: UsersRound, label: "أفراد العائلة والصلاحيات", path: "/governance?tab=members", minimumRole: "viewer" },
-      { icon: CheckCircle2, label: "مركز الموافقات والاعتمادات", path: "/governance?tab=approvals", minimumRole: "editor" },
-      { icon: Download, label: "النسخ الاحتياطي والتصدير", path: "/governance?tab=backup", minimumRole: "owner" },
+      { icon: Coins, label: "حاسبة الزكاة الشرعية وحول الذهب", path: "/governance?tab=zakat", minimumRole: "viewer" },
+      { icon: ShieldAlert, label: "اختبارات الهبوط والضغط (Stress Testing)", path: "/stress-testing", minimumRole: "viewer" },
+      { icon: FileLock2, label: "الخزنة المشفرة والمستندات", path: "/governance?tab=vault", minimumRole: "editor" },
+      { icon: BookOpenCheck, label: "سجل التدقيق المحاسبي والاعتمادات", path: "/governance?tab=audit", minimumRole: "advisor" },
+      { icon: UsersRound, label: "أفراد العائلة والصلاحيات والنسخ", path: "/governance?tab=members", minimumRole: "owner" },
     ],
   },
 ];
@@ -304,8 +298,8 @@ function FintechNav({
                       <button
                         className={`size-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                           isCurrent
-                            ? "bg-primary/15 text-primary border border-primary/30 dark:bg-primary/20 dark:text-emerald-400 shadow-xs"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                            ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-700 shadow-xs"
+                            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
                         }`}
                         onClick={() => onNavigate(item.path)}
                         aria-label={item.label}
@@ -320,7 +314,7 @@ function FintechNav({
                       className="bg-popover border border-border text-popover-foreground shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
                     >
                       <p className="font-semibold text-xs text-foreground">{item.label}</p>
-                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">{group.label}</p>
+                      <p className="text-[10px] text-emerald-400 font-medium mt-0.5">{group.label}</p>
                     </TooltipContent>
                   </Tooltip>
                 );
@@ -357,16 +351,16 @@ function FintechNav({
               <AccordionTrigger
                 className={`fintech-v2-group-trigger flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
                   hasActiveItem
-                    ? "bg-primary/10 text-primary border border-primary/20 dark:bg-primary/15 dark:text-emerald-400 dark:border-primary/30"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-700/80 font-bold"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
                 }`}
               >
                 <span className="flex items-center gap-2.5 min-w-0">
                   <span
                     className={`p-1.5 rounded-lg shrink-0 border transition-colors ${
                       hasActiveItem
-                        ? "bg-primary/15 border-primary/30 text-primary dark:bg-emerald-500/20 dark:border-emerald-500/30 dark:text-emerald-300"
-                        : "bg-muted border-border text-muted-foreground"
+                        ? "bg-emerald-50 dark:bg-zinc-700/60 border-emerald-200 dark:border-zinc-600 text-emerald-600 dark:text-emerald-400"
+                        : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
                     }`}
                   >
                     <GroupIcon className="size-4" />
@@ -374,7 +368,7 @@ function FintechNav({
                   <span className="truncate text-xs font-bold">{group.label}</span>
                 </span>
               </AccordionTrigger>
-              <AccordionContent className="fintech-v2-group-content pt-1 pb-1.5 pr-2 mr-3 border-r border-dashed border-border/60 space-y-1">
+              <AccordionContent className="fintech-v2-group-content pt-1 pb-1.5 pr-2 mr-3 border-r border-dashed border-zinc-200 dark:border-zinc-800 space-y-1">
                 {group.items.map(item => {
                   const Icon = item.icon;
                   const isCurrent =
@@ -385,16 +379,16 @@ function FintechNav({
                       key={item.path}
                       className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-150 text-right cursor-pointer ${
                         isCurrent
-                          ? "bg-primary/10 text-primary font-bold border-r-2 border-primary shadow-xs dark:bg-primary/20 dark:text-emerald-400 dark:border-emerald-500"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-semibold"
+                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 font-bold border-r-2 border-emerald-500 shadow-xs"
+                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 font-medium"
                       }`}
                       onClick={() => onNavigate(item.path)}
                       aria-current={isCurrent ? "page" : undefined}
                     >
-                      <Icon className={`size-4 shrink-0 ${isCurrent ? "text-primary dark:text-emerald-400" : "text-muted-foreground"}`} />
+                      <Icon className={`size-4 shrink-0 ${isCurrent ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400"}`} />
                       <span className="truncate flex-1">{item.label}</span>
                       {isCurrent && (
-                        <span className="size-1.5 rounded-full bg-primary dark:bg-emerald-400 shrink-0 shadow-[0_0_6px_#059669] dark:shadow-[0_0_6px_#34d399]" />
+                        <span className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0 shadow-[0_0_6px_#10b981]" />
                       )}
                     </button>
                   );
@@ -692,7 +686,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl">
-      {/* Theme-Adaptive Sidebar Styling: Light (#F8FAFC) / Dark (#0B0F17) */}
+      {/* Theme-Adaptive Sidebar Styling: Light (#F8FAFC) / Dark (#0c0a09) */}
       <style>{`
         aside.fintech-v2-sidebar,
         .fintech-v2-mobile-sheet {
@@ -704,11 +698,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
         .dark aside.fintech-v2-sidebar,
         .dark .fintech-v2-mobile-sheet {
-          background-color: #0B0F17 !important;
-          background: #0B0F17 !important;
+          background-color: #0c0a09 !important;
+          background: #0c0a09 !important;
           background-image: none !important;
-          border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
-          color: #F8FAFC !important;
+          border-left: 1px solid #27272a !important;
+          color: #fafafa !important;
         }
         aside.fintech-v2-sidebar::before,
         aside.fintech-v2-sidebar::after {
@@ -718,12 +712,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       `}</style>
       <aside
         data-sidebar="true"
-        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""} bg-[#F8FAFC] border-l border-slate-200/90 dark:bg-[#0B0F17] dark:border-white/10`}
+        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""} bg-[#F8FAFC] border-l border-slate-200/90 dark:bg-[#0c0a09] dark:border-[#27272a]`}
       >
-        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-4 py-3.5 border-b border-slate-200/80 dark:border-white/[0.08] shrink-0 min-h-[68px]">
+        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-4 py-3.5 border-b border-slate-200/80 dark:border-[#27272a] shrink-0 min-h-[68px] bg-transparent">
           <FintechBrand collapsed={collapsed} />
           <button
-            className="fintech-v2-collapse size-8 rounded-lg flex items-center justify-center border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:text-white dark:hover:bg-white/15 transition-colors shrink-0"
+            className="fintech-v2-collapse size-8 rounded-lg flex items-center justify-center border border-slate-200/90 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:border-[#27272a] dark:bg-[#18181b] dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors shrink-0"
             onClick={() => setCollapsed(value => !value)}
             aria-label={collapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
             title={collapsed ? "توسيع القائمة" : "طي القائمة"}
@@ -743,7 +737,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent
           side="right"
-          className="fintech-v2-mobile-sheet bg-[#F8FAFC] border-slate-200/90 dark:bg-[#0B0F17] dark:border-white/10"
+          className="fintech-v2-mobile-sheet bg-[#F8FAFC] border-slate-200/90 dark:bg-[#0c0a09] dark:border-zinc-800"
           dir="rtl"
         >
           <div className="fintech-v2-mobile-body">

@@ -47,30 +47,30 @@ export function AccountCardsWidget({
 
   const cardThemes = [
     {
-      bg: "from-slate-900 to-slate-800 text-white border-slate-700/60 shadow-lg",
+      bg: "from-zinc-900 via-zinc-900 to-black text-white border-zinc-700/80 shadow-md",
       chip: "bg-amber-400/80 border-amber-300",
       accent: "text-emerald-400",
     },
     {
-      bg: "from-emerald-950 via-teal-900 to-emerald-900 text-white border-emerald-700/40 shadow-lg",
+      bg: "from-emerald-950 via-teal-950 to-zinc-950 text-white border-emerald-700/40 shadow-md",
       chip: "bg-amber-300/80 border-amber-200",
       accent: "text-teal-300",
     },
     {
-      bg: "from-blue-950 via-indigo-950 to-slate-900 text-white border-indigo-800/40 shadow-lg",
+      bg: "from-zinc-900 via-slate-900 to-black text-white border-zinc-700/60 shadow-md",
       chip: "bg-amber-400/80 border-amber-300",
       accent: "text-sky-300",
     },
   ];
 
   return (
-    <Card className="border border-border/60 bg-card/60 backdrop-blur-md shadow-xs">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-border/40">
+    <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-zinc-200 dark:border-zinc-800">
         <div>
-          <CardTitle className="text-base font-bold text-foreground">
+          <CardTitle className="text-base font-bold text-zinc-950 dark:text-zinc-50">
             الحسابات والبطاقات النشطة
           </CardTitle>
-          <CardDescription className="text-xs text-muted-foreground mt-0.5">
+          <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
             {accounts.length} حسابات مصرفية ونقدية متصلة
           </CardDescription>
         </div>
@@ -78,7 +78,7 @@ export function AccountCardsWidget({
           variant="ghost"
           size="sm"
           onClick={() => setLocation("/banking")}
-          className="h-8 gap-1 text-xs text-primary hover:text-primary/80 font-bold"
+          className="h-8 gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-bold"
         >
           <span>إدارة</span>
           <ChevronLeft className="size-3.5" />
@@ -94,7 +94,7 @@ export function AccountCardsWidget({
           >
             {/* Background watermark */}
             <div className="absolute -right-6 -bottom-6 opacity-10 pointer-events-none">
-              <Landmark className="size-32" />
+              <Landmark className="size-32 text-zinc-400" />
             </div>
 
             {/* Top row: Chip and Bank Name */}
@@ -111,26 +111,26 @@ export function AccountCardsWidget({
                   <span className="w-1.5 h-3.5 border-r border-white rounded-r-full" />
                 </div>
               </div>
-              <span className="text-xs font-bold tracking-wider uppercase text-slate-300 font-sans">
+              <span className="text-xs font-bold tracking-wider uppercase text-zinc-300 font-sans">
                 {primaryAccounts[0].kind === "wallet" ? "E-WALLET" : "PREMIER DEBIT"}
               </span>
             </div>
 
             {/* Account Number Masked */}
-            <p className="font-mono text-sm tracking-widest text-slate-300 mb-2 relative z-10">
+            <p className="font-mono text-sm tracking-widest text-zinc-300 mb-2 relative z-10">
               •••• •••• •••• {String(primaryAccounts[0].id).slice(-4).padStart(4, "0")}
             </p>
 
             {/* Bottom Row: Name & Balance */}
             <div className="flex items-end justify-between relative z-10">
               <div>
-                <span className="block text-[10px] text-slate-400 font-medium">اسم الحساب</span>
+                <span className="block text-[10px] text-zinc-400 font-medium">اسم الحساب</span>
                 <span className="text-xs font-bold text-white truncate max-w-[140px] block" dir="rtl">
                   {primaryAccounts[0].name}
                 </span>
               </div>
               <div className="text-right">
-                <span className="block text-[10px] text-slate-400 font-medium">الرصيد الدفتري</span>
+                <span className="block text-[10px] text-zinc-400 font-medium">الرصيد الدفتري</span>
                 <span className="text-base font-extrabold text-emerald-400 tabular-nums font-mono">
                   {formatMoney(primaryAccounts[0].value, primaryAccounts[0].currency || currency)}
                 </span>
@@ -145,23 +145,23 @@ export function AccountCardsWidget({
             <div
               key={acc.id}
               onClick={() => onOpenReconcile?.(acc)}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/50 transition-all cursor-pointer group"
+              className="flex items-center justify-between p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                <div className="size-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-500/30">
                   {acc.kind === "wallet" ? <Wallet className="size-4" /> : <Landmark className="size-4" />}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                  <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {acc.name}
                   </p>
-                  <p className="text-[10px] text-muted-foreground font-mono">
+                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
                     {acc.kind === "wallet" ? "محفظة رقمية" : "حساب بنكي"} · {acc.currency || currency}
                   </p>
                 </div>
               </div>
               <div className="text-start">
-                <p className="text-xs font-bold tabular-nums text-foreground">
+                <p className="text-xs font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
                   {formatMoney(acc.value, acc.currency || currency)}
                 </p>
               </div>
@@ -171,30 +171,30 @@ export function AccountCardsWidget({
 
         {/* Liabilities / Credit Card Summary Mini-Banner */}
         {primaryDebts.length > 0 && (
-          <div className="pt-2 border-t border-border/40">
-            <div className="flex items-center justify-between p-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5">
+          <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between p-2.5 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-950/20">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8 rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20">
+                <div className="size-8 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200 dark:border-rose-500/30">
                   <CreditCard className="size-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-foreground truncate">
+                  <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50 truncate">
                     {primaryDebts[0].name}
                   </p>
-                  <p className="text-[10px] text-rose-600/80 dark:text-rose-400/80 font-medium">
+                  <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">
                     مديونية مستحقة
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold tabular-nums text-rose-600 dark:text-rose-400">
+                <span className="text-xs font-extrabold tabular-nums text-rose-600 dark:text-rose-400">
                   {formatMoney(Number(primaryDebts[0].outstanding), primaryDebts[0].currency || currency)}
                 </span>
                 {onOpenDebtPayment && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-[11px] px-2 border-rose-500/30 text-rose-600 hover:bg-rose-500/10 font-bold"
+                    className="h-7 text-[11px] px-2.5 border-rose-200 dark:border-rose-500/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 bg-white dark:bg-rose-950/40 font-bold"
                     onClick={() => onOpenDebtPayment(Number(primaryDebts[0].id))}
                   >
                     سداد
