@@ -1,0 +1,282 @@
+[
+  {
+    "id": "01_fintech_dashboard",
+    "name": "لوحة التحكم الرئيسية (Fintech Dashboard)",
+    "category": "المركز المالي",
+    "path": "/",
+    "lightFile": "01_fintech_dashboard_light.png",
+    "darkFile": "01_fintech_dashboard_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "02_transactions",
+    "name": "المعاملات والقيود المالية",
+    "category": "البنوك والسيولة",
+    "path": "/transactions",
+    "lightFile": "02_transactions_light.png",
+    "darkFile": "02_transactions_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "03_banking_accounts",
+    "name": "الحسابات المصرفية ومحافظ السيولة",
+    "category": "البنوك والسيولة",
+    "path": "/banking?tab=accounts",
+    "lightFile": "03_banking_accounts_light.png",
+    "darkFile": "03_banking_accounts_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "04_banking_certificates",
+    "name": "الودائع والشهادات البنكية",
+    "category": "البنوك والسيولة",
+    "path": "/banking?tab=certificates",
+    "lightFile": "04_banking_certificates_light.png",
+    "darkFile": "04_banking_certificates_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "05_banking_liquidity",
+    "name": "السيولة والتخطيط وصندوق الطوارئ",
+    "category": "البنوك والسيولة",
+    "path": "/banking?tab=liquidity",
+    "lightFile": "05_banking_liquidity_light.png",
+    "darkFile": "05_banking_liquidity_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "06_banking_debts",
+    "name": "الالتزامات والديون والبطاقات",
+    "category": "البنوك والسيولة",
+    "path": "/banking?tab=debts",
+    "lightFile": "06_banking_debts_light.png",
+    "darkFile": "06_banking_debts_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "07_investments_portfolio",
+    "name": "محفظة الاستثمارات المباشرة",
+    "category": "المحافظ والاستثمار",
+    "path": "/investments?tab=portfolio",
+    "lightFile": "07_investments_portfolio_light.png",
+    "darkFile": "07_investments_portfolio_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "08_investments_gold",
+    "name": "محفظة الذهب والسبائك وأسعار العيارات",
+    "category": "المحافظ والاستثمار",
+    "path": "/investments?tab=instruments",
+    "lightFile": "08_investments_gold_light.png",
+    "darkFile": "08_investments_gold_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "09_investments_realized",
+    "name": "الأداء والأرباح المحققة (FIFO)",
+    "category": "المحافظ والاستثمار",
+    "path": "/investments?tab=realized",
+    "lightFile": "09_investments_realized_light.png",
+    "darkFile": "09_investments_realized_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "10_investments_allocation",
+    "name": "التوزيع الجغرافي وتوزيع الأصول",
+    "category": "المحافظ والاستثمار",
+    "path": "/investments?tab=allocation",
+    "lightFile": "10_investments_allocation_light.png",
+    "darkFile": "10_investments_allocation_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "11_quant_egx",
+    "name": "تداول الأسهم والإشارات الكمية (EGX)",
+    "category": "المحافظ والاستثمار",
+    "path": "/quant",
+    "lightFile": "11_quant_egx_light.png",
+    "darkFile": "11_quant_egx_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "12_governance_zakat",
+    "name": "حاسبة الزكاة الشرعية وحول النصاب",
+    "category": "الحوكمة والزكاة",
+    "path": "/governance?tab=zakat",
+    "lightFile": "12_governance_zakat_light.png",
+    "darkFile": "12_governance_zakat_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "13_stress_testing",
+    "name": "مصفوفة اختبارات الهبوط والضغط",
+    "category": "الحوكمة والزكاة",
+    "path": "/stress-testing",
+    "lightFile": "13_stress_testing_light.png",
+    "darkFile": "13_stress_testing_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "14_wealth_health",
+    "name": "مؤشر درع التضخم وصحة الثروة",
+    "category": "المركز المالي",
+    "path": "/wealth-health",
+    "lightFile": "14_wealth_health_light.png",
+    "darkFile": "14_wealth_health_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "15_reports",
+    "name": "القوائم المالية والميزانية المجمعة",
+    "category": "المركز المالي",
+    "path": "/reports",
+    "lightFile": "15_reports_light.png",
+    "darkFile": "15_reports_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "16_governance_vault",
+    "name": "خزينة المستندات الرقمية المشفرة",
+    "category": "الحوكمة والزكاة",
+    "path": "/governance?tab=vault",
+    "lightFile": "16_governance_vault_light.png",
+    "darkFile": "16_governance_vault_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "17_governance_audit",
+    "name": "سجل التدقيق المحاسبي والاعتمادات",
+    "category": "الحوكمة والزكاة",
+    "path": "/governance?tab=audit",
+    "lightFile": "17_governance_audit_light.png",
+    "darkFile": "17_governance_audit_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "18_governance_members",
+    "name": "أفراد العائلة وإدارة الصلاحيات والنسخ",
+    "category": "الحوكمة والزكاة",
+    "path": "/governance?tab=members",
+    "lightFile": "18_governance_members_light.png",
+    "darkFile": "18_governance_members_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "19_operations_center",
+    "name": "مركز العمليات والإعدادات التشغيلية",
+    "category": "الحوكمة والزكاة",
+    "path": "/operations",
+    "lightFile": "19_operations_center_light.png",
+    "darkFile": "19_operations_center_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  },
+  {
+    "id": "20_login_auth",
+    "name": "بوابة تسجيل الدخول الآمن",
+    "category": "الأمان والدخول",
+    "path": "/login",
+    "lightFile": "20_login_auth_light.png",
+    "darkFile": "20_login_auth_dark.png",
+    "consoleErrors": [],
+    "contrastAudit": {
+      "lightPassed": true,
+      "darkPassed": true,
+      "details": "Light: AAA Solid Dark on Light, Dark: AAA Pure White on Dark"
+    }
+  }
+]
