@@ -421,12 +421,60 @@ export async function generateFinancialStatementsPackage(
   return resultPackage;
 }
 
+import { getExecutiveReportData, generateExecutiveReportPdf } from "./services/executivePdfService";
+
 export const financialStatementsRouter = router({
   financialStatements: protectedProcedure
     .input(financialStatementsInputSchema)
     .query(async ({ ctx, input }) => {
       const family = await ensurePersonalFamilyContext(ctx.user);
       return generateFinancialStatementsPackage(family, input);
+    }),
+
+  executiveReportData: protectedProcedure
+    .input(financialStatementsInputSchema)
+    .query(async ({ ctx, input }) => {
+      const family = await ensurePersonalFamilyContext(ctx.user);
+      return getExecutiveReportData(family, input);
+    }),
+
+  exportExecutivePdf: protectedProcedure
+    .input(financialStatementsInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const family = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(family, "advisor");
+      const db = await getDb();
+      if (!db) throw notAvailable();
+
+      const reportData = await getExecutiveReportData(family, input);
+      const pdfBuffer = await generateExecutiveReportPdf(reportData);
+      const dateStr = new Date(reportData.generatedAt).toISOString().slice(0, 10);
+      const filename = `Executive-Wealth-Report-${dateStr}-${reportData.reportId.slice(-6)}.pdf`;
+
+      await db.insert(auditEvents).values({
+        workspaceId: family.workspace.id,
+        actorUserId: ctx.user.id,
+        action: "financial_statements.executive_pdf_exported",
+        targetType: "financial_statements",
+        targetId: reportData.reportId,
+        beforeState: null,
+        afterState: {
+          reportId: reportData.reportId,
+          filename,
+          sizeBytes: pdfBuffer.length,
+          periodLabel: reportData.periodLabel,
+        },
+        requestId: crypto.randomUUID(),
+        occurredAt: reportData.generatedAt,
+      });
+
+      return {
+        filename,
+        contentType: "application/pdf",
+        base64: pdfBuffer.toString("base64"),
+        sizeBytes: pdfBuffer.length,
+        reportId: reportData.reportId,
+      };
     }),
 
   export: protectedProcedure

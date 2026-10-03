@@ -49,7 +49,8 @@ import { Button } from "./ui/button";
 import NotificationCenter from "./NotificationCenter";
 import OmniCommandBar from "./OmniCommandBar";
 import { SmartSmsPasteModal } from "./banking/SmartSmsPasteModal";
-import { Command, Smartphone } from "lucide-react";
+import { ExecutivePdfModal } from "./reports/ExecutivePdfModal";
+import { Command, Smartphone, FileText } from "lucide-react";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
 type MenuItem = { icon: LucideIcon; label: string; path: string; minimumRole: MinimumRole };
@@ -821,6 +822,18 @@ function TopbarControls({
   const { isPrivate, togglePrivacy } = usePrivacyMode();
   return (
     <>
+      <ExecutivePdfModal
+        trigger={
+          <button
+            className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold transition-all shadow-xs"
+            title="تصدير تقرير الثروة التنفيذي (PDF)"
+            aria-label="تصدير تقرير الثروة التنفيذي"
+          >
+            <FileText className="size-3.5 text-amber-600 dark:text-amber-400" />
+            <span className="hidden xl:inline text-[11px]">تقرير PDF تنفيذي</span>
+          </button>
+        }
+      />
       <button
         onClick={onOpenSmartPaste}
         className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"

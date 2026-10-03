@@ -22,6 +22,8 @@ import {
   Coins,
 } from "lucide-react";
 
+import { ExecutivePdfModal } from "@/components/reports/ExecutivePdfModal";
+
 export function ReportsPage({ embedded = false }: { embedded?: boolean }) {
   // Date modes: "period_key" | "point_in_time" | "period"
   const [dateMode, setDateMode] = useState<"period_key" | "point_in_time" | "period">("period_key");
@@ -93,6 +95,7 @@ export function ReportsPage({ embedded = false }: { embedded?: boolean }) {
           icon={FileChartColumn}
           actions={
             <div className="flex flex-wrap items-center gap-2 no-print">
+              <ExecutivePdfModal defaultPeriodKey={periodKey} />
               <Button
                 variant="outline"
                 size="sm"
