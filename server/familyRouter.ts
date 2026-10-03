@@ -63,6 +63,7 @@ import {
   listAccountSnapshots,
   listPortfolioPositions,
   listRecentEvents,
+  searchOmni,
 } from "./familyRead";
 import { getDb } from "./db";
 import { parsePositiveAmount } from "./ledgerMath";
@@ -257,6 +258,11 @@ export const familyRouter = router({
   dashboard: protectedProcedure.query(async ({ ctx }) => getDashboardSummary(await familyContext(ctx.user))),
   marketOverview: protectedProcedure.query(async ({ ctx }) => getDashboardMarketOverview(await familyContext(ctx.user))),
   marketDataQuality: protectedProcedure.query(async ({ ctx }) => getMarketDataQuality(await familyContext(ctx.user))),
+  search: router({
+    omni: protectedProcedure
+      .input(z.object({ query: z.string().default("") }))
+      .query(async ({ ctx, input }) => searchOmni(await familyContext(ctx.user), input.query)),
+  }),
   valuation: router({
     history: protectedProcedure.input(z.object({ limit: z.number().int().min(1).max(100).optional() }).optional()).query(async ({ ctx, input }) => listValuationHistory(await familyContext(ctx.user), input?.limit ?? 50)),
     officialLatest: protectedProcedure.query(async ({ ctx }) => getLatestOfficialValuationSnapshot(await familyContext(ctx.user))),

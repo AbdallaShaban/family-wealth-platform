@@ -1,38 +1,235 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+  CommandShortcut,
+} from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/financialDisplay";
 import {
-  Command,
+  LayoutDashboard,
+  ShieldCheck,
+  FileChartColumn,
+  Landmark,
+  ArrowLeftRight,
+  WalletCards,
+  CreditCard,
+  TrendingUp,
+  Coins,
+  Sparkles,
+  BarChart3,
+  PieChart,
+  ShieldAlert,
+  FileLock2,
+  BookOpenCheck,
+  UsersRound,
+  FileSpreadsheet,
+  Receipt,
+  Scale,
+  UploadCloud,
+  FileText,
+  PlusCircle,
+  Banknote,
+  CheckCircle2,
+  Loader2,
   Search,
   ArrowUpRight,
   ArrowDownLeft,
-  ArrowLeftRight,
-  TrendingUp,
-  Landmark,
   Wallet,
-  Receipt,
-  FileSpreadsheet,
-  CheckCircle2,
-  Sparkles,
-  Loader2,
-  AlertCircle,
-  CreditCard,
-  ShieldCheck,
 } from "lucide-react";
 
-type IntentType = "trade" | "deposit" | "expense" | "transfer" | "navigate";
+// ==========================================
+// 20 Platform Pages & Sections Registry
+// ==========================================
+interface NavigationRoute {
+  id: string;
+  label: string;
+  category: string;
+  path: string;
+  icon: React.ElementType;
+  keywords: string[];
+}
+
+const ALL_20_PLATFORM_ROUTES: NavigationRoute[] = [
+  // 1. Overview & Net Worth (3 sections)
+  {
+    id: "nav-overview",
+    label: "النظرة التنفيذية وصافي الثروة",
+    category: "المركز المالي وصافي الثروة",
+    path: "/",
+    icon: LayoutDashboard,
+    keywords: ["رئيسية", "نظرة عامة", "ثروة", "داشبورد", "dashboard", "overview", "net worth", "صافي الثروة"],
+  },
+  {
+    id: "nav-wealth-health",
+    label: "صحة الثروة ومؤشر درع التضخم",
+    category: "المركز المالي وصافي الثروة",
+    path: "/wealth-health",
+    icon: ShieldCheck,
+    keywords: ["تضخم", "درع", "صحة", "مؤشر", "inflation", "shield", "health", "مخاطر"],
+  },
+  {
+    id: "nav-reports",
+    label: "القوائم المالية والميزانية المجمعة",
+    category: "المركز المالي وصافي الثروة",
+    path: "/reports",
+    icon: FileChartColumn,
+    keywords: ["تقارير", "ميزانية", "ارباح وخسائر", "تدفقات", "قوائم", "reports", "budget", "financial statements"],
+  },
+
+  // 2. Banking & Liquidity (7 sections)
+  {
+    id: "nav-banking",
+    label: "الحسابات المصرفية والمحافظ النقدية",
+    category: "البنوك والسيولة والتدفقات",
+    path: "/banking",
+    icon: Landmark,
+    keywords: ["بنوك", "حسابات", "محافظ", "كاش", "بنك", "banks", "accounts", "cib", "nbe", "تيلدا", "instapay"],
+  },
+  {
+    id: "nav-transactions",
+    label: "سجل المعاملات والعمليات المالية",
+    category: "البنوك والسيولة والتدفقات",
+    path: "/transactions",
+    icon: ArrowLeftRight,
+    keywords: ["عمليات", "حركات", "معاملات", "قيود", "تحويلات", "transactions", "ledger", "دفتر الأستاذ"],
+  },
+  {
+    id: "nav-certificates",
+    label: "الشهادات والودائع البنكية الادخارية",
+    category: "البنوك والسيولة والتدفقات",
+    path: "/banking?tab=certificates",
+    icon: FileSpreadsheet,
+    keywords: ["شهادات", "ودائع", "عائد", "فوائد", "certificates", "deposits", "شهادة ادخار"],
+  },
+  {
+    id: "nav-liquidity",
+    label: "السيولة والتخطيط المالي والاحتياطي",
+    category: "البنوك والسيولة والتدفقات",
+    path: "/banking?tab=liquidity",
+    icon: WalletCards,
+    keywords: ["سيولة", "طوارئ", "احتياطي", "تخطيط", "liquidity", "cashflow", "صندوق طوارئ"],
+  },
+  {
+    id: "nav-debts",
+    label: "الالتزامات والديون والبطاقات الائتمانية",
+    category: "البنوك والسيولة والتدفقات",
+    path: "/banking?tab=debts",
+    icon: CreditCard,
+    keywords: ["ديون", "قروض", "فيزا", "كروت", "اقساط", "debts", "loans", "cards", "مديونية"],
+  },
+  {
+    id: "nav-reconciliation",
+    label: "تسوية الحسابات البنكية والمطابقة",
+    category: "البنوك والسيولة والتدفقات",
+    path: "/reconciliation",
+    icon: Scale,
+    keywords: ["تسوية", "تطابق", "مطابقة", "تدقيق ارصدة", "reconciliation", "فروقات"],
+  },
+  {
+    id: "nav-imports",
+    label: "استيراد كشوف الحسابات ورسائل SMS",
+    category: "البنوك والسيولة والتدفقات",
+    path: "/imports",
+    icon: UploadCloud,
+    keywords: ["استيراد", "رسائل", "sms", "كشف حساب", "csv", "import", "بنك مصر", "اهلي"],
+  },
+
+  // 3. Investments, Gold & Markets (5 sections)
+  {
+    id: "nav-investments",
+    label: "الأصول والمحفظة الاستثمارية",
+    category: "المحافظ وأسواق المال والذهب",
+    path: "/investments",
+    icon: TrendingUp,
+    keywords: ["محفظة", "اسهم", "استثمار", "اصول", "portfolio", "investments", "سوق المال"],
+  },
+  {
+    id: "nav-gold",
+    label: "أسعار الذهب والسبائك بالعيارات (لحظي)",
+    category: "المحافظ وأسواق المال والذهب",
+    path: "/investments?tab=instruments",
+    icon: Coins,
+    keywords: ["ذهب", "سبائك", "عيار 24", "عيار 21", "عيار 18", "جنيه ذهب", "gold", "bullion", "btc", "سبيكة"],
+  },
+  {
+    id: "nav-quant",
+    label: "تداول الأسهم والإشارات الكمية (EGX)",
+    category: "المحافظ وأسواق المال والذهب",
+    path: "/quant",
+    icon: Sparkles,
+    keywords: ["تداول", "بورصة", "ايجي اكس", "egx", "مؤشرات", "quant", "signals", "توصيات"],
+  },
+  {
+    id: "nav-realized",
+    label: "الأداء والأرباح المحققة (FIFO)",
+    category: "المحافظ وأسواق المال والذهب",
+    path: "/investments?tab=realized",
+    icon: BarChart3,
+    keywords: ["ارباح", "خسائر", "أداء", "فيفو", "fifo", "realized", "pnl", "صفقات مغلقة"],
+  },
+  {
+    id: "nav-allocation",
+    label: "التوزيع الجغرافي وتنويع المخاطر",
+    category: "المحافظ وأسواق المال والذهب",
+    path: "/investments?tab=allocation",
+    icon: PieChart,
+    keywords: ["توزيع", "تنويع", "مخاطر", "قطاعات", "allocation", "risk", "أصول"],
+  },
+
+  // 4. Governance, Zakat & Vault (5 sections)
+  {
+    id: "nav-zakat",
+    label: "حاسبة الزكاة الشرعية وحول الذهب",
+    category: "الحوكمة وإدارة المخاطر والزكاة",
+    path: "/governance?tab=zakat",
+    icon: Receipt,
+    keywords: ["زكاة", "شرعية", "حول", "نصاب", "حاسبة الزكاة", "zakat", "85 جرام عيار 24"],
+  },
+  {
+    id: "nav-stress-testing",
+    label: "اختبارات الهبوط والضغط (Stress Testing)",
+    category: "الحوكمة وإدارة المخاطر والزكاة",
+    path: "/stress-testing",
+    icon: ShieldAlert,
+    keywords: ["هبوط", "صدمات", "ضغط", "سيناريوهات", "stress", "testing", "ازمات"],
+  },
+  {
+    id: "nav-vault",
+    label: "الخزنة المشفرة والمستندات السرية",
+    category: "الحوكمة وإدارة المخاطر والزكاة",
+    path: "/governance?tab=vault",
+    icon: FileLock2,
+    keywords: ["خزنة", "تشفير", "عقود", "مستندات", "ملفات", "vault", "docs", "أمان"],
+  },
+  {
+    id: "nav-audit",
+    label: "سجل التدقيق المحاسبي والاعتمادات",
+    category: "الحوكمة وإدارة المخاطر والزكاة",
+    path: "/governance?tab=audit",
+    icon: BookOpenCheck,
+    keywords: ["تدقيق", "مراجعة", "اعتمادات", "سجل", "audit", "compliance", "مدقق"],
+  },
+  {
+    id: "nav-members",
+    label: "أفراد العائلة والصلاحيات والنسخ الاحتياطي",
+    category: "الحوكمة وإدارة المخاطر والزكاة",
+    path: "/governance?tab=members",
+    icon: UsersRound,
+    keywords: ["عائلة", "مستخدمين", "صلاحيات", "نسخ احتياطي", "members", "backup", "ادمن"],
+  },
+];
+
+type IntentType = "trade" | "deposit" | "expense" | "transfer";
 
 interface ParsedIntent {
   type: IntentType;
@@ -44,10 +241,7 @@ interface ParsedIntent {
   grossAmount?: number;
   amount?: number;
   accountHint?: string;
-  toAccountHint?: string;
   memo?: string;
-  path?: string;
-  label?: string;
 }
 
 export function OmniCommandBar({
@@ -59,34 +253,55 @@ export function OmniCommandBar({
 }) {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
-  const [query, setQuery] = useState("");
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [confirmStep, setConfirmStep] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExecutingCommand, setIsExecutingCommand] = useState(false);
+  const [confirmExecution, setConfirmExecution] = useState(false);
 
-  // Load available accounts and instruments to match natural language hints
+  // Debounce search input for server queries (200ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset internal states on open/close
+  useEffect(() => {
+    if (!open) {
+      setSearch("");
+      setDebouncedSearch("");
+      setConfirmExecution(false);
+      setIsExecutingCommand(false);
+    }
+  }, [open]);
+
+  // Data Queries
   const accountsQuery = trpc.family.accounts.list.useQuery(undefined, { enabled: open });
   const instrumentsQuery = trpc.family.instruments.list.useQuery(undefined, { enabled: open });
+  const recentLedgerQuery = trpc.family.ledger.recent.useQuery(undefined, { enabled: open });
+  const serverSearchQuery = trpc.family.search.omni.useQuery(
+    { query: debouncedSearch },
+    { enabled: open && debouncedSearch.length >= 2, staleTime: 10_000 }
+  );
+
+  // Mutations
+  const exportPdfMutation = trpc.family.reports.exportExecutivePdf.useMutation();
   const postCashMutation = trpc.family.ledger.postCash.useMutation();
   const postTradeMutation = trpc.family.ledger.recordTrade.useMutation();
 
   const accounts = accountsQuery.data || [];
   const instruments = instrumentsQuery.data || [];
+  const recentEvents = recentLedgerQuery.data || [];
+  const serverResults = serverSearchQuery.data;
 
-  // Reset state when closed
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setConfirmStep(false);
-      setIsExecuting(false);
-    }
-  }, [open]);
-
-  // Natural Language Intent Parser
+  // Natural Language Command Parser
   const parsedIntent = useMemo<ParsedIntent | null>(() => {
-    const raw = query.trim();
+    const raw = search.trim();
     if (!raw) return null;
 
-    // 1. Trade Match: e.g. "شراء 100 COMI @ 88.5 حساب CIB" or "بيع 500 ISPH" or "buy 50 SWDY"
+    // 1. Trade Match: e.g. "شراء 100 COMI @ 88.5" or "بيع 500 ISPH"
     const tradeRegex = /^(شراء|بيع|buy|sell)\s+(\d+(?:\.\d+)?)\s+([A-Za-z0-9_.\u0600-\u06FF]+)(?:\s*@\s*(\d+(?:\.\d+)?))?(?:\s+(?:حساب\s+)?([^\n@]+))?/i;
     const tradeMatch = raw.match(tradeRegex);
     if (tradeMatch) {
@@ -109,7 +324,7 @@ export function OmniCommandBar({
       };
     }
 
-    // 2. Deposit / Income Match: e.g. "ايداع 5000 تيلدا" or "دخل 15000 راتب"
+    // 2. Deposit Match: e.g. "ايداع 5000 تيلدا" or "دخل 15000 راتب"
     const depositRegex = /^(ايداع|إيداع|دخل|deposit|income)\s+(\d+(?:\.\d+)?)(?:\s+(?:في\s+|حساب\s+)?([^\n]+))?/i;
     const depositMatch = raw.match(depositRegex);
     if (depositMatch) {
@@ -124,7 +339,7 @@ export function OmniCommandBar({
       };
     }
 
-    // 3. Expense / Spend Match: e.g. "صرف 450 بنزين" or "مصروف 1200 بقالة" or "سحب 2000 مصاريف"
+    // 3. Expense Match: e.g. "صرف 450 بنزين" or "مصروف 1200 بقالة"
     const expenseRegex = /^(صرف|مصروف|سحب|شراء\s+مشتريات|expense|spend|withdraw)\s+(\d+(?:\.\d+)?)(?:\s+(?:من\s+|حساب\s+)?([^\n]+))?/i;
     const expenseMatch = raw.match(expenseRegex);
     if (expenseMatch) {
@@ -138,31 +353,10 @@ export function OmniCommandBar({
       };
     }
 
-    // 4. Quick Navigations
-    const navItems = [
-      { keywords: ["محفظة", "استثمار", "اسهم", "سهم", "invest"], path: "/investments", label: "الانتقال إلى المحفظة الاستثمارية" },
-      { keywords: ["معاملات", "عمليات", "تحويلات", "حركات", "trans"], path: "/transactions", label: "الانتقال إلى سجل المعاملات" },
-      { keywords: ["حسابات", "بنوك", "بنك", "سيولة", "acc"], path: "/accounts", label: "الانتقال إلى الحسابات المصرفية والسيولة" },
-      { keywords: ["ديون", "كروت", "فيزا", "تقسيط", "debts"], path: "/debts", label: "الانتقال إلى كروت الائتمان والديون" },
-      { keywords: ["شهادات", "ودائع", "banking", "certs"], path: "/banking", label: "الانتقال إلى الشهادات البنكية والودائع" },
-      { keywords: ["تقارير", "تدقيق", "ميزانية", "reports"], path: "/reports", label: "الانتقال إلى التقارير المالية والتدقيق" },
-    ];
-
-    for (const nav of navItems) {
-      if (nav.keywords.some((kw) => raw.toLowerCase().includes(kw))) {
-        return {
-          type: "navigate",
-          rawText: raw,
-          path: nav.path,
-          label: nav.label,
-        };
-      }
-    }
-
     return null;
-  }, [query]);
+  }, [search]);
 
-  // Match resolved target accounts & instruments
+  // Matched target account and instrument for command execution
   const matchedAccount = useMemo(() => {
     if (!parsedIntent) return accounts[0] || null;
     const hint = parsedIntent.accountHint?.toLowerCase();
@@ -191,15 +385,9 @@ export function OmniCommandBar({
     );
   }, [parsedIntent, instruments]);
 
-  // Execute the parsed financial command
-  const handleExecute = async () => {
+  // Execute Parsed Financial Command
+  const handleExecuteCommand = async () => {
     if (!parsedIntent) return;
-
-    if (parsedIntent.type === "navigate" && parsedIntent.path) {
-      setLocation(parsedIntent.path);
-      onOpenChange(false);
-      return;
-    }
 
     if (parsedIntent.type === "deposit" || parsedIntent.type === "expense") {
       if (!matchedAccount) {
@@ -211,7 +399,7 @@ export function OmniCommandBar({
         return;
       }
 
-      setIsExecuting(true);
+      setIsExecutingCommand(true);
       try {
         await postCashMutation.mutateAsync({
           accountId: matchedAccount.id,
@@ -231,7 +419,7 @@ export function OmniCommandBar({
       } catch (err: any) {
         toast.error(err?.message || "تعذر تنفيذ العملية المالية.");
       } finally {
-        setIsExecuting(false);
+        setIsExecutingCommand(false);
       }
       return;
     }
@@ -242,7 +430,7 @@ export function OmniCommandBar({
         return;
       }
       if (!matchedInstrument) {
-        toast.error(`السهم "${parsedIntent.symbol}" غير مسجل في أدواتك الاستثمارية. يرجى إضافته أولاً.`);
+        toast.error(`السهم "${parsedIntent.symbol}" غير مسجل في أدواتك الاستثمارية.`);
         return;
       }
       if (!parsedIntent.quantity || parsedIntent.quantity <= 0) {
@@ -254,7 +442,7 @@ export function OmniCommandBar({
         return;
       }
 
-      setIsExecuting(true);
+      setIsExecutingCommand(true);
       try {
         await postTradeMutation.mutateAsync({
           side: parsedIntent.side || "buy",
@@ -263,7 +451,7 @@ export function OmniCommandBar({
           quantity: String(parsedIntent.quantity),
           unitPrice: String(parsedIntent.unitPrice),
           occurredAt: Date.now(),
-          memo: `أمر تداول فوري عبر لوحة الأوامر الذكية: ${parsedIntent.side === "buy" ? "شراء" : "بيع"} ${parsedIntent.quantity} ${matchedInstrument.symbol}`,
+          memo: `أمر فوري عبر شريط الأوامر: ${parsedIntent.side === "buy" ? "شراء" : "بيع"} ${parsedIntent.quantity} ${matchedInstrument.symbol}`,
           idempotencyKey: `omni-trade-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         });
 
@@ -275,323 +463,630 @@ export function OmniCommandBar({
       } catch (err: any) {
         toast.error(err?.message || "تعذر تنفيذ صفقة التداول.");
       } finally {
-        setIsExecuting(false);
+        setIsExecutingCommand(false);
       }
     }
   };
 
+  // Quick Action 1: Instant Executive PDF Export
+  const handleExportPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      toast.info("جارٍ إنشاء التقرير التنفيذي المالي الفاخر بصيغة PDF...", { duration: 3000 });
+
+      const result = await exportPdfMutation.mutateAsync({ periodKey: "2026-08" });
+
+      // Decode base64 and initiate browser download
+      const byteCharacters = atob(result.base64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "application/pdf" });
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success("تم تصدير التقرير التنفيذي المالي بنجاح بصيغة PDF", {
+        description: `الملف: ${result.filename} (${(result.sizeBytes / 1024).toFixed(1)} KB)`,
+      });
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(err?.message || "تعذر تصدير تقرير الثروة التنفيذي بصيغة PDF.");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
+  const handleNavigate = useCallback(
+    (path: string) => {
+      setLocation(path);
+      onOpenChange(false);
+    },
+    [setLocation, onOpenChange]
+  );
+
+  // Grouped and filtered navigation routes
+  const filteredRoutes = useMemo(() => {
+    if (!search.trim()) return ALL_20_PLATFORM_ROUTES;
+    const q = search.trim().toLowerCase();
+    return ALL_20_PLATFORM_ROUTES.filter(
+      (r) =>
+        r.label.toLowerCase().includes(q) ||
+        r.category.toLowerCase().includes(q) ||
+        r.keywords.some((k) => k.toLowerCase().includes(q))
+    );
+  }, [search]);
+
+  // Combined accounts search (client-cached + server results)
+  const displayAccounts = useMemo(() => {
+    if (serverResults?.accounts && serverResults.accounts.length > 0) {
+      return serverResults.accounts;
+    }
+    if (!search.trim()) return accounts.slice(0, 6);
+    const q = search.trim().toLowerCase();
+    return accounts.filter(
+      (a) =>
+        a.name.toLowerCase().includes(q) ||
+        (a.institution && a.institution.toLowerCase().includes(q)) ||
+        (a.currency && a.currency.toLowerCase().includes(q))
+    );
+  }, [accounts, serverResults, search]);
+
+  // Combined gold instruments
+  const displayGoldInstruments = useMemo(() => {
+    const goldList = instruments.filter(
+      (i) => i.assetType === "gold" || /ذهب|gold|عيار|سبيكة/i.test(i.name)
+    );
+    if (!search.trim()) return goldList.slice(0, 5);
+    const q = search.trim().toLowerCase();
+    return goldList.filter(
+      (i) =>
+        i.name.toLowerCase().includes(q) ||
+        (i.symbol && i.symbol.toLowerCase().includes(q)) ||
+        /ذهب|gold|عيار/i.test(q)
+    );
+  }, [instruments, search]);
+
+  // Combined transactions search (server deep search OR recent ledger client cache)
+  const displayTransactions = useMemo(() => {
+    if (serverResults?.transactions && serverResults.transactions.length > 0) {
+      return serverResults.transactions;
+    }
+    if (!search.trim()) return recentEvents.slice(0, 6);
+    const q = search.trim().toLowerCase();
+    return recentEvents
+      .filter((e) => {
+        const memoMatch = e.memo?.toLowerCase().includes(q);
+        const amountMatch = String(e.grossAmount || "").includes(q);
+        const typeMatch = e.eventType.toLowerCase().includes(q);
+        return memoMatch || amountMatch || typeMatch;
+      })
+      .slice(0, 8);
+  }, [recentEvents, serverResults, search]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="sm:max-w-2xl bg-[#0B0F17] border border-white/10 text-slate-100 p-0 overflow-hidden shadow-2xl rounded-2xl"
-        dir="rtl"
-      >
-        <DialogHeader className="p-4 border-b border-white/10 bg-slate-900/60">
-          <div className="flex items-center gap-3">
-            <div className="size-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-              <Command className="size-5" />
+    <CommandDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="شريط الأوامر والبحث الشامل الفوري"
+      description="ابحث في كافة الأقسام، الحسابات، الذهب، والعمليات أو نفّذ إجراءات سريعة فوراً"
+      className="sm:max-w-2xl bg-[#090D14] border border-white/10 text-slate-100 p-0 overflow-hidden shadow-2xl rounded-2xl"
+    >
+      <div className="flex flex-col h-full" dir="rtl">
+        {/* Top Header Bar with Badge */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-slate-900/60">
+          <div className="flex items-center gap-2.5">
+            <div className="size-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+              <Sparkles className="size-4" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-                لوحة الأوامر الذكية الشاملة
-                <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-400 bg-emerald-950/40">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white tracking-wide">
+                  شريط الأوامر والبحث الشامل
+                </span>
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-mono border-emerald-500/30 text-emerald-400 bg-emerald-950/40 px-1.5 py-0"
+                >
                   Ctrl + K
                 </Badge>
-              </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400 mt-0.5">
-                اكتب أي أمر بلغة بسيطة للتنفيذ الفوري أو التنقل السريع في المنصة
-              </DialogDescription>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                تنقل فوري بين كافة الأقسام العشرين، ابحث بالمعاملات ومحافظ الذهب ونفّذ أوامرك مباشرة
+              </p>
             </div>
           </div>
-        </DialogHeader>
-
-        <div className="p-4 space-y-4">
-          {/* Quick Input Bar */}
-          <div className="relative">
-            <Search className="absolute right-3.5 top-3.5 size-4 text-slate-400" />
-            <Input
-              autoFocus
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setConfirmStep(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && parsedIntent) {
-                  if (confirmStep) {
-                    handleExecute();
-                  } else {
-                    setConfirmStep(true);
-                  }
-                }
-              }}
-              placeholder="مثال: شراء 100 COMI @ 88.5 أو ايداع 5000 تيلدا أو صرف 450 بنزين..."
-              className="pr-10 pl-4 py-6 bg-slate-950/80 border-white/15 text-slate-100 placeholder:text-slate-500 focus-visible:ring-emerald-500 rounded-xl text-sm"
-            />
-          </div>
-
-          {/* Parsed Intent Card & Preview */}
-          {parsedIntent ? (
-            <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/20 space-y-3 animate-in fade-in-50 duration-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    className={
-                      parsedIntent.type === "trade"
-                        ? parsedIntent.side === "buy"
-                          ? "bg-emerald-600 text-white"
-                          : "bg-rose-600 text-white"
-                        : parsedIntent.type === "deposit"
-                        ? "bg-emerald-600 text-white"
-                        : parsedIntent.type === "expense"
-                        ? "bg-amber-600 text-white"
-                        : "bg-sky-600 text-white"
-                    }
-                  >
-                    {parsedIntent.type === "trade"
-                      ? parsedIntent.side === "buy"
-                        ? "أمر شراء أسهم"
-                        : "أمر بيع أسهم"
-                      : parsedIntent.type === "deposit"
-                      ? "إيداع نقدي فوري"
-                      : parsedIntent.type === "expense"
-                      ? "تسجيل مصروف فوري"
-                      : "تنقل سريع"}
-                  </Badge>
-                  <span className="text-xs text-slate-300 font-mono">
-                    فهم الأمر المالي بنجاح
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400">
-                  اضغط Enter للتأكيد والترحيل
-                </span>
-              </div>
-
-              {/* Trade Specific Breakdown */}
-              {parsedIntent.type === "trade" && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
-                    <span className="text-slate-400 block text-[10px]">الرمز</span>
-                    <strong className="text-emerald-400 font-mono text-sm">
-                      {matchedInstrument?.symbol || parsedIntent.symbol}
-                    </strong>
-                    <span className="text-[10px] text-slate-400 block truncate">
-                      {matchedInstrument?.name || "غير مسجل"}
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
-                    <span className="text-slate-400 block text-[10px]">الكمية</span>
-                    <strong className="text-white font-mono text-sm">
-                      {parsedIntent.quantity?.toLocaleString() || 0}
-                    </strong>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
-                    <span className="text-slate-400 block text-[10px]">سعر التنفيذ</span>
-                    <strong className="text-white font-mono text-sm">
-                      {parsedIntent.unitPrice ? `${parsedIntent.unitPrice.toFixed(2)} ج.م` : "سعر السوق"}
-                    </strong>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
-                    <span className="text-slate-400 block text-[10px]">الحساب المرتبط</span>
-                    <strong className="text-white text-xs truncate block">
-                      {matchedAccount?.name || "حساب افتراضي"}
-                    </strong>
-                  </div>
-                </div>
-              )}
-
-              {/* Cashflow Specific Breakdown */}
-              {(parsedIntent.type === "deposit" || parsedIntent.type === "expense") && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-xs">
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
-                    <span className="text-slate-400 block text-[10px]">المبلغ</span>
-                    <strong className="text-emerald-400 font-mono text-sm">
-                      {parsedIntent.amount ? formatMoney(parsedIntent.amount, "EGP") : "—"}
-                    </strong>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5">
-                    <span className="text-slate-400 block text-[10px]">الحساب المستهدف</span>
-                    <strong className="text-white text-xs truncate block">
-                      {matchedAccount?.name || "الحساب الرئيسي"}
-                    </strong>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 col-span-2 sm:col-span-1">
-                    <span className="text-slate-400 block text-[10px]">البيان / الملاحظة</span>
-                    <strong className="text-slate-200 text-xs truncate block">
-                      {parsedIntent.memo || "—"}
-                    </strong>
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation Breakdown */}
-              {parsedIntent.type === "navigate" && (
-                <div className="p-2.5 rounded-lg bg-black/40 border border-white/5 flex items-center justify-between">
-                  <span className="text-slate-200 text-xs">{parsedIntent.label}</span>
-                  <Badge variant="outline" className="text-sky-400 border-sky-500/30">
-                    {parsedIntent.path}
-                  </Badge>
-                </div>
-              )}
-
-              {/* 1-Click Confirmation Prompt */}
-              <div className="pt-2 flex items-center justify-between gap-3 border-t border-white/10">
-                <span className="text-xs text-slate-300">
-                  {confirmStep
-                    ? "هل أنت متأكد من رغبتك في ترحيل هذا القيد فوراً إلى الدفتر؟"
-                    : "جاهز للتنفيذ الفوري المباشر"}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setConfirmStep(false)}
-                    className="text-xs text-slate-400 hover:text-white"
-                  >
-                    إلغاء
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={isExecuting}
-                    onClick={handleExecute}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs px-4"
-                  >
-                    {isExecuting ? (
-                      <>
-                        <Loader2 className="size-3.5 animate-spin ml-1.5" />
-                        جارٍ الترحيل...
-                      </>
-                    ) : confirmStep ? (
-                      "تأكيد نهائي وترحيل ✓"
-                    ) : (
-                      "ترحيل إلى الدفتر ↵"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            /* Cheat-sheet / Quick Shortcuts when empty */
-            <div className="space-y-3 pt-2">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                أوامر سريعة يمكنك كتابتها مباشرة:
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <button
-                  onClick={() => setQuery("شراء 100 COMI @ 88.5")}
-                  className="p-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] text-right transition-all flex items-center gap-2 group"
-                >
-                  <ArrowUpRight className="size-4 text-emerald-400 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="block font-medium text-slate-200 group-hover:text-emerald-300">
-                      شراء 100 COMI @ 88.5
-                    </span>
-                    <span className="block text-[10px] text-slate-500">
-                      تسجيل صفقة شراء أسهم بنك CIB
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setQuery("بيع 500 ISPH")}
-                  className="p-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] text-right transition-all flex items-center gap-2 group"
-                >
-                  <ArrowDownLeft className="size-4 text-rose-400 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="block font-medium text-slate-200 group-hover:text-rose-300">
-                      بيع 500 ISPH
-                    </span>
-                    <span className="block text-[10px] text-slate-500">
-                      تسجيل صفقة بيع أسهم ابن سينا فارما
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setQuery("ايداع 5000 تيلدا")}
-                  className="p-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] text-right transition-all flex items-center gap-2 group"
-                >
-                  <Wallet className="size-4 text-emerald-400 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="block font-medium text-slate-200 group-hover:text-emerald-300">
-                      ايداع 5000 تيلدا
-                    </span>
-                    <span className="block text-[10px] text-slate-500">
-                      إيداع نقدي فوري في محفظة تيلدا
-                    </span>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setQuery("صرف 450 بنزين")}
-                  className="p-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] text-right transition-all flex items-center gap-2 group"
-                >
-                  <Receipt className="size-4 text-amber-400 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="block font-medium text-slate-200 group-hover:text-amber-300">
-                      صرف 450 بنزين
-                    </span>
-                    <span className="block text-[10px] text-slate-500">
-                      تسجيل مصروف وقود مباشر
-                    </span>
-                  </div>
-                </button>
-              </div>
-
-              {/* Navigation Links */}
-              <div className="pt-2 border-t border-white/5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
-                <span className="text-slate-500 ml-1">انتقال سريع:</span>
-                <button
-                  onClick={() => {
-                    setLocation("/investments");
-                    onOpenChange(false);
-                  }}
-                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                >
-                  المحفظة
-                </button>
-                <button
-                  onClick={() => {
-                    setLocation("/transactions");
-                    onOpenChange(false);
-                  }}
-                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                >
-                  المعاملات
-                </button>
-                <button
-                  onClick={() => {
-                    setLocation("/debts");
-                    onOpenChange(false);
-                  }}
-                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                >
-                  كروت الائتمان
-                </button>
-                <button
-                  onClick={() => {
-                    setLocation("/banking");
-                    onOpenChange(false);
-                  }}
-                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                >
-                  الشهادات البنكية
-                </button>
-                <button
-                  onClick={() => {
-                    setLocation("/reports");
-                    onOpenChange(false);
-                  }}
-                  className="px-2 py-1 rounded-md bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors"
-                >
-                  التدقيق
-                </button>
-              </div>
+          {serverSearchQuery.isFetching && (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
+              <Loader2 className="size-3 animate-spin" />
+              <span>بحث عميق...</span>
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Command Input */}
+        <CommandInput
+          value={search}
+          onValueChange={setSearch}
+          placeholder="ابحث بالاسم، المبلغ، الحساب، الذهب، أو اكتب أمراً سريعاً (مثال: شراء 100 COMI @ 88.5)..."
+          className="py-4 text-sm text-slate-100 placeholder:text-slate-500 border-none focus:ring-0"
+        />
+
+        {/* Interactive Natural Language Command Preview */}
+        {parsedIntent && (
+          <div className="m-3 p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/25 space-y-3 animate-in fade-in-50 duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge
+                  className={
+                    parsedIntent.type === "trade"
+                      ? parsedIntent.side === "buy"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-rose-600 text-white"
+                      : parsedIntent.type === "deposit"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-amber-600 text-white"
+                  }
+                >
+                  {parsedIntent.type === "trade"
+                    ? parsedIntent.side === "buy"
+                      ? "صفقة شراء أسهم"
+                      : "صفقة بيع أسهم"
+                    : parsedIntent.type === "deposit"
+                    ? "إيداع نقدي فوري"
+                    : "تسجيل مصروف فوري"}
+                </Badge>
+                <span className="text-xs text-slate-200 font-medium">
+                  تم فهم الأمر المالي بالذكاء الحسابي
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400">اضغط Enter للتأكيد والترحيل</span>
+            </div>
+
+            {/* Parsed Details Breakdown */}
+            {parsedIntent.type === "trade" && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="p-2 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-slate-400 block text-[10px]">الرمز</span>
+                  <strong className="text-emerald-400 font-mono text-sm">
+                    {matchedInstrument?.symbol || parsedIntent.symbol}
+                  </strong>
+                </div>
+                <div className="p-2 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-slate-400 block text-[10px]">الكمية</span>
+                  <strong className="text-white font-mono text-sm">
+                    {parsedIntent.quantity?.toLocaleString() || 0}
+                  </strong>
+                </div>
+                <div className="p-2 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-slate-400 block text-[10px]">السعر</span>
+                  <strong className="text-white font-mono text-sm">
+                    {parsedIntent.unitPrice ? `${parsedIntent.unitPrice.toFixed(2)} ج.م` : "سعر السوق"}
+                  </strong>
+                </div>
+                <div className="p-2 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-slate-400 block text-[10px]">الحساب</span>
+                  <strong className="text-white text-xs truncate block">
+                    {matchedAccount?.name || "حساب افتراضي"}
+                  </strong>
+                </div>
+              </div>
+            )}
+
+            {(parsedIntent.type === "deposit" || parsedIntent.type === "expense") && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                <div className="p-2 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-slate-400 block text-[10px]">المبلغ</span>
+                  <strong className="text-emerald-400 font-mono text-sm">
+                    {parsedIntent.amount ? formatMoney(parsedIntent.amount, "EGP") : "—"}
+                  </strong>
+                </div>
+                <div className="p-2 rounded-lg bg-black/40 border border-white/5">
+                  <span className="text-slate-400 block text-[10px]">الحساب المستهدف</span>
+                  <strong className="text-white text-xs truncate block">
+                    {matchedAccount?.name || "الحساب الرئيسي"}
+                  </strong>
+                </div>
+                <div className="p-2 rounded-lg bg-black/40 border border-white/5 col-span-2 sm:col-span-1">
+                  <span className="text-slate-400 block text-[10px]">البيان</span>
+                  <strong className="text-slate-200 text-xs truncate block">
+                    {parsedIntent.memo || "—"}
+                  </strong>
+                </div>
+              </div>
+            )}
+
+            {/* Execution Buttons */}
+            <div className="flex items-center justify-between pt-1 border-t border-white/10">
+              <span className="text-xs text-slate-300">
+                {confirmExecution
+                  ? "هل تؤكد ترحيل هذا القيد فوراً إلى الدفتر المالي؟"
+                  : "جاهز للترحيل الفوري المباشر"}
+              </span>
+              <div className="flex items-center gap-2">
+                {confirmExecution && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setConfirmExecution(false)}
+                    className="text-xs text-slate-400 hover:text-white h-7 px-2.5"
+                  >
+                    إلغاء
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  disabled={isExecutingCommand}
+                  onClick={() => {
+                    if (confirmExecution) {
+                      handleExecuteCommand();
+                    } else {
+                      setConfirmExecution(true);
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs h-7 px-3.5 shadow-sm"
+                >
+                  {isExecutingCommand ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin ml-1.5" />
+                      جارٍ الترحيل...
+                    </>
+                  ) : confirmExecution ? (
+                    "تأكيد نهائي وترحيل ✓"
+                  ) : (
+                    "ترحيل إلى الدفتر ↵"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Command List */}
+        <CommandList className="max-h-[460px] overflow-y-auto px-2 py-2 space-y-2">
+          <CommandEmpty className="py-8 text-center text-sm text-slate-400">
+            <Search className="size-8 mx-auto mb-2 text-slate-600 opacity-60" />
+            <p className="font-medium text-slate-300">لم يتم العثور على نتائج مطابقة لـ "{search}"</p>
+            <p className="text-xs text-slate-500 mt-1">
+              جرب البحث باسم صفحة (مثلاً: زكاة، تقارير، ذهب، شهادات) أو بمبلغ مالي أو حساب مصرفي
+            </p>
+          </CommandEmpty>
+
+          {/* Group 1: Quick Actions (Always Available) */}
+          <CommandGroup
+            heading="الإجراءات المالية السريعة (Quick Actions)"
+            className="text-slate-400"
+          >
+            {/* Quick Action: PDF Export */}
+            <CommandItem
+              onSelect={handleExportPdf}
+              className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-emerald-500/15 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-8 rounded-lg bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0 group-hover:scale-105 transition-transform">
+                  {isExportingPdf ? (
+                    <Loader2 className="size-4 animate-spin text-sky-400" />
+                  ) : (
+                    <FileText className="size-4 text-sky-400" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-100 group-hover:text-sky-300">
+                      تصدير التقرير التنفيذي المالي الشامل (PDF)
+                    </span>
+                    <Badge className="bg-sky-500/20 text-sky-300 text-[10px] px-1.5 py-0 border border-sky-500/30">
+                      طباعة فاخرة
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">
+                    توليد وتنزيل تقرير الثروة المعتمد من 4 صفحات بختم الإغلاق والزكاة ودرع التضخم
+                  </p>
+                </div>
+              </div>
+              <CommandShortcut className="font-mono text-[11px] text-sky-400 bg-sky-950/40 px-1.5 py-0.5 rounded border border-sky-500/30">
+                PDF
+              </CommandShortcut>
+            </CommandItem>
+
+            {/* Quick Action: Record New Transaction */}
+            <CommandItem
+              onSelect={() => handleNavigate("/transactions")}
+              className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-emerald-500/15 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
+                  <PlusCircle className="size-4 text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-100 group-hover:text-emerald-300">
+                      تسجيل معاملة أو قيد مالي جديد
+                    </span>
+                    <Badge className="bg-emerald-500/20 text-emerald-300 text-[10px] px-1.5 py-0 border border-emerald-500/30">
+                      قيد دفتر الأستاذ
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">
+                    إيداع، سحب، تحويل بين الحسابات، أو صفقة تداول أسهم وذهب
+                  </p>
+                </div>
+              </div>
+              <CommandShortcut className="font-mono text-[11px] text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                N
+              </CommandShortcut>
+            </CommandItem>
+
+            {/* Quick Action: Pay Debt */}
+            <CommandItem
+              onSelect={() => handleNavigate("/banking?tab=debts")}
+              className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-emerald-500/15 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-8 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 group-hover:scale-105 transition-transform">
+                  <Banknote className="size-4 text-rose-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-100 group-hover:text-rose-300">
+                      سداد مديونية أو قسط ائتماني
+                    </span>
+                    <Badge className="bg-rose-500/20 text-rose-300 text-[10px] px-1.5 py-0 border border-rose-500/30">
+                      التزامات
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">
+                    تسجيل سداد قسط قرض أو بطاقة ائتمان من حساب السيولة
+                  </p>
+                </div>
+              </div>
+              <CommandShortcut className="font-mono text-[11px] text-rose-400 bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-500/30">
+                D
+              </CommandShortcut>
+            </CommandItem>
+
+            {/* Quick Action: Balance Settlement */}
+            <CommandItem
+              onSelect={() => handleNavigate("/reconciliation")}
+              className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-emerald-500/15 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+                  <Scale className="size-4 text-amber-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-100 group-hover:text-amber-300">
+                      تسوية رصيد حساب وتدقيق الفروقات
+                    </span>
+                    <Badge className="bg-amber-500/20 text-amber-300 text-[10px] px-1.5 py-0 border border-amber-500/30">
+                      مطابقة
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-400 truncate mt-0.5">
+                    توليد قيد تسوية محاسبي لتطابق الرصيد الدفتري مع الكشف البنكي
+                  </p>
+                </div>
+              </div>
+              <CommandShortcut className="font-mono text-[11px] text-amber-400 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/30">
+                R
+              </CommandShortcut>
+            </CommandItem>
+          </CommandGroup>
+
+          <CommandSeparator className="bg-white/10" />
+
+          {/* Group 2: Bank Accounts & Gold Portfolios */}
+          {(displayAccounts.length > 0 || displayGoldInstruments.length > 0) && (
+            <CommandGroup
+              heading="الحسابات المصرفية ومحافظ الذهب والسبائك"
+              className="text-slate-400"
+            >
+              {/* Accounts */}
+              {displayAccounts.map((account) => (
+                <CommandItem
+                  key={`acc-${account.id}`}
+                  onSelect={() => handleNavigate("/banking")}
+                  className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-emerald-500/15 transition-colors group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                      <Landmark className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-slate-100 group-hover:text-emerald-300">
+                          {account.name}
+                        </span>
+                        {account.institution && (
+                          <span className="text-[11px] text-slate-400 font-normal">
+                            · {account.institution}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-500 block truncate">
+                        نوع الحساب: {account.accountType} · العملة: {account.currency}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {"balance" in account && account.balance !== undefined && (
+                      <Badge className="bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 font-mono text-xs px-2 py-0.5">
+                        {formatMoney(account.balance, account.currency)}
+                      </Badge>
+                    )}
+                  </div>
+                </CommandItem>
+              ))}
+
+              {/* Gold & Bullion Instruments */}
+              {displayGoldInstruments.map((gold) => (
+                <CommandItem
+                  key={`gold-${gold.id}`}
+                  onSelect={() => handleNavigate("/investments?tab=instruments")}
+                  className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-amber-500/15 transition-colors group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                      <Coins className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-slate-100 group-hover:text-amber-300">
+                          {gold.name}
+                        </span>
+                        <Badge className="bg-amber-500/20 text-amber-300 text-[10px] px-1.5 py-0 border border-amber-500/30">
+                          ذهب وسبيكة
+                        </Badge>
+                      </div>
+                      <span className="text-[11px] text-slate-400 block truncate font-mono">
+                        رمز الأداة: {gold.symbol || "XAU"} · تسعير لحظي بالسوق المصري
+                      </span>
+                    </div>
+                  </div>
+                  <CommandShortcut className="font-mono text-[10px] text-amber-400">
+                    عرض الأسعار
+                  </CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
+          <CommandSeparator className="bg-white/10" />
+
+          {/* Group 3: Financial Transactions Search */}
+          {displayTransactions.length > 0 && (
+            <CommandGroup
+              heading="سجل العمليات والمعاملات المالية"
+              className="text-slate-400"
+            >
+              {displayTransactions.map((tx) => (
+                <CommandItem
+                  key={`tx-${tx.id}`}
+                  onSelect={() => handleNavigate("/transactions")}
+                  className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-emerald-500/15 transition-colors group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={`size-8 rounded-lg flex items-center justify-center shrink-0 border ${
+                        tx.eventType === "income" || tx.eventType === "deposit"
+                          ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                          : tx.eventType === "buy"
+                          ? "bg-sky-500/15 border-sky-500/30 text-sky-400"
+                          : tx.eventType === "sell"
+                          ? "bg-purple-500/15 border-purple-500/30 text-purple-400"
+                          : "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                      }`}
+                    >
+                      {tx.eventType === "income" || tx.eventType === "deposit" ? (
+                        <ArrowDownLeft className="size-4" />
+                      ) : tx.eventType === "buy" ? (
+                        <ArrowUpRight className="size-4" />
+                      ) : (
+                        <Receipt className="size-4" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-slate-100 group-hover:text-emerald-300 truncate">
+                          {tx.memo || `معاملة #${tx.id} (${tx.eventType})`}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] text-slate-400 border-white/10 px-1 py-0"
+                        >
+                          {tx.eventType}
+                        </Badge>
+                      </div>
+                      <span className="text-[11px] text-slate-400 block truncate">
+                        {"primaryAccountName" in tx && tx.primaryAccountName
+                          ? `الحساب: ${tx.primaryAccountName}`
+                          : "معاملة نقدية"}
+                        {tx.occurredAt && (
+                          <span className="text-slate-500 mr-2 font-mono">
+                            · {new Date(tx.occurredAt).toLocaleDateString("ar-EG")}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="shrink-0 font-mono text-sm font-bold text-slate-200">
+                    {formatMoney(tx.grossAmount || 0, tx.currency || "EGP")}
+                  </div>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
+          <CommandSeparator className="bg-white/10" />
+
+          {/* Group 4: All 20 Navigation Sections */}
+          <CommandGroup
+            heading="التنقل السريع في أقسام المنصة (20 قسماً وصفحة)"
+            className="text-slate-400"
+          >
+            {filteredRoutes.map((route) => {
+              const Icon = route.icon;
+              return (
+                <CommandItem
+                  key={route.id}
+                  onSelect={() => handleNavigate(route.path)}
+                  className="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-white/[0.08] aria-selected:bg-emerald-500/15 transition-colors group"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="size-8 rounded-lg bg-white/[0.05] border border-white/10 flex items-center justify-center text-slate-300 shrink-0 group-hover:text-emerald-400 group-hover:border-emerald-500/30 transition-all">
+                      <Icon className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-slate-200 group-hover:text-white">
+                          {route.label}
+                        </span>
+                        <span className="text-[10px] text-slate-500 bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/5">
+                          {route.category}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-400 font-mono block truncate">
+                        {route.path}
+                      </span>
+                    </div>
+                  </div>
+                  <CommandShortcut className="font-mono text-[10px] text-slate-500 group-hover:text-slate-300">
+                    انتقال ↵
+                  </CommandShortcut>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        </CommandList>
+
+        {/* Footer shortcuts hint */}
+        <div className="px-4 py-2 border-t border-white/10 bg-slate-950/70 flex items-center justify-between text-[11px] text-slate-400">
+          <div className="flex items-center gap-3">
+            <span>
+              استخدم <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">↑</kbd>{" "}
+              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">↓</kbd> للتنقل
+            </span>
+            <span>
+              اضغط <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">↵ Enter</kbd> للاختيار
+            </span>
+          </div>
+          <div>
+            <span>
+              اضغط <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">Esc</kbd> للإغلاق
+            </span>
+          </div>
+        </div>
+      </div>
+    </CommandDialog>
   );
 }
 

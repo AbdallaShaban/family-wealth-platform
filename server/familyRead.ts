@@ -545,3 +545,104 @@ export async function getMarketDataQuality(context: FamilyContext) {
     },
   };
 }
+
+export async function searchOmni(context: FamilyContext, rawQuery: string) {
+  const query = rawQuery.trim();
+  if (!query) {
+    return {
+      transactions: [],
+      accounts: [],
+      instruments: [],
+      debts: [],
+    };
+  }
+
+  const db = await getDb();
+  if (!db) throw unavailable();
+
+  const searchPattern = `%${query}%`;
+  const isGoldSearch = /ذهب|gold|عيار|سبائك|سبيكة|جنيه/i.test(query);
+
+  // 1. Transactions matching memo, amount, eventType, category, account, or instrument
+  const transactionRows = await db
+    .select({
+      id: financialEvents.id,
+      eventType: financialEvents.eventType,
+      status: financialEvents.status,
+      occurredAt: financialEvents.occurredAt,
+      currency: financialEvents.currency,
+      grossAmount: financialEvents.grossAmount,
+      quantity: financialEvents.quantity,
+      unitPrice: financialEvents.unitPrice,
+      memo: financialEvents.memo,
+      primaryAccountId: financialEvents.primaryAccountId,
+      primaryAccountName: accounts.name,
+      instrumentId: financialEvents.instrumentId,
+      instrumentSymbol: instruments.symbol,
+      instrumentName: instruments.name,
+      categoryId: financialEvents.categoryId,
+      categoryName: cashFlowCategories.name,
+    })
+    .from(financialEvents)
+    .leftJoin(accounts, eq(financialEvents.primaryAccountId, accounts.id))
+    .leftJoin(instruments, eq(financialEvents.instrumentId, instruments.id))
+    .leftJoin(cashFlowCategories, eq(financialEvents.categoryId, cashFlowCategories.id))
+    .where(
+      and(
+        eq(financialEvents.workspaceId, context.workspace.id),
+        sql`(${financialEvents.memo} LIKE ${searchPattern} OR ${financialEvents.eventType} LIKE ${searchPattern} OR ${financialEvents.grossAmount} LIKE ${searchPattern} OR ${financialEvents.currency} LIKE ${searchPattern} OR ${accounts.name} LIKE ${searchPattern} OR ${instruments.name} LIKE ${searchPattern} OR ${instruments.symbol} LIKE ${searchPattern} OR ${cashFlowCategories.name} LIKE ${searchPattern})`
+      )
+    )
+    .orderBy(desc(financialEvents.occurredAt), desc(financialEvents.id))
+    .limit(20);
+
+  // 2. Accounts & Balances
+  const allAccounts = await listAccountSnapshots(context);
+  const matchingAccounts = allAccounts
+    .filter(
+      (a) =>
+        a.name.toLowerCase().includes(query.toLowerCase()) ||
+        (a.institution && a.institution.toLowerCase().includes(query.toLowerCase())) ||
+        (a.currency && a.currency.toLowerCase().includes(query.toLowerCase()))
+    )
+    .slice(0, 10);
+
+  // 3. Instruments (Stocks & Gold)
+  const instrumentConditions = isGoldSearch
+    ? sql`(${instruments.symbol} LIKE ${searchPattern} OR ${instruments.name} LIKE ${searchPattern} OR ${instruments.assetType} = 'gold')`
+    : sql`(${instruments.symbol} LIKE ${searchPattern} OR ${instruments.name} LIKE ${searchPattern} OR ${instruments.assetType} LIKE ${searchPattern})`;
+
+  const matchingInstruments = await db
+    .select({
+      id: instruments.id,
+      symbol: instruments.symbol,
+      name: instruments.name,
+      assetType: instruments.assetType,
+      currency: instruments.currency,
+    })
+    .from(instruments)
+    .where(
+      and(
+        eq(instruments.workspaceId, context.workspace.id),
+        instrumentConditions
+      )
+    )
+    .limit(10);
+
+  // 4. Debts
+  const allDebts = await listDebtSummaries(context);
+  const matchingDebts = allDebts
+    .filter(
+      (d) =>
+        d.name.toLowerCase().includes(query.toLowerCase()) ||
+        (d.lender && d.lender.toLowerCase().includes(query.toLowerCase()))
+    )
+    .slice(0, 5);
+
+  return {
+    transactions: transactionRows,
+    accounts: matchingAccounts,
+    instruments: matchingInstruments,
+    debts: matchingDebts,
+  };
+}
