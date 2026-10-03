@@ -45,6 +45,7 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   Wallet,
+  BellRing,
 } from "lucide-react";
 
 // ==========================================
@@ -226,6 +227,14 @@ const ALL_20_PLATFORM_ROUTES: NavigationRoute[] = [
     path: "/governance?tab=members",
     icon: UsersRound,
     keywords: ["عائلة", "مستخدمين", "صلاحيات", "نسخ احتياطي", "members", "backup", "ادمن"],
+  },
+  {
+    id: "nav-telegram-alerts",
+    label: "تنبيهات تيليجرام اللحظية والإشعارات الذكية",
+    category: "الحوكمة وإدارة المخاطر والزكاة",
+    path: "/governance?tab=alerts",
+    icon: BellRing,
+    keywords: ["تيليجرام", "تنبيهات", "اشعارات", "بوت", "رسائل", "telegram", "alerts", "bot"],
   },
 ];
 

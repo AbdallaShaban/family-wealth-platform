@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileChartColumn, ShieldCheck, FileLock2, Scale, UsersRound, CheckCircle2, HardDriveDownload } from "lucide-react";
+import { FileChartColumn, ShieldCheck, FileLock2, Scale, UsersRound, CheckCircle2, HardDriveDownload, Send, Coins } from "lucide-react";
 import { ReportsPage } from "./ReportsPage";
 import { AuditPage } from "./family/AuditPage";
 import VaultPage from "./VaultPage";
@@ -9,7 +9,7 @@ import MembersPageRedesign from "./MembersPageRedesign";
 import ApprovalsPage from "./ApprovalsPage";
 import FamilyExportPage from "./FamilyExportPage";
 import { ShariaZakatHawlHub } from "@/components/governance/ShariaZakatHawlHub";
-import { Coins } from "lucide-react";
+import { TelegramAlertsSettingsCard } from "@/components/governance/TelegramAlertsSettingsCard";
 
 const TAB_TRIGGER_CLS =
   "gap-1.5 py-2 px-4 rounded-xl text-xs font-medium transition-colors border border-transparent " +
@@ -22,7 +22,7 @@ const TAB_TRIGGER_CLS =
 const normalizeGovTab = (tab: string | null): string => {
   if (!tab) return "reports";
   if (tab === "statements" || tab === "reports") return "reports";
-  if (tab === "audit" || tab === "vault" || tab === "members" || tab === "approvals" || tab === "backup" || tab === "export" || tab === "zakat") {
+  if (tab === "audit" || tab === "vault" || tab === "members" || tab === "approvals" || tab === "backup" || tab === "export" || tab === "zakat" || tab === "alerts") {
     if (tab === "export") return "backup";
     return tab;
   }
@@ -107,6 +107,10 @@ export default function GovernanceHubPage() {
               <HardDriveDownload className="w-3.5 h-3.5" />
               النسخ الاحتياطي والتصدير
             </TabsTrigger>
+            <TabsTrigger value="alerts" className={TAB_TRIGGER_CLS}>
+              <Send className="w-3.5 h-3.5 text-sky-500" />
+              تنبيهات تيليجرام
+            </TabsTrigger>
           </TabsList>
 
           {/* TAB 1: Financial Statements & Balance Sheet */}
@@ -148,6 +152,11 @@ export default function GovernanceHubPage() {
           </TabsContent>
           <TabsContent value="export">
             <FamilyExportPage embedded />
+          </TabsContent>
+
+          {/* TAB 7: Telegram Instant Alerts Engine */}
+          <TabsContent value="alerts">
+            <TelegramAlertsSettingsCard />
           </TabsContent>
         </Tabs>
       </div>

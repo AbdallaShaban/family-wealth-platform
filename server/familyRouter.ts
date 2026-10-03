@@ -122,6 +122,7 @@ import {
   familyZakatRouter,
 } from "./routers/family/familyTaxZakatRouter";
 import { familyLedgerRouter } from "./routers/family/familyLedgerRouter";
+import { familyTelegramRouter } from "./routers/family/familyTelegramRouter";
 
 async function assertVaultLink(db: any, workspaceId: number, profileId: number, linkedEntityType: string, linkedEntityId: string) {
   if (linkedEntityType === "general") return;
@@ -1789,6 +1790,7 @@ export const familyRouter = router({
   }),
 
   ledger: familyLedgerRouter,
+  telegram: familyTelegramRouter,
 
   audit: router({
     recent: protectedProcedure.query(async ({ ctx }) => {

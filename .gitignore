@@ -118,3 +118,8 @@ client/public/__manus__/version.json
 # Visual audit screenshots
 .visual-audit/
 .audit/visual-captures/*.png
+
+# Telegram Alerts Local Config & Logs
+.telegram_alerts_config.json
+.telegram_sent_log.json
+telegram_alerts_view.png
