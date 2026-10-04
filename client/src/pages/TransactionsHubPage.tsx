@@ -47,7 +47,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Plus,
+  Receipt,
 } from "lucide-react";
+import { SmartReceiptPasteModal } from "@/components/transactions/SmartReceiptPasteModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -403,6 +405,9 @@ export default function TransactionsHubPage() {
 
   const access = trpc.family.bootstrap.useQuery();
   const canEdit = ["owner", "advisor", "editor"].includes(access.data?.membership.role || "viewer");
+
+  // OCR Receipt State
+  const [receiptOcrOpen, setReceiptOcrOpen] = useState(false);
 
   // Delete Transaction State
   const [deleteTransactionOpen, setDeleteTransactionOpen] = useState(false);
@@ -770,7 +775,7 @@ export default function TransactionsHubPage() {
 
         {/* Institutional Consolidated Primary Action Bar */}
         <section className="rounded-2xl border border-slate-200/90 dark:border-slate-800/80 bg-white dark:bg-[#0B0F17] p-3 sm:px-4 shadow-xs flex flex-row items-center justify-between gap-3" aria-labelledby="operations-heading">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -781,7 +786,17 @@ export default function TransactionsHubPage() {
                   <ChevronDown className="size-3.5 text-slate-400 dark:text-slate-600 mr-0.5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-[#0E1420] border-slate-200 dark:border-slate-800 shadow-lg p-1.5 rounded-xl z-20">
+              <DropdownMenuContent align="start" className="w-64 bg-white dark:bg-[#0E1420] border-slate-200 dark:border-slate-800 shadow-lg p-1.5 rounded-xl z-20">
+                <DropdownMenuItem
+                  onClick={() => setReceiptOcrOpen(true)}
+                  className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-950/40 rounded-lg hover:bg-emerald-500/20 mb-1"
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                    <Receipt className="size-3.5" />
+                  </div>
+                  <span>مطابقة إيصال إنستاباي / محفظة (OCR)</span>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem
                   onClick={() => { setActiveModal("deposit"); setReviewStep(false); }}
                   className="cursor-pointer gap-2.5 text-xs py-2 font-semibold text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/70"
@@ -847,6 +862,16 @@ export default function TransactionsHubPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Button
+              onClick={() => setReceiptOcrOpen(true)}
+              variant="outline"
+              className="gap-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 font-bold text-xs sm:text-sm px-3.5 py-2 rounded-xl shadow-2xs transition-all shrink-0 cursor-pointer h-auto"
+              title="مطابقة إيصال إنستاباي / محفظة بنكية ضوئياً (Ctrl+V)"
+            >
+              <Receipt className="size-4 text-emerald-600 dark:text-emerald-400" />
+              <span>مطابقة إيصال فوري (OCR)</span>
+            </Button>
 
             <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline-block">
               تسجيل قيود اليومية المحاسبية المباشرة بحسابات النقدية والمحافظ والديون
@@ -2072,6 +2097,13 @@ export default function TransactionsHubPage() {
           variant="destructive"
           isLoading={deleteTransactionMutation.isPending}
           onConfirm={handleConfirmDelete}
+        />
+
+        {/* Smart Receipt OCR Modal */}
+        <SmartReceiptPasteModal
+          open={receiptOcrOpen}
+          onOpenChange={setReceiptOcrOpen}
+          onSuccess={invalidateAll}
         />
       </div>
     </DashboardLayout>

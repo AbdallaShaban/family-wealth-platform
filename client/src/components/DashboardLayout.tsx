@@ -49,11 +49,12 @@ import { Button } from "./ui/button";
 import NotificationCenter from "./NotificationCenter";
 import OmniCommandBar from "./OmniCommandBar";
 import { SmartSmsPasteModal } from "./banking/SmartSmsPasteModal";
+import { SmartReceiptPasteModal } from "./transactions/SmartReceiptPasteModal";
 import { ExecutivePdfModal } from "./reports/ExecutivePdfModal";
 import { OfflineStatusBadge } from "./pwa/OfflineStatusBadge";
 import { PwaInstallButton, PwaInstallSidebarBanner } from "./pwa/PwaInstallPrompt";
 import { QuickOfflineTransactionModal } from "./pwa/QuickOfflineTransactionModal";
-import { Command, Smartphone, FileText } from "lucide-react";
+import { Command, Smartphone, FileText, Receipt } from "lucide-react";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
 type MenuItem = { icon: LucideIcon; label: string; path: string; minimumRole: MinimumRole };
@@ -622,9 +623,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
   const [omniOpen, setOmniOpen] = useState(false);
   const [smartPasteOpen, setSmartPasteOpen] = useState(false);
+  const [receiptOcrOpen, setReceiptOcrOpen] = useState(false);
   const { isPrivate } = usePrivacyMode();
 
-  // Global Interactive Command Palette (Ctrl + K / Cmd + K)
+  // Global Interactive Command Palette (Ctrl + K / Cmd + K) and Clipboard Paste (Ctrl + V for images)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -632,8 +634,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setOmniOpen((prev) => !prev);
       }
     };
+
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) {
+        return;
+      }
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          e.preventDefault();
+          setReceiptOcrOpen(true);
+          return;
+        }
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("paste", handleGlobalPaste);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("paste", handleGlobalPaste);
+    };
   }, []);
   const role = (workspace.data?.membership.role ?? "viewer") as MinimumRole;
   const normalizedLocation = location.startsWith("/family/") ? location.replace("/family", "") : location;
@@ -760,6 +783,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <TopbarControls
               onOpenOmni={() => setOmniOpen(true)}
               onOpenSmartPaste={() => setSmartPasteOpen(true)}
+              onOpenReceiptOcr={() => setReceiptOcrOpen(true)}
               onOpenQuickEntry={() => setQuickEntryOpen(true)}
             />
           </div>
@@ -788,6 +812,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <OmniCommandBar open={omniOpen} onOpenChange={setOmniOpen} />
 
       <SmartSmsPasteModal open={smartPasteOpen} onOpenChange={setSmartPasteOpen} />
+
+      <SmartReceiptPasteModal open={receiptOcrOpen} onOpenChange={setReceiptOcrOpen} />
 
       <QuickOfflineTransactionModal open={quickEntryOpen} onOpenChange={setQuickEntryOpen} />
 
@@ -821,10 +847,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function TopbarControls({
   onOpenOmni,
   onOpenSmartPaste,
+  onOpenReceiptOcr,
   onOpenQuickEntry,
 }: {
   onOpenOmni?: () => void;
   onOpenSmartPaste?: () => void;
+  onOpenReceiptOcr?: () => void;
   onOpenQuickEntry?: () => void;
 }) {
   const { theme, toggleTheme } = useTheme();
@@ -834,6 +862,15 @@ function TopbarControls({
     <>
       <OfflineStatusBadge />
       <PwaInstallButton />
+      <button
+        onClick={onOpenReceiptOcr}
+        className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
+        title="مطابقة إيصال إنستاباي / محفظة ذكياً (OCR)"
+        aria-label="مسح إيصال ضوئي فوري"
+      >
+        <Receipt className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+        <span className="hidden xl:inline text-[11px]">مسح إيصال (OCR)</span>
+      </button>
       <button
         onClick={onOpenQuickEntry}
         className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 font-bold transition-all shadow-xs"

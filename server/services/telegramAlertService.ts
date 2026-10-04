@@ -122,8 +122,8 @@ export async function sendTelegramMessage(
   overrideConfig?: { botToken?: string; chatId?: string }
 ): Promise<{ success: boolean; messageId?: number; error?: string }> {
   const config = loadTelegramConfig();
-  const token = overrideConfig?.botToken || config.botToken;
-  const chat = overrideConfig?.chatId || config.chatId;
+  const token = overrideConfig && "botToken" in overrideConfig ? overrideConfig.botToken : config.botToken;
+  const chat = overrideConfig && "chatId" in overrideConfig ? overrideConfig.chatId : config.chatId;
 
   if (!token) {
     return { success: false, error: "Telegram Bot Token غير مضبوط. يرجى إدخاله في الإعدادات أو المتغيرات البيئية." };
