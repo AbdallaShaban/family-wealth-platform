@@ -7,6 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { DemoModeProvider } from "./contexts/DemoModeContext";
 import { PrivacyModeProvider } from "./contexts/PrivacyModeContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { OfflineSyncProvider } from "./contexts/OfflineSyncContext";
 
 const FamilyHomeGate = lazy(() => import("./pages/FamilyHomeGate"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -150,12 +151,16 @@ function App() {
         defaultTheme="dark"
         switchable
       >
-        <PrivacyModeProvider><DemoModeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </DemoModeProvider></PrivacyModeProvider>
+        <PrivacyModeProvider>
+          <DemoModeProvider>
+            <OfflineSyncProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Router />
+              </TooltipProvider>
+            </OfflineSyncProvider>
+          </DemoModeProvider>
+        </PrivacyModeProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

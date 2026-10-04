@@ -50,6 +50,9 @@ import NotificationCenter from "./NotificationCenter";
 import OmniCommandBar from "./OmniCommandBar";
 import { SmartSmsPasteModal } from "./banking/SmartSmsPasteModal";
 import { ExecutivePdfModal } from "./reports/ExecutivePdfModal";
+import { OfflineStatusBadge } from "./pwa/OfflineStatusBadge";
+import { PwaInstallButton, PwaInstallSidebarBanner } from "./pwa/PwaInstallPrompt";
+import { QuickOfflineTransactionModal } from "./pwa/QuickOfflineTransactionModal";
 import { Command, Smartphone, FileText } from "lucide-react";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
@@ -488,6 +491,7 @@ function UserControls({
 
   return (
     <div className="fintech-v2-user-zone border-t border-border/60 pt-3 px-3 pb-3 space-y-2">
+      <PwaInstallSidebarBanner />
       <div className="fintech-v2-utility-row flex gap-2">
         <button
           className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
@@ -615,6 +619,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [quickConfirmOpen, setQuickConfirmOpen] = useState(false);
+  const [quickEntryOpen, setQuickEntryOpen] = useState(false);
   const [omniOpen, setOmniOpen] = useState(false);
   const [smartPasteOpen, setSmartPasteOpen] = useState(false);
   const { isPrivate } = usePrivacyMode();
@@ -755,6 +760,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <TopbarControls
               onOpenOmni={() => setOmniOpen(true)}
               onOpenSmartPaste={() => setSmartPasteOpen(true)}
+              onOpenQuickEntry={() => setQuickEntryOpen(true)}
             />
           </div>
         </header>
@@ -776,12 +782,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         location={location}
         onNavigate={navigate}
         onOpenMore={() => setMobileOpen(true)}
-        onQuickCapture={() => setQuickConfirmOpen(true)}
+        onQuickCapture={() => setQuickEntryOpen(true)}
       />
 
       <OmniCommandBar open={omniOpen} onOpenChange={setOmniOpen} />
 
       <SmartSmsPasteModal open={smartPasteOpen} onOpenChange={setSmartPasteOpen} />
+
+      <QuickOfflineTransactionModal open={quickEntryOpen} onOpenChange={setQuickEntryOpen} />
 
       <Dialog open={quickConfirmOpen} onOpenChange={setQuickConfirmOpen}>
         <DialogContent dir="rtl" className="sm:max-w-md">
@@ -813,15 +821,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function TopbarControls({
   onOpenOmni,
   onOpenSmartPaste,
+  onOpenQuickEntry,
 }: {
   onOpenOmni?: () => void;
   onOpenSmartPaste?: () => void;
+  onOpenQuickEntry?: () => void;
 }) {
   const { theme, toggleTheme } = useTheme();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { isPrivate, togglePrivacy } = usePrivacyMode();
   return (
     <>
+      <OfflineStatusBadge />
+      <PwaInstallButton />
+      <button
+        onClick={onOpenQuickEntry}
+        className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 font-bold transition-all shadow-xs"
+        title="تسجيل عملية مالية سريعة (يدعم وضع عدم الاتصال)"
+        aria-label="تسجيل سريع"
+      >
+        <PlusCircle className="size-3.5 text-blue-600 dark:text-blue-400" />
+        <span className="hidden xl:inline text-[11px]">إدخال سريع</span>
+      </button>
       <ExecutivePdfModal
         trigger={
           <button

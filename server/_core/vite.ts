@@ -65,10 +65,16 @@ export function serveStatic(app: Express) {
   app.use(
     express.static(distPath, {
       setHeaders: (res, filePath) => {
-        if (filePath.endsWith("index.html")) {
+        if (filePath.endsWith("index.html") || filePath.endsWith("service-worker.js")) {
           res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
           res.setHeader("Pragma", "no-cache");
           res.setHeader("Expires", "0");
+          if (filePath.endsWith("service-worker.js")) {
+            res.setHeader("Service-Worker-Allowed", "/");
+          }
+        } else if (filePath.endsWith(".webmanifest") || filePath.endsWith("manifest.json")) {
+          res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+          res.setHeader("Cache-Control", "public, max-age=3600");
         }
       },
     })
