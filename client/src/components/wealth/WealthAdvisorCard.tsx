@@ -137,19 +137,21 @@ export default function WealthAdvisorCard({ onExportPdf }: WealthAdvisorCardProp
                 <span className="font-semibold">معدل التضخم السنوي المستهدف:</span>
                 <span className="font-mono font-bold text-amber-300">{customInflation}%</span>
               </div>
-              <input
-                type="range"
-                min="5"
-                max="50"
-                step="0.5"
-                value={customInflation}
-                onChange={e => setCustomInflation(parseFloat(e.target.value))}
-                className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-400"
-              />
-              <div className="flex justify-between text-[10px] text-slate-400">
-                <span>5% (عالمي)</span>
-                <span>26.5% (الأساس المعلن بمصر)</span>
-                <span>50% (متشدد)</span>
+              <div dir="ltr" className="w-full py-1">
+                <input
+                  type="range"
+                  min="5"
+                  max="50"
+                  step="0.5"
+                  value={customInflation}
+                  onChange={e => setCustomInflation(parseFloat(e.target.value))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-700/80 accent-sky-400 focus:outline-hidden"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                  <span>5% (عالمي)</span>
+                  <span>26.5% (أساس مصر)</span>
+                  <span>50% (متشدد)</span>
+                </div>
               </div>
             </div>
 
@@ -158,19 +160,21 @@ export default function WealthAdvisorCard({ onExportPdf }: WealthAdvisorCardProp
                 <span className="font-semibold">مستهدف صندوق الطوارئ والسيولة:</span>
                 <span className="font-mono font-bold text-sky-300">{customTargetMonths} أشهر نفقات</span>
               </div>
-              <input
-                type="range"
-                min="3"
-                max="18"
-                step="1"
-                value={customTargetMonths}
-                onChange={e => setCustomTargetMonths(parseInt(e.target.value, 10))}
-                className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-400"
-              />
-              <div className="flex justify-between text-[10px] text-slate-400">
-                <span>3 أشهر (حد أدنى)</span>
-                <span>6 أشهر (المعيار الدولي)</span>
-                <span>18 شهراً (تحفظ كامل)</span>
+              <div dir="ltr" className="w-full py-1">
+                <input
+                  type="range"
+                  min="3"
+                  max="18"
+                  step="1"
+                  value={customTargetMonths}
+                  onChange={e => setCustomTargetMonths(parseInt(e.target.value, 10))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer bg-slate-700/80 accent-sky-400 focus:outline-hidden"
+                />
+                <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                  <span>3 أشهر (أدنى)</span>
+                  <span>6 أشهر (دولي)</span>
+                  <span>18 شهراً (تحفظ)</span>
+                </div>
               </div>
             </div>
           </div>

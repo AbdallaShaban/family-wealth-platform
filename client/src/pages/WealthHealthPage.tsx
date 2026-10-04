@@ -907,7 +907,7 @@ export default function WealthHealthPage() {
                       type="number"
                       step="0.1"
                       min="0"
-                      max="30"
+                      max="35"
                       value={customNominalReturn}
                       onChange={e => setCustomNominalReturn(e.target.value)}
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
@@ -917,14 +917,14 @@ export default function WealthHealthPage() {
                     <input
                       type="range"
                       min="0"
-                      max="25"
+                      max="35"
                       step="0.1"
                       value={parseFloat(customNominalReturn) || 0}
                       onChange={e => setCustomNominalReturn(parseFloat(e.target.value).toFixed(1))}
                       className={INSTITUTIONAL_SLIDER_CLASS}
                     />
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 7.0% سنويًا</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 7.0% سنويًا (الشهادات: حتى 30%)</p>
                 </div>
 
                 <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5 min-h-[115px] flex flex-col justify-between">
@@ -937,7 +937,7 @@ export default function WealthHealthPage() {
                       type="number"
                       step="0.1"
                       min="0"
-                      max="25"
+                      max="50"
                       value={customInflation}
                       onChange={e => setCustomInflation(e.target.value)}
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
@@ -947,14 +947,14 @@ export default function WealthHealthPage() {
                     <input
                       type="range"
                       min="0"
-                      max="20"
+                      max="50"
                       step="0.1"
                       value={parseFloat(customInflation) || 0}
                       onChange={e => setCustomInflation(parseFloat(e.target.value).toFixed(1))}
                       className={INSTITUTIONAL_SLIDER_CLASS}
                     />
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 3.0% سنويًا</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">الافتراضي: 26.5% سنويًا (خط الأساس)</p>
                 </div>
 
                 <div className="space-y-2 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/60 p-3.5 min-h-[115px] flex flex-col justify-between">
@@ -967,7 +967,7 @@ export default function WealthHealthPage() {
                       type="number"
                       step="0.1"
                       min="1"
-                      max="10"
+                      max="15"
                       value={customSwr}
                       onChange={e => setCustomSwr(e.target.value)}
                       className="h-7 w-20 font-mono text-xs text-center bg-white dark:bg-[#0E1420] border border-slate-300 dark:border-slate-700/80 rounded-lg"
@@ -977,7 +977,7 @@ export default function WealthHealthPage() {
                     <input
                       type="range"
                       min="1"
-                      max="10"
+                      max="15"
                       step="0.1"
                       value={parseFloat(customSwr) || 4}
                       onChange={e => setCustomSwr(parseFloat(e.target.value).toFixed(1))}
