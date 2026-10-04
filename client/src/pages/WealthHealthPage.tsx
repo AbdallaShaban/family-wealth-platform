@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import HealthRadialGauge from "@/components/HealthRadialGauge";
 import SensitiveValue from "@/components/SensitiveValue";
 import { formatMoney } from "@/lib/financialDisplay";
+import WealthAdvisorCard from "@/components/wealth/WealthAdvisorCard";
 import {
   HeartPulse,
   ShieldCheck,
@@ -317,6 +318,11 @@ export default function WealthHealthPage() {
             </div>
           </div>
         ) : null}
+
+        {/* ==================================================================== */}
+        {/* 2.5. FAMILY AI WEALTH ADVISOR HUB */}
+        {/* ==================================================================== */}
+        <WealthAdvisorCard />
 
         {/* ==================================================================== */}
         {/* 3. SIX DIMENSION BREAKDOWN CARDS */}

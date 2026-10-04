@@ -85,6 +85,18 @@ export interface ExecutiveReportData {
     shieldRating: string;
     recommendation: string;
   };
+
+  // Family AI Wealth Advisor Recommendations
+  advisorRecommendations?: {
+    idleCashAmount?: number;
+    purchasingPowerLoss?: number;
+    topRecommendations: Array<{
+      titleAr: string;
+      actionSummaryAr: string;
+      priority: string;
+      suggestedAmountBase?: number;
+    }>;
+  };
 }
 
 /**
@@ -292,6 +304,25 @@ export async function getExecutiveReportData(
       shieldRating,
       recommendation,
     },
+
+    advisorRecommendations: await (async () => {
+      try {
+        const { generateWealthAdvisorPackage } = await import("./wealthAdvisorService");
+        const advisorPkg = await generateWealthAdvisorPackage(family);
+        return {
+          idleCashAmount: advisorPkg.liquidity.stagnantSurplusCashBase,
+          purchasingPowerLoss: advisorPkg.liquidity.annualPurchasingPowerLossBase,
+          topRecommendations: advisorPkg.recommendations.slice(0, 3).map(r => ({
+            titleAr: r.titleAr,
+            actionSummaryAr: r.actionSummaryAr,
+            priority: r.priority,
+            suggestedAmountBase: r.suggestedAmountBase,
+          })),
+        };
+      } catch {
+        return undefined;
+      }
+    })(),
   };
 }
 
@@ -1014,8 +1045,29 @@ export function renderExecutiveReportHtml(d: ExecutiveReportData): string {
       </div>
     </div>
 
+    ${d.advisorRecommendations && d.advisorRecommendations.topRecommendations.length > 0 ? `
+    <div style="margin-top: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-right: 4px solid #16a34a; border-radius: 6px; padding: 10px 14px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span style="font-weight: 700; font-size: 9pt; color: #166534;">توجيهات المستشار الذكي لإعادة التوازن وحماية الثروة (AI Wealth Advisory Directives)</span>
+        <span style="font-size: 7.5pt; background: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; font-weight: 700;">استشاري فقط</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        ${d.advisorRecommendations.topRecommendations.map(r => `
+          <div style="font-size: 8.5pt; color: #1f2937; line-height: 1.4; display: flex; align-items: flex-start; gap: 6px;">
+            <span style="color: #16a34a; font-weight: 900; margin-top: 1px;">•</span>
+            <div>
+              <strong style="color: #0f172a;">${r.titleAr}:</strong>
+              <span>${r.actionSummaryAr}</span>
+              ${r.suggestedAmountBase ? `<span style="font-weight: 700; color: #15803d; margin-right: 4px;">(المبلغ المقترح: ${formatCurrency(r.suggestedAmountBase, curr)})</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+
     <!-- Signatures section -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 35px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 25px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
       <div>
         <div style="font-weight: 700; color: #0f172a; margin-bottom: 40px;">توقيع مالك الثروة / رب الأسرة:</div>
         <div style="border-bottom: 1px solid #0f172a; width: 80%;"></div>

@@ -184,7 +184,7 @@ export const saveAssumptionsInputSchema = z.object({
 /**
  * Core Data Loader: Computes all necessary aggregations for Wealth Health & FIRE
  */
-async function loadWealthHealthAggregations(
+export async function loadWealthHealthAggregations(
   family: Awaited<ReturnType<typeof ensurePersonalFamilyContext>>,
   asOfTimestamp: number
 ) {
@@ -937,4 +937,27 @@ export const wealthHealthRouter = router({
 
       return { success: true, message: "تم حفظ افتراضات التخطيط المالي بنجاح." };
     }),
+
+  /**
+   * Procedure 4: getAdvisorInsights
+   * Advisory-only AI wealth diagnostics, idle liquidity analysis, and rebalancing recommendations.
+   */
+  getAdvisorInsights: protectedProcedure
+    .input(
+      z
+        .object({
+          customInflationRate: z.number().min(0).max(100).optional(),
+          customTargetMonths: z.number().int().min(1).max(36).optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const family = await ensurePersonalFamilyContext(ctx.user);
+      const { generateWealthAdvisorPackage } = await import("./services/wealthAdvisorService");
+      return generateWealthAdvisorPackage(family, {
+        customInflationRate: input?.customInflationRate,
+        customTargetMonths: input?.customTargetMonths,
+      });
+    }),
 });
+
