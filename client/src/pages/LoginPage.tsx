@@ -123,14 +123,8 @@ export default function LoginPage() {
   return (
     <main
       dir="rtl"
-      className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-12 text-slate-100 selection:bg-emerald-500 selection:text-white relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center bg-slate-950 px-4 py-12 text-white selection:bg-emerald-600 relative overflow-hidden"
     >
-      {/* Subtle background ambient gradients */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 right-1/4 size-96 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="absolute -bottom-40 left-1/4 size-96 rounded-full bg-teal-500/10 blur-3xl" />
-      </div>
-
       <div className="relative w-full max-w-md">
         {/* Main Authentication Card */}
         <div className="rounded-2xl border border-slate-800/80 bg-slate-900/95 p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
@@ -160,7 +154,7 @@ export default function LoginPage() {
                 setMode("login");
                 setErrorMessage(null);
               }}
-              className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all ${
+              className={`flex items-center justify-center gap-2 rounded-lg min-h-[44px] py-2.5 text-sm font-medium transition-all ${
                 mode === "login"
                   ? "bg-slate-800 text-white shadow-xs"
                   : "text-slate-400 hover:text-slate-200"
@@ -175,7 +169,7 @@ export default function LoginPage() {
                 setMode("register");
                 setErrorMessage(null);
               }}
-              className={`flex items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all ${
+              className={`flex items-center justify-center gap-2 rounded-lg min-h-[44px] py-2.5 text-sm font-medium transition-all ${
                 mode === "register"
                   ? "bg-slate-800 text-white shadow-xs"
                   : "text-slate-400 hover:text-slate-200"
@@ -202,7 +196,7 @@ export default function LoginPage() {
                   الاسم بالكامل
                 </Label>
                 <div className="relative">
-                  <User className="absolute right-3 top-3 size-4 text-slate-500 pointer-events-none" />
+                  <User className="absolute right-3 top-3.5 size-4 text-slate-500 pointer-events-none" />
                   <Input
                     id="name"
                     type="text"
@@ -213,7 +207,7 @@ export default function LoginPage() {
                       setName(e.target.value);
                       if (errorMessage) setErrorMessage(null);
                     }}
-                    className="pr-9 bg-slate-950/60 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40"
+                    className="pr-9 min-h-[48px] h-12 text-sm bg-slate-950/60 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40"
                   />
                 </div>
               </div>
@@ -224,7 +218,7 @@ export default function LoginPage() {
                 البريد الإلكتروني
               </Label>
               <div className="relative">
-                <Mail className="absolute right-3 top-3 size-4 text-slate-500 pointer-events-none" />
+                <Mail className="absolute right-3 top-3.5 size-4 text-slate-500 pointer-events-none" />
                 <Input
                   id="email"
                   type="email"
@@ -235,7 +229,7 @@ export default function LoginPage() {
                     setEmail(e.target.value);
                     if (errorMessage) setErrorMessage(null);
                   }}
-                  className="pr-9 bg-slate-950/60 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-sans"
+                  className="pr-9 min-h-[48px] h-12 text-sm bg-slate-950/60 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-sans"
                   dir="ltr"
                 />
               </div>
@@ -246,7 +240,7 @@ export default function LoginPage() {
                 كلمة المرور
               </Label>
               <div className="relative">
-                <Lock className="absolute right-3 top-3 size-4 text-slate-500 pointer-events-none" />
+                <Lock className="absolute right-3 top-3.5 size-4 text-slate-500 pointer-events-none" />
                 <Input
                   id="password"
                   type="password"
@@ -257,7 +251,7 @@ export default function LoginPage() {
                     setPassword(e.target.value);
                     if (errorMessage) setErrorMessage(null);
                   }}
-                  className="pr-9 bg-slate-950/60 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-sans"
+                  className="pr-9 min-h-[48px] h-12 text-sm bg-slate-950/60 border-slate-800 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-sans"
                   dir="ltr"
                 />
               </div>
@@ -272,7 +266,7 @@ export default function LoginPage() {
                   <span className="text-[10px] text-slate-500">حماية النطاق المغلق</span>
                 </div>
                 <div className="relative">
-                  <KeyRound className="absolute right-3 top-3 size-4 text-emerald-500 pointer-events-none" />
+                  <KeyRound className="absolute right-3 top-3.5 size-4 text-emerald-500 pointer-events-none" />
                   <Input
                     id="inviteCode"
                     type="text"
@@ -283,7 +277,7 @@ export default function LoginPage() {
                       setInviteCode(e.target.value.toUpperCase());
                       if (errorMessage) setErrorMessage(null);
                     }}
-                    className="pr-9 bg-slate-950/60 border-emerald-800/40 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-mono tracking-wider"
+                    className="pr-9 min-h-[48px] h-12 text-sm bg-slate-950/60 border-emerald-800/40 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-mono tracking-wider"
                     dir="ltr"
                   />
                 </div>
@@ -304,7 +298,7 @@ export default function LoginPage() {
               type="submit"
               size="lg"
               disabled={isSubmitting}
-              className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md transition-all duration-200 mt-2 rounded-xl flex items-center justify-center gap-2"
+              className="w-full min-h-[48px] h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md transition-all duration-200 mt-2 rounded-xl flex items-center justify-center gap-2 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -341,7 +335,7 @@ export default function LoginPage() {
                 type="button"
                 variant="outline"
                 size="lg"
-                className="w-full h-11 border-slate-700 bg-slate-950/40 hover:bg-slate-800 text-slate-200 font-medium rounded-xl flex items-center justify-center gap-3 text-sm"
+                className="w-full min-h-[48px] h-12 border-slate-700 bg-slate-950/40 hover:bg-slate-800 text-slate-200 font-medium rounded-xl flex items-center justify-center gap-3 text-sm cursor-pointer"
                 onClick={() => startLogin()}
               >
                 <svg className="size-4 shrink-0" viewBox="0 0 24 24">

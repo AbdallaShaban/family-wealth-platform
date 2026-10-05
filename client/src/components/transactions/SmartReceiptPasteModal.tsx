@@ -459,7 +459,7 @@ export function SmartReceiptPasteModal({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 shadow-2xs">
                   <span className="text-[10px] text-slate-500 font-semibold block">المبلغ المستخرج</span>
-                  <strong className="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5 block">
+                  <strong className="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono tabular-nums mt-0.5 block">
                     {amount ? `${Number(amount).toLocaleString()} EGP` : "---"}
                   </strong>
                 </div>
@@ -497,7 +497,7 @@ export function SmartReceiptPasteModal({
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">حساب التسوية المصرفي أو المحفظة</Label>
                     <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                      <SelectTrigger className="text-xs h-9 bg-white dark:bg-slate-900">
+                      <SelectTrigger className="text-xs min-h-[44px] h-11 bg-white dark:bg-slate-900">
                         <SelectValue placeholder="اختر الحساب..." />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="bg-white dark:bg-slate-900">
@@ -513,7 +513,7 @@ export function SmartReceiptPasteModal({
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">نوع العملية المالية</Label>
                     <Select value={direction} onValueChange={(val: any) => setDirection(val)}>
-                      <SelectTrigger className="text-xs h-9 bg-white dark:bg-slate-900">
+                      <SelectTrigger className="text-xs min-h-[44px] h-11 bg-white dark:bg-slate-900">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="bg-white dark:bg-slate-900">
@@ -538,14 +538,14 @@ export function SmartReceiptPasteModal({
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       placeholder="0.00"
-                      className="text-xs font-mono h-9 bg-white dark:bg-slate-900"
+                      className="text-xs font-mono font-bold tabular-nums min-h-[44px] h-11 bg-white dark:bg-slate-900"
                     />
                   </div>
 
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">تصنيف التدفق النقدي (اختياري)</Label>
                     <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                      <SelectTrigger className="text-xs h-9 bg-white dark:bg-slate-900">
+                      <SelectTrigger className="text-xs min-h-[44px] h-11 bg-white dark:bg-slate-900">
                         <SelectValue placeholder="بدون تصنيف فوري" />
                       </SelectTrigger>
                       <SelectContent dir="rtl" className="bg-white dark:bg-slate-900">
@@ -567,7 +567,7 @@ export function SmartReceiptPasteModal({
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
                       placeholder="e.g. 405812345678"
-                      className="text-xs font-mono h-9 bg-white dark:bg-slate-900"
+                      className="text-xs font-mono min-h-[44px] h-11 bg-white dark:bg-slate-900"
                     />
                   </div>
 
@@ -577,7 +577,7 @@ export function SmartReceiptPasteModal({
                       type="datetime-local"
                       value={occurredAtDate}
                       onChange={(e) => setOccurredAtDate(e.target.value)}
-                      className="text-xs h-9 bg-white dark:bg-slate-900"
+                      className="text-xs min-h-[44px] h-11 bg-white dark:bg-slate-900"
                     />
                   </div>
                 </div>
@@ -588,7 +588,7 @@ export function SmartReceiptPasteModal({
                     value={memo}
                     onChange={(e) => setMemo(e.target.value)}
                     placeholder="بيان العملية المسجل في دفتر الأستاذ..."
-                    className="text-xs h-9 bg-white dark:bg-slate-900"
+                    className="text-xs min-h-[44px] h-11 bg-white dark:bg-slate-900"
                   />
                 </div>
               </div>
@@ -602,7 +602,7 @@ export function SmartReceiptPasteModal({
             variant="outline"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="text-xs rounded-xl"
+            className="text-xs rounded-xl min-h-[44px] h-11 px-4 cursor-pointer"
           >
             إلغاء
           </Button>
@@ -612,7 +612,7 @@ export function SmartReceiptPasteModal({
             size="sm"
             disabled={!amount || Number(amount) <= 0 || postReceiptMutation.isPending}
             onClick={handlePostToLedger}
-            className="gap-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+            className="gap-2 text-xs font-bold rounded-xl min-h-[44px] h-11 px-5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer"
           >
             {postReceiptMutation.isPending ? (
               <>

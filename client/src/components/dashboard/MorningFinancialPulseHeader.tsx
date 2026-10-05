@@ -79,23 +79,20 @@ export function MorningFinancialPulseHeader({
   return (
     <div
       dir="rtl"
-      className="relative overflow-hidden rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-950/20 via-zinc-900/60 to-teal-950/20 p-4 sm:p-5 shadow-sm transition-all"
+      className="relative overflow-hidden rounded-2xl border border-emerald-600/20 dark:border-emerald-500/30 bg-card p-4 sm:p-5 shadow-xs transition-all"
     >
-      {/* Decorative subtle ambient light */}
-      <div className="absolute top-0 right-0 -mt-8 -mr-8 size-48 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-
       {/* Top Greeting Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-zinc-200/40 dark:border-zinc-800/60">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-border">
         <div className="flex items-center gap-2.5">
           <div className="size-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <GreetingIcon className="size-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-zinc-950 dark:text-zinc-50">
+              <h2 className="text-base sm:text-lg font-black text-foreground">
                 {greeting.text}، {userName || "صديقنا"}
               </h2>
-              <Badge className="bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 text-[10px] font-bold">
+              <Badge className="bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-bold">
                 الوضع السلس المباشر
               </Badge>
             </div>
@@ -117,7 +114,7 @@ export function MorningFinancialPulseHeader({
       {/* 3 Instant Metric Answers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-4">
         {/* Answer 1: Cash to Spend */}
-        <div className="p-3.5 rounded-xl bg-card/70 border border-zinc-200 dark:border-zinc-800/80 space-y-1.5">
+        <div className="p-3.5 rounded-xl bg-background border border-border space-y-1.5">
           <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
             <span className="flex items-center gap-1.5">
               <Wallet className="size-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -127,7 +124,7 @@ export function MorningFinancialPulseHeader({
               <CheckCircle2 className="size-3" /> متاح الآن
             </span>
           </div>
-          <div className="text-2xl font-black text-zinc-950 dark:text-zinc-50 font-mono tracking-tight">
+          <div className="text-2xl font-black text-foreground font-mono tracking-tight">
             {formatCurrency(liquidBalance, currency)}
           </div>
           <div className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -136,7 +133,7 @@ export function MorningFinancialPulseHeader({
         </div>
 
         {/* Answer 2: Spending Pulse & Safety */}
-        <div className="p-3.5 rounded-xl bg-card/70 border border-zinc-200 dark:border-zinc-800/80 space-y-1.5">
+        <div className="p-3.5 rounded-xl bg-background border border-border space-y-1.5">
           <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="size-3.5 text-blue-600 dark:text-blue-400" />
@@ -146,7 +143,7 @@ export function MorningFinancialPulseHeader({
               ضمن الأمان
             </span>
           </div>
-          <div className="text-2xl font-black text-zinc-950 dark:text-zinc-50 font-mono tracking-tight">
+          <div className="text-2xl font-black text-foreground font-mono tracking-tight">
             {formatCurrency(thisWeekSpending > 0 ? thisWeekSpending : 1450, currency)}
           </div>
           <div className="text-[11px] text-muted-foreground flex items-center gap-1">
@@ -156,7 +153,7 @@ export function MorningFinancialPulseHeader({
         </div>
 
         {/* Answer 3: Upcoming Commitment Alert */}
-        <div className="p-3.5 rounded-xl bg-card/70 border border-zinc-200 dark:border-zinc-800/80 space-y-1.5">
+        <div className="p-3.5 rounded-xl bg-background border border-border space-y-1.5">
           <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
             <span className="flex items-center gap-1.5">
               <CalendarClock className="size-3.5 text-amber-600 dark:text-amber-400" />
@@ -168,7 +165,7 @@ export function MorningFinancialPulseHeader({
           </div>
           {upcomingDebt ? (
             <>
-              <div className="text-xl font-black text-zinc-950 dark:text-zinc-50 font-mono tracking-tight">
+              <div className="text-xl font-black text-foreground font-mono tracking-tight">
                 {formatCurrency(Number(upcomingDebt.amount || 250), currency)}
               </div>
               <div className="text-[11px] text-muted-foreground truncate">

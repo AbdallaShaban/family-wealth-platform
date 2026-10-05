@@ -13,17 +13,20 @@ async function main() {
   });
   const page = await context.newPage();
 
+  const uniqueId = Date.now().toString().slice(-4);
+  const testEmail = `dr.shafie.${uniqueId}@family.hub`;
+
   console.log("Navigating to login page with invite code...");
-  await page.goto("http://localhost:3000/login?invite=INV-UQ9L-8MVM", { waitUntil: "networkidle" });
+  await page.goto("http://localhost:3000/login?invite=FAMILY-WEALTH-SECRET-2026", { waitUntil: "networkidle" });
 
   const shot1Path = path.join(ARTIFACT_DIR, "01_onboarding_registration_invite.png");
   await page.screenshot({ path: shot1Path, fullPage: false });
   console.log("Saved screenshot 1 to:", shot1Path);
 
   // Fill in registration form
-  console.log("Filling in registration form...");
+  console.log("Filling in registration form with:", testEmail);
   await page.fill("#name", "د. هاني الشافعي");
-  await page.fill("#email", "dr.hani.shafie@example.com");
+  await page.fill("#email", testEmail);
   await page.fill("#password", "Password@2026!");
 
   // Submit

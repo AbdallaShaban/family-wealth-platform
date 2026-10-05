@@ -301,7 +301,7 @@ export default function RetailSignalsWidget() {
                       <Button
                         onClick={() => setLocation(swingUrl)}
                         size="sm"
-                        className="w-full text-xs font-bold h-8 bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 text-white shadow-xs cursor-pointer"
+                        className="w-full text-xs font-bold h-8 bg-slate-900 hover:bg-slate-800 dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-amber-950 text-white shadow-xs cursor-pointer"
                       >
                         <Zap className="size-3 ml-1" />
                         <span>تنفيذ سوينج</span>

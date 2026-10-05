@@ -65,12 +65,12 @@ export function AccountCardsWidget({
 
   return (
     <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-border">
         <div>
-          <CardTitle className="text-base font-bold text-zinc-950 dark:text-zinc-50">
+          <CardTitle className="text-base font-bold text-foreground">
             الحسابات والبطاقات النشطة
           </CardTitle>
-          <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          <CardDescription className="text-xs text-muted-foreground mt-1">
             {accounts.length} حسابات مصرفية ونقدية متصلة
           </CardDescription>
         </div>
@@ -78,7 +78,7 @@ export function AccountCardsWidget({
           variant="ghost"
           size="sm"
           onClick={() => setLocation("/banking")}
-          className="h-8 gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-bold"
+          className="h-8 gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-muted font-bold cursor-pointer"
         >
           <span>إدارة</span>
           <ChevronLeft className="size-3.5" />
@@ -145,23 +145,23 @@ export function AccountCardsWidget({
             <div
               key={acc.id}
               onClick={() => onOpenReconcile?.(acc)}
-              className="flex items-center justify-between p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 transition-all cursor-pointer group"
+              className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-muted/40 hover:bg-muted transition-all cursor-pointer group"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="size-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200 dark:border-emerald-500/30">
                   {acc.kind === "wallet" ? <Wallet className="size-4" /> : <Landmark className="size-4" />}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-zinc-950 dark:text-zinc-50 truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                  <p className="text-xs font-bold text-foreground truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {acc.name}
                   </p>
-                  <p className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                  <p className="text-[10px] text-muted-foreground font-mono">
                     {acc.kind === "wallet" ? "محفظة رقمية" : "حساب بنكي"} · {acc.currency || currency}
                   </p>
                 </div>
               </div>
               <div className="text-start">
-                <p className="text-xs font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+                <p className="text-xs font-bold tabular-nums text-foreground">
                   {formatMoney(acc.value, acc.currency || currency)}
                 </p>
               </div>

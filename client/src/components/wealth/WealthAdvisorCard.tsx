@@ -121,7 +121,7 @@ export default function WealthAdvisorCard({ onExportPdf }: WealthAdvisorCardProp
             </button>
             <button
               onClick={handleDownloadPdf}
-              className="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-transform active:scale-95 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-sky-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-transform active:scale-95 cursor-pointer"
             >
               <FileDown className="size-3.5" />
               <span>تضمين بالتقرير التنفيذي</span>
@@ -433,7 +433,7 @@ export default function WealthAdvisorCard({ onExportPdf }: WealthAdvisorCardProp
                                 isCritical
                                   ? "bg-rose-600 text-white"
                                   : isHigh
-                                  ? "bg-amber-500 text-slate-950 font-extrabold"
+                                  ? "bg-amber-500 text-amber-950 font-extrabold"
                                   : isOpp
                                   ? "bg-emerald-600 text-white"
                                   : "bg-slate-600 text-white"

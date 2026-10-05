@@ -52,42 +52,42 @@ export function MoneyMovementCard({ currency, totalIncome = 13248, totalExpense 
     <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b border-zinc-200 dark:border-zinc-800">
         <div>
-          <CardTitle className="text-base font-bold text-zinc-950 dark:text-zinc-50">
+          <CardTitle className="text-base font-bold text-foreground">
             حركة السيولة والتدفقات
           </CardTitle>
-          <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          <CardDescription className="text-xs text-muted-foreground mt-1">
             مقارنة التدفقات النقدية الداخلة والخارجة
           </CardDescription>
         </div>
 
         {/* Period Selector */}
-        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border">
           <button
             onClick={() => setPeriod("7d")}
-            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               period === "7d"
-                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700/60 font-bold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50"
+                ? "bg-card text-foreground shadow-xs border border-border font-bold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             7 أيام
           </button>
           <button
             onClick={() => setPeriod("30d")}
-            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               period === "30d"
-                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700/60 font-bold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50"
+                ? "bg-card text-foreground shadow-xs border border-border font-bold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             30 يوم
           </button>
           <button
             onClick={() => setPeriod("90d")}
-            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               period === "90d"
-                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700/60 font-bold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50"
+                ? "bg-card text-foreground shadow-xs border border-border font-bold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             90 يوم
@@ -104,7 +104,7 @@ export function MoneyMovementCard({ currency, totalIncome = 13248, totalExpense 
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">الوارد (In)</p>
-              <p className="text-xs sm:text-sm font-extrabold tabular-nums text-zinc-950 dark:text-zinc-50 tracking-tight">
+              <p className="text-xs sm:text-sm font-extrabold tabular-nums text-foreground tracking-tight">
                 {formatMoney(totals.in, currency)}
               </p>
             </div>
@@ -116,7 +116,7 @@ export function MoneyMovementCard({ currency, totalIncome = 13248, totalExpense 
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-400">المنصرف (Out)</p>
-              <p className="text-xs sm:text-sm font-extrabold tabular-nums text-zinc-950 dark:text-zinc-50 tracking-tight">
+              <p className="text-xs sm:text-sm font-extrabold tabular-nums text-foreground tracking-tight">
                 {formatMoney(totals.out, currency)}
               </p>
             </div>
@@ -124,8 +124,8 @@ export function MoneyMovementCard({ currency, totalIncome = 13248, totalExpense 
         </div>
 
         {/* Net Flow Pill */}
-        <div className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/80 px-3 py-2 text-xs">
-          <span className="text-zinc-600 dark:text-zinc-400 font-medium">صافي التدفق المالي (Net Flow):</span>
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs">
+          <span className="text-muted-foreground font-medium">صافي التدفق المالي (Net Flow):</span>
           <span className={`font-extrabold tabular-nums ${totals.net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
             {totals.net >= 0 ? "+" : ""}{formatMoney(totals.net, currency)}
           </span>

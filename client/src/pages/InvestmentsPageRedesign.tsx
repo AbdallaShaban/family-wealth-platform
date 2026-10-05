@@ -792,7 +792,7 @@ export default function InvestmentsPageRedesign() {
                                       onClick={() => handleOpenDeleteInstrument(item)}
                                       title="حذف الأداة المالية"
                                       aria-label="حذف الأداة المالية"
-                                      className="size-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-500 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors"
+                                      className="size-8 rounded-lg text-muted-foreground hover:text-rose-700 hover:bg-rose-100 dark:hover:text-rose-300 dark:hover:bg-rose-950/40 transition-colors"
                                     >
                                       <Trash2 className="size-3.5" />
                                     </Button>

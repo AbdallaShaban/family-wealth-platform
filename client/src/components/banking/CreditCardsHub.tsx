@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { useDemoMode } from "@/contexts/DemoModeContext";
 import {
   CreditCard,
   Percent,
@@ -25,9 +24,8 @@ import { formatMoney } from "@/lib/financialDisplay";
 import { TransactionAdvisorWidget } from "@/components/TransactionAdvisorWidget";
 
 export function CreditCardsHub() {
-  const { isDemoMode } = useDemoMode();
   const utils = trpc.useUtils();
-  const creditCardsQuery = trpc.family.creditCards.list.useQuery(undefined, { enabled: !isDemoMode });
+  const creditCardsQuery = trpc.family.creditCards.list.useQuery();
   const accountsQuery = trpc.family.accounts.list.useQuery();
   const createCreditCardMutation = trpc.family.creditCards.create.useMutation();
   const createInstallmentMutation = trpc.family.creditCards.createInstallment.useMutation();

@@ -63,7 +63,7 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
             <WifiOff className="size-3.5 text-amber-500" />
             <span className="hidden md:inline font-bold">دون اتصال</span>
             {pendingCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-zinc-950 text-[10px] font-black">
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-amber-950 text-[10px] font-black">
                 {pendingCount}
               </span>
             )}
@@ -77,7 +77,7 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
           <>
             <RefreshCw className="size-3.5 text-yellow-500" />
             <span className="hidden md:inline font-bold">معلق للمزامنة</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-yellow-500 text-zinc-950 text-[10px] font-black">
+            <span className="px-1.5 py-0.2 rounded-full bg-yellow-500 text-yellow-950 text-[10px] font-black">
               {pendingCount}
             </span>
           </>
@@ -91,25 +91,25 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
 
       {/* Pending Queue Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent dir="rtl" className="max-w-2xl bg-zinc-950 border-zinc-800 text-zinc-100">
-          <DialogHeader className="border-b border-zinc-800/80 pb-3">
+        <DialogContent dir="rtl" className="max-w-2xl bg-card border-border text-foreground">
+          <DialogHeader className="border-b border-border pb-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <div className={`p-2 rounded-xl border ${
-                  !isOnline ? "bg-amber-500/10 border-amber-500/30 text-amber-400" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                  !isOnline ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                 }`}>
                   <Database className="size-5" />
                 </div>
                 <div>
-                  <DialogTitle className="text-base font-bold text-zinc-100">
+                  <DialogTitle className="text-base font-bold text-foreground">
                     مركز المزامنة المحلية وقائمة الانتظار (Offline Queue)
                   </DialogTitle>
-                  <DialogDescription className="text-xs text-zinc-400">
+                  <DialogDescription className="text-xs text-muted-foreground">
                     إدارة العمليات المحفوظة في ذاكرة المتصفح (IndexedDB) للترحيل إلى الخادم
                   </DialogDescription>
                 </div>
               </div>
-              <Badge variant="outline" className={!isOnline ? "border-amber-500 text-amber-400" : "border-emerald-500 text-emerald-400"}>
+              <Badge variant="outline" className={!isOnline ? "border-amber-500/40 text-amber-600 dark:text-amber-400" : "border-emerald-500/40 text-emerald-600 dark:text-emerald-400"}>
                 {!isOnline ? "⚡ وضع عدم الاتصال" : "🌐 متصل بالشبكة"}
               </Badge>
             </div>
@@ -117,11 +117,11 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
 
           <div className="py-3 space-y-4">
             {/* Status summary banner */}
-            <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between text-xs">
+            <div className="p-3 rounded-xl bg-muted/50 border border-border flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <Clock className="size-4 text-zinc-400" />
+                <Clock className="size-4 text-muted-foreground" />
                 <span>العمليات المعلقة حالياً:</span>
-                <span className="font-bold text-amber-400 text-sm">{pendingCount}</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400 text-sm">{pendingCount}</span>
               </div>
               {isOnline && pendingCount > 0 && (
                 <Button
@@ -138,10 +138,10 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
 
             {/* List of pending transactions */}
             {pendingTransactions.length === 0 ? (
-              <div className="py-8 text-center text-zinc-500 space-y-2">
+              <div className="py-8 text-center text-muted-foreground space-y-2">
                 <CheckCircle2 className="size-10 text-emerald-500/50 mx-auto" />
-                <p className="text-sm font-medium text-zinc-300">كافة العمليات مزامنة بالكامل مع السيرفر</p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-sm font-medium text-foreground">كافة العمليات مزامنة بالكامل مع السيرفر</p>
+                <p className="text-xs text-muted-foreground">
                   لا توجد أي قيود أو حركات مالية معلقة في الذاكرة المحلية لجهازك.
                 </p>
               </div>
@@ -150,15 +150,15 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
                 {pendingTransactions.map((tx) => (
                   <div
                     key={tx.localId}
-                    className="p-3 rounded-xl bg-zinc-900 border border-zinc-800/80 flex items-center justify-between gap-3 text-xs hover:border-zinc-700 transition-colors"
+                    className="p-3 rounded-xl bg-background border border-border flex items-center justify-between gap-3 text-xs hover:border-border/80 transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className={`p-1.5 rounded-lg ${
                         tx.type === "expense"
-                          ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                          ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
                           : tx.type === "transfer"
-                          ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                          : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                          : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                       }`}>
                         {tx.type === "expense" ? (
                           <ArrowDownLeft className="size-4" />
@@ -170,22 +170,22 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-zinc-200">
+                          <span className="font-bold text-foreground">
                             {tx.type === "expense"
                               ? "مصروف مالي"
                               : tx.type === "transfer"
                               ? "تحويل بين حسابين"
                               : "إيداع / دخل"}
                           </span>
-                          <span className="font-mono text-zinc-400 text-[11px]">
+                          <span className="font-mono text-muted-foreground text-[11px]">
                             {new Date(tx.createdAt).toLocaleTimeString("ar-EG")}
                           </span>
                         </div>
-                        <p className="text-zinc-400 text-[11px] truncate max-w-xs mt-0.5">
+                        <p className="text-muted-foreground text-[11px] truncate max-w-xs mt-0.5">
                           {tx.memo || "بدون بيان إضافي"}
                         </p>
                         {tx.lastError && (
-                          <p className="text-rose-400 text-[10px] mt-0.5 flex items-center gap-1">
+                          <p className="text-rose-500 dark:text-rose-400 text-[10px] mt-0.5 flex items-center gap-1">
                             <AlertTriangle className="size-3" />
                             {tx.lastError}
                           </p>
@@ -194,12 +194,12 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="text-left font-mono font-bold text-sm text-zinc-100">
+                      <div className="text-left font-mono font-bold text-sm text-foreground">
                         {formatMoney(tx.amount, tx.currency)}
                       </div>
                       <button
                         onClick={() => deletePendingItem(tx.localId)}
-                        className="p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        className="p-1.5 text-muted-foreground hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                         title="حذف من قائمة الانتظار"
                       >
                         <Trash2 className="size-3.5" />
@@ -211,13 +211,13 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
             )}
           </div>
 
-          <DialogFooter className="border-t border-zinc-800/80 pt-3 flex items-center justify-between sm:justify-between w-full">
+          <DialogFooter className="border-t border-border pt-3 flex items-center justify-between sm:justify-between w-full">
             {pendingTransactions.length > 0 ? (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => clearAllPending()}
-                className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 text-xs h-8"
+                className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-500/10 text-xs h-8 cursor-pointer"
               >
                 تفريغ كافة المعلقات
               </Button>
@@ -226,7 +226,7 @@ export function OfflineStatusBadge({ className }: { className?: string } = {}) {
               variant="outline"
               size="sm"
               onClick={() => setModalOpen(false)}
-              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-8"
+              className="border-border text-foreground hover:bg-muted text-xs h-8 cursor-pointer"
             >
               إغلاق
             </Button>

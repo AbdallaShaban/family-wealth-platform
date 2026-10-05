@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo } from "react";
 
 type DemoModeContextValue = {
   isDemoMode: boolean;
@@ -9,19 +9,22 @@ const DemoModeContext = createContext<DemoModeContextValue | undefined>(undefine
 const STORAGE_KEY = "family-demo-mode";
 
 export function DemoModeProvider({ children }: { children: React.ReactNode }) {
-  const [isDemoMode, setIsDemoMode] = useState(() => new URLSearchParams(window.location.search).get("demo") === "1" || localStorage.getItem(STORAGE_KEY) === "true");
-
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, String(isDemoMode));
-  }, [isDemoMode]);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(STORAGE_KEY, "false");
+    } catch {
+      // ignore storage access errors
+    }
+  }, []);
 
   const toggleDemoMode = useCallback(() => {
-    setIsDemoMode(value => !value);
+    // Platform is permanently operating in real live production mode
   }, []);
 
   const value = useMemo(
-    () => ({ isDemoMode, toggleDemoMode }),
-    [isDemoMode, toggleDemoMode]
+    () => ({ isDemoMode: false, toggleDemoMode }),
+    [toggleDemoMode]
   );
 
   return <DemoModeContext.Provider value={value}>{children}</DemoModeContext.Provider>;

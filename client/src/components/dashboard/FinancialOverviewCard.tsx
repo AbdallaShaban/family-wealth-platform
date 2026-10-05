@@ -47,10 +47,10 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
 
   return (
     <Card className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl">
-      <CardHeader className="flex flex-col gap-3 space-y-0 pb-3 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200 dark:border-zinc-800">
+      <CardHeader className="flex flex-col gap-3 space-y-0 pb-3 sm:flex-row sm:items-center sm:justify-between border-b border-border">
         <div>
           <div className="flex items-center gap-2">
-            <CardTitle className="text-base font-bold text-zinc-950 dark:text-zinc-50">
+            <CardTitle className="text-base font-bold text-foreground">
               النظرة المالية وتطور المحفظة
             </CardTitle>
             <span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/30">
@@ -58,29 +58,29 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
               +{growthRate}% نمو
             </span>
           </div>
-          <CardDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+          <CardDescription className="text-xs text-muted-foreground mt-1">
             تطور إجمالي صافي الأصول المجمعة مقارنة بالفترة المماثلة
           </CardDescription>
         </div>
 
         {/* Range Selector */}
-        <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-900 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 self-start sm:self-auto">
+        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border self-start sm:self-auto">
           <button
             onClick={() => setSelectedRange("6m")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               selectedRange === "6m"
-                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700/60 font-bold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50"
+                ? "bg-card text-foreground shadow-xs border border-border font-bold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             آخر 6 أشهر
           </button>
           <button
             onClick={() => setSelectedRange("1y")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
               selectedRange === "1y"
-                ? "bg-white dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 shadow-xs border border-zinc-200 dark:border-zinc-700/60 font-bold"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50"
+                ? "bg-card text-foreground shadow-xs border border-border font-bold"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             سنة كاملة
@@ -90,18 +90,18 @@ export function FinancialOverviewCard({ netWorth, currency, monthlyTrend }: Fina
 
       <CardContent className="pt-4">
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4 text-xs mb-3 text-zinc-600 dark:text-zinc-400">
+        <div className="flex flex-wrap items-center gap-4 text-xs mb-3 text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <span className="size-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20" />
             <span>العام الحالي:</span>
-            <strong className="text-zinc-950 dark:text-zinc-50 font-bold">
+            <strong className="text-foreground font-bold">
               {formatMoney(currentTotal, currency)}
             </strong>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full bg-zinc-400 dark:bg-zinc-600" />
+            <span className="size-2.5 rounded-full bg-muted-foreground/60" />
             <span>العام السابق:</span>
-            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
+            <span className="text-muted-foreground font-medium">
               {formatMoney(chartData[chartData.length - 1]?.lastYear || 0, currency)}
             </span>
           </div>

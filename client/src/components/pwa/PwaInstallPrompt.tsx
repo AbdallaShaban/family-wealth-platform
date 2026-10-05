@@ -56,23 +56,23 @@ export function PwaInstallSidebarBanner({ onOpenModal }: { onOpenModal?: () => v
 
   return (
     <>
-      <div className="mx-3 my-2 p-3 rounded-2xl bg-gradient-to-br from-emerald-950/80 to-zinc-900 border border-emerald-500/30 text-right space-y-2">
-        <div className="flex items-center justify-between text-emerald-400 font-bold text-xs">
+      <div className="mx-3 my-2 p-3 rounded-2xl bg-card border border-emerald-600/25 dark:border-emerald-500/30 text-right space-y-2 shadow-xs">
+        <div className="flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-bold text-xs">
           <div className="flex items-center gap-2">
             <Smartphone className="size-4" />
             <span>تطبيق الهاتف والشاشة</span>
           </div>
-          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded-md">
+          <span className="text-[10px] bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded-md font-mono font-bold">
             PWA
           </span>
         </div>
-        <p className="text-[11px] text-zinc-300 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
           ثبّت المنصة كاختصار مباشر أو تطبيق PWA سريع مع دعم كامل للعمل دون إنترنت.
         </p>
         <Button
           size="sm"
           onClick={handleClick}
-          className="w-full h-7 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 rounded-xl shadow-xs"
+          className="w-full h-8 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs gap-1.5 rounded-xl shadow-xs cursor-pointer"
         >
           <Download className="size-3" />
           تثبيت واختصار الهاتف

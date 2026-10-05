@@ -8,12 +8,18 @@ const ARTIFACT_DIR = "C:\\Users\\abdal\\.gemini\\antigravity-ide\\brain\\5bd4cdc
 const QR_PATH = path.join(ARTIFACT_DIR, "pwa_mobile_qr.png");
 const TUNNEL_INFO_FILE = path.resolve(process.cwd(), ".tunnel-info.json");
 
-console.log(`[Cloudflare Tunnel] Starting tunnel for http://localhost:${PORT}...`);
+console.log(`[Cloudflare Tunnel] Initializing encrypted tunnel for http://localhost:${PORT}...`);
 
 const isWin = process.platform === "win32";
-const npxCmd = isWin ? "npx.cmd" : "npx";
+const token = process.env.CLOUDFLARE_TUNNEL_TOKEN;
 
-const child = spawn("npx", ["cloudflared", "tunnel", "--url", `http://localhost:${PORT}`], {
+const args = token
+  ? ["cloudflared", "tunnel", "run", "--token", token]
+  : ["cloudflared", "tunnel", "--url", `http://localhost:${PORT}`];
+
+console.log(`[Cloudflare Tunnel] Running: npx ${args.join(" ")}`);
+
+const child = spawn("npx", args, {
   shell: true,
   stdio: ["ignore", "pipe", "pipe"],
   env: process.env,
@@ -69,7 +75,7 @@ child.stdout.on("data", handleOutput);
 child.stderr.on("data", handleOutput);
 
 child.on("close", (code) => {
-  console.log(`[Cloudflare Tunnel] Process exited with code ${code}`);
+  console.log(`[Cloudflare Tunnel] Process closed with code ${code}. PM2 daemon will automatically restart.`);
   process.exit(code || 0);
 });
 

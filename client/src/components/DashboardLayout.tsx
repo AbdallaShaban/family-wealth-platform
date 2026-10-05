@@ -3,7 +3,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useDemoMode } from "@/contexts/DemoModeContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { usePrivacyMode } from "@/contexts/PrivacyModeContext";
 import { trpc } from "@/lib/trpc";
@@ -421,7 +420,6 @@ function UserControls({
   onNavigate?: (path: string) => void;
 }) {
   const { theme, toggleTheme } = useTheme();
-  const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { user } = useAuth();
   const initial = user?.name?.trim().charAt(0).toUpperCase() || "F";
   const roleLabel = roleArabicLabels[role] || "مشاهد معتمد";
@@ -495,25 +493,15 @@ function UserControls({
   return (
     <div className="fintech-v2-user-zone border-t border-border/60 pt-3 px-3 pb-3 space-y-2">
       <PwaInstallSidebarBanner />
-      <div className="fintech-v2-utility-row flex gap-2">
+      <div className="fintech-v2-utility-row">
         <button
-          className={`flex-1 flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
-            isDemoMode
-              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 shadow-xs"
-              : "border-border bg-card text-foreground hover:bg-muted"
-          }`}
-          onClick={toggleDemoMode}
-        >
-          <Sparkles className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>{isDemoMode ? "العرض التجريبي مفعل" : "معاينة تجريبية"}</span>
-        </button>
-        <button
-          className="flex items-center justify-center size-8 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 h-8 px-2.5 rounded-xl border border-border bg-card text-foreground hover:bg-muted text-xs font-semibold transition-all cursor-pointer"
           onClick={toggleTheme}
           aria-label="تبديل الوضع اللوني"
           title="تبديل الوضع اللوني"
         >
-          {theme === "dark" ? <Sun className="size-3.5 text-amber-300" /> : <Moon className="size-3.5 text-slate-700" />}
+          {theme === "dark" ? <Sun className="size-3.5 text-amber-400" /> : <Moon className="size-3.5 text-slate-700" />}
+          <span>{theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}</span>
         </button>
       </div>
 
@@ -945,7 +933,6 @@ function TopbarControls({
   onOpenPwaInstall?: () => void;
 }) {
   const { theme, toggleTheme } = useTheme();
-  const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { isPrivate, togglePrivacy } = usePrivacyMode();
   return (
     <>
@@ -956,58 +943,51 @@ function TopbarControls({
         <PwaInstallButton onOpenModal={onOpenPwaInstall} />
         <button
           onClick={onOpenReceiptOcr}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
+          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs cursor-pointer"
           title="مطابقة إيصال إنستاباي / محفظة ذكياً (OCR)"
           aria-label="مسح إيصال ضوئي فوري"
         >
           <Receipt className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="hidden xl:inline text-[11px]">مسح إيصال (OCR)</span>
+          <span className="hidden 2xl:inline text-[11px]">مسح إيصال (OCR)</span>
         </button>
         <button
           onClick={onOpenQuickEntry}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 font-bold transition-all shadow-xs"
+          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 font-bold transition-all shadow-xs cursor-pointer"
           title="تسجيل عملية مالية سريعة (يدعم وضع عدم الاتصال)"
           aria-label="تسجيل سريع"
         >
           <PlusCircle className="size-3.5 text-blue-600 dark:text-blue-400" />
-          <span className="hidden xl:inline text-[11px]">إدخال سريع</span>
+          <span className="hidden 2xl:inline text-[11px]">إدخال سريع</span>
         </button>
         <ExecutivePdfModal
           trigger={
             <button
-              className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold transition-all shadow-xs"
+              className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold transition-all shadow-xs cursor-pointer"
               title="تصدير تقرير الثروة التنفيذي (PDF)"
               aria-label="تصدير تقرير الثروة التنفيذي"
             >
               <FileText className="size-3.5 text-amber-600 dark:text-amber-400" />
-              <span className="hidden xl:inline text-[11px]">تقرير PDF تنفيذي</span>
+              <span className="hidden 2xl:inline text-[11px]">تقرير PDF تنفيذي</span>
             </button>
           }
         />
         <button
           onClick={onOpenSmartPaste}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
+          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs cursor-pointer"
           title="لصق رسالة بنكية / إنستاباي (تسجيل سريع)"
           aria-label="لصق رسالة بنكية أو إشعار إنستاباي"
         >
           <Smartphone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="hidden xl:inline text-[11px]">لصق رسالة بنكية / إنستاباي</span>
+          <span className="hidden 2xl:inline text-[11px]">لصق رسالة بنكية</span>
         </button>
         <button
           onClick={onOpenOmni}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all"
+          className="fintech-topbar-button flex items-center gap-1.5 px-2 bg-muted/60 border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
           title="لوحة الأوامر الشاملة (Ctrl + K)"
           aria-label="فتح لوحة الأوامر الشاملة"
         >
-          <Command className="size-3.5 text-emerald-400" />
-          <span className="text-[11px] font-mono text-slate-400">Ctrl+K</span>
-        </button>
-        <button
-          onClick={toggleDemoMode}
-          className={`fintech-topbar-button ${isDemoMode ? "is-active" : ""}`}
-        >
-          <Sparkles className="size-4" />
-          <span className="hidden sm:inline">تجريبي</span>
+          <Command className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="text-[11px] font-mono text-muted-foreground">Ctrl+K</span>
         </button>
         <button
           onClick={togglePrivacy}

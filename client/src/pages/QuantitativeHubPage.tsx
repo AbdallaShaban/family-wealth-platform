@@ -515,27 +515,27 @@ export default function QuantitativeHubPage() {
         {/* Main Tabs Hub */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid grid-cols-2 md:grid-cols-5 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 h-auto gap-1">
-            <TabsTrigger value="signals" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 font-bold text-slate-700 dark:text-slate-200">
+            <TabsTrigger value="signals" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-amber-950 font-bold text-muted-foreground">
               <Zap className="w-4 h-4" />
               الإشارات الكمية
             </TabsTrigger>
-            <TabsTrigger value="market" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 font-bold text-slate-700 dark:text-slate-200">
+            <TabsTrigger value="market" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-amber-950 font-bold text-muted-foreground">
               <BarChart3 className="w-4 h-4" />
               البورصة والذهب
             </TabsTrigger>
-            <TabsTrigger value="paper" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 font-bold text-slate-700 dark:text-slate-200">
+            <TabsTrigger value="paper" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-amber-950 font-bold text-muted-foreground">
               <Activity className="w-4 h-4" />
               محفظة المحاكاة
             </TabsTrigger>
-            <TabsTrigger value="rebalance" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 font-bold text-slate-700 dark:text-slate-200">
+            <TabsTrigger value="rebalance" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-amber-950 font-bold text-muted-foreground">
               <PieChart className="w-4 h-4" />
               إعادة التوازن
             </TabsTrigger>
-            <TabsTrigger value="health" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 font-bold text-slate-700 dark:text-slate-200">
+            <TabsTrigger value="health" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-amber-950 font-bold text-muted-foreground">
               <CreditCard className="w-4 h-4" />
               التشخيص والبطاقات
             </TabsTrigger>
-            <TabsTrigger value="stress" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 font-bold text-slate-700 dark:text-slate-200">
+            <TabsTrigger value="stress" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-amber-950 font-bold text-muted-foreground">
               <ShieldCheck className="w-4 h-4" />
               اختبارات الضغط
             </TabsTrigger>
@@ -587,7 +587,7 @@ export default function QuantitativeHubPage() {
 
                 <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
                   <span className="text-slate-500 dark:text-slate-400 font-medium">الأصل المختار:</span>
-                  <Badge className="bg-amber-500 text-slate-950 font-black px-3 py-1 text-xs font-mono shadow-xs">
+                  <Badge className="bg-amber-500 text-amber-950 font-black px-3 py-1 text-xs font-mono shadow-xs">
                     {selectedTicker}
                   </Badge>
                 </div>
@@ -604,7 +604,7 @@ export default function QuantitativeHubPage() {
                     onClick={() => handleSelectTicker(stock.ticker)}
                     className={`text-xs h-7 px-2.5 font-semibold shrink-0 cursor-pointer ${
                       selectedTicker === stock.ticker
-                        ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                        ? "bg-amber-500 text-amber-950 font-black shadow-xs"
                         : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200/70 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
                     }`}
                   >
@@ -617,7 +617,7 @@ export default function QuantitativeHubPage() {
                   onClick={() => handleSelectTicker("AZG")}
                   className={`text-xs h-7 px-2.5 font-semibold shrink-0 cursor-pointer ${
                     selectedTicker === "AZG"
-                      ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                      ? "bg-amber-500 text-amber-950 font-black shadow-xs"
                       : "border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200/70 dark:border-slate-700/80 dark:bg-slate-900/80 dark:text-slate-200 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -638,7 +638,7 @@ export default function QuantitativeHubPage() {
                         signal.action.includes("ACCUMULATE")
                           ? "bg-emerald-600 text-white"
                           : signal.action.includes("PROFIT")
-                          ? "bg-amber-500 text-slate-950"
+                          ? "bg-amber-500 text-amber-950"
                           : "bg-blue-600 text-white"
                       }`}>
                         {signal.actionAr}
@@ -741,7 +741,7 @@ export default function QuantitativeHubPage() {
                           const swingUrl = `/trading/swing?ticker=${encodeURIComponent(signal.ticker)}&action=swing&entry=${signal.entryZone.min}&tp=${signal.targets.t1}&sl=${signal.stopLoss}&name=${encodeURIComponent(activeInstrument?.nameAr || signal.instrumentNameAr || signal.ticker)}`;
                           setLocation(swingUrl);
                         }}
-                        className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black gap-1.5 py-2.5 text-xs shadow-md cursor-pointer"
+                        className="w-full bg-amber-500 hover:bg-amber-400 text-amber-950 font-black gap-1.5 py-2.5 text-xs shadow-md cursor-pointer"
                       >
                         <ArrowUpRight className="w-4 h-4 rotate-180" />
                         تداول في السوينج
@@ -968,7 +968,7 @@ export default function QuantitativeHubPage() {
                                 onClick={() => {
                                   setLocation(`/trading/swing?ticker=${encodeURIComponent(stock.ticker)}&action=swing&entry=${stock.lastClose}&name=${encodeURIComponent(stock.nameAr)}`);
                                 }}
-                                className="text-xs border-slate-700 bg-slate-900/60 hover:bg-amber-500 hover:text-slate-950 text-slate-200 font-bold h-7 px-2"
+                                className="text-xs border-slate-700 bg-slate-900/60 hover:bg-amber-500 hover:text-amber-950 text-foreground font-bold h-7 px-2"
                               >
                                 سوينج
                               </Button>
@@ -1082,7 +1082,7 @@ export default function QuantitativeHubPage() {
                 </div>
                 <Button
                   onClick={() => setIsSimTradeOpen(true)}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs gap-1.5 shadow-md"
+                  className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs gap-1.5 shadow-md"
                 >
                   <Sparkles className="w-4 h-4" />
                   صفقة تجريبية جديدة
@@ -1126,7 +1126,7 @@ export default function QuantitativeHubPage() {
                     <Button
                       onClick={() => setIsSimTradeOpen(true)}
                       size="sm"
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs"
+                      className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-xs"
                     >
                       <Plus className="w-4 h-4 ml-1" />
                       إجراء صفقة محاكاة الآن
@@ -1189,7 +1189,7 @@ export default function QuantitativeHubPage() {
                     variant={targetProfile === prof ? "default" : "outline"}
                     size="sm"
                     onClick={() => setTargetProfile(prof)}
-                    className={targetProfile === prof ? "bg-amber-500 text-slate-950 font-black text-xs shadow-md" : "text-xs border-slate-700 bg-slate-950 text-slate-200 hover:bg-slate-800"}
+                    className={targetProfile === prof ? "bg-amber-500 text-amber-950 font-black text-xs shadow-md" : "text-xs border-slate-700 bg-slate-950 text-slate-200 hover:bg-slate-800"}
                   >
                     {prof === "BALANCED" ? "متوازن (موصى به)" : prof === "CONSERVATIVE" ? "متحفظ (سيولة وذهب)" : "نمو قوي (أسهم)"}
                   </Button>
@@ -1361,7 +1361,7 @@ export default function QuantitativeHubPage() {
                 </div>
                 <Button
                   onClick={() => setIsCardModalOpen(true)}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs gap-1.5 shadow-md"
+                  className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs gap-1.5 shadow-md"
                 >
                   <Plus className="w-4 h-4" />
                   إضافة بطاقة ائتمان
@@ -1446,7 +1446,7 @@ export default function QuantitativeHubPage() {
                     <Button
                       onClick={() => setIsCardModalOpen(true)}
                       size="sm"
-                      className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs"
+                      className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-xs"
                     >
                       <Plus className="w-4 h-4 ml-1" />
                       إضافة بطاقة ائتمان الآن
@@ -1549,7 +1549,7 @@ export default function QuantitativeHubPage() {
                   {health?.subscriptions && health.subscriptions.subscriptions.length > 0 ? (
                     <div className="space-y-4">
                       {/* Compact Executive Summary Strip */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-gradient-to-r from-purple-950/30 via-slate-900/60 to-purple-950/30 rounded-xl border border-purple-500/20 shadow-inner">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 rounded-xl border border-slate-800 shadow-inner">
                         <div className="p-3 bg-slate-950/80 rounded-lg border border-slate-800/80 flex items-center justify-between">
                           <div>
                             <span className="text-[11px] text-slate-400 font-semibold block">إجمالي الالتزام الشهري</span>
@@ -1851,7 +1851,7 @@ export default function QuantitativeHubPage() {
                   type="submit"
                   size="sm"
                   disabled={simOrderMutation.isPending}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs"
+                  className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs"
                 >
                   {simOrderMutation.isPending ? "جارٍ التنفيذ..." : "تأكيد تنفيذ المحاكاة"}
                 </Button>
@@ -1965,7 +1965,7 @@ export default function QuantitativeHubPage() {
                   type="submit"
                   size="sm"
                   disabled={createCardMutation.isPending}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs"
+                  className="bg-amber-500 hover:bg-amber-400 text-amber-950 font-black text-xs"
                 >
                   {createCardMutation.isPending ? "جارٍ الحفظ..." : "حفظ البطاقة في الالتزامات"}
                 </Button>

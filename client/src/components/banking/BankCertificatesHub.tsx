@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { useDemoMode } from "@/contexts/DemoModeContext";
 import {
   Landmark,
   Clock,
@@ -23,9 +22,8 @@ import SensitiveValue from "@/components/SensitiveValue";
 import { formatMoney } from "@/lib/financialDisplay";
 
 export function BankCertificatesHub() {
-  const { isDemoMode } = useDemoMode();
   const utils = trpc.useUtils();
-  const certificatesQuery = trpc.family.certificates.list.useQuery(undefined, { enabled: !isDemoMode });
+  const certificatesQuery = trpc.family.certificates.list.useQuery();
   const accountsQuery = trpc.family.accounts.list.useQuery();
   const createCertMutation = trpc.family.certificates.create.useMutation();
   const collectYieldMutation = trpc.family.certificates.collectYield.useMutation();

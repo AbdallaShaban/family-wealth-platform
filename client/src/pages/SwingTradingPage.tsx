@@ -2,7 +2,6 @@ import React, { useMemo, useRef, useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
-import { useDemoMode } from "@/contexts/DemoModeContext";
 
 import { formatMoney, formatDate, formatFullTimestamp } from "@/lib/financialDisplay";
 import { CandlestickChart } from "@/components/trading/CandlestickChart";
@@ -149,26 +148,12 @@ export default function SwingTradingPage() {
     },
   });
 
-  const seedDemoMutation = trpc.swingTrading.seedDemoData.useMutation({
-    onSuccess: async () => {
-      await utils.swingTrading.list.invalidate();
-      await utils.swingTrading.diagnostics.invalidate();
-      await utils.swingTrading.getCandles.invalidate();
-      toast.success("تم تحميل البيانات والصفقات التجريبية بنجاح");
-    },
-    onError: (err) => {
-      toast.error(`فشل تحميل البيانات التجريبية: ${err.message || "حدث خطأ غير متوقع"}`);
-    },
-  });
-
-  const { isDemoMode } = useDemoMode();
   const rawTrades = tradesQuery.data ?? [];
 
-  // Clean Trades State: Demo seeded trades only show when explicitly in DemoMode
+  // Production Trades: Active real accounts and settled positions
   const trades = useMemo(() => {
-    if (isDemoMode) return rawTrades;
     return rawTrades.filter((t) => !t.isPaperTrading && !t.notes?.includes("ارتداد إيجابي"));
-  }, [rawTrades, isDemoMode]);
+  }, [rawTrades]);
 
   const diagnostics = diagnosticsQuery.data;
   const instruments = instrumentsQuery.data ?? [];
@@ -429,22 +414,6 @@ export default function SwingTradingPage() {
           </div>
 
           <div className="flex items-center gap-2.5">
-            {isDemoMode && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => seedDemoMutation.mutate()}
-                disabled={seedDemoMutation.isPending}
-                className="border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800"
-              >
-                {seedDemoMutation.isPending ? (
-                  <RefreshCw className="h-4 w-4 ml-1 animate-spin text-amber-400" />
-                ) : (
-                  <Sparkles className="h-4 w-4 ml-1 text-amber-400" />
-                )}
-                {seedDemoMutation.isPending ? "جارٍ التحميل..." : "تحميل بيانات تجريبية"}
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
@@ -460,7 +429,7 @@ export default function SwingTradingPage() {
             </Button>
             <Button
               onClick={() => setIsNewTradeOpen(true)}
-              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-semibold shadow-lg shadow-amber-500/20"
+              className="bg-amber-500 hover:bg-amber-600 text-amber-950 font-semibold shadow-lg shadow-amber-500/20"
             >
               <Plus className="h-4 w-4 ml-1" />
               تسجيل صفقة سوينج
@@ -603,7 +572,7 @@ export default function SwingTradingPage() {
                 onClick={() => setSelectedCategory(cat.id as CategoryFilter)}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   selectedCategory === cat.id
-                    ? "bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20"
+                    ? "bg-amber-500 text-amber-950 font-bold shadow-md shadow-amber-500/20"
                     : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800"
                 }`}
               >
@@ -703,7 +672,7 @@ export default function SwingTradingPage() {
               </p>
               <Button
                 onClick={() => setIsNewTradeOpen(true)}
-                className="mt-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2.5 shadow-lg shadow-amber-500/20"
+                className="mt-5 bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold px-5 py-2.5 shadow-lg shadow-amber-500/20"
               >
                 + فتح صفقة جديدة
               </Button>
@@ -1371,7 +1340,7 @@ export default function SwingTradingPage() {
                 <Button
                   type="submit"
                   disabled={createTradeMutation.isPending}
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs"
+                  className="bg-amber-500 hover:bg-amber-600 text-amber-950 font-bold text-xs"
                 >
                   {createTradeMutation.isPending ? "جاري الحفظ..." : "سجل الصفقة الآن"}
                 </Button>
@@ -1508,7 +1477,7 @@ export default function SwingTradingPage() {
                   <Button
                     type="submit"
                     disabled={closeTradeMutation.isPending}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-emerald-950 font-bold text-xs"
                   >
                     {closeTradeMutation.isPending ? "جاري الحفظ..." : "تأكيد إغلاق الصفقة"}
                   </Button>

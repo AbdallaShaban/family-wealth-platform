@@ -1,0 +1,41 @@
+{
+  "$schema": "https://impeccable.style/schemas/design.json",
+  "name": "FAMILY Sovereign Design System",
+  "version": "1.0.0",
+  "tokens": {
+    "colors": {
+      "background": "#0B0F17",
+      "surface": "#111827",
+      "surface-elevated": "#162032",
+      "border": "#1E293B",
+      "text-primary": "#F8FAFC",
+      "text-secondary": "#94A3B8",
+      "text-muted": "#64748B",
+      "accent-emerald": "#10B981",
+      "accent-emerald-dark": "#059669",
+      "accent-rose": "#F43F5E",
+      "accent-amber": "#D97706",
+      "accent-blue": "#2563EB"
+    },
+    "typography": {
+      "font-sans": "Noto Sans Arabic, Cairo, Inter, system-ui, sans-serif",
+      "font-mono": "JetBrains Mono, SF Mono, Consolas, monospace",
+      "scale": {
+        "hero": "36px",
+        "title": "24px",
+        "subtitle": "18px",
+        "body": "14px",
+        "caption": "12px"
+      }
+    },
+    "radii": {
+      "card": "16px",
+      "button": "12px",
+      "pill": "9999px"
+    },
+    "spacing": {
+      "touch-target-min": "44px",
+      "touch-target-mobile": "48px"
+    }
+  }
+}
