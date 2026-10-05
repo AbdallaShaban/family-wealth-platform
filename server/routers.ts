@@ -47,18 +47,8 @@ export const appRouter = router({
 
             if (user) return user;
 
-            // Session fallback: cryptographically verified JWT session preserves login during transient DB hiccups
-            return {
-              id: 1,
-              openId: session.openId,
-              name: session.name || "Family Member",
-              email: null,
-              loginMethod: "local",
-              role: "admin",
-              createdAt: new Date(),
-              updatedAt: new Date(),
-              lastSignedIn: new Date(),
-            };
+            // If user record is not found in DB, do not spoof id: 1 to guarantee multi-user data scoping
+            return null;
           }
         }
       } catch (err) {

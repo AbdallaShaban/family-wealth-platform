@@ -93,14 +93,14 @@ export function MorningFinancialPulseHeader({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-black text-zinc-950 dark:text-zinc-50">
-                {greeting.text}، {userName || "أبا أحمد"}
+                {greeting.text}، {userName || "صديقنا"}
               </h2>
               <Badge className="bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/40 text-[10px] font-bold">
-                الوضع العائلي البسيط
+                الوضع السلس المباشر
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              إليك نبض مالك اليوم في 3 ثوانٍ بهدوء ووضوح
+              إليك نبض أموالك اليوم في 3 ثوانٍ بهدوء ووضوح
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function MorningFinancialPulseHeader({
           <div className="flex items-center justify-between text-muted-foreground text-xs font-semibold">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="size-3.5 text-blue-600 dark:text-blue-400" />
-              مصروفات البيت هذا الأسبوع
+              مصروفاتك هذا الأسبوع
             </span>
             <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold">
               ضمن الأمان
