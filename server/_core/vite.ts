@@ -74,7 +74,9 @@ export function serveStatic(app: Express) {
           }
         } else if (filePath.endsWith(".webmanifest") || filePath.endsWith("manifest.json")) {
           res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
-          res.setHeader("Cache-Control", "public, max-age=3600");
+          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res.setHeader("Pragma", "no-cache");
+          res.setHeader("Expires", "0");
         }
       },
     })

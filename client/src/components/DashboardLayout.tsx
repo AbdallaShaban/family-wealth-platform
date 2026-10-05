@@ -52,7 +52,8 @@ import { SmartSmsPasteModal } from "./banking/SmartSmsPasteModal";
 import { SmartReceiptPasteModal } from "./transactions/SmartReceiptPasteModal";
 import { ExecutivePdfModal } from "./reports/ExecutivePdfModal";
 import { OfflineStatusBadge } from "./pwa/OfflineStatusBadge";
-import { PwaInstallButton, PwaInstallSidebarBanner } from "./pwa/PwaInstallPrompt";
+import { PwaInstallButton, PwaInstallSidebarBanner, PwaInstallDrawerItem } from "./pwa/PwaInstallPrompt";
+import { PwaInstallModal } from "./pwa/PwaInstallModal";
 import { QuickOfflineTransactionModal } from "./pwa/QuickOfflineTransactionModal";
 import { Command, Smartphone, FileText, Receipt } from "lucide-react";
 
@@ -561,50 +562,61 @@ function MobileBottomNav({
   onQuickCapture: () => void;
 }) {
   const canQuickCapture = roleRank[role] >= roleRank.editor;
-  const items = [
-    { path: "/", label: "الرئيسية", icon: LayoutDashboard },
-    { path: "/accounts", label: "الحسابات", icon: Landmark },
-    { path: "/goals", label: "الخطة", icon: Target },
-  ];
+  const isHome = location === "/";
+  const isBanking =
+    location === "/banking" ||
+    location === "/accounts" ||
+    location.startsWith("/banking") ||
+    location.startsWith("/accounts");
+  const isTransactions = location === "/transactions" || location.startsWith("/transactions");
+
   return (
     <nav className="fintech-bottom-nav" aria-label="التنقل السفلي">
       <div>
-        {items.slice(0, 2).map(item => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.path}
-              className={location === item.path ? "is-active" : ""}
-              onClick={() => onNavigate(item.path)}
-            >
-              <Icon className="size-5" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+        {/* 1. الرئيسية */}
         <button
-          className="fintech-bottom-quick"
+          className={isHome ? "is-active" : ""}
+          onClick={() => onNavigate("/")}
+          aria-label="الرئيسية"
+        >
+          <LayoutDashboard className="size-5" />
+          <span>الرئيسية</span>
+        </button>
+
+        {/* 2. الحسابات والسيولة */}
+        <button
+          className={isBanking ? "is-active" : ""}
+          onClick={() => onNavigate("/banking")}
+          aria-label="الحسابات والسيولة"
+        >
+          <Landmark className="size-5" />
+          <span>الحسابات</span>
+        </button>
+
+        {/* 3. زر إدخال مركزي بارز ومريح للإبهام */}
+        <button
+          className="fintech-bottom-quick cursor-pointer"
           disabled={!canQuickCapture}
-          title={canQuickCapture ? "تسجيل تدفق جديد" : "يتطلب صلاحية محرر"}
+          title={canQuickCapture ? "تسجيل عملية مالية سريعة" : "يتطلب صلاحية محرر"}
           onClick={() => canQuickCapture && onQuickCapture()}
+          aria-label="إدخال مالي سريع"
         >
           <PlusCircle className="size-6" />
           <span>إدخال</span>
         </button>
-        {items.slice(2).map(item => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.path}
-              className={location === item.path ? "is-active" : ""}
-              onClick={() => onNavigate(item.path)}
-            >
-              <Icon className="size-5" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-        <button onClick={onOpenMore}>
+
+        {/* 4. المعاملات والقيود */}
+        <button
+          className={isTransactions ? "is-active" : ""}
+          onClick={() => onNavigate("/transactions")}
+          aria-label="المعاملات المالية"
+        >
+          <ArrowLeftRight className="size-5" />
+          <span>المعاملات</span>
+        </button>
+
+        {/* 5. المزيد من الأدوات والخيارات */}
+        <button onClick={onOpenMore} aria-label="المزيد من الأدوات والقوائم">
           <Menu className="size-5" />
           <span>المزيد</span>
         </button>
@@ -624,6 +636,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [omniOpen, setOmniOpen] = useState(false);
   const [smartPasteOpen, setSmartPasteOpen] = useState(false);
   const [receiptOcrOpen, setReceiptOcrOpen] = useState(false);
+  const [pwaInstallOpen, setPwaInstallOpen] = useState(false);
   const { isPrivate } = usePrivacyMode();
 
   // Global Interactive Command Palette (Ctrl + K / Cmd + K) and Clipboard Paste (Ctrl + V for images)
@@ -745,10 +758,74 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           className="fintech-v2-mobile-sheet bg-[#F8FAFC] border-slate-200/90 dark:bg-[#0c0a09] dark:border-zinc-800"
           dir="rtl"
         >
-          <div className="fintech-v2-mobile-body">
+          <div className="fintech-v2-mobile-body overflow-y-auto">
             <div className="p-4 border-b border-slate-200/80 dark:border-white/[0.08]">
               <FintechBrand collapsed={false} />
             </div>
+
+            {/* Quick Tools & Mobile Actions Section */}
+            <div className="p-3 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
+                  أدوات وإجراءات سريعة
+                </span>
+                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                  QUICK TOOLS
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setReceiptOcrOpen(true);
+                  }}
+                  className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 text-xs font-bold transition-all text-right cursor-pointer"
+                >
+                  <Receipt className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="truncate">مسح إيصال (OCR)</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setQuickEntryOpen(true);
+                  }}
+                  className="flex items-center gap-2 p-2.5 rounded-xl border border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/20 text-blue-900 dark:text-blue-300 text-xs font-bold transition-all text-right cursor-pointer"
+                >
+                  <PlusCircle className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="truncate">إدخال أوفلاين</span>
+                </button>
+                <ExecutivePdfModal
+                  trigger={
+                    <button
+                      onClick={() => setMobileOpen(false)}
+                      className="w-full flex items-center gap-2 p-2.5 rounded-xl border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold transition-all text-right cursor-pointer"
+                    >
+                      <FileText className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span className="truncate">تقرير PDF تنفيذي</span>
+                    </button>
+                  }
+                />
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setSmartPasteOpen(true);
+                  }}
+                  className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 text-xs font-bold transition-all text-right cursor-pointer"
+                >
+                  <Smartphone className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="truncate">لصق رسالة بنكية</span>
+                </button>
+              </div>
+
+              {/* PWA Direct Shortcut & Install Card */}
+              <PwaInstallDrawerItem
+                onOpenModal={() => {
+                  setMobileOpen(false);
+                  setPwaInstallOpen(true);
+                }}
+              />
+            </div>
+
             <FintechNav
               collapsed={false}
               role={role}
@@ -762,29 +839,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <main className="fintech-v2-main">
         <header className="fintech-topbar">
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
             <button
               onClick={() => setMobileOpen(true)}
-              className="fintech-mobile-menu"
+              className="fintech-mobile-menu shrink-0"
               aria-label="فتح التنقل"
             >
               <Menu className="size-5" />
             </button>
             <div className="min-w-0">
-              <p>
+              <p className="hidden sm:block">
                 FAMILY / {workspace.data?.workspace.name || "WEALTH"} ·{" "}
                 {workspace.data?.workspace.baseCurrency || "EGP"}
                 {currentGroup ? ` · ${currentGroup.label}` : ""}
               </p>
-              <strong>{currentLabel}</strong>
+              <span className="sm:hidden text-[10px] font-mono font-bold text-emerald-600 dark:text-emerald-400 block truncate leading-none">
+                FAMILY · {workspace.data?.workspace.baseCurrency || "EGP"}
+              </span>
+              <strong className="text-sm sm:text-base font-bold truncate leading-tight mt-0.5">{currentLabel}</strong>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <TopbarControls
               onOpenOmni={() => setOmniOpen(true)}
               onOpenSmartPaste={() => setSmartPasteOpen(true)}
               onOpenReceiptOcr={() => setReceiptOcrOpen(true)}
               onOpenQuickEntry={() => setQuickEntryOpen(true)}
+              onOpenPwaInstall={() => setPwaInstallOpen(true)}
             />
           </div>
         </header>
@@ -816,6 +897,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <SmartReceiptPasteModal open={receiptOcrOpen} onOpenChange={setReceiptOcrOpen} />
 
       <QuickOfflineTransactionModal open={quickEntryOpen} onOpenChange={setQuickEntryOpen} />
+
+      <PwaInstallModal open={pwaInstallOpen} onOpenChange={setPwaInstallOpen} />
 
       <Dialog open={quickConfirmOpen} onOpenChange={setQuickConfirmOpen}>
         <DialogContent dir="rtl" className="sm:max-w-md">
@@ -849,91 +932,98 @@ function TopbarControls({
   onOpenSmartPaste,
   onOpenReceiptOcr,
   onOpenQuickEntry,
+  onOpenPwaInstall,
 }: {
   onOpenOmni?: () => void;
   onOpenSmartPaste?: () => void;
   onOpenReceiptOcr?: () => void;
   onOpenQuickEntry?: () => void;
+  onOpenPwaInstall?: () => void;
 }) {
   const { theme, toggleTheme } = useTheme();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
   const { isPrivate, togglePrivacy } = usePrivacyMode();
   return (
     <>
-      <OfflineStatusBadge />
-      <PwaInstallButton />
-      <button
-        onClick={onOpenReceiptOcr}
-        className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
-        title="مطابقة إيصال إنستاباي / محفظة ذكياً (OCR)"
-        aria-label="مسح إيصال ضوئي فوري"
-      >
-        <Receipt className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-        <span className="hidden xl:inline text-[11px]">مسح إيصال (OCR)</span>
-      </button>
-      <button
-        onClick={onOpenQuickEntry}
-        className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 font-bold transition-all shadow-xs"
-        title="تسجيل عملية مالية سريعة (يدعم وضع عدم الاتصال)"
-        aria-label="تسجيل سريع"
-      >
-        <PlusCircle className="size-3.5 text-blue-600 dark:text-blue-400" />
-        <span className="hidden xl:inline text-[11px]">إدخال سريع</span>
-      </button>
-      <ExecutivePdfModal
-        trigger={
-          <button
-            className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold transition-all shadow-xs"
-            title="تصدير تقرير الثروة التنفيذي (PDF)"
-            aria-label="تصدير تقرير الثروة التنفيذي"
-          >
-            <FileText className="size-3.5 text-amber-600 dark:text-amber-400" />
-            <span className="hidden xl:inline text-[11px]">تقرير PDF تنفيذي</span>
-          </button>
-        }
-      />
-      <button
-        onClick={onOpenSmartPaste}
-        className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
-        title="لصق رسالة بنكية / إنستاباي (تسجيل سريع)"
-        aria-label="لصق رسالة بنكية أو إشعار إنستاباي"
-      >
-        <Smartphone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-        <span className="hidden xl:inline text-[11px]">لصق رسالة بنكية / إنستاباي</span>
-      </button>
-      <button
-        onClick={onOpenOmni}
-        className="fintech-topbar-button flex items-center gap-1.5 px-2 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all"
-        title="لوحة الأوامر الشاملة (Ctrl + K)"
-        aria-label="فتح لوحة الأوامر الشاملة"
-      >
-        <Command className="size-3.5 text-emerald-400" />
-        <span className="hidden md:inline text-[11px] font-mono text-slate-400">Ctrl+K</span>
-      </button>
+      {/* Desktop Only Buttons Wrapper - Guaranteed hidden on mobile screens */}
+      <div className="hidden md:flex items-center gap-1.5 fintech-topbar-desktop-actions">
+        <OfflineStatusBadge />
+        <PwaInstallButton onOpenModal={onOpenPwaInstall} />
+        <button
+          onClick={onOpenReceiptOcr}
+          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
+          title="مطابقة إيصال إنستاباي / محفظة ذكياً (OCR)"
+          aria-label="مسح إيصال ضوئي فوري"
+        >
+          <Receipt className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="hidden xl:inline text-[11px]">مسح إيصال (OCR)</span>
+        </button>
+        <button
+          onClick={onOpenQuickEntry}
+          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 font-bold transition-all shadow-xs"
+          title="تسجيل عملية مالية سريعة (يدعم وضع عدم الاتصال)"
+          aria-label="تسجيل سريع"
+        >
+          <PlusCircle className="size-3.5 text-blue-600 dark:text-blue-400" />
+          <span className="hidden xl:inline text-[11px]">إدخال سريع</span>
+        </button>
+        <ExecutivePdfModal
+          trigger={
+            <button
+              className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold transition-all shadow-xs"
+              title="تصدير تقرير الثروة التنفيذي (PDF)"
+              aria-label="تصدير تقرير الثروة التنفيذي"
+            >
+              <FileText className="size-3.5 text-amber-600 dark:text-amber-400" />
+              <span className="hidden xl:inline text-[11px]">تقرير PDF تنفيذي</span>
+            </button>
+          }
+        />
+        <button
+          onClick={onOpenSmartPaste}
+          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs"
+          title="لصق رسالة بنكية / إنستاباي (تسجيل سريع)"
+          aria-label="لصق رسالة بنكية أو إشعار إنستاباي"
+        >
+          <Smartphone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+          <span className="hidden xl:inline text-[11px]">لصق رسالة بنكية / إنستاباي</span>
+        </button>
+        <button
+          onClick={onOpenOmni}
+          className="fintech-topbar-button flex items-center gap-1.5 px-2 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all"
+          title="لوحة الأوامر الشاملة (Ctrl + K)"
+          aria-label="فتح لوحة الأوامر الشاملة"
+        >
+          <Command className="size-3.5 text-emerald-400" />
+          <span className="text-[11px] font-mono text-slate-400">Ctrl+K</span>
+        </button>
+        <button
+          onClick={toggleDemoMode}
+          className={`fintech-topbar-button ${isDemoMode ? "is-active" : ""}`}
+        >
+          <Sparkles className="size-4" />
+          <span className="hidden sm:inline">تجريبي</span>
+        </button>
+        <button
+          onClick={togglePrivacy}
+          className={`fintech-topbar-button ${isPrivate ? "is-active" : ""}`}
+          aria-pressed={isPrivate}
+          aria-label={isPrivate ? "إظهار القيم" : "إخفاء القيم"}
+        >
+          <EyeOff className="size-4" />
+          <span className="hidden sm:inline">{isPrivate ? "إظهار" : "خصوصية"}</span>
+        </button>
+        <button
+          onClick={toggleTheme}
+          className="fintech-topbar-button"
+          aria-label="تبديل الوضع اللوني"
+        >
+          {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+        </button>
+      </div>
+
+      {/* NotificationCenter: Ultra-clean and visible on all screen sizes */}
       <NotificationCenter />
-      <button
-        onClick={toggleDemoMode}
-        className={`fintech-topbar-button ${isDemoMode ? "is-active" : ""}`}
-      >
-        <Sparkles className="size-4" />
-        <span className="hidden sm:inline">تجريبي</span>
-      </button>
-      <button
-        onClick={togglePrivacy}
-        className={`fintech-topbar-button ${isPrivate ? "is-active" : ""}`}
-        aria-pressed={isPrivate}
-        aria-label={isPrivate ? "إظهار القيم" : "إخفاء القيم"}
-      >
-        <EyeOff className="size-4" />
-        <span className="hidden sm:inline">{isPrivate ? "إظهار" : "خصوصية"}</span>
-      </button>
-      <button
-        onClick={toggleTheme}
-        className="fintech-topbar-button"
-        aria-label="تبديل الوضع اللوني"
-      >
-        {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-      </button>
     </>
   );
 }

@@ -384,6 +384,18 @@ textarea:user-invalid {
 @media (max-width: 1270px) { .fintech-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.fintech-hero { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .fintech-content-shell { padding: 15px; }.fintech-mobile-menu { display: inline-flex; }.fintech-topbar { min-height: 67px; padding: 10px 15px; }.fintech-content-grid, .fintech-lower-grid, .fintech-accounts-strip { grid-template-columns: 1fr; }.fintech-accounts-strip { gap: 14px; }.fintech-sidebar [data-slot="sidebar-inner"] { border-left: 0; }.fintech-hero { border-radius: 20px; }.fintech-metric, .fintech-panel { border-radius: 18px; }.fintech-page { width: 100%; } }
 @media (max-width: 600px) { .fintech-metrics-grid { grid-template-columns: 1fr; gap: 11px; }.fintech-metric { min-height: 138px; }.fintech-hero { padding: 16px 18px; }.fintech-hero h1 { font-size: 20px; }.fintech-hero-actions { flex-direction: column; align-items: stretch; }.fintech-hero-actions button { width: 100%; }.fintech-decision-stamp { position: static; margin-top: 4px; }.fintech-legend { grid-template-columns: 1fr; }.fintech-pie-wrap { height: 220px; }.fintech-flow-chart { height: 250px; }.fintech-panel { padding: 17px; }.fintech-empty-stage { grid-template-columns: 1fr; gap: 16px; padding: 25px; }.fintech-account-scroller { grid-auto-columns: minmax(210px, 82%); }.fintech-topbar strong { font-size: 14px; } }
+@media (max-width: 768px) {
+  .fintech-topbar { min-height: 56px; padding: 8px 12px; gap: 8px; }
+  .fintech-topbar strong { font-size: 13.5px; max-width: 200px; }
+  .fintech-topbar-desktop-actions { display: none !important; }
+  .fintech-content-shell { padding: 12px 10px 88px; }
+  .fintech-page, .fintech-route-frame { width: 100%; max-width: 100%; overflow-x: hidden; }
+}
+@media (max-width: 480px) {
+  .fintech-topbar { padding: 6px 10px; min-height: 54px; }
+  .fintech-topbar strong { font-size: 13px; max-width: 155px; }
+  .fintech-content-shell { padding: 10px 8px 90px; }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
 
 /* Consistent operational surfaces: clear contrast in both themes without changing accounting logic. */

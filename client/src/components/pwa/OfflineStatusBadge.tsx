@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-export function OfflineStatusBadge() {
+export function OfflineStatusBadge({ className }: { className?: string } = {}) {
   const {
     isOnline,
     isSyncing,
@@ -48,7 +48,7 @@ export function OfflineStatusBadge() {
             : pendingCount > 0
             ? "bg-yellow-500/15 border-yellow-500/40 text-yellow-800 dark:text-yellow-300"
             : "bg-emerald-500/10 border-emerald-500/25 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
-        }`}
+        } ${className || ""}`}
         title={
           !isOnline
             ? `غير متصل بالإنترنت (${pendingCount} عملية معلقة محلياً) - انقر للإدارة`
