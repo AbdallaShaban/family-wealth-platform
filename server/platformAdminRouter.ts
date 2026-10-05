@@ -1,9 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { and, desc, eq, gt, isNotNull, ne, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { platformAdminInvitations, platformAuditEvents, platformOwnership, users } from "../drizzle/schema";
+import { platformAdminInvitations, platformAuditEvents, platformOwnership, userRegistrationInvites, users } from "../drizzle/schema";
 import { getDb } from "./db";
 import { adminProcedure, router } from "./_core/trpc";
+import { generateInviteCodeString } from "./localAuth";
 import { canChangePlatformRole, isEligiblePlatformAdminInvitation, PLATFORM_ADMIN_INVITATION_TTL_MS, reviewPlatformAdminInvitation } from "./platformOwnership";
 import { getSmtpConfiguration, sendAdminInvitationEmail, verifySmtpConnection } from "./mailer";
 
@@ -152,5 +153,75 @@ export const platformAdminRouter = router({
       await tx.insert(platformAuditEvents).values({ actorUserId: ctx.user.id, targetUserId: target.id, action: "platform_user.role_changed", beforeState: { role: target.role }, afterState: { role: input.role }, occurredAt: now });
     });
     return { id: target.id, role: input.role, changed: true as const };
+  }),
+
+  registrationInvites: router({
+    list: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw notAvailable();
+      return db
+        .select({
+          id: userRegistrationInvites.id,
+          code: userRegistrationInvites.code,
+          note: userRegistrationInvites.note,
+          status: userRegistrationInvites.status,
+          maxUses: userRegistrationInvites.maxUses,
+          usedCount: userRegistrationInvites.usedCount,
+          expiresAt: userRegistrationInvites.expiresAt,
+          createdAt: userRegistrationInvites.createdAt,
+          usedAt: userRegistrationInvites.usedAt,
+          creatorName: users.name,
+        })
+        .from(userRegistrationInvites)
+        .leftJoin(users, eq(userRegistrationInvites.createdByUserId, users.id))
+        .orderBy(desc(userRegistrationInvites.createdAt))
+        .limit(100);
+    }),
+
+    generate: adminProcedure
+      .input(
+        z.object({
+          note: z.string().max(255).optional(),
+          maxUses: z.number().int().min(1).max(50).default(1),
+          expiresDays: z.number().int().min(1).max(365).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw notAvailable();
+
+        const code = generateInviteCodeString();
+        const now = Date.now();
+        const expiresAt = input.expiresDays ? now + input.expiresDays * 86_400_000 : null;
+
+        await db.insert(userRegistrationInvites).values({
+          code,
+          note: input.note || "دعوة مستخدم جديد",
+          createdByUserId: ctx.user.id,
+          maxUses: input.maxUses,
+          usedCount: 0,
+          status: "active",
+          expiresAt,
+          createdAt: now,
+        });
+
+        return {
+          code,
+          inviteLink: `/login?invite=${code}`,
+          expiresAt,
+        };
+      }),
+
+    revoke: adminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw notAvailable();
+        await db
+          .update(userRegistrationInvites)
+          .set({ status: "revoked" })
+          .where(eq(userRegistrationInvites.id, input.id));
+        return { success: true };
+      }),
   }),
 });

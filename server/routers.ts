@@ -7,7 +7,7 @@ import { sdk } from "./_core/sdk";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { ensurePersonalFamilyContext } from "./familyAccess";
-import { comparePassword, hashPassword, verifyFamilyInviteCode } from "./localAuth";
+import { comparePassword, hashPassword, verifyFamilyInviteCode, verifyAndConsumeInviteCode } from "./localAuth";
 import { familyRouter } from "./familyRouter";
 import { platformAdminRouter } from "./platformAdminRouter";
 import { performanceRouter } from "./performanceRouter";
@@ -157,10 +157,11 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        if (!verifyFamilyInviteCode(input.inviteCode)) {
+        const inviteVerification = await verifyAndConsumeInviteCode(input.inviteCode);
+        if (!inviteVerification.valid) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "رمز دعوة العائلة غير صحيح. التسجيل مقتصر على أفراد العائلة المصرح لهم.",
+            message: inviteVerification.reason || "رمز الدعوة غير صحيح أو منتهي الصلاحية.",
           });
         }
 
@@ -178,6 +179,11 @@ export const appRouter = router({
           email: normalizedEmail,
           passwordHash,
           name: input.name,
+        });
+
+        // Mark the single-use invite code as consumed by this user
+        await verifyAndConsumeInviteCode(input.inviteCode, newUser.id).catch((err) => {
+          console.warn("[Auth] Failed to consume single-use invite code:", err);
         });
 
         try {

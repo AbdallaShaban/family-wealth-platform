@@ -1191,3 +1191,29 @@ export type BankCertificate = typeof bankCertificates.$inferSelect;
 export type InsertBankCertificate = typeof bankCertificates.$inferInsert;
 export type CreditCardInstallment = typeof creditCardInstallments.$inferSelect;
 export type InsertCreditCardInstallment = typeof creditCardInstallments.$inferInsert;
+
+export const userRegistrationInvites = mysqlTable(
+  "user_registration_invites",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    code: varchar("code", { length: 64 }).notNull().unique(),
+    note: varchar("note", { length: 255 }),
+    createdByUserId: int("createdByUserId").notNull().references(() => users.id),
+    usedByUserId: int("usedByUserId").references(() => users.id),
+    status: mysqlEnum("status", ["active", "used", "revoked", "expired"]).default("active").notNull(),
+    maxUses: int("maxUses").default(1).notNull(),
+    usedCount: int("usedCount").default(0).notNull(),
+    expiresAt: bigint("expiresAt", { mode: "number" }),
+    createdAt: bigint("createdAt", { mode: "number" }).notNull(),
+    usedAt: bigint("usedAt", { mode: "number" }),
+  },
+  table => ({
+    codeUnique: uniqueIndex("user_reg_invites_code_unique").on(table.code),
+    statusIndex: index("user_reg_invites_status_idx").on(table.status),
+    creatorIndex: index("user_reg_invites_creator_idx").on(table.createdByUserId),
+  })
+);
+
+export type UserRegistrationInvite = typeof userRegistrationInvites.$inferSelect;
+export type InsertUserRegistrationInvite = typeof userRegistrationInvites.$inferInsert;
+

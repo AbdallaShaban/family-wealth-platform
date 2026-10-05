@@ -23,6 +23,7 @@ import { useViewMode } from "@/contexts/ViewModeContext";
 import { ReconciliationModal } from "./modals/ReconciliationModal";
 import { DebtPaymentModal } from "./modals/DebtPaymentModal";
 import { OnboardingWizard } from "./OnboardingWizard";
+import { CleanWorkspaceOnboardingWelcome } from "./dashboard/CleanWorkspaceOnboardingWelcome";
 
 function formatEGP(val: number | string | null | undefined): string {
   const num = Number(val) || 0;
@@ -228,6 +229,15 @@ export default function FintechDashboard() {
             </Button>
           </div>
         </div>
+
+        {/* Clean Workspace Onboarding & Welcome Guide */}
+        <CleanWorkspaceOnboardingWelcome
+          workspaceId={live?.workspace?.id ?? 1}
+          workspaceName={workspaceName}
+          userName={user?.name || "عزيزي المستخدم"}
+          accountCount={accountsList.length}
+          transactionCount={live?.recentEvents?.length ?? 0}
+        />
 
         {/* Morning Financial Pulse Header (Family Mode Centerpiece) */}
         {isFamilyMode && (

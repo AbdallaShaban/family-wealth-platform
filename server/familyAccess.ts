@@ -1,7 +1,7 @@
 import { and, eq, gt } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import type { User } from "../drizzle/schema";
-import { financialProfiles, memberships, users, workspaceInvitations, workspaces } from "../drizzle/schema";
+import { accounts, cashFlowCategories, financialProfiles, memberships, users, workspaceInvitations, workspaces } from "../drizzle/schema";
 import { getDb } from "./db";
 
 export type WorkspaceRole = "owner" | "advisor" | "editor" | "viewer";
@@ -68,7 +68,7 @@ export async function ensurePersonalFamilyContext(user: User): Promise<FamilyCon
       await tx.update(memberships).set({ role: "owner", status: "active", updatedAt: now }).where(eq(memberships.id, existingMembership.id));
     }
 
-    const [existingProfile] = await tx.select().from(financialProfiles).where(and(eq(financialProfiles.workspaceId, workspace.id), eq(financialProfiles.userId, user.id))).orderBy(financialProfiles.id).limit(1);
+    let [existingProfile] = await tx.select().from(financialProfiles).where(and(eq(financialProfiles.workspaceId, workspace.id), eq(financialProfiles.userId, user.id))).orderBy(financialProfiles.id).limit(1);
     if (!existingProfile) {
       await tx.insert(financialProfiles).values({
         workspaceId: workspace.id,
@@ -79,8 +79,80 @@ export async function ensurePersonalFamilyContext(user: User): Promise<FamilyCon
         createdAt: now,
         updatedAt: now,
       });
+      [existingProfile] = await tx.select().from(financialProfiles).where(and(eq(financialProfiles.workspaceId, workspace.id), eq(financialProfiles.userId, user.id))).orderBy(financialProfiles.id).limit(1);
     } else if (existingProfile.displayName !== (user.name || "المالك المالي") || existingProfile.isFinancialOwner !== "yes") {
       await tx.update(financialProfiles).set({ displayName: user.name || "المالك المالي", isFinancialOwner: "yes", updatedAt: now }).where(eq(financialProfiles.id, existingProfile.id));
+    }
+
+    // Clean Workspace Initialization: Seed essential accounts if none exist
+    const existingAccounts = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.workspaceId, workspace.id))
+      .limit(1);
+
+    if (existingAccounts.length === 0 && existingProfile) {
+      await tx.insert(accounts).values([
+        {
+          workspaceId: workspace.id,
+          ownerProfileId: existingProfile.id,
+          name: "محفظة الكاش والنقدية",
+          accountCode: `INIT_CASH_${workspace.id}`,
+          accountType: "cash",
+          currency: workspace.baseCurrency || "EGP",
+          institution: "نقدية باليد",
+          status: "active",
+          isSystemAccount: "no",
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          workspaceId: workspace.id,
+          ownerProfileId: existingProfile.id,
+          name: "الحساب البنكي الرئيسي",
+          accountCode: `INIT_BANK_${workspace.id}`,
+          accountType: "bank",
+          currency: workspace.baseCurrency || "EGP",
+          institution: "البنك الرئيسي",
+          status: "active",
+          isSystemAccount: "no",
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          workspaceId: workspace.id,
+          ownerProfileId: existingProfile.id,
+          name: "محفظة إلكترونية (إنستاباي / كاش)",
+          accountCode: `INIT_WALLET_${workspace.id}`,
+          accountType: "wallet",
+          currency: workspace.baseCurrency || "EGP",
+          institution: "Instapay / Wallet",
+          status: "active",
+          isSystemAccount: "no",
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+    }
+
+    // Clean Workspace Initialization: Seed starter categories if none exist
+    const existingCategories = await tx
+      .select({ id: cashFlowCategories.id })
+      .from(cashFlowCategories)
+      .where(eq(cashFlowCategories.workspaceId, workspace.id))
+      .limit(1);
+
+    if (existingCategories.length === 0) {
+      await tx.insert(cashFlowCategories).values([
+        { workspaceId: workspace.id, name: "سوبرماركت ومستلزمات منزلية", direction: "expense", color: "#10b981", isEssential: "yes", isArchived: "no", createdAt: now, updatedAt: now },
+        { workspaceId: workspace.id, name: "بنزين ومواصلات وتوصيل", direction: "expense", color: "#3b82f6", isEssential: "yes", isArchived: "no", createdAt: now, updatedAt: now },
+        { workspaceId: workspace.id, name: "مطعم ومقهى", direction: "expense", color: "#f59e0b", isEssential: "no", isArchived: "no", createdAt: now, updatedAt: now },
+        { workspaceId: workspace.id, name: "فواتير والتزامات شهرية", direction: "expense", color: "#ef4444", isEssential: "yes", isArchived: "no", createdAt: now, updatedAt: now },
+        { workspaceId: workspace.id, name: "صيدلية وعناية طبية", direction: "expense", color: "#06b6d4", isEssential: "yes", isArchived: "no", createdAt: now, updatedAt: now },
+        { workspaceId: workspace.id, name: "نثريات ومصروف جيب", direction: "expense", color: "#8b5cf6", isEssential: "no", isArchived: "no", createdAt: now, updatedAt: now },
+        { workspaceId: workspace.id, name: "راتب ودخل أساسي", direction: "income", color: "#22c55e", isEssential: "yes", isArchived: "no", createdAt: now, updatedAt: now },
+        { workspaceId: workspace.id, name: "عائد استثمار وأرباح", direction: "income", color: "#14b8a6", isEssential: "yes", isArchived: "no", createdAt: now, updatedAt: now },
+      ]);
     }
 
     if (user.email) {

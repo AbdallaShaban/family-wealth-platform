@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,20 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const codeParam = params.get("invite") || params.get("code") || params.get("inviteCode");
+    const tabParam = params.get("tab") || params.get("mode");
+
+    if (codeParam) {
+      setInviteCode(codeParam.trim());
+      setMode("register");
+    } else if (tabParam === "register") {
+      setMode("register");
+    }
+  }, []);
 
   // Check if Google OAuth is configured on the backend
   const authStatus = trpc.auth.status.useQuery(undefined, {
@@ -253,7 +267,7 @@ export default function LoginPage() {
               <div className="space-y-1.5 pt-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="inviteCode" className="text-xs font-medium text-emerald-300">
-                    رمز دعوة العائلة (Invite Code)
+                    كود الدعوة المعتمد (Invite Code)
                   </Label>
                   <span className="text-[10px] text-slate-500">حماية النطاق المغلق</span>
                 </div>
@@ -261,21 +275,28 @@ export default function LoginPage() {
                   <KeyRound className="absolute right-3 top-3 size-4 text-emerald-500 pointer-events-none" />
                   <Input
                     id="inviteCode"
-                    type="password"
+                    type="text"
                     required
-                    placeholder="أدخل رمز الدعوة المعتمد"
+                    placeholder="INV-XXXX-XXXX أو كود الدعوة"
                     value={inviteCode}
                     onChange={(e) => {
-                      setInviteCode(e.target.value);
+                      setInviteCode(e.target.value.toUpperCase());
                       if (errorMessage) setErrorMessage(null);
                     }}
-                    className="pr-9 bg-slate-950/60 border-emerald-800/40 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-mono"
+                    className="pr-9 bg-slate-950/60 border-emerald-800/40 text-white placeholder:text-slate-600 focus-visible:ring-emerald-500/40 text-left font-mono tracking-wider"
                     dir="ltr"
                   />
                 </div>
-                <p className="text-[11px] text-slate-400 pt-0.5 leading-relaxed">
-                  يمنع التسجيل بدون رمز دعوة العائلة المعتمد لحظر أي زوار عموميين غير مصرح لهم.
-                </p>
+                {inviteCode.trim() ? (
+                  <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono mt-1">
+                    <CheckCircle2 className="size-3.5 shrink-0" />
+                    <span>تم التعرف على كود الدعوة: {inviteCode.trim()}</span>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-400 pt-0.5 leading-relaxed">
+                    أكواد الدعوة أحادية الاستخدام ومخصصة لكل فرد بدقة لمنع التسجيل العشوائي.
+                  </p>
+                )}
               </div>
             )}
 
