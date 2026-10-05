@@ -173,6 +173,41 @@ export function QuickOfflineTransactionModal({
             </TabsList>
           </Tabs>
 
+          {/* Quick Amount Pills */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs text-zinc-400">
+              <span>مبالغ سريعة شائعة بنقرة واحدة:</span>
+              {amount && (
+                <button
+                  type="button"
+                  onClick={() => setAmount("")}
+                  className="text-[11px] text-rose-400 hover:underline cursor-pointer"
+                >
+                  مسح المبلغ
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[50, 100, 200, 500, 1000].map((quickVal) => (
+                <button
+                  key={quickVal}
+                  type="button"
+                  onClick={() => {
+                    const current = parseFloat(amount);
+                    if (isNaN(current) || current <= 0) {
+                      setAmount(String(quickVal));
+                    } else {
+                      setAmount(String(current + quickVal));
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-200 border border-zinc-700/60 transition-all cursor-pointer hover:border-emerald-500/50 hover:text-emerald-300"
+                >
+                  +{quickVal} ج
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Amount and Currency */}
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2 space-y-1.5">
@@ -185,7 +220,7 @@ export function QuickOfflineTransactionModal({
                 onChange={(e) => setAmount(e.target.value)}
                 autoFocus
                 required
-                className="bg-zinc-900 border-zinc-800 text-left font-mono font-bold text-base focus:border-emerald-500"
+                className="bg-zinc-900 border-zinc-800 text-left font-mono font-bold text-lg text-emerald-400 focus:border-emerald-500"
               />
             </div>
             <div className="space-y-1.5">
@@ -204,6 +239,37 @@ export function QuickOfflineTransactionModal({
               </Select>
             </div>
           </div>
+
+          {/* 1-Click Preset Category Chips (For Expense tab) */}
+          {activeTab === "expense" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs text-zinc-300">تصنيف المصروف بنقرة سريعة:</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { label: "سوبرماركت", icon: "🛒", memo: "سوبرماركت وبقالة" },
+                  { label: "بنزين ومواصلات", icon: "⛽", memo: "بنزين ومواصلات" },
+                  { label: "مطعم وكافيه", icon: "☕", memo: "مطعم وكافيه" },
+                  { label: "فواتير وكهرباء", icon: "💡", memo: "فواتير وخدمات" },
+                  { label: "صيدلية وعلاج", icon: "💊", memo: "صيدلية ومستلزمات علاجية" },
+                  { label: "نثريات ومصروف", icon: "🎯", memo: "مصروف جيب ونثريات" },
+                ].map((cat) => (
+                  <button
+                    key={cat.label}
+                    type="button"
+                    onClick={() => setMemo(cat.memo)}
+                    className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold border transition-all text-right cursor-pointer ${
+                      memo === cat.memo
+                        ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 font-bold"
+                        : "bg-zinc-900/80 border-zinc-800 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100"
+                    }`}
+                  >
+                    <span>{cat.icon}</span>
+                    <span className="truncate">{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Primary Account */}
           <div className="space-y-1.5">

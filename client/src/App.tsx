@@ -8,6 +8,7 @@ import { DemoModeProvider } from "./contexts/DemoModeContext";
 import { PrivacyModeProvider } from "./contexts/PrivacyModeContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { OfflineSyncProvider } from "./contexts/OfflineSyncContext";
+import { ViewModeProvider } from "./contexts/ViewModeContext";
 
 const FamilyHomeGate = lazy(() => import("./pages/FamilyHomeGate"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -151,16 +152,18 @@ function App() {
         defaultTheme="dark"
         switchable
       >
-        <PrivacyModeProvider>
-          <DemoModeProvider>
-            <OfflineSyncProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Router />
-              </TooltipProvider>
-            </OfflineSyncProvider>
-          </DemoModeProvider>
-        </PrivacyModeProvider>
+        <ViewModeProvider>
+          <PrivacyModeProvider>
+            <DemoModeProvider>
+              <OfflineSyncProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Router />
+                </TooltipProvider>
+              </OfflineSyncProvider>
+            </DemoModeProvider>
+          </PrivacyModeProvider>
+        </ViewModeProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { FinancialOverviewCard } from "./dashboard/FinancialOverviewCard";
 import { RecentTransactionsWidget } from "./dashboard/RecentTransactionsWidget";
+import { MorningFinancialPulseHeader } from "./dashboard/MorningFinancialPulseHeader";
+import { useViewMode } from "@/contexts/ViewModeContext";
 import { ReconciliationModal } from "./modals/ReconciliationModal";
 import { DebtPaymentModal } from "./modals/DebtPaymentModal";
 import { OnboardingWizard } from "./OnboardingWizard";
@@ -35,6 +37,7 @@ function formatEGP(val: number | string | null | undefined): string {
 export default function FintechDashboard() {
   const { user } = useAuth();
   const { isDemoMode, toggleDemoMode } = useDemoMode();
+  const { isFamilyMode } = useViewMode();
   const [, setLocation] = useLocation();
 
   // Dialog States
@@ -173,11 +176,15 @@ export default function FintechDashboard() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-1">
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-zinc-950 dark:text-zinc-50">
-              مرحباً، {user?.name || "Abdalla"}
+              {isFamilyMode ? `مرحباً بك، ${user?.name || "Abdalla"}` : `مرحباً، ${user?.name || "Abdalla"}`}
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              مساحة العمل المباشرة
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+              isFamilyMode
+                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                : "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+            }`}>
+              <span className={`size-1.5 rounded-full ${isFamilyMode ? "bg-emerald-500 animate-pulse" : "bg-blue-500"}`} />
+              {isFamilyMode ? "الوضع العائلي البسيط" : "وضع المستشار Pro"}
             </span>
           </div>
 
@@ -222,13 +229,25 @@ export default function FintechDashboard() {
           </div>
         </div>
 
+        {/* Morning Financial Pulse Header (Family Mode Centerpiece) */}
+        {isFamilyMode && (
+          <MorningFinancialPulseHeader
+            userName={user?.name}
+            liquidBalance={liquidAssets}
+            totalDebts={totalDebts}
+            currency={currency}
+            debtsList={debtsList as any}
+            recentEvents={recentEvents as any}
+          />
+        )}
+
         {/* 1. Exactly 4 Top KPI Cards (Tremor Raw + Midday Standard) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* KPI 1: Net Worth */}
           <Card className="border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl hover:border-zinc-400 dark:hover:border-zinc-700 transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
-                صافي الثروة المجمعة
+                {isFamilyMode ? "إجمالي ثروة العائلة المجمعة" : "صافي الثروة المجمعة"}
               </span>
               <div className="size-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 flex items-center justify-center">
                 <Landmark className="size-4" />
@@ -240,7 +259,7 @@ export default function FintechDashboard() {
               </div>
               <div className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
                 <TrendingUp className="size-3.5" />
-                <span>+38.5% نمو إجمالي مقارنة بالأساس</span>
+                <span>{isFamilyMode ? "+38.5% نمو تراكمي آمن للمدخرات" : "+38.5% نمو إجمالي مقارنة بالأساس"}</span>
               </div>
             </CardContent>
           </Card>
@@ -249,7 +268,7 @@ export default function FintechDashboard() {
           <Card className="border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl hover:border-zinc-400 dark:hover:border-zinc-700 transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
-                السيولة النقدية المتاحة
+                {isFamilyMode ? "كاش وسيولة حرة للصرف" : "السيولة النقدية المتاحة"}
               </span>
               <div className="size-8 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/80 flex items-center justify-center">
                 <Wallet className="size-4" />
@@ -260,7 +279,7 @@ export default function FintechDashboard() {
                 {formatEGP(liquidAssets)}
               </div>
               <p className="mt-2 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
-                {live?.accountCount ?? 9} حسابات مصرفية ونقدية جارية
+                {isFamilyMode ? "جاهزة ومتاحة للحياة اليومية بالبنوك والمحافظ" : `${live?.accountCount ?? 9} حسابات مصرفية ونقدية جارية`}
               </p>
             </CardContent>
           </Card>
@@ -269,7 +288,7 @@ export default function FintechDashboard() {
           <Card className="border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl hover:border-zinc-400 dark:hover:border-zinc-700 transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
-                إجمالي المحفظة الاستثمارية
+                {isFamilyMode ? "مدخرات الذهب والاستثمارات" : "إجمالي المحفظة الاستثمارية"}
               </span>
               <div className="size-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/80 flex items-center justify-center">
                 <TrendingUp className="size-4" />
@@ -280,7 +299,7 @@ export default function FintechDashboard() {
                 {formatEGP(investedAssets)}
               </div>
               <p className="mt-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                أرباح غير محققة: {formatEGP(unrealizedPnl)}
+                {isFamilyMode ? `أرباح ونمو محقق: ${formatEGP(unrealizedPnl)}` : `أرباح غير محققة: ${formatEGP(unrealizedPnl)}`}
               </p>
             </CardContent>
           </Card>
@@ -289,7 +308,7 @@ export default function FintechDashboard() {
           <Card className="border border-zinc-300 dark:border-zinc-800 bg-white dark:bg-[#18181b] shadow-xs rounded-xl hover:border-zinc-400 dark:hover:border-zinc-700 transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400">
-                الالتزامات والديون والبطاقات
+                {isFamilyMode ? "الأقساط والالتزامات الحالية" : "الالتزامات والديون والبطاقات"}
               </span>
               <div className="size-8 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/80 flex items-center justify-center">
                 <CreditCard className="size-4" />
@@ -300,7 +319,7 @@ export default function FintechDashboard() {
                 {formatEGP(totalDebts)}
               </div>
               <p className="mt-2 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-                {debtsList.length > 0 ? debtsList.length : 2} التزامات وبطاقات نشطة
+                {isFamilyMode ? "أقساط وبطاقات تحت السيطرة وبدون تأخير" : `${debtsList.length > 0 ? debtsList.length : 2} التزامات وبطاقات نشطة`}
               </p>
             </CardContent>
           </Card>

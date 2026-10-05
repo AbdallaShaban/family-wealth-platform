@@ -55,6 +55,7 @@ import { OfflineStatusBadge } from "./pwa/OfflineStatusBadge";
 import { PwaInstallButton, PwaInstallSidebarBanner, PwaInstallDrawerItem } from "./pwa/PwaInstallPrompt";
 import { PwaInstallModal } from "./pwa/PwaInstallModal";
 import { QuickOfflineTransactionModal } from "./pwa/QuickOfflineTransactionModal";
+import { DualViewModeToggle, DualViewModeDrawerItem } from "./layout/DualViewModeToggle";
 import { Command, Smartphone, FileText, Receipt } from "lucide-react";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
@@ -817,6 +818,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </button>
               </div>
 
+              {/* Dual View Mode: Family vs Pro */}
+              <DualViewModeDrawerItem />
+
               {/* PWA Direct Shortcut & Install Card */}
               <PwaInstallDrawerItem
                 onOpenModal={() => {
@@ -947,6 +951,7 @@ function TopbarControls({
     <>
       {/* Desktop Only Buttons Wrapper - Guaranteed hidden on mobile screens */}
       <div className="hidden md:flex items-center gap-1.5 fintech-topbar-desktop-actions">
+        <DualViewModeToggle />
         <OfflineStatusBadge />
         <PwaInstallButton onOpenModal={onOpenPwaInstall} />
         <button
