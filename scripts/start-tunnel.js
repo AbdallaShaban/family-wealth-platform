@@ -8,14 +8,14 @@ const ARTIFACT_DIR = "C:\\Users\\abdal\\.gemini\\antigravity-ide\\brain\\5bd4cdc
 const QR_PATH = path.join(ARTIFACT_DIR, "pwa_mobile_qr.png");
 const TUNNEL_INFO_FILE = path.resolve(process.cwd(), ".tunnel-info.json");
 
-console.log(`[Cloudflare Tunnel] Initializing encrypted tunnel for http://localhost:${PORT}...`);
+console.log(`[Cloudflare Tunnel] Initializing encrypted tunnel for http://localhost:${PORT} with HTTP/2 protocol...`);
 
-const isWin = process.platform === "win32";
 const token = process.env.CLOUDFLARE_TUNNEL_TOKEN;
 
+// Using --protocol http2 to prevent QUIC UDP dropping on residential ISPs
 const args = token
-  ? ["cloudflared", "tunnel", "run", "--token", token]
-  : ["cloudflared", "tunnel", "--url", `http://localhost:${PORT}`];
+  ? ["cloudflared", "tunnel", "--protocol", "http2", "run", "--token", token]
+  : ["cloudflared", "tunnel", "--protocol", "http2", "--url", `http://localhost:${PORT}`];
 
 console.log(`[Cloudflare Tunnel] Running: npx ${args.join(" ")}`);
 
@@ -31,11 +31,11 @@ async function handleOutput(data) {
   const text = data.toString();
   process.stdout.write(text);
 
-  if (!tunnelUrlFound) {
-    const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
-    if (match) {
+  const match = text.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+  if (match) {
+    const tunnelUrl = match[0];
+    if (!tunnelUrlFound || fs.existsSync(TUNNEL_INFO_FILE)) {
       tunnelUrlFound = true;
-      const tunnelUrl = match[0];
       console.log("\n========================================================");
       console.log(`🚀 [Cloudflare Tunnel Online] URL: ${tunnelUrl}`);
       console.log("========================================================\n");
