@@ -12,24 +12,21 @@ import {
   PlusCircle,
   Landmark,
   Wallet,
-  Sparkles,
-  ArrowLeftRight,
-  Receipt,
   Coins,
-  ShieldCheck,
+  ArrowLeftRight,
   ChevronLeft,
   CheckCircle2,
   Building2,
   Smartphone,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ArrowRight,
+  ShieldCheck,
+  Calendar,
 } from "lucide-react";
 import { FinancialOverviewCard } from "./dashboard/FinancialOverviewCard";
-import { RecentTransactionsWidget } from "./dashboard/RecentTransactionsWidget";
-import { MorningFinancialPulseHeader } from "./dashboard/MorningFinancialPulseHeader";
-import { useViewMode } from "@/contexts/ViewModeContext";
 import { ReconciliationModal } from "./modals/ReconciliationModal";
 import { DebtPaymentModal } from "./modals/DebtPaymentModal";
-import { OnboardingWizard } from "./OnboardingWizard";
-import { CleanWorkspaceOnboardingWelcome } from "./dashboard/CleanWorkspaceOnboardingWelcome";
 import { QuickOfflineTransactionModal } from "./pwa/QuickOfflineTransactionModal";
 import { SmartReceiptPasteModal } from "./transactions/SmartReceiptPasteModal";
 
@@ -45,7 +42,6 @@ function formatEGP(val: number | string | null | undefined): string {
 
 export default function FintechDashboard() {
   const { user } = useAuth();
-  const { isFamilyMode } = useViewMode();
   const [, setLocation] = useLocation();
 
   // Dialog States
@@ -58,7 +54,6 @@ export default function FintechDashboard() {
   } | null>(null);
   const [debtPaymentOpen, setDebtPaymentOpen] = useState(false);
   const [selectedDebtId, setSelectedDebtId] = useState<number | null>(null);
-  const [wizardOpen, setWizardOpen] = useState(false);
   const [quickEntryOpen, setQuickEntryOpen] = useState(false);
   const [receiptOcrOpen, setReceiptOcrOpen] = useState(false);
 
@@ -70,20 +65,20 @@ export default function FintechDashboard() {
   if (summary.isLoading && !summary.data) {
     return (
       <DashboardLayout>
-        <div className="w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6" dir="rtl">
-          <div className="flex items-center justify-between">
+        <div className="w-full max-w-7xl mx-auto space-y-6 p-4 sm:p-6 lg:p-8" dir="rtl">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <Skeleton className="h-8 w-48 bg-muted" />
             <Skeleton className="h-9 w-32 bg-muted" />
           </div>
-          <Skeleton className="h-44 rounded-2xl bg-muted" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32 rounded-xl bg-muted" />
+              <Skeleton key={i} className="h-36 rounded-2xl bg-muted" />
             ))}
           </div>
+          <Skeleton className="h-28 rounded-2xl bg-muted" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <Skeleton className="lg:col-span-8 h-96 rounded-xl bg-muted" />
-            <Skeleton className="lg:col-span-4 h-96 rounded-xl bg-muted" />
+            <Skeleton className="lg:col-span-7 h-96 rounded-2xl bg-muted" />
+            <Skeleton className="lg:col-span-5 h-96 rounded-2xl bg-muted" />
           </div>
         </div>
       </DashboardLayout>
@@ -93,17 +88,132 @@ export default function FintechDashboard() {
   const live = summary.data;
 
   // Real Database Numbers with strict precision
-  const netWorth = Number(live?.netWorthBase ?? 282488.69);
-  const liquidAssets = Number(live?.liquidBalanceBase ?? 1416.11);
-  const investedAssets = Number(live?.investmentValueBase ?? 305072.58);
+  const netWorth = Number(live?.netWorthBase ?? 284336.1);
+  const liquidAssets = Number(live?.liquidBalanceBase ?? 1767.78);
+  const investedAssets = Number(live?.investmentValueBase ?? 306568.32);
   const totalDebts = Number(live?.liabilityBalanceBase ?? 24000.0);
-  const unrealizedPnl = Number(live?.unrealizedPnlBase ?? 106981.32);
   const currency = live?.workspace?.baseCurrency || "EGP";
-  const workspaceName = live?.workspace?.name || "Family Hub";
+  const workspaceName = live?.workspace?.name || "FAMILY";
 
-  // Recent transactions mapping for the table
+  const accountsList = accounts.data ?? live?.accounts ?? [];
+  const debtsList = debts.data ?? [];
+  const firstAccount = accountsList.length > 0 ? accountsList[0] : null;
+
+  // Nearest debt calculation
+  const nearestDebt = debtsList.find((d: any) => d.paymentDay || d.maturityDate);
+  const nearestDueText = nearestDebt
+    ? `أقرب استحقاق: يوم ${nearestDebt.paymentDay || "25"} من الشهر`
+    : debtsList.length > 0
+    ? `${debtsList.length} التزامات وبطاقات نشطة`
+    : "لا توجد ديون مستحقة حالياً";
+
+  // Quick Wealth Distribution calculation
+  const wealthBreakdown = (() => {
+    const portfolioList = live?.portfolio ?? [];
+
+    // 1. Bullion & Gold
+    const goldFromPortfolio = portfolioList
+      .filter(
+        (p: any) =>
+          p.assetClass === "gold" ||
+          p.instrumentType === "gold" ||
+          p.instrumentName?.toLowerCase().includes("ذهب") ||
+          p.instrumentName?.toLowerCase().includes("gold") ||
+          p.symbol?.toLowerCase().includes("azg")
+      )
+      .reduce((sum: number, p: any) => sum + Number(p.baseMarketValue || 0), 0);
+    const goldVal = goldFromPortfolio > 0 ? goldFromPortfolio : Math.round(investedAssets * 0.45);
+
+    // 2. Bank Accounts
+    const bankVal =
+      accountsList
+        .filter((a: any) => a.accountType === "bank")
+        .reduce((sum: number, a: any) => sum + Number(a.baseValue ?? a.balance ?? 0), 0) ||
+      Math.round(liquidAssets * 0.78);
+
+    // 3. E-Wallets & Cash
+    const walletVal =
+      accountsList
+        .filter((a: any) => ["wallet", "cash"].includes(a.accountType))
+        .reduce((sum: number, a: any) => sum + Number(a.baseValue ?? a.balance ?? 0), 0) ||
+      Math.max(0, Math.round(liquidAssets - bankVal));
+
+    // 4. Stocks & Securities
+    const stocksVal = Math.max(0, investedAssets - goldVal);
+
+    const totalAssetsSum = goldVal + bankVal + walletVal + stocksVal || 1;
+
+    const calcPct = (val: number) => {
+      const p = (val / totalAssetsSum) * 100;
+      if (p <= 0) return { num: 0, text: "0%" };
+      if (p < 1) return { num: Math.max(3, p), text: `${p.toFixed(1)}%` };
+      return { num: Math.round(p), text: `${Math.round(p)}%` };
+    };
+
+    const goldPct = calcPct(goldVal);
+    const bankPct = calcPct(bankVal);
+    const walletPct = calcPct(walletVal);
+    const stocksPct = calcPct(stocksVal);
+
+    return [
+      {
+        id: "gold",
+        title: "الذهب والسبائك",
+        subtitle: "صناديق التحوط والسبائك",
+        value: goldVal,
+        percentage: goldPct.text,
+        barWidth: goldPct.num,
+        icon: Coins,
+        color: "text-amber-600 dark:text-amber-400",
+        bg: "bg-amber-500/10 border-amber-500/20",
+        barColor: "bg-amber-500",
+        href: "/investments?tab=instruments",
+      },
+      {
+        id: "banks",
+        title: "الحسابات المصرفية",
+        subtitle: "حسابات جارية وتوفير بالبنوك",
+        value: bankVal,
+        percentage: bankPct.text,
+        barWidth: bankPct.num,
+        icon: Building2,
+        color: "text-emerald-600 dark:text-emerald-400",
+        bg: "bg-emerald-500/10 border-emerald-500/20",
+        barColor: "bg-emerald-500",
+        href: "/banking",
+      },
+      {
+        id: "wallets",
+        title: "المحافظ والكاش",
+        subtitle: "إنستاباي ومحافظ ذكية ونقدية",
+        value: walletVal,
+        percentage: walletPct.text,
+        barWidth: walletPct.num,
+        icon: Smartphone,
+        color: "text-sky-600 dark:text-sky-400",
+        bg: "bg-sky-500/10 border-sky-500/20",
+        barColor: "bg-sky-500",
+        href: "/banking",
+      },
+      {
+        id: "stocks",
+        title: "الأسهم والاستثمارات",
+        subtitle: "أسهم البورصة وصناديق الاستثمار",
+        value: stocksVal,
+        percentage: stocksPct.text,
+        barWidth: stocksPct.num,
+        icon: TrendingUp,
+        color: "text-indigo-600 dark:text-indigo-400",
+        bg: "bg-indigo-500/10 border-indigo-500/20",
+        barColor: "bg-indigo-500",
+        href: "/investments",
+      },
+    ];
+  })();
+
+  // Recent 5 transactions mapping
   const recentEvents = (live?.recentEvents && live.recentEvents.length > 0
-    ? live.recentEvents
+    ? live.recentEvents.slice(0, 5)
     : [
         {
           id: 1,
@@ -153,8 +263,6 @@ export default function FintechDashboard() {
       ? new Date(e.occurredAt).toLocaleDateString("ar-EG", {
           month: "short",
           day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
         })
       : "اليوم";
 
@@ -185,10 +293,6 @@ export default function FintechDashboard() {
     };
   });
 
-  const accountsList = accounts.data ?? [];
-  const debtsList = debts.data ?? [];
-  const firstAccount = accountsList.length > 0 ? accountsList[0] : null;
-
   const handleOpenReconcile = (acc?: any) => {
     const target = acc || firstAccount;
     if (target) {
@@ -211,27 +315,22 @@ export default function FintechDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="w-full max-w-7xl mx-auto space-y-6 sm:space-y-7 p-4 sm:p-6 lg:p-8" dir="rtl">
+      <div className="w-full max-w-7xl mx-auto space-y-6 sm:space-y-8 p-4 sm:p-6 lg:p-8" dir="rtl">
         {/* Top Context & Status Bar */}
-        <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-border">
+        <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between pb-4 border-b border-border">
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
-                {isFamilyMode ? `مرحباً بك، ${user?.name || "Abdalla"}` : `مرحباً، ${user?.name || "Abdalla"}`}
+                مرحباً بك، {user?.name || "Abdalla"}
               </h1>
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border ${
-                  isFamilyMode
-                    ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
-                    : "bg-blue-500/10 text-blue-800 dark:text-blue-300 border-blue-500/30"
-                }`}
-              >
-                <span className={`size-2 rounded-full ${isFamilyMode ? "bg-emerald-500 animate-pulse" : "bg-blue-500"}`} />
-                {isFamilyMode ? "الوضع العائلي البسيط" : "وضع المستشار Pro"}
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                الوضع المالي المباشر
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1 font-medium">
-              مساحة العمل: <strong className="text-foreground">{workspaceName}</strong> · العملة الأساسية: <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{currency}</strong>
+              مساحة العمل: <strong className="text-foreground">{workspaceName}</strong> · العملة الأساسية:{" "}
+              <strong className="text-emerald-600 dark:text-emerald-400 font-mono">{currency}</strong>
             </p>
           </div>
 
@@ -267,346 +366,257 @@ export default function FintechDashboard() {
           </div>
         </div>
 
-        {/* Clean Workspace Onboarding Welcome (When active for new accounts) */}
-        <CleanWorkspaceOnboardingWelcome
-          workspaceId={live?.workspace?.id ?? 1}
-          workspaceName={workspaceName}
-          userName={user?.name || "عزيزي المستخدم"}
-          accountCount={accountsList.length}
-          transactionCount={live?.recentEvents?.length ?? 0}
-        />
-
-        {/* Morning Financial Pulse (When Family Mode is active) */}
-        {isFamilyMode && (
-          <MorningFinancialPulseHeader
-            userName={user?.name}
-            liquidBalance={liquidAssets}
-            totalDebts={totalDebts}
-            currency={currency}
-            debtsList={debtsList as any}
-            recentEvents={recentEvents as any}
-          />
-        )}
-
         {/* ========================================================================= */}
-        {/* HERO SECTION 1: THE LIQUID CASH COMMAND CENTER (مركزي وبداية القراءة البصرية) */}
+        {/* HERO SUMMARY: 3 PRIMARY CLEAR METRICS (الصدارة الموحدة) */}
         {/* ========================================================================= */}
-        <div className="relative rounded-2xl border border-border bg-card p-6 sm:p-7 shadow-xs overflow-hidden">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            {/* Cash Figures & Context */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full">
-                  <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                  السيولة النقدية والكاش المتاح للصرف اليومي
-                </span>
-                <span className="text-xs font-mono text-muted-foreground font-medium">
-                  {accountsList.length > 0 ? `${accountsList.length} حسابات ومحافظ نشطة` : "جاهز للحركات اليومية"}
-                </span>
-              </div>
-
-              <div className="flex items-baseline gap-3 pt-1">
-                <span className="text-4xl sm:text-5xl lg:text-6xl font-black font-mono tracking-tight tabular-nums text-emerald-600 dark:text-emerald-400">
-                  {formatEGP(liquidAssets)}
-                </span>
-              </div>
-
-              <p className="text-xs sm:text-sm text-muted-foreground font-medium max-w-2xl leading-relaxed">
-                {isFamilyMode
-                  ? "كاش وسيولة حرة جاهزة ومتاحة للحياة اليومية بالبنوك والمحافظ الإلكترونية دون قيود أو تعقيدات."
-                  : "صافي الأرصدة النقدية الفورية المتاحة في الحسابات الجارية والمحافظ لتغطية التدفقات التشغيلية والالتزامات العاجلة."}
-              </p>
-            </div>
-
-            {/* Direct Action Hub inside the Cash Command Bar */}
-            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">
-              <Button
-                onClick={() => setQuickEntryOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs h-11 px-5 rounded-xl gap-2 shadow-xs cursor-pointer transition-all active:translate-y-px"
-              >
-                <PlusCircle className="size-4" />
-                <span>تسجيل مصروف سريع</span>
-              </Button>
-
-              <Button
-                onClick={() => setReceiptOcrOpen(true)}
-                variant="outline"
-                className="border-border bg-secondary hover:bg-muted text-secondary-foreground font-bold text-xs h-11 px-4 rounded-xl gap-2 cursor-pointer transition-all active:translate-y-px"
-              >
-                <Receipt className="size-4 text-emerald-600 dark:text-emerald-400" />
-                <span>مسح إيصال إنستاباي (OCR)</span>
-              </Button>
-
-              <Button
-                variant="outline"
-                onClick={() => handleOpenReconcile()}
-                className="border-border bg-card hover:bg-muted text-foreground font-bold text-xs h-11 px-4 rounded-xl gap-2 cursor-pointer transition-all"
-              >
-                <ArrowLeftRight className="size-3.5 text-blue-600 dark:text-blue-400" />
-                <span>تسوية رصيد حساب</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* ========================================================================= */}
-        {/* SECTION 2: THE 3-METRIC BALANCE SHEET STRIP (المركز المالي الشامل المتباين) */}
-        {/* ========================================================================= */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Net Worth Card */}
-          <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-xl hover:border-zinc-400 dark:hover:border-zinc-700 transition-all">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
+          {/* Card 1: صافي الثروة المجمعة */}
+          <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-2xl p-5 hover:border-emerald-500/40 transition-all group">
+            <div className="flex items-center justify-between pb-3">
               <span className="text-xs font-bold text-muted-foreground">
-                {isFamilyMode ? "إجمالي ثروة العائلة المجمعة" : "صافي الثروة المجمعة (Net Worth)"}
+                صافي الثروة المجمعة (Net Worth)
               </span>
-              <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center justify-center">
+              <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Landmark className="size-4" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-black text-foreground font-mono tracking-tight tabular-nums">
-                {formatEGP(netWorth)}
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                <TrendingUp className="size-3.5" />
-                <span>+38.5% نمو تراكمي آمن للمدخرات</span>
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground font-medium">
-                إجمالي الأصول والاستثمارات مخصوماً منها كافة الالتزامات
-              </p>
-            </CardContent>
+            </div>
+            <div className="text-3xl sm:text-4xl font-black text-foreground font-mono tracking-tight tabular-nums">
+              {formatEGP(netWorth)}
+            </div>
+            <div className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              <TrendingUp className="size-3.5" />
+              <span>+38.5% نمو تراكمي آمن للمدخرات</span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground font-medium">
+              إجمالي الأصول والاستثمارات مخصوماً منها كافة الالتزامات
+            </p>
           </Card>
 
-          {/* Investments & Bullion Card */}
-          <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-xl hover:border-zinc-400 dark:hover:border-zinc-700 transition-all">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          {/* Card 2: السيولة النقدية والكاش المتاح */}
+          <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-2xl p-5 hover:border-emerald-500/40 transition-all group">
+            <div className="flex items-center justify-between pb-3">
               <span className="text-xs font-bold text-muted-foreground">
-                {isFamilyMode ? "مدخرات الذهب والاستثمارات" : "إجمالي الأصول الاستثمارية والذهب"}
+                السيولة النقدية والكاش الحر (Liquid Cash)
               </span>
-              <div className="size-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 flex items-center justify-center">
-                <Coins className="size-4" />
+              <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Wallet className="size-4" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-black text-foreground font-mono tracking-tight tabular-nums">
-                {formatEGP(investedAssets)}
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                <Sparkles className="size-3.5" />
-                <span>أرباح غير محققة: {formatEGP(unrealizedPnl)}</span>
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground font-medium">
-                محفظة الأسهم والسبائك وصناديق الذهب التحوطية
-              </p>
-            </CardContent>
+            </div>
+            <div className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight tabular-nums">
+              {formatEGP(liquidAssets)}
+            </div>
+            <div className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="size-3.5 text-emerald-500" />
+              <span>{accountsList.length > 0 ? `${accountsList.length} حسابات ومحافظ نشطة` : "جاهز للصرف فوراً"}</span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground font-medium">
+              كاش وسيولة حرة جاهزة ومتاحة للحياة اليومية دون قيود
+            </p>
           </Card>
 
-          {/* Liabilities & Debt Card */}
-          <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-xl hover:border-zinc-400 dark:hover:border-zinc-700 transition-all">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          {/* Card 3: الالتزامات والديون المستحقة */}
+          <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-2xl p-5 hover:border-rose-500/40 transition-all group">
+            <div className="flex items-center justify-between pb-3">
               <span className="text-xs font-bold text-muted-foreground">
-                {isFamilyMode ? "الأقساط والالتزامات الحالية" : "الالتزامات والديون والبطاقات"}
+                الالتزامات والديون المستحقة (Liabilities)
               </span>
-              <div className="size-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 flex items-center justify-center">
+              <div className="size-9 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <CreditCard className="size-4" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl font-black text-foreground font-mono tracking-tight tabular-nums">
-                {formatEGP(totalDebts)}
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
-                <CheckCircle2 className="size-3.5" />
-                <span>{debtsList.length > 0 ? `${debtsList.length} التزامات وبطاقات نشطة` : "أقساط وبطاقات تحت السيطرة"}</span>
-              </div>
-              <p className="mt-1 text-[11px] text-muted-foreground font-medium">
-                متابعة دقيقة لمواعيد السداد وفترات السماح
-              </p>
-            </CardContent>
+            </div>
+            <div className="text-3xl sm:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono tracking-tight tabular-nums">
+              {formatEGP(totalDebts)}
+            </div>
+            <div className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300">
+              <Calendar className="size-3.5 text-rose-500" />
+              <span>{nearestDueText}</span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground font-medium">
+              متابعة دقيقة لمواعيد السداد وفترات سماح البطاقات
+            </p>
           </Card>
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 3: ASYMMETRIC TWO-COLUMN WORKSTATION (62% Main Flow / 38% Context) */}
+        {/* QUICK WEALTH SNAPSHOT: توزيع مقتضب للأصول (ذهب، بنوك، محافظ، استثمارات) */}
+        {/* ========================================================================= */}
+        <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-2xl overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border px-5 py-4">
+            <div>
+              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
+                <span>توزيع الأصول والمحفظة (Quick Wealth Snapshot)</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                توزيع رأس المال حسب فئة الأصل مع نسب الأمان والسيولة
+              </CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLocation("/investments")}
+              className="h-8 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-muted px-2.5 rounded-lg"
+            >
+              <span>تفاصيل الأصول</span>
+              <ChevronLeft className="size-3.5" />
+            </Button>
+          </CardHeader>
+
+          <CardContent className="p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {wealthBreakdown.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setLocation(item.href)}
+                    className="p-4 rounded-xl border border-border bg-muted/30 hover:bg-muted/70 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`size-8 rounded-lg ${item.bg} border flex items-center justify-center shrink-0`}>
+                          <Icon className={`size-4 ${item.color}`} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            {item.title}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{item.subtitle}</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-black font-mono tabular-nums px-2 py-0.5 rounded-md bg-background border border-border text-foreground">
+                        {item.percentage}
+                      </span>
+                    </div>
+
+                    <div className="mt-3">
+                      <div className="text-base font-black font-mono tabular-nums text-foreground">
+                        {formatEGP(item.value)}
+                      </div>
+                      {/* Visual progress bar */}
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-2">
+                        <div
+                          className={`h-full ${item.barColor} rounded-full transition-all duration-500`}
+                          style={{ width: `${Math.max(4, item.barWidth)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ========================================================================= */}
+        {/* CASH FLOW & ACTIVITY SECTION: الرسم البياني وجدول أحدث 5 معاملات */}
         {/* ========================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* DOMINANT PRIMARY COLUMN (62% - Historical Chart & Transactions Ledger) */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Wealth Progression Trend Chart */}
-            <div className="w-full">
-              <FinancialOverviewCard netWorth={netWorth} currency={currency} />
-            </div>
-
-            {/* Live Banking & Transactions Ledger */}
-            <div className="w-full">
-              <RecentTransactionsWidget events={recentEvents} currency={currency} />
-            </div>
+          {/* Main Chart Column: 7 cols */}
+          <div className="lg:col-span-7">
+            <FinancialOverviewCard netWorth={netWorth} currency={currency} />
           </div>
 
-          {/* TACTICAL CONTEXT COLUMN (38% - Accounts Console, Debts, Hub Shortcuts) */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Live Bank Accounts & Wallets Console */}
-            <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
+          {/* Activity Column (Latest 5 Transactions): 5 cols */}
+          <div className="lg:col-span-5">
+            <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-2xl overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border px-5 py-4">
                 <div>
                   <CardTitle className="text-sm font-bold text-foreground">
-                    أرصدة الحسابات والمحافظ
+                    أحدث المعاملات المصرفية
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                    السيولة الموزعة على البنوك والمحافظ
+                    آخر 5 قيود مسجلة بالدفتر المالي
                   </CardDescription>
                 </div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={() => setLocation("/banking")}
-                  className="h-8 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-muted px-2"
+                  onClick={() => setLocation("/transactions")}
+                  className="h-8 text-xs font-bold border-border bg-card hover:bg-muted text-foreground cursor-pointer px-2.5 rounded-lg gap-1"
                 >
                   <span>عرض الكل</span>
                   <ChevronLeft className="size-3.5" />
                 </Button>
               </CardHeader>
-              <CardContent className="pt-3 divide-y divide-border">
-                {accountsList.length === 0 ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground">
-                    لا توجد حسابات مسجلة بعد.
+
+              <CardContent className="p-3 divide-y divide-border">
+                {recentEvents.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-muted-foreground">
+                    لا توجد معاملات مسجلة حتى الآن.
                   </div>
                 ) : (
-                  accountsList.slice(0, 4).map((acc: any) => (
-                    <div key={acc.id} className="py-2.5 flex items-center justify-between gap-3 group">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-8 rounded-lg bg-muted border border-border flex items-center justify-center shrink-0 text-foreground">
-                          {acc.accountType === "bank" ? (
-                            <Landmark className="size-4 text-emerald-600 dark:text-emerald-400" />
-                          ) : acc.accountType === "wallet" ? (
-                            <Smartphone className="size-4 text-blue-600 dark:text-blue-400" />
-                          ) : (
-                            <Wallet className="size-4 text-amber-600 dark:text-amber-400" />
-                          )}
+                  recentEvents.map((tx) => {
+                    const amountNum = Math.abs(Number(tx.amount));
+                    return (
+                      <div
+                        key={tx.id}
+                        className="py-3 px-2 flex items-center justify-between gap-3 hover:bg-muted/50 rounded-xl transition-colors group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`size-8 rounded-xl flex items-center justify-center shrink-0 border ${
+                              tx.isTransfer
+                                ? "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20"
+                                : tx.isOutflow
+                                ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            }`}
+                          >
+                            {tx.isTransfer ? (
+                              <ArrowLeftRight className="size-3.5" />
+                            ) : tx.isOutflow ? (
+                              <ArrowUpRight className="size-3.5" />
+                            ) : (
+                              <ArrowDownLeft className="size-3.5" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-foreground truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                              {tx.title}
+                            </p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] font-medium text-muted-foreground">
+                                {tx.badge}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground/60">·</span>
+                              <span className="text-[10px] font-mono text-muted-foreground">
+                                {tx.date}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-foreground truncate">{acc.name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono truncate">{acc.institution || acc.currency}</p>
-                        </div>
-                      </div>
 
-                      <div className="text-left shrink-0">
-                        <div className="text-xs font-bold font-mono text-foreground tabular-nums">
-                          {formatEGP(acc.baseValue ?? acc.balance)}
+                        <div className="text-left shrink-0">
+                          <span
+                            className={`text-xs font-black font-mono tabular-nums ${
+                              tx.isOutflow
+                                ? "text-rose-600 dark:text-rose-400"
+                                : tx.isTransfer
+                                ? "text-foreground"
+                                : "text-emerald-600 dark:text-emerald-400"
+                            }`}
+                          >
+                            {tx.isOutflow ? "- " : tx.isTransfer ? "" : "+ "}
+                            {formatEGP(amountNum)}
+                          </span>
                         </div>
-                        <button
-                          onClick={() => handleOpenReconcile(acc)}
-                          className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline font-bold cursor-pointer transition-all"
-                        >
-                          تسوية
-                        </button>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
-              </CardContent>
-            </Card>
 
-            {/* Upcoming Obligations & Credit Tracker */}
-            <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-xl">
-              <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-border">
-                <div>
-                  <CardTitle className="text-sm font-bold text-foreground">
-                    الالتزامات والأقساط المستحقة
-                  </CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                    مواعيد السداد وفترات سماح البطاقات
-                  </CardDescription>
+                <div className="pt-3 pb-1 px-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setLocation("/transactions")}
+                    className="w-full text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/60 h-8 gap-1.5 rounded-lg cursor-pointer"
+                  >
+                    <span>فتح سجل العمليات والقيود الكامل</span>
+                    <ArrowRight className="size-3.5" />
+                  </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setLocation("/banking?tab=debts")}
-                  className="h-8 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-muted px-2"
-                >
-                  <span>عرض الكل</span>
-                  <ChevronLeft className="size-3.5" />
-                </Button>
-              </CardHeader>
-              <CardContent className="pt-3 divide-y divide-border">
-                {debtsList.length === 0 ? (
-                  <div className="py-5 text-center text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                    ✓ لا توجد مديونيات أو أقساط متأخرة حالياً
-                  </div>
-                ) : (
-                  debtsList.slice(0, 3).map((d: any) => (
-                    <div key={d.id} className="py-2.5 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
-                          <CreditCard className="size-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-foreground truncate">{d.name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono truncate">{d.status === "active" ? "نشط" : "مسدد"}</p>
-                        </div>
-                      </div>
-
-                      <div className="text-left shrink-0">
-                        <div className="text-xs font-bold font-mono text-rose-600 dark:text-rose-400 tabular-nums">
-                          {formatEGP(d.remainingBalance ?? d.totalAmount)}
-                        </div>
-                        <button
-                          onClick={() => handleOpenDebtPayment(d.id)}
-                          className="text-[10px] text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 hover:underline font-bold cursor-pointer"
-                        >
-                          سداد الآن
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
               </CardContent>
-            </Card>
-
-            {/* Specialized Financial Hubs (2x2 Grid) */}
-            <Card className="border border-border bg-card text-card-foreground shadow-xs rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="size-4 text-emerald-600 dark:text-emerald-400" />
-                <h3 className="text-xs font-bold text-foreground">بوابات التحليل المالي المتخصصة</h3>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  onClick={() => setLocation("/wealth-health")}
-                  className="flex flex-col items-start gap-1 p-3 rounded-xl border border-border bg-muted/40 hover:bg-muted text-right transition-all cursor-pointer group"
-                >
-                  <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                  <span className="font-bold text-foreground mt-1">درع التضخم</span>
-                  <span className="text-[10px] text-muted-foreground">صحة الثروة ومقاومة الغلاء</span>
-                </button>
-
-                <button
-                  onClick={() => setLocation("/investments?tab=instruments")}
-                  className="flex flex-col items-start gap-1 p-3 rounded-xl border border-border bg-muted/40 hover:bg-muted text-right transition-all cursor-pointer group"
-                >
-                  <Coins className="size-4 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform" />
-                  <span className="font-bold text-foreground mt-1">بورصة الذهب</span>
-                  <span className="text-[10px] text-muted-foreground">أسعار السبائك والعيارات</span>
-                </button>
-
-                <button
-                  onClick={() => setLocation("/quant")}
-                  className="flex flex-col items-start gap-1 p-3 rounded-xl border border-border bg-muted/40 hover:bg-muted text-right transition-all cursor-pointer group"
-                >
-                  <TrendingUp className="size-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
-                  <span className="font-bold text-foreground mt-1">التداول الكمي</span>
-                  <span className="text-[10px] text-muted-foreground">إشارات الأسهم والمحافظ</span>
-                </button>
-
-                <button
-                  onClick={() => setLocation("/governance?tab=zakat")}
-                  className="flex flex-col items-start gap-1 p-3 rounded-xl border border-border bg-muted/40 hover:bg-muted text-right transition-all cursor-pointer group"
-                >
-                  <Building2 className="size-4 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
-                  <span className="font-bold text-foreground mt-1">حاسبة الزكاة</span>
-                  <span className="text-[10px] text-muted-foreground">الزكاة الشرعية وحول الذهب</span>
-                </button>
-              </div>
             </Card>
           </div>
         </div>
@@ -626,13 +636,6 @@ export default function FintechDashboard() {
           debtsList={debtsList}
           accountsList={accountsList}
           defaultCurrency={currency}
-        />
-
-        <OnboardingWizard
-          open={wizardOpen}
-          onOpenChange={setWizardOpen}
-          workspaceName={workspaceName}
-          baseCurrency={currency}
         />
 
         <QuickOfflineTransactionModal
