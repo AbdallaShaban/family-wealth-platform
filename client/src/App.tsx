@@ -67,7 +67,7 @@ function Router() {
       {/* 5 Primary Gateways / Hubs */}
       <Route path={"/banking"}>{() => <BankingHubPage />}</Route>
       <Route path={"/investments"} component={InvestmentsPage} />
-      <Route path={"/quant"} component={QuantitativeHubPage} />
+      <Route path={"/quant"}>{() => <Redirect to="/investments?tab=quant" replace />}</Route>
       <Route path={"/governance"}>{() => <GovernanceHubPage />}</Route>
 
       {/* Legacy Route Redirects to 5-Hub Architecture */}
@@ -90,7 +90,7 @@ function Router() {
       <Route path={"/intelligence"} component={QuantitativeHubPage} />
       <Route path={"/advisory"} component={QuantitativeHubPage} />
       <Route path={"/advisor"} component={QuantitativeHubPage} />
-      <Route path={"/family/quant"} component={QuantitativeHubPage} />
+      <Route path={"/family/quant"}>{() => <Redirect to="/investments?tab=quant" replace />}</Route>
       <Route path={"/trading/swing"} component={SwingTradingPage} />
       <Route path={"/family/trading/swing"} component={SwingTradingPage} />
       <Route path={"/swing"} component={SwingTradingPage} />
@@ -105,7 +105,8 @@ function Router() {
       <Route path={"/export"}>{() => <FamilyExportPage />}</Route>
       <Route path={"/settlements"} component={SettlementPage} />
       <Route path={"/transfers"} component={TransfersPage} />
-      <Route path={"/trades"} component={TradingPage} />
+      <Route path={"/trades"}>{() => <Redirect to="/investments?tab=trades" replace />}</Route>
+      <Route path={"/trading"}>{() => <Redirect to="/investments?tab=trades" replace />}</Route>
       <Route path={"/valuation"} component={ValuationPage} />
       <Route path={"/data-quality"} component={MarketDataQualityPage} />
       <Route path={"/reconciliation"} component={ReconciliationPage} />

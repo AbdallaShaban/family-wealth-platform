@@ -86,7 +86,7 @@ function getCadenceBadgeLabel(cadence: string) {
   return cadence;
 }
 
-export default function QuantitativeHubPage() {
+export default function QuantitativeHubPage({ embedded = false }: { embedded?: boolean; [key: string]: any } = {}) {
   const [location, setLocation] = useLocation();
   const normalizeTab = (tab: string | null): string => {
     if (!tab) return "signals";
@@ -412,8 +412,7 @@ export default function QuantitativeHubPage() {
     }
   };
 
-  return (
-    <DashboardLayout>
+  const content = (
       <div className="space-y-8 pb-16 text-slate-900 dark:text-slate-100" dir="rtl">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
@@ -2248,6 +2247,8 @@ export default function QuantitativeHubPage() {
           defaultPrice={signal?.currentPrice}
         />
       </div>
-    </DashboardLayout>
   );
+
+  if (embedded) return content;
+  return <DashboardLayout>{content}</DashboardLayout>;
 }

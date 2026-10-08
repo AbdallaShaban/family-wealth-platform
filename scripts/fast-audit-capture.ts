@@ -10,11 +10,15 @@ import { COOKIE_NAME } from "../shared/const";
 const BASE_URL = "http://localhost:3000";
 const OUTPUT_DIR = path.resolve(process.cwd(), ".visual-audit", "theme-audit");
 
+const ARTIFACT_DIR = "C:/Users/abdal/.gemini/antigravity-ide/brain/5bd4cdcc-e17f-4f15-bc34-6a4e574b171d";
+
 const PAGES = [
   { slug: "01-dashboard", path: "/" },
   { slug: "02-banking", path: "/banking" },
+  { slug: "02b-accounts", path: "/accounts" },
   { slug: "03-transactions", path: "/transactions" },
   { slug: "04-investments", path: "/investments" },
+  { slug: "04b-investments-quant", path: "/investments?tab=quant" },
   { slug: "05-governance", path: "/governance" },
   { slug: "06-login", path: "/login" },
 ];
@@ -44,12 +48,11 @@ async function loadAndCapture(
     }
   }, theme);
 
-  if (slug === "01-dashboard") {
-    // Wait for tRPC summary data to finish loading
-    await page.waitForSelector("[data-slot='card'], .fintech-dashboard-grid", { timeout: 5000 }).catch(() => {});
-    await page.waitForTimeout(2000);
+  if (slug === "01-dashboard" || slug === "02b-accounts" || slug === "04-investments" || slug === "04b-investments-quant") {
+    // Wait for tRPC data to finish loading
+    await page.waitForTimeout(4000);
   } else {
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
   }
 
   await page.screenshot({ path: outputPath, fullPage });
@@ -200,6 +203,27 @@ async function capture() {
     } catch (e: any) {
       console.error(`Failed ${p.slug} mobile dark:`, e.message);
     }
+  }
+
+  // Copy relevant screenshots to ARTIFACT_DIR
+  try {
+    const filesToCopy = [
+      "02b-accounts-desktop-dark.png",
+      "02b-accounts-desktop-light.png",
+      "04-investments-desktop-dark.png",
+      "04-investments-desktop-light.png",
+      "04b-investments-quant-desktop-dark.png",
+    ];
+    for (const f of filesToCopy) {
+      const src = path.join(OUTPUT_DIR, f);
+      const dst = path.join(ARTIFACT_DIR, `step3_${f}`);
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, dst);
+        console.log(`Copied ${f} -> ${dst}`);
+      }
+    }
+  } catch (err: any) {
+    console.error("Failed to copy to ARTIFACT_DIR:", err.message);
   }
 
   await browser.close();
