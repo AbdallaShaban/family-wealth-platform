@@ -55,7 +55,14 @@ import { PwaInstallButton, PwaInstallSidebarBanner, PwaInstallDrawerItem } from 
 import { PwaInstallModal } from "./pwa/PwaInstallModal";
 import { QuickOfflineTransactionModal } from "./pwa/QuickOfflineTransactionModal";
 import { DualViewModeToggle, DualViewModeDrawerItem } from "./layout/DualViewModeToggle";
-import { Command, Smartphone, FileText, Receipt } from "lucide-react";
+import { Command, Smartphone, FileText, Receipt, Plus, Search, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type MinimumRole = "viewer" | "editor" | "advisor" | "owner";
 type MenuItem = { icon: LucideIcon; label: string; path: string; minimumRole: MinimumRole };
@@ -73,54 +80,66 @@ const roleArabicLabels: Record<MinimumRole, string> = {
 const navigationGroups: NavigationGroup[] = [
   {
     id: "overview",
-    label: "المركز المالي وصافي الثروة",
+    label: "الرئيسية",
     icon: LayoutDashboard,
     items: [
-      { icon: LayoutDashboard, label: "النظرة التنفيذية وصافي الثروة", path: "/", minimumRole: "viewer" },
+      { icon: LayoutDashboard, label: "نظرة عامة وصافي الثروة", path: "/", minimumRole: "viewer" },
       { icon: ShieldCheck, label: "صحة الثروة ودرع التضخم", path: "/wealth-health", minimumRole: "viewer" },
-      { icon: FileChartColumn, label: "القوائم المالية والميزانية المجمعة", path: "/reports", minimumRole: "viewer" },
     ],
   },
   {
     id: "banking",
-    label: "البنوك والسيولة والتدفقات",
+    label: "الحسابات والسيولة",
     icon: Landmark,
     items: [
-      { icon: Landmark, label: "الحسابات البنكية والمحافظ", path: "/banking", minimumRole: "viewer" },
-      { icon: ArrowLeftRight, label: "المعاملات المالية والقيود", path: "/transactions", minimumRole: "viewer" },
-      { icon: Landmark, label: "الشهادات والودائع الادخارية", path: "/banking?tab=certificates", minimumRole: "viewer" },
-      { icon: WalletCards, label: "السيولة والتخطيط والاحتياطي", path: "/banking?tab=liquidity", minimumRole: "editor" },
-      { icon: CreditCard, label: "الالتزامات والديون والبطاقات", path: "/banking?tab=debts", minimumRole: "editor" },
+      { icon: Landmark, label: "الحسابات والبطاقات", path: "/banking", minimumRole: "viewer" },
+      { icon: ArrowLeftRight, label: "سجل المعاملات والقيود", path: "/transactions", minimumRole: "viewer" },
     ],
   },
   {
     id: "investments",
-    label: "المحافظ وأسواق المال والذهب",
+    label: "المحفظة والأصول",
     icon: TrendingUp,
     items: [
       { icon: TrendingUp, label: "الأصول والمحفظة الاستثمارية", path: "/investments", minimumRole: "viewer" },
-      { icon: Coins, label: "أسعار الذهب والسبائك بالعيارات", path: "/investments?tab=instruments", minimumRole: "viewer" },
-      { icon: Sparkles, label: "تداول الأسهم والإشارات الكمية", path: "/quant", minimumRole: "viewer" },
-      { icon: BarChart3, label: "الأداء والأرباح المحققة (FIFO)", path: "/investments?tab=realized", minimumRole: "viewer" },
-      { icon: ArrowLeftRight, label: "التوزيع الجغرافي والمخاطر", path: "/investments?tab=allocation", minimumRole: "viewer" },
+      { icon: Sparkles, label: "أسواق المال والتداول الكمي", path: "/quant", minimumRole: "viewer" },
     ],
   },
   {
     id: "governance",
-    label: "الحوكمة وإدارة المخاطر والزكاة",
-    icon: ShieldAlert,
+    label: "التقارير والخدمات",
+    icon: FileChartColumn,
     items: [
-      { icon: Coins, label: "حاسبة الزكاة الشرعية وحول الذهب", path: "/governance?tab=zakat", minimumRole: "viewer" },
-      { icon: ShieldAlert, label: "اختبارات الهبوط والضغط (Stress Testing)", path: "/stress-testing", minimumRole: "viewer" },
-      { icon: FileLock2, label: "الخزنة المشفرة والمستندات", path: "/governance?tab=vault", minimumRole: "editor" },
-      { icon: BookOpenCheck, label: "سجل التدقيق المحاسبي والاعتمادات", path: "/governance?tab=audit", minimumRole: "advisor" },
-      { icon: UsersRound, label: "أفراد العائلة والصلاحيات والنسخ", path: "/governance?tab=members", minimumRole: "owner" },
+      { icon: FileChartColumn, label: "القوائم المالية والتقارير", path: "/reports", minimumRole: "viewer" },
+      { icon: ShieldAlert, label: "الحوكمة والزكاة والخزنة", path: "/governance", minimumRole: "viewer" },
     ],
   },
 ];
 
+const routeLabels: Record<string, string> = {
+  "/": "نظرة عامة وصافي الثروة",
+  "/wealth-health": "صحة الثروة ودرع التضخم",
+  "/banking": "الحسابات والسيولة",
+  "/transactions": "سجل المعاملات والقيود",
+  "/accounts": "الحسابات والبطاقات",
+  "/certificates": "الشهادات والودائع الادخارية",
+  "/debts": "الالتزامات والديون والبطاقات",
+  "/investments": "الأصول والمحفظة الاستثمارية",
+  "/quant": "أسواق المال والتداول الكمي",
+  "/reports": "القوائم المالية والتقارير",
+  "/governance": "الحوكمة والزكاة والخزنة",
+  "/stress-testing": "اختبارات الهبوط والضغط",
+  "/vault": "الخزنة المشفرة والمستندات",
+  "/audit": "سجل التدقيق المحاسبي",
+  "/zakat": "حاسبة الزكاة وحول الذهب",
+};
+
 // Legacy route → hub ID mapping for backward compatibility
 const routeToHubMap: Record<string, string> = {
+  "/": "overview",
+  "/wealth-health": "overview",
+  "/valuation": "overview",
+  "/banking": "banking",
   "/accounts": "banking",
   "/certificates": "banking",
   "/cash-flow": "banking",
@@ -130,16 +149,18 @@ const routeToHubMap: Record<string, string> = {
   "/reconciliation": "banking",
   "/transactions": "banking",
   "/imports": "banking",
+  "/investments": "investments",
   "/performance": "investments",
   "/risk": "investments",
   "/assets-insurance": "investments",
-  "/stress-testing": "quant",
-  "/trading/swing": "quant",
-  "/goals": "quant",
-  "/operations": "quant",
-  "/valuation": "overview",
-  "/wealth-health": "overview",
+  "/quant": "investments",
+  "/stress-testing": "investments",
+  "/trading": "investments",
+  "/trading/swing": "investments",
+  "/goals": "investments",
+  "/operations": "investments",
   "/reports": "governance",
+  "/governance": "governance",
   "/audit": "governance",
   "/vault": "governance",
   "/consolidation": "governance",
@@ -223,76 +244,17 @@ function FintechNav({
     }))
     .filter(group => group.items.length > 0);
 
-  const currentActiveGateway = getActiveGatewayId(location);
-
-  const [openGateways, setOpenGateways] = useState<string[]>(() => {
-    try {
-      const saved = sessionStorage.getItem("family-sidebar-open-gateways");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          if (!parsed.includes(currentActiveGateway)) {
-            return [...parsed, currentActiveGateway];
-          }
-          return parsed;
-        }
-      }
-    } catch {
-      // fallback
-    }
-    return [currentActiveGateway];
-  });
-
-  useEffect(() => {
-    const activeG = getActiveGatewayId(location);
-    setOpenGateways(prev => {
-      if (!prev.includes(activeG)) {
-        const next = [...prev, activeG];
-        try {
-          sessionStorage.setItem("family-sidebar-open-gateways", JSON.stringify(next));
-        } catch {}
-        return next;
-      }
-      return prev;
-    });
-  }, [location]);
-
-  useEffect(() => {
-    const navigation = navRef.current;
-    if (!navigation) return;
-    try {
-      const saved = Number(sessionStorage.getItem("family-sidebar-scroll-top")) || 0;
-      if (saved > 0) {
-        navigation.scrollTop = saved;
-      }
-    } catch {}
-  }, [collapsed]);
-
-  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
-    try {
-      sessionStorage.setItem("family-sidebar-scroll-top", String(e.currentTarget.scrollTop));
-    } catch {}
-  };
-
-  const handleAccordionChange = (values: string[]) => {
-    setOpenGateways(values);
-    try {
-      sessionStorage.setItem("family-sidebar-open-gateways", JSON.stringify(values));
-    } catch {}
-  };
-
   if (collapsed) {
     return (
       <TooltipProvider delayDuration={60}>
         <nav
           ref={navRef}
-          onScroll={handleScroll}
-          className="fintech-v2-icon-nav flex-1 min-h-0 overflow-y-auto scrollbar-none py-3 px-1.5 space-y-2"
+          className="fintech-v2-icon-nav flex-1 min-h-0 overflow-y-auto scrollbar-none py-3 px-1.5 space-y-3"
           aria-label="التنقل المصغر"
         >
           {visibleGroups.map((group, gIdx) => (
             <div key={group.id} className="fintech-v2-icon-group flex flex-col items-center gap-1.5 w-full">
-              {gIdx > 0 && <div className="w-7 h-px bg-border/60 my-1 shrink-0" />}
+              {gIdx > 0 && <div className="w-6 h-px bg-border/60 my-1 shrink-0" />}
               {group.items.map(item => {
                 const Icon = item.icon;
                 const isCurrent =
@@ -304,8 +266,8 @@ function FintechNav({
                       <button
                         className={`size-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
                           isCurrent
-                            ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-700 shadow-xs"
-                            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
+                            ? "bg-primary/10 text-primary border border-primary/25 shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         }`}
                         onClick={() => onNavigate(item.path)}
                         aria-label={item.label}
@@ -320,7 +282,7 @@ function FintechNav({
                       className="bg-popover border border-border text-popover-foreground shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
                     >
                       <p className="font-semibold text-xs text-foreground">{item.label}</p>
-                      <p className="text-[10px] text-emerald-400 font-medium mt-0.5">{group.label}</p>
+                      <p className="text-[10px] text-primary font-medium mt-0.5">{group.label}</p>
                     </TooltipContent>
                   </Tooltip>
                 );
@@ -335,75 +297,56 @@ function FintechNav({
   return (
     <nav
       ref={navRef}
-      onScroll={handleScroll}
-      className="fintech-v2-nav flex-1 min-h-0 overflow-y-auto scrollbar-none px-3 py-3 space-y-2"
+      className="fintech-v2-nav flex-1 min-h-0 overflow-y-auto scrollbar-none px-3 py-3 space-y-4"
       aria-label="التنقل الرئيسي"
     >
-      <Accordion
-        type="multiple"
-        value={openGateways}
-        onValueChange={handleAccordionChange}
-        className="fintech-v2-accordion space-y-2"
-      >
-        {visibleGroups.map(group => {
-          const GroupIcon = group.icon;
-          const hasActiveItem = group.items.some(
-            item =>
-              location === item.path ||
-              (item.path !== "/" && (location === item.path || location.startsWith(item.path + "/")))
-          );
-          return (
-            <AccordionItem value={group.id} key={group.id} className="border-0">
-              <AccordionTrigger
-                className={`fintech-v2-group-trigger flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 ${
-                  hasActiveItem
-                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 border border-zinc-200 dark:border-zinc-700/80 font-bold"
-                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
-                }`}
-              >
-                <span className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className={`p-1.5 rounded-lg shrink-0 border transition-colors ${
-                      hasActiveItem
-                        ? "bg-emerald-50 dark:bg-zinc-700/60 border-emerald-200 dark:border-zinc-600 text-emerald-600 dark:text-emerald-400"
-                        : "bg-zinc-100 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400"
+      {visibleGroups.map(group => {
+        const GroupIcon = group.icon;
+        const isGroupActive = group.items.some(
+          item =>
+            location === item.path ||
+            (item.path !== "/" && (location === item.path || location.startsWith(item.path + "/")))
+        );
+        return (
+          <div key={group.id} className="space-y-1.5">
+            <div className="flex items-center gap-2 px-2.5 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
+              <span className={`p-1 rounded-md shrink-0 border transition-colors ${
+                isGroupActive
+                  ? "bg-primary/10 border-primary/25 text-primary"
+                  : "bg-muted/60 border-border text-muted-foreground"
+              }`}>
+                <GroupIcon className="size-3.5" />
+              </span>
+              <span>{group.label}</span>
+            </div>
+            <div className="space-y-1 pr-1">
+              {group.items.map(item => {
+                const Icon = item.icon;
+                const isCurrent =
+                  location === item.path ||
+                  (item.path !== "/" && (location === item.path || location.startsWith(item.path + "/")));
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => onNavigate(item.path)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-right ${
+                      isCurrent
+                        ? "bg-primary/10 text-primary font-bold border border-primary/25 shadow-xs"
+                        : "text-foreground/80 hover:text-foreground hover:bg-muted/80 border border-transparent"
                     }`}
                   >
-                    <GroupIcon className="size-4" />
-                  </span>
-                  <span className="truncate text-xs font-bold">{group.label}</span>
-                </span>
-              </AccordionTrigger>
-              <AccordionContent className="fintech-v2-group-content pt-1 pb-1.5 pr-2 mr-3 border-r border-dashed border-zinc-200 dark:border-zinc-800 space-y-1">
-                {group.items.map(item => {
-                  const Icon = item.icon;
-                  const isCurrent =
-                    location === item.path ||
-                    (item.path !== "/" && (location === item.path || location.startsWith(item.path + "/")));
-                  return (
-                    <button
-                      key={item.path}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-150 text-right cursor-pointer ${
-                        isCurrent
-                          ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-950 dark:text-zinc-50 font-bold border-r-2 border-emerald-500 shadow-xs"
-                          : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 font-medium"
-                      }`}
-                      onClick={() => onNavigate(item.path)}
-                      aria-current={isCurrent ? "page" : undefined}
-                    >
-                      <Icon className={`size-4 shrink-0 ${isCurrent ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400"}`} />
-                      <span className="truncate flex-1">{item.label}</span>
-                      {isCurrent && (
-                        <span className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0 shadow-[0_0_6px_#10b981]" />
-                      )}
-                    </button>
-                  );
-                })}
-              </AccordionContent>
-            </AccordionItem>
-          );
-        })}
-      </Accordion>
+                    <Icon className={`size-4 shrink-0 ${isCurrent ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className="truncate flex-1">{item.label}</span>
+                    {isCurrent && (
+                      <span className="size-1.5 rounded-full bg-primary shrink-0 shadow-[0_0_6px_var(--primary)]" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </nav>
   );
 }
@@ -556,8 +499,13 @@ function MobileBottomNav({
     location === "/banking" ||
     location === "/accounts" ||
     location.startsWith("/banking") ||
-    location.startsWith("/accounts");
-  const isTransactions = location === "/transactions" || location.startsWith("/transactions");
+    location.startsWith("/accounts") ||
+    location === "/transactions";
+  const isInvestments =
+    location === "/investments" ||
+    location === "/trading" ||
+    location.startsWith("/investments") ||
+    location.startsWith("/quant");
 
   return (
     <nav className="fintech-bottom-nav" aria-label="التنقل السفلي">
@@ -590,24 +538,24 @@ function MobileBottomNav({
           onClick={() => canQuickCapture && onQuickCapture()}
           aria-label="إدخال مالي سريع"
         >
-          <PlusCircle className="size-6" />
+          <Plus className="size-6 stroke-[2.5]" />
           <span>إدخال</span>
         </button>
 
-        {/* 4. المعاملات والقيود */}
+        {/* 4. المحفظة والأصول */}
         <button
-          className={isTransactions ? "is-active" : ""}
-          onClick={() => onNavigate("/transactions")}
-          aria-label="المعاملات المالية"
+          className={isInvestments ? "is-active" : ""}
+          onClick={() => onNavigate("/investments")}
+          aria-label="المحفظة والأصول"
         >
-          <ArrowLeftRight className="size-5" />
-          <span>المعاملات</span>
+          <TrendingUp className="size-5" />
+          <span>الأصول</span>
         </button>
 
         {/* 5. المزيد من الأدوات والخيارات */}
         <button onClick={onOpenMore} aria-label="المزيد من الأدوات والقوائم">
           <Menu className="size-5" />
-          <span>المزيد</span>
+          <span>الخدمات</span>
         </button>
       </div>
     </nav>
@@ -673,7 +621,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
   const canAccessCurrentRoute = !routeItem || roleRank[role] >= roleRank[routeItem.minimumRole];
   const currentLabel = canAccessCurrentRoute
-    ? routeItem?.label ?? (location === "/" ? "النظرة المالية العامة" : "نظرة تفصيلية")
+    ? (routeItem?.label ?? routeLabels[location] ?? routeLabels[normalizedLocation] ?? (location === "/" ? "نظرة عامة وصافي الثروة" : "نظرة تفصيلية"))
     : "وصول محدود";
   const navigate = (path: string) => {
     setLocation(path);
@@ -857,7 +805,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onOpenSmartPaste={() => setSmartPasteOpen(true)}
               onOpenReceiptOcr={() => setReceiptOcrOpen(true)}
               onOpenQuickEntry={() => setQuickEntryOpen(true)}
-              onOpenPwaInstall={() => setPwaInstallOpen(true)}
+              onNavigate={navigate}
+              user={user}
+              onLogout={logout}
+              role={role}
             />
           </div>
         </header>
@@ -924,92 +875,167 @@ function TopbarControls({
   onOpenSmartPaste,
   onOpenReceiptOcr,
   onOpenQuickEntry,
-  onOpenPwaInstall,
+  onNavigate,
+  user,
+  onLogout,
+  role,
 }: {
   onOpenOmni?: () => void;
   onOpenSmartPaste?: () => void;
   onOpenReceiptOcr?: () => void;
   onOpenQuickEntry?: () => void;
-  onOpenPwaInstall?: () => void;
+  onNavigate?: (path: string) => void;
+  user?: any;
+  onLogout?: () => void;
+  role?: MinimumRole;
 }) {
   const { theme, toggleTheme } = useTheme();
-  const { isPrivate, togglePrivacy } = usePrivacyMode();
-  return (
-    <>
-      {/* Desktop Only Buttons Wrapper - Guaranteed hidden on mobile screens */}
-      <div className="hidden md:flex items-center gap-1.5 fintech-topbar-desktop-actions">
-        <DualViewModeToggle />
-        <OfflineStatusBadge />
-        <PwaInstallButton onOpenModal={onOpenPwaInstall} />
-        <button
-          onClick={onOpenReceiptOcr}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs cursor-pointer"
-          title="مطابقة إيصال إنستاباي / محفظة ذكياً (OCR)"
-          aria-label="مسح إيصال ضوئي فوري"
-        >
-          <Receipt className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="hidden 2xl:inline text-[11px]">مسح إيصال (OCR)</span>
-        </button>
-        <button
-          onClick={onOpenQuickEntry}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 text-blue-800 dark:text-blue-300 font-bold transition-all shadow-xs cursor-pointer"
-          title="تسجيل عملية مالية سريعة (يدعم وضع عدم الاتصال)"
-          aria-label="تسجيل سريع"
-        >
-          <PlusCircle className="size-3.5 text-blue-600 dark:text-blue-400" />
-          <span className="hidden 2xl:inline text-[11px]">إدخال سريع</span>
-        </button>
-        <ExecutivePdfModal
-          trigger={
-            <button
-              className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold transition-all shadow-xs cursor-pointer"
-              title="تصدير تقرير الثروة التنفيذي (PDF)"
-              aria-label="تصدير تقرير الثروة التنفيذي"
-            >
-              <FileText className="size-3.5 text-amber-600 dark:text-amber-400" />
-              <span className="hidden 2xl:inline text-[11px]">تقرير PDF تنفيذي</span>
-            </button>
-          }
-        />
-        <button
-          onClick={onOpenSmartPaste}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold transition-all shadow-xs cursor-pointer"
-          title="لصق رسالة بنكية / إنستاباي (تسجيل سريع)"
-          aria-label="لصق رسالة بنكية أو إشعار إنستاباي"
-        >
-          <Smartphone className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="hidden 2xl:inline text-[11px]">لصق رسالة بنكية</span>
-        </button>
-        <button
-          onClick={onOpenOmni}
-          className="fintech-topbar-button flex items-center gap-1.5 px-2 bg-muted/60 border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-          title="لوحة الأوامر الشاملة (Ctrl + K)"
-          aria-label="فتح لوحة الأوامر الشاملة"
-        >
-          <Command className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-[11px] font-mono text-muted-foreground">Ctrl+K</span>
-        </button>
-        <button
-          onClick={togglePrivacy}
-          className={`fintech-topbar-button ${isPrivate ? "is-active" : ""}`}
-          aria-pressed={isPrivate}
-          aria-label={isPrivate ? "إظهار القيم" : "إخفاء القيم"}
-        >
-          <EyeOff className="size-4" />
-          <span className="hidden sm:inline">{isPrivate ? "إظهار" : "خصوصية"}</span>
-        </button>
-        <button
-          onClick={toggleTheme}
-          className="fintech-topbar-button"
-          aria-label="تبديل الوضع اللوني"
-        >
-          {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-        </button>
-      </div>
+  const initial = user?.name?.trim().charAt(0).toUpperCase() || "F";
+  const roleLabel = (role && roleArabicLabels[role]) || "مشاهد معتمد";
 
-      {/* NotificationCenter: Ultra-clean and visible on all screen sizes */}
+  return (
+    <div className="flex items-center gap-2">
+      {/* 1. Quick Search / Omni Bar (Ctrl + K) */}
+      <button
+        onClick={onOpenOmni}
+        className="fintech-topbar-button flex items-center gap-2 px-2.5 sm:px-3 bg-muted/60 border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer rounded-xl h-9"
+        title="لوحة الأوامر والبحث الشامل (Ctrl + K)"
+        aria-label="لوحة الأوامر والبحث الشامل"
+      >
+        <Search className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        <span className="hidden sm:inline text-xs font-medium">بحث...</span>
+        <kbd className="hidden lg:inline-flex items-center text-[10px] font-mono bg-background border border-border/80 px-1.5 py-0.5 rounded text-muted-foreground mr-1">
+          Ctrl+K
+        </kbd>
+      </button>
+
+      {/* 2. Prominent Quick Actions (+) Dropdown Menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="flex items-center gap-1.5 h-9 px-3 sm:px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer shrink-0"
+            title="إجراءات سريعة"
+            aria-label="إجراءات سريعة"
+          >
+            <Plus className="size-4 stroke-[2.5]" />
+            <span className="hidden sm:inline">إجراء سريع</span>
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="w-56 p-1.5 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl z-50"
+        >
+          <DropdownMenuItem
+            onClick={onOpenQuickEntry}
+            className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-xs font-semibold hover:bg-muted"
+          >
+            <div className="size-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <PlusCircle className="size-4" />
+            </div>
+            <div>
+              <div className="font-bold text-foreground">تسجيل معاملة سريعة</div>
+              <div className="text-[10px] text-muted-foreground">مصروف، إيداع، تحويل، سداد</div>
+            </div>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={onOpenReceiptOcr}
+            className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-xs font-semibold hover:bg-muted"
+          >
+            <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Receipt className="size-4" />
+            </div>
+            <div>
+              <div className="font-bold text-foreground">مسح إيصال فوري (OCR)</div>
+              <div className="text-[10px] text-muted-foreground">إنستاباي والمحافظ الإلكترونية</div>
+            </div>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={onOpenSmartPaste}
+            className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-xs font-semibold hover:bg-muted"
+          >
+            <div className="size-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+              <Smartphone className="size-4" />
+            </div>
+            <div>
+              <div className="font-bold text-foreground">لصق رسالة بنكية</div>
+              <div className="text-[10px] text-muted-foreground">قراءة ذكية لإشعارات SMS</div>
+            </div>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator className="my-1 bg-border/60" />
+
+          <ExecutivePdfModal
+            trigger={
+              <div className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-xs font-semibold hover:bg-muted w-full">
+                <div className="size-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <FileText className="size-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-foreground">تقرير الثروة التنفيذي</div>
+                  <div className="text-[10px] text-muted-foreground">تصدير مستند PDF معتمد</div>
+                </div>
+              </div>
+            }
+          />
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* 3. Theme Toggle (Sun / Moon) */}
+      <button
+        onClick={toggleTheme}
+        className="fintech-topbar-button size-9 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer flex items-center justify-center shrink-0"
+        aria-label="تبديل الوضع اللوني"
+        title={theme === "dark" ? "التحويل للوضع الفاتح" : "التحويل للوضع الداكن"}
+      >
+        {theme === "dark" ? <Sun className="size-4 text-amber-400" /> : <Moon className="size-4 text-slate-700" />}
+      </button>
+
+      {/* 4. User Profile Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="flex items-center gap-1.5 p-1 rounded-xl border border-border/80 hover:border-border hover:bg-muted/60 transition-all cursor-pointer shrink-0"
+            aria-label="الملف الشخصي"
+            title={user?.name || "مستخدم FAMILY"}
+          >
+            <span className="size-7 rounded-lg bg-primary/15 border border-primary/25 text-primary flex items-center justify-center font-bold text-xs">
+              {initial}
+            </span>
+            <ChevronDown className="size-3 text-muted-foreground ml-0.5" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="end"
+          className="w-52 p-1.5 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl z-50"
+        >
+          <div className="px-2.5 py-2 border-b border-border/60 mb-1">
+            <p className="font-bold text-xs text-foreground truncate">{user?.name || "مستخدم FAMILY"}</p>
+            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{roleLabel}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{user?.email || "جلسة آمنة"}</p>
+          </div>
+          <DropdownMenuItem
+            onClick={() => onNavigate?.("/governance?tab=members")}
+            className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-medium hover:bg-muted"
+          >
+            <UsersRound className="size-3.5 text-muted-foreground" />
+            <span>إدارة الصلاحيات والأعضاء</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="my-1 bg-border/60" />
+          <DropdownMenuItem
+            onClick={onLogout}
+            className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+          >
+            <LogOut className="size-3.5" />
+            <span>تسجيل الخروج</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* 5. Notification Center */}
       <NotificationCenter />
-    </>
+    </div>
   );
 }
 
