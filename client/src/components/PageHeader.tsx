@@ -60,18 +60,20 @@ export function PageHeader({
             <BreadcrumbLink href="/">الرئيسية</BreadcrumbLink>
           </BreadcrumbItem>
           {breadcrumbs ? (
-            breadcrumbs.map((crumb, idx) => (
-              <React.Fragment key={idx}>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  {crumb.href ? (
-                    <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-                  ) : (
-                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                  )}
-                </BreadcrumbItem>
-              </React.Fragment>
-            ))
+            breadcrumbs
+              .filter((crumb) => crumb.label !== "الرئيسية" && crumb.href !== "/")
+              .map((crumb, idx) => (
+                <React.Fragment key={idx}>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    {crumb.href ? (
+                      <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItem>
+                </React.Fragment>
+              ))
           ) : (
             <>
               {category && (

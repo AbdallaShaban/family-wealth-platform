@@ -12,24 +12,17 @@ import { ViewModeProvider } from "./contexts/ViewModeContext";
 
 const FamilyHomeGate = lazy(() => import("./pages/FamilyHomeGate"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
-const AccountsPage = lazy(() => import("./pages/family/AccountsPage"));
 const LedgerPage = lazy(() => import("./pages/family/LedgerPage"));
-const CashFlowPage = lazy(() => import("./pages/family/CashFlowPage"));
 const CashFlowRegisterPage = lazy(() => import("./pages/family/CashFlowRegisterPage"));
 const RecurringRulesPage = lazy(() => import("./pages/family/RecurringRulesPage"));
-const DebtsPage = lazy(() => import("./pages/family/DebtsPage"));
-const CertificatesPage = lazy(() => import("./pages/family/CertificatesPage"));
-const EmergencyFundPage = lazy(() => import("./pages/family/EmergencyFundPage"));
 const TransfersPage = lazy(() => import("./pages/family/TransfersPage"));
 const InvestmentsPage = lazy(() => import("./pages/InvestmentsPageRedesign"));
-const TradingPage = lazy(() => import("./pages/TradingPageRedesign"));
 const ValuationPage = lazy(() => import("./pages/ValuationPageRedesign"));
 const GoalsPlanningPage = lazy(() => import("./pages/family/GoalsPlanningPage"));
 const RiskAllocationPage = lazy(() => import("./pages/family/RiskAllocationPage"));
 const FeeTaxRulesPage = lazy(() => import("./pages/family/FeeTaxRulesPage"));
 const AssetsInsurancePage = lazy(() => import("./pages/family/AssetsInsurancePage"));
 const RebalanceReviewPage = lazy(() => import("./pages/family/RebalanceReviewPage"));
-const MembersPage = lazy(() => import("./pages/MembersPageRedesign"));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const AuditPage = lazy(() => import("./pages/family/AuditPage"));
 const BankImportInbox = lazy(() => import("./pages/BankImportInbox"));
@@ -117,7 +110,6 @@ function Router() {
       <Route path={"/tax"} component={FeeTaxRulesPage} />
       <Route path={"/assets-insurance"} component={AssetsInsurancePage} />
       <Route path={"/risk/rebalance"} component={RebalanceReviewPage} />
-      <Route path={"/members"}>{() => <MembersPage />}</Route>
       <Route path={"/reports"}>{() => <ReportsPage />}</Route>
       <Route path={"/family/reports"}>{() => <ReportsPage />}</Route>
       <Route path={"/wealth-health"} component={WealthHealthPage} />
