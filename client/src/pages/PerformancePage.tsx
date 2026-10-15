@@ -155,7 +155,7 @@ export default function PerformancePage() {
             </Badge>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {/* 1. TWR (Time-Weighted Return) */}
             <div className="rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-4 shadow-xs">
               <div className="flex items-center justify-between mb-2">
@@ -298,6 +298,60 @@ export default function PerformancePage() {
                         ({formatPercent(data.benchmark.benchmarkCumulativeReturn)})
                       </span>
                     )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 5. Public Market Equivalent (Kaplan-Schoar PME & Direct Alpha) */}
+            <div className="rounded-xl border border-[#E2E8F0] dark:border-border bg-[#FFFFFF] dark:bg-card p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-2">
+                <FinancialTooltip term="PME">
+                  <span className="text-xs font-semibold text-[#64748B] dark:text-muted-foreground cursor-help border-b border-dashed border-[#64748B]/40">
+                    مكافئ السوق (KS-PME)
+                  </span>
+                </FinancialTooltip>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] border-[#E2E8F0] dark:border-border ${
+                    data?.pme?.status === "available"
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200"
+                      : "bg-[#F8FAFC] dark:bg-muted/40 text-[#64748B] dark:text-muted-foreground"
+                  }`}
+                >
+                  {data?.pme?.status === "available"
+                    ? "PME مقترن"
+                    : data?.pme?.status === "insufficient_data"
+                    ? "تدفقات غير كافية"
+                    : "بدون أسعار مؤشر"}
+                </Badge>
+              </div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <div className="space-y-1">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xs text-[#64748B] dark:text-muted-foreground">نسبة PME:</span>
+                    <span className={`text-xl font-bold font-mono ${
+                      data?.pme?.pmeRatio && parseFloat(data.pme.pmeRatio) >= 1
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : data?.pme?.pmeRatio
+                        ? "text-amber-600 dark:text-amber-400"
+                        : "text-slate-500"
+                    }`}>
+                      {data?.pme?.pmeRatio ? `${data.pme.pmeRatio}x` : "—"}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[#64748B] dark:text-muted-foreground flex items-center justify-between">
+                    <span>
+                      Direct Alpha:{" "}
+                      <span className={`font-mono font-bold ${getReturnColorClass(data?.pme?.directAlphaAnnualized)}`}>
+                        {formatPercent(data?.pme?.directAlphaAnnualized)}
+                      </span>
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {data?.pme?.pmeRatio && parseFloat(data.pme.pmeRatio) > 1 ? "تفوق على السوق" : "أداء مقارن"}
+                    </span>
                   </div>
                 </div>
               )}

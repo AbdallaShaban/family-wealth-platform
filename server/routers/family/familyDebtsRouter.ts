@@ -5,6 +5,7 @@ import { assertRole, ensurePersonalFamilyContext } from "../../familyAccess";
 import { createDebt, postDebtPayment } from "../../familyLedger";
 import { listDebtSummaries } from "../../familyRead";
 import { compareExtraDebtPayment, projectDebtSchedule } from "../../debtMath";
+import { simulateDebtPayoffStrategies } from "../../services/debtStrategyService";
 import { currency, idempotencyKey, money, occurredAt } from "../../schemas/familySchemas";
 
 export const familyDebtsRouter = router({
@@ -68,4 +69,18 @@ export const familyDebtsRouter = router({
     }) : null;
     return { debtId: debt.id, currency: debt.currency, schedule, comparison };
   }),
+
+  snowballAvalancheComparison: protectedProcedure
+    .input(
+      z
+        .object({
+          extraMonthlyPayment: z.number().min(0).default(0),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const family = await ensurePersonalFamilyContext(ctx.user);
+      return simulateDebtPayoffStrategies(family, input?.extraMonthlyPayment ?? 0);
+    }),
 });
+

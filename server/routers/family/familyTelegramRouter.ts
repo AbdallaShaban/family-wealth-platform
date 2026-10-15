@@ -1,49 +1,60 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../../_core/trpc";
-import { assertRole, ensurePersonalFamilyContext } from "../../familyAccess";
+import { resolveFamilyContextForWorkspace } from "../../familyAccess";
 import {
   loadTelegramConfig,
   saveTelegramConfig,
   sendTestAlert,
   runAllAlertChecks,
   checkWeeklySummaryAlert,
+  type TelegramAlertConfig,
 } from "../../services/telegramAlertService";
 
 export const familyTelegramRouter = router({
-  getConfig: protectedProcedure.query(async ({ ctx }) => {
-    const family = await ensurePersonalFamilyContext(ctx.user);
-    const config = loadTelegramConfig();
+  getConfig: protectedProcedure
+    .input(
+      z
+        .object({
+          workspaceId: z.number().int().positive().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const family = await resolveFamilyContextForWorkspace(ctx.user, input?.workspaceId, "viewer");
+      const config = loadTelegramConfig(family.workspace.id);
 
-    // Mask bot token for security (only show first 6 and last 4 characters)
-    let maskedToken = "";
-    if (config.botToken) {
-      if (config.botToken.length > 12) {
-        maskedToken = `${config.botToken.slice(0, 6)}••••••••${config.botToken.slice(-4)}`;
-      } else {
-        maskedToken = "••••••••••••";
+      // Mask bot token for security (only show first 6 and last 4 characters)
+      let maskedToken = "";
+      if (config.botToken) {
+        if (config.botToken.length > 12) {
+          maskedToken = `${config.botToken.slice(0, 6)}••••••••${config.botToken.slice(-4)}`;
+        } else {
+          maskedToken = "••••••••••••";
+        }
       }
-    }
 
-    return {
-      isConfigured: Boolean(config.botToken && config.chatId),
-      botTokenMasked: maskedToken,
-      chatId: config.chatId,
-      enabled: config.enabled,
-      enableCertificates: config.enableCertificates,
-      enableGoldMovements: config.enableGoldMovements,
-      enableZakatHawl: config.enableZakatHawl,
-      enableWeeklySummary: config.enableWeeklySummary,
-      goldMovementThresholdPct: config.goldMovementThresholdPct,
-      lastCheckedAt: config.lastCheckedAt || null,
-      lastDispatchedAt: config.lastDispatchedAt || null,
-      lastTestSentAt: config.lastTestSentAt || null,
-    };
-  }),
+      return {
+        workspaceId: family.workspace.id,
+        isConfigured: Boolean(config.botToken && config.chatId),
+        botTokenMasked: maskedToken,
+        chatId: config.chatId,
+        enabled: config.enabled,
+        enableCertificates: config.enableCertificates,
+        enableGoldMovements: config.enableGoldMovements,
+        enableZakatHawl: config.enableZakatHawl,
+        enableWeeklySummary: config.enableWeeklySummary,
+        goldMovementThresholdPct: config.goldMovementThresholdPct,
+        lastCheckedAt: config.lastCheckedAt || null,
+        lastDispatchedAt: config.lastDispatchedAt || null,
+        lastTestSentAt: config.lastTestSentAt || null,
+      };
+    }),
 
   updateConfig: protectedProcedure
     .input(
       z.object({
+        workspaceId: z.number().int().positive().optional(),
         botToken: z.string().trim().optional(),
         chatId: z.string().trim().optional(),
         enabled: z.boolean().optional(),
@@ -55,14 +66,16 @@ export const familyTelegramRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const family = await ensurePersonalFamilyContext(ctx.user);
-      assertRole(family, "editor");
+      const family = await resolveFamilyContextForWorkspace(ctx.user, input.workspaceId, "editor");
 
-      const updates: Record<string, any> = {};
+      const updates: Partial<TelegramAlertConfig> = {};
 
-      // Only update botToken if it doesn't contain mask dots
-      if (input.botToken && !input.botToken.includes("•")) {
-        updates.botToken = input.botToken;
+      // Only update botToken if provided, non-empty, and doesn't contain mask dots
+      if (input.botToken !== undefined) {
+        const trimmed = input.botToken.trim();
+        if (trimmed && !trimmed.includes("•")) {
+          updates.botToken = trimmed;
+        }
       }
       if (input.chatId !== undefined) updates.chatId = input.chatId;
       if (input.enabled !== undefined) updates.enabled = input.enabled;
@@ -72,9 +85,10 @@ export const familyTelegramRouter = router({
       if (input.enableWeeklySummary !== undefined) updates.enableWeeklySummary = input.enableWeeklySummary;
       if (input.goldMovementThresholdPct !== undefined) updates.goldMovementThresholdPct = input.goldMovementThresholdPct;
 
-      const updated = saveTelegramConfig(updates);
+      const updated = saveTelegramConfig(family.workspace.id, updates);
       return {
         success: true,
+        workspaceId: family.workspace.id,
         isConfigured: Boolean(updated.botToken && updated.chatId),
       };
     }),
@@ -83,19 +97,19 @@ export const familyTelegramRouter = router({
     .input(
       z
         .object({
+          workspaceId: z.number().int().positive().optional(),
           botToken: z.string().trim().optional(),
           chatId: z.string().trim().optional(),
         })
         .optional()
     )
     .mutation(async ({ ctx, input }) => {
-      const family = await ensurePersonalFamilyContext(ctx.user);
-      assertRole(family, "editor");
+      const family = await resolveFamilyContextForWorkspace(ctx.user, input?.workspaceId, "editor");
 
-      const token = input?.botToken && !input.botToken.includes("•") ? input.botToken : undefined;
-      const chat = input?.chatId;
+      const token = input?.botToken && !input.botToken.includes("•") && input.botToken.trim() ? input.botToken.trim() : undefined;
+      const chat = input?.chatId && input.chatId.trim() ? input.chatId.trim() : undefined;
 
-      const result = await sendTestAlert(token, chat);
+      const result = await sendTestAlert(family, token, chat);
       if (!result.success) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -105,23 +119,39 @@ export const familyTelegramRouter = router({
 
       return {
         success: true,
+        workspaceId: family.workspace.id,
         messageId: result.messageId,
       };
     }),
 
-  runChecks: protectedProcedure.mutation(async ({ ctx }) => {
-    const family = await ensurePersonalFamilyContext(ctx.user);
-    assertRole(family, "editor");
-    return runAllAlertChecks(family);
-  }),
+  runChecks: protectedProcedure
+    .input(
+      z
+        .object({
+          workspaceId: z.number().int().positive().optional(),
+        })
+        .optional()
+    )
+    .mutation(async ({ ctx, input }) => {
+      const family = await resolveFamilyContextForWorkspace(ctx.user, input?.workspaceId, "editor");
+      return runAllAlertChecks(family);
+    }),
 
-  sendWeeklySummaryNow: protectedProcedure.mutation(async ({ ctx }) => {
-    const family = await ensurePersonalFamilyContext(ctx.user);
-    assertRole(family, "editor");
-    const result = await checkWeeklySummaryAlert(family, true);
-    return {
-      success: result.length > 0,
-      details: result,
-    };
-  }),
+  sendWeeklySummaryNow: protectedProcedure
+    .input(
+      z
+        .object({
+          workspaceId: z.number().int().positive().optional(),
+        })
+        .optional()
+    )
+    .mutation(async ({ ctx, input }) => {
+      const family = await resolveFamilyContextForWorkspace(ctx.user, input?.workspaceId, "editor");
+      const result = await checkWeeklySummaryAlert(family, true);
+      return {
+        success: result.length > 0,
+        workspaceId: family.workspace.id,
+        details: result,
+      };
+    }),
 });

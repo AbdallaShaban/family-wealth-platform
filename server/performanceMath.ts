@@ -123,9 +123,13 @@ export interface PerformanceSummaryReport {
   mwr: MwrResult;
   riskMetrics: RiskMetrics;
   benchmark: BenchmarkComparison;
+  pme?: PmeCalculationResult;
   attribution: PortfolioAttribution;
   capitalBridge: CapitalBridge;
   asOf: number;
+  status?: "ok" | "insufficient_data";
+  dataQuality?: DataQualityStatus;
+  notes?: string[];
 }
 
 // ============================================================================
@@ -253,6 +257,9 @@ export function calculateTwr(args: {
       // Exact valuation point exists at flow date
       preFlowVal = valMap.get(flowDate)!;
       flowQuality = "exact_daily";
+    } else if (currentStartVal.isZero()) {
+      preFlowVal = new Decimal(0);
+      flowQuality = "cash_flow_linked";
     } else {
       // Linear proportional estimate between known points if intermediate quotes are missing
       // Sub-period approximation: V_pre = V_prev + (time_fraction) * (V_next_pre - V_prev)
@@ -1002,3 +1009,298 @@ export function buildCapitalBridge(args: {
     reconciles,
   };
 }
+
+// ============================================================================
+// Phase 3: Public Market Equivalent (PME) & Trade Analytics
+// ============================================================================
+
+export interface PmeCalculationArgs {
+  benchmarkSymbol: string;
+  startingValuation: Decimal.Value;
+  endingValuation: Decimal.Value;
+  cashFlows: Array<{
+    date: number;
+    amount: Decimal.Value; // positive = inflow/contribution into portfolio, negative = outflow/distribution
+  }>;
+  benchmarkQuotes: Array<{
+    date: number;
+    price: Decimal.Value;
+  }>;
+  periodDays: number;
+}
+
+export interface PmeCalculationResult {
+  benchmarkSymbol: string;
+  status: "available" | "insufficient_data" | "no_benchmark_quotes";
+  pmeRatio: string | null;           // Kaplan-Schoar PME: > 1.0 means outperformed benchmark
+  directAlphaAnnualized: string | null; // Annualized excess log return over benchmark
+  benchmarkNavEquivalent: string | null; // What the benchmark portfolio would be worth today
+  totalContributionsCompounded: string | null;
+  totalDistributionsCompounded: string | null;
+  methodology: string;
+  notes?: string[];
+}
+
+/**
+ * Calculates Kaplan-Schoar PME (Public Market Equivalent) and Direct Alpha.
+ * Standardized in private wealth and institutional benchmarking:
+ *   PME = (Ending NAV + Sum(Distributions_t * I_T / I_t)) / (Starting NAV * I_T / I_0 + Sum(Contributions_t * I_T / I_t))
+ * Where I_t is the benchmark index level at time t, and I_T is the ending benchmark level.
+ */
+export function calculatePublicMarketEquivalent(args: PmeCalculationArgs): PmeCalculationResult {
+  const sym = args.benchmarkSymbol.trim().toUpperCase();
+  const quotes = args.benchmarkQuotes ?? [];
+  const notes: string[] = [];
+
+  if (quotes.length < 2) {
+    return {
+      benchmarkSymbol: sym,
+      status: "no_benchmark_quotes",
+      pmeRatio: null,
+      directAlphaAnnualized: null,
+      benchmarkNavEquivalent: null,
+      totalContributionsCompounded: null,
+      totalDistributionsCompounded: null,
+      methodology: "Kaplan-Schoar PME (2005) & Direct Alpha",
+      notes: [`بيانات أسعار المؤشر (${sym}) غير كافية لحساب PME لهذا النطاق الزمني.`],
+    };
+  }
+
+  // Sort benchmark quotes chronologically
+  const sortedQuotes = [...quotes].sort((a, b) => a.date - b.date);
+  const endQuote = sortedQuotes[sortedQuotes.length - 1];
+  const startQuote = sortedQuotes[0];
+
+  const iT = toDec(endQuote.price);
+  const i0 = toDec(startQuote.price);
+
+  if (iT.lte(0) || i0.lte(0)) {
+    return {
+      benchmarkSymbol: sym,
+      status: "insufficient_data",
+      pmeRatio: null,
+      directAlphaAnnualized: null,
+      benchmarkNavEquivalent: null,
+      totalContributionsCompounded: null,
+      totalDistributionsCompounded: null,
+      methodology: "Kaplan-Schoar PME (2005) & Direct Alpha",
+      notes: ["سعر بداية أو نهاية المؤشر المرجعي غير صالح (يساوي صفرًا أو سالبًا)."],
+    };
+  }
+
+  // Find nearest benchmark quote on or before date t
+  function getBenchmarkPriceAt(date: number): Decimal | null {
+    let closestPrice: Decimal | null = null;
+    let minDiff = Infinity;
+
+    for (const q of sortedQuotes) {
+      const diff = Math.abs(q.date - date);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestPrice = toDec(q.price);
+      }
+    }
+    return closestPrice && closestPrice.gt(0) ? closestPrice : null;
+  }
+
+  const v0 = toDec(args.startingValuation);
+  const vT = toDec(args.endingValuation);
+
+  // Starting capital compounded forward to T
+  const compoundedStart = v0.gt(0) ? v0.mul(safeDiv(iT, i0)) : new Decimal(0);
+
+  let compoundedInflows = new Decimal(0);
+  let compoundedOutflows = new Decimal(0);
+  let missingQuoteForFlow = false;
+
+  for (const flow of args.cashFlows) {
+    const amt = toDec(flow.amount);
+    if (amt.isZero()) continue;
+
+    const iFlow = getBenchmarkPriceAt(flow.date);
+    if (!iFlow) {
+      missingQuoteForFlow = true;
+      continue;
+    }
+
+    const factor = safeDiv(iT, iFlow);
+    if (amt.gt(0)) {
+      compoundedInflows = compoundedInflows.plus(amt.mul(factor));
+    } else {
+      compoundedOutflows = compoundedOutflows.plus(amt.abs().mul(factor));
+    }
+  }
+
+  if (missingQuoteForFlow) {
+    notes.push("تم تقريب سعر المؤشر لبعض التدفقات النقدية إلى أقرب نقطة سعرية متاحة.");
+  }
+
+  // Total Invested in Benchmark (Denominator)
+  const totalContributionsCompounded = compoundedStart.plus(compoundedInflows);
+
+  // Total Realized / Preserved (Numerator)
+  const totalDistributionsCompounded = vT.plus(compoundedOutflows);
+
+  if (totalContributionsCompounded.lte(0)) {
+    return {
+      benchmarkSymbol: sym,
+      status: "insufficient_data",
+      pmeRatio: null,
+      directAlphaAnnualized: null,
+      benchmarkNavEquivalent: null,
+      totalContributionsCompounded: "0.00",
+      totalDistributionsCompounded: totalDistributionsCompounded.toFixed(2),
+      methodology: "Kaplan-Schoar PME (2005) & Direct Alpha",
+      notes: ["إجمالي رأس المال المستثمر في المؤشر يساوي صفرًا؛ لا يمكن قسمة PME."],
+    };
+  }
+
+  const pmeRatioDec = safeDiv(totalDistributionsCompounded, totalContributionsCompounded);
+
+  // Direct Alpha annualized: alpha = (365.25 / days) * ln(PME)
+  let directAlpha: string | null = null;
+  if (pmeRatioDec.gt(0) && args.periodDays >= 14) {
+    const lnPme = new Decimal(Math.log(pmeRatioDec.toNumber()));
+    const annualFactor = safeDiv(365.25, Math.max(args.periodDays, 1));
+    directAlpha = lnPme.mul(annualFactor).toFixed(4);
+  }
+
+  // Hypothetical Benchmark NAV:
+  // If the investor had deposited all cash flows into the benchmark, what would it be worth now?
+  const benchmarkNavEquivalentDec = Decimal.max(0, totalContributionsCompounded.minus(compoundedOutflows));
+
+  return {
+    benchmarkSymbol: sym,
+    status: "available",
+    pmeRatio: pmeRatioDec.toFixed(4),
+    directAlphaAnnualized: directAlpha,
+    benchmarkNavEquivalent: benchmarkNavEquivalentDec.toFixed(2),
+    totalContributionsCompounded: totalContributionsCompounded.toFixed(2),
+    totalDistributionsCompounded: totalDistributionsCompounded.toFixed(2),
+    methodology: "Kaplan-Schoar PME (2005) & Direct Alpha",
+    notes: notes.length > 0 ? notes : undefined,
+  };
+}
+
+export interface PortfolioConcentrationResult {
+  top3WeightPct: string;
+  top5WeightPct: string;
+  herfindahlIndex: number; // HHI: 0 - 10000
+  diversificationStatus: "well_diversified" | "moderately_concentrated" | "highly_concentrated";
+  holdingsCount: number;
+}
+
+/**
+ * Calculates portfolio concentration using Herfindahl-Hirschman Index (HHI)
+ * and top holdings concentration.
+ */
+export function calculatePortfolioConcentration(
+  holdings: Array<{ marketValue: Decimal.Value }>
+): PortfolioConcentrationResult {
+  const totalValue = holdings.reduce(
+    (acc, h) => acc.plus(toDec(h.marketValue)),
+    new Decimal(0)
+  );
+
+  if (totalValue.lte(0) || holdings.length === 0) {
+    return {
+      top3WeightPct: "0.00",
+      top5WeightPct: "0.00",
+      herfindahlIndex: 0,
+      diversificationStatus: "well_diversified",
+      holdingsCount: 0,
+    };
+  }
+
+  const weights = holdings
+    .map((h) => safeDiv(toDec(h.marketValue), totalValue).mul(100).toNumber())
+    .sort((a, b) => b - a);
+
+  const top3Weight = weights.slice(0, 3).reduce((a, b) => a + b, 0);
+  const top5Weight = weights.slice(0, 5).reduce((a, b) => a + b, 0);
+
+  // HHI = Sum(w_i^2) where w_i is in percent (0 - 100)
+  const hhi = Math.round(weights.reduce((acc, w) => acc + w * w, 0));
+
+  let status: "well_diversified" | "moderately_concentrated" | "highly_concentrated" = "well_diversified";
+  if (hhi > 2500 || top3Weight > 65) {
+    status = "highly_concentrated";
+  } else if (hhi >= 1500 || top3Weight > 45) {
+    status = "moderately_concentrated";
+  }
+
+  return {
+    top3WeightPct: top3Weight.toFixed(2),
+    top5WeightPct: top5Weight.toFixed(2),
+    herfindahlIndex: hhi,
+    diversificationStatus: status,
+    holdingsCount: holdings.length,
+  };
+}
+
+export interface PerformanceContributor {
+  symbol: string;
+  name: string;
+  contributionAmount: string; // Absolute gain or loss in base currency
+  contributionPct: string;    // Pct of total portfolio return
+  direction: "positive" | "negative";
+}
+
+/**
+ * Identifies the top performance contributors and detractors.
+ */
+export function calculatePerformanceContributors(
+  items: Array<{
+    symbol: string;
+    name: string;
+    startValue: Decimal.Value;
+    endValue: Decimal.Value;
+    netCashFlows?: Decimal.Value; // purchases (+) or sales (-)
+    dividends?: Decimal.Value;
+  }>
+): { topGainers: PerformanceContributor[]; topDetractors: PerformanceContributor[] } {
+  const analyzed = items.map((item) => {
+    const v0 = toDec(item.startValue);
+    const vEnd = toDec(item.endValue);
+    const flows = toDec(item.netCashFlows ?? 0);
+    const divs = toDec(item.dividends ?? 0);
+
+    // Gain/Loss = Ending Value - Starting Value - Net Cash Flows + Dividends
+    const pnl = vEnd.minus(v0).minus(flows).plus(divs);
+    return {
+      symbol: item.symbol,
+      name: item.name,
+      pnl,
+    };
+  });
+
+  const gainers = analyzed
+    .filter((a) => a.pnl.gt(0))
+    .sort((a, b) => b.pnl.minus(a.pnl).toNumber())
+    .slice(0, 5)
+    .map((g) => ({
+      symbol: g.symbol,
+      name: g.name,
+      contributionAmount: g.pnl.toFixed(2),
+      contributionPct: "0.00",
+      direction: "positive" as const,
+    }));
+
+  const detractors = analyzed
+    .filter((a) => a.pnl.lt(0))
+    .sort((a, b) => a.pnl.minus(b.pnl).toNumber())
+    .slice(0, 5)
+    .map((d) => ({
+      symbol: d.symbol,
+      name: d.name,
+      contributionAmount: d.pnl.toFixed(2),
+      contributionPct: "0.00",
+      direction: "negative" as const,
+    }));
+
+  return {
+    topGainers: gainers,
+    topDetractors: detractors,
+  };
+}
+

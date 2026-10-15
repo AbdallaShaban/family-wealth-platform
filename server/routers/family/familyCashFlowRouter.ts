@@ -24,6 +24,7 @@ import {
   recurringRules,
 } from "../../../drizzle/schema";
 import { currency, money, notAvailable } from "../../schemas/familySchemas";
+import { getZeroBasedBudgetOverview } from "../../services/budgetPlanningService";
 
 import { ensureDefaultCategories } from "../../seedCategories";
 
@@ -312,6 +313,17 @@ export const familyCashFlowRouter = router({
     invalidateReadModelCache(`stress-testing:${family.workspace.id}:`);
     return { success: true, id: existing.id };
   }),
+
+  zeroBasedOverview: protectedProcedure
+    .input(
+      z.object({
+        periodKey: z.string().regex(/^\d{4}-\d{2}$/),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const family = await ensurePersonalFamilyContext(ctx.user);
+      return getZeroBasedBudgetOverview(family, input.periodKey);
+    }),
 
   templates: protectedProcedure.query(async () => [] as Array<{ id: number; name: string; horizonMonths: string; startsPeriodKey: string; spendingLimitBase: string | null; status: string; createdAt: number; updatedAt: number }>),
 

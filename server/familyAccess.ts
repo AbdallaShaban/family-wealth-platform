@@ -218,3 +218,85 @@ export function assertRole(context: FamilyContext, minimum: WorkspaceRole) {
     throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك الصلاحية المطلوبة لهذه العملية." });
   }
 }
+
+/**
+ * Resolves and strictly validates access to a specific workspace for the authenticated user.
+ * If no requestedWorkspaceId is provided, returns the user's active/personal context.
+ * If requestedWorkspaceId is provided, verifies active membership and role in that workspace.
+ */
+export async function resolveFamilyContextForWorkspace(
+  user: User,
+  requestedWorkspaceId?: number,
+  minimumRole: WorkspaceRole = "viewer"
+): Promise<FamilyContext> {
+  const defaultContext = await ensurePersonalFamilyContext(user);
+  if (!requestedWorkspaceId || requestedWorkspaceId === defaultContext.workspace.id) {
+    assertRole(defaultContext, minimumRole);
+    return defaultContext;
+  }
+
+  const db = await getDb();
+  if (!db) throw dbUnavailable();
+
+  const [membership] = await db
+    .select()
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.workspaceId, requestedWorkspaceId),
+        eq(memberships.userId, user.id),
+        eq(memberships.status, "active")
+      )
+    )
+    .limit(1);
+
+  if (!membership) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "لا تملك صلاحية الوصول إلى مساحة العمل المحددة.",
+    });
+  }
+
+  const [workspace] = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.id, requestedWorkspaceId))
+    .limit(1);
+
+  if (!workspace) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "مساحة العمل غير موجودة.",
+    });
+  }
+
+  const [profile] = await db
+    .select()
+    .from(financialProfiles)
+    .where(
+      and(
+        eq(financialProfiles.workspaceId, requestedWorkspaceId),
+        eq(financialProfiles.userId, user.id)
+      )
+    )
+    .limit(1);
+
+  const context: FamilyContext = {
+    workspace,
+    membership,
+    profile: profile || {
+      id: 0,
+      workspaceId: workspace.id,
+      userId: user.id,
+      displayName: user.name || "عضو",
+      relationship: "other",
+      isFinancialOwner: "no",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
+  };
+
+  assertRole(context, minimumRole);
+  return context;
+}
+

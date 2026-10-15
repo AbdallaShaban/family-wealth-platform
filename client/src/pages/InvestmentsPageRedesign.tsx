@@ -70,6 +70,7 @@ import { TradeActionModals } from "@/components/investments/TradeActionModals";
 import { LiveGoldFxTicker } from "@/components/investments/LiveGoldFxTicker";
 import RiskAllocationPage from "./family/RiskAllocationPage";
 import { RealPurchasingPowerEngine } from "@/components/wealth/RealPurchasingPowerEngine";
+import { DividendCalendarView } from "@/components/investments/DividendCalendarView";
 
 const QuantitativeHubPage = lazy(() => import("./QuantitativeHubPage"));
 
@@ -452,6 +453,10 @@ export default function InvestmentsPageRedesign() {
             </TabsTrigger>
             <TabsTrigger value="allocation" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none">
               التوزيع والمخاطر
+            </TabsTrigger>
+            <TabsTrigger value="dividends" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none flex items-center gap-1.5">
+              <CircleDollarSign className="size-3.5 text-emerald-500" />
+              <span>توزيعات الأرباح</span>
             </TabsTrigger>
             <TabsTrigger value="quant" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2 rounded-xl transition-colors border border-transparent shadow-none flex items-center gap-1.5">
               <Cpu className="size-3.5 text-amber-500" />
@@ -1357,6 +1362,11 @@ export default function InvestmentsPageRedesign() {
             <Suspense fallback={<div className="p-12 text-center text-xs text-muted-foreground">جارٍ تحميل مركز التحليل الكمي والتداول الذكي...</div>}>
               <QuantitativeHubPage embedded={true} />
             </Suspense>
+          </TabsContent>
+
+          {/* TAB 9: Dividend Calendar & Yield Intelligence */}
+          <TabsContent value="dividends" className="space-y-6">
+            <DividendCalendarView />
           </TabsContent>
         </Tabs>
 

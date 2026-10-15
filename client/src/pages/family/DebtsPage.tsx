@@ -18,7 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CreditCardsHub from "@/components/banking/CreditCardsHub";
-import { CreditCard, ArrowUpRight, Building2, Calendar, Loader2, Percent } from "lucide-react";
+import { DebtPayoffStrategySimulator } from "@/components/banking/DebtPayoffStrategySimulator";
+import { CreditCard, ArrowUpRight, Building2, Calendar, Loader2, Percent, Flame } from "lucide-react";
 
 export const debtTypeLabel: Record<string, string> = {
   loan: "قرض",
@@ -204,6 +205,10 @@ export function DebtsPage({ embedded = false }: { embedded?: boolean }) {
               <TabsTrigger value="loans" className="rounded-lg text-xs font-bold gap-2 px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-2xs">
                 <Building2 className="size-3.5 text-slate-500" />
                 القروض والالتزامات العامة
+              </TabsTrigger>
+              <TabsTrigger value="simulator" className="rounded-lg text-xs font-bold gap-2 px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-2xs">
+                <Flame className="size-3.5 text-amber-500" />
+                محاكاة السداد (Snowball vs Avalanche)
               </TabsTrigger>
             </TabsList>
           </div>
@@ -820,6 +825,10 @@ export function DebtsPage({ embedded = false }: { embedded?: boolean }) {
             ) : null}
           </div>
         )}
+          </TabsContent>
+
+          <TabsContent value="simulator" className="m-0 space-y-6">
+            <DebtPayoffStrategySimulator />
           </TabsContent>
         </Tabs>
       </div>

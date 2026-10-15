@@ -1,8 +1,11 @@
+import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import PageHeader from "@/components/PageHeader";
 import { CircleAlert, DatabaseZap, Gauge, Globe2, ShieldCheck, Clock3 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
+import { TradingViewStyleTechnicalChart } from "@/components/fintech/TradingViewStyleTechnicalChart";
+import { MarketWatchlistAndAlerts } from "@/components/fintech/MarketWatchlistAndAlerts";
 
 const formatDateTime = (value: number | null) =>
   value
@@ -20,6 +23,7 @@ const quoteStatusLabel: Record<string, string> = {
 };
 
 export default function MarketDataQualityPage() {
+  const [activeSymbol, setActiveSymbol] = useState("COMI");
   const quality = trpc.family.marketDataQuality.useQuery();
   const data = quality.data;
 
@@ -295,6 +299,12 @@ export default function MarketDataQualityPage() {
                 </div>
               </div>
             </section>
+
+            {/* TradingView-Style Technical Analysis & Candlestick Chart */}
+            <TradingViewStyleTechnicalChart symbol={activeSymbol} />
+
+            {/* Watchlist & Alerts Management */}
+            <MarketWatchlistAndAlerts onSelectSymbol={(sym) => setActiveSymbol(sym)} />
 
             {/* Governance Card */}
             <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs flex items-start gap-3.5">

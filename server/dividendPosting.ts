@@ -15,6 +15,7 @@ import {
 } from "../drizzle/schema";
 import { assertBalanced, parseNonNegativeAmount, parsePositiveAmount, type JournalDraftLine } from "./ledgerMath";
 import { invalidateReadModelCache } from "./readModelCache";
+import { resolveBaseFxRate } from "./familyLedger";
 
 export type PostCashDividendArgs = {
   context: FamilyContext;
@@ -39,6 +40,9 @@ export type CashDividendResult = {
   taxAmount: string;
   netCashAmount: string;
   currency: string;
+  fxRateToBase?: string;
+  baseGrossAmount?: string;
+  baseNetCashAmount?: string;
   cashAccountId: number;
   paymentDate: number;
   duplicate?: boolean;
@@ -78,7 +82,9 @@ export function buildDividendJournalLines(params: {
   taxAmount: Decimal;
   netCashAmount: Decimal;
   currency: string;
+  fxRateToBase?: Decimal;
 }): JournalDraftLine[] {
+  const fxRate = params.fxRateToBase ?? new Decimal(1);
   const lines: JournalDraftLine[] = [
     // Line 1: Debit Cash Account for net cash received
     {
@@ -86,8 +92,8 @@ export function buildDividendJournalLines(params: {
       direction: "debit",
       amount: params.netCashAmount,
       currency: params.currency,
-      fxRateToBase: new Decimal(1),
-      baseAmount: params.netCashAmount,
+      fxRateToBase: fxRate,
+      baseAmount: params.netCashAmount.mul(fxRate),
     },
     // Line 2: Credit Dividend Income System Account for gross dividend
     {
@@ -95,8 +101,8 @@ export function buildDividendJournalLines(params: {
       direction: "credit",
       amount: params.grossAmount,
       currency: params.currency,
-      fxRateToBase: new Decimal(1),
-      baseAmount: params.grossAmount,
+      fxRateToBase: fxRate,
+      baseAmount: params.grossAmount.mul(fxRate),
     },
   ];
 
@@ -107,8 +113,8 @@ export function buildDividendJournalLines(params: {
       direction: "debit",
       amount: params.taxAmount,
       currency: params.currency,
-      fxRateToBase: new Decimal(1),
-      baseAmount: params.taxAmount,
+      fxRateToBase: fxRate,
+      baseAmount: params.taxAmount.mul(fxRate),
     });
   }
 
@@ -297,6 +303,9 @@ export async function postCashDividend(args: PostCashDividendArgs): Promise<Cash
       );
     }
 
+    // 6.5. Resolve exchange rate to workspace base currency
+    const fxRateToBase = await resolveBaseFxRate(tx, args.context, currency, args.paymentDate);
+
     // 7. Double-entry draft lines
     const draftLines = buildDividendJournalLines({
       cashAccountId: cashAccount.id,
@@ -306,6 +315,7 @@ export async function postCashDividend(args: PostCashDividendArgs): Promise<Cash
       taxAmount: effectiveTaxAmount,
       netCashAmount,
       currency,
+      fxRateToBase,
     });
 
     // 8. Create posted financial event
@@ -357,8 +367,8 @@ export async function postCashDividend(args: PostCashDividendArgs): Promise<Cash
         direction: line.direction,
         amount: line.amount.toFixed(6),
         currency: line.currency ?? currency,
-        fxRateToBase: (line.fxRateToBase ?? new Decimal(1)).toFixed(10),
-        baseAmount: (line.baseAmount ?? line.amount).toFixed(6),
+        fxRateToBase: (line.fxRateToBase ?? fxRateToBase).toFixed(10),
+        baseAmount: (line.baseAmount ?? line.amount.mul(fxRateToBase)).toFixed(6),
         memo: line.direction === "debit" && line.accountId === cashAccount.id ? "استلام صافي التوزيعات" : "استحقاق توزيعات الأرباح",
         createdAt: now,
       }))
@@ -382,6 +392,9 @@ export async function postCashDividend(args: PostCashDividendArgs): Promise<Cash
         taxAmount: effectiveTaxAmount.toFixed(6),
         netCashAmount: netCashAmount.toFixed(6),
         currency,
+        fxRateToBase: fxRateToBase.toFixed(10),
+        baseGrossAmount: grossAmount.mul(fxRateToBase).toFixed(6),
+        baseNetCashAmount: netCashAmount.mul(fxRateToBase).toFixed(6),
         paymentDate: args.paymentDate,
         exDate: args.exDate,
       },
@@ -404,6 +417,9 @@ export async function postCashDividend(args: PostCashDividendArgs): Promise<Cash
       taxAmount: effectiveTaxAmount.toFixed(6),
       netCashAmount: netCashAmount.toFixed(6),
       currency,
+      fxRateToBase: fxRateToBase.toFixed(10),
+      baseGrossAmount: grossAmount.mul(fxRateToBase).toFixed(6),
+      baseNetCashAmount: netCashAmount.mul(fxRateToBase).toFixed(6),
       cashAccountId: cashAccount.id,
       paymentDate: args.paymentDate,
     };

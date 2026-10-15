@@ -59,8 +59,10 @@ function isCashLike(account: AccountRecord) {
   return ["cash", "bank", "brokerage", "wallet"].includes(account.accountType);
 }
 
-async function resolveBaseFxRate(tx: any, context: FamilyContext, currency: string, occurredAt: number) {
+export async function resolveBaseFxRate(tx: any, context: FamilyContext, currency: string, occurredAt: number) {
   if (currency === context.workspace.baseCurrency) return new Decimal(1);
+
+  // 1. Direct historical quote: fromCurrency -> baseCurrency, asOf <= occurredAt
   const [quote] = await tx
     .select()
     .from(fxRates)
@@ -72,22 +74,14 @@ async function resolveBaseFxRate(tx: any, context: FamilyContext, currency: stri
     ))
     .orderBy(desc(fxRates.asOf))
     .limit(1);
-  if (quote) return new Decimal(quote.rate);
+  if (quote) {
+    const directRate = new Decimal(quote.rate);
+    if (directRate.isFinite() && directRate.gt(0)) {
+      return directRate;
+    }
+  }
 
-  // Check if any quote exists regardless of timestamp
-  const [anyQuote] = await tx
-    .select()
-    .from(fxRates)
-    .where(and(
-      eq(fxRates.workspaceId, context.workspace.id),
-      eq(fxRates.fromCurrency, currency),
-      eq(fxRates.toCurrency, context.workspace.baseCurrency),
-    ))
-    .orderBy(desc(fxRates.asOf))
-    .limit(1);
-  if (anyQuote) return new Decimal(anyQuote.rate);
-
-  // Check inverse quote
+  // 2. Inverse historical quote: baseCurrency -> fromCurrency, asOf <= occurredAt
   const [inverseQuote] = await tx
     .select()
     .from(fxRates)
@@ -95,11 +89,15 @@ async function resolveBaseFxRate(tx: any, context: FamilyContext, currency: stri
       eq(fxRates.workspaceId, context.workspace.id),
       eq(fxRates.fromCurrency, context.workspace.baseCurrency),
       eq(fxRates.toCurrency, currency),
+      lte(fxRates.asOf, occurredAt),
     ))
     .orderBy(desc(fxRates.asOf))
     .limit(1);
-  if (inverseQuote && Number(inverseQuote.rate) > 0) {
-    return new Decimal(1).div(new Decimal(inverseQuote.rate));
+  if (inverseQuote) {
+    const invRate = new Decimal(inverseQuote.rate);
+    if (invRate.isFinite() && invRate.gt(0)) {
+      return new Decimal(1).div(invRate);
+    }
   }
 
   // Live market quote & baseline fallbacks are only for production/dev, disabled in unit tests to enforce documented ledger invariants
