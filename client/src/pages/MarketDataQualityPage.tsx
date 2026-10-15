@@ -31,14 +31,14 @@ export default function MarketDataQualityPage() {
     <DashboardLayout>
       <main className="mx-auto max-w-7xl space-y-6" dir="rtl">
         <PageHeader
-          title="جودة بيانات وتسعير السوق"
-          description="لوحة تشغيلية للمتابعة فقط: تعرض تغطية السعر والمصدر وتاريخ اللقطة وحالة التقادم، ولا تعرض قيمًا مالية ولا تحدّث أسعارًا ولا تنشئ أي صفقة أو قيد."
+          title="التحليل الفني والشموع وقوائم المراقبة (TradingView Hub)"
+          description="شارت الشموع التفاعلي، مؤشرات المتوسطات المتحركة (SMA/EMA) وحجم التداول، وقوائم المراقبة والتنبيهات السعرية اللحظية."
           breadcrumbs={[
             { label: "الرئيسية", href: "/" },
-            { label: "النظرة المالية والتقييم", href: "/valuation" },
-            { label: "جودة بيانات وتسعير السوق" },
+            { label: "المحفظة والاستثمار", href: "/investments" },
+            { label: "الشموع والتحليل الفني" },
           ]}
-          badge={{ text: "مراقبة فقط", variant: "institutional" }}
+          badge={{ text: "منصة التحليل الفني", variant: "institutional" }}
           icon={DatabaseZap}
         />
 
@@ -136,6 +136,12 @@ export default function MarketDataQualityPage() {
                 </span>
               </div>
             </div>
+
+            {/* TradingView-Style Technical Analysis & Candlestick Chart (Hero Position) */}
+            <TradingViewStyleTechnicalChart symbol={activeSymbol} />
+
+            {/* Watchlist & Alerts Management */}
+            <MarketWatchlistAndAlerts onSelectSymbol={(sym) => setActiveSymbol(sym)} />
 
             {/* Coverage Tables & Details */}
             <section className="grid gap-6 lg:grid-cols-[1.05fr_.95fr]">
@@ -299,12 +305,6 @@ export default function MarketDataQualityPage() {
                 </div>
               </div>
             </section>
-
-            {/* TradingView-Style Technical Analysis & Candlestick Chart */}
-            <TradingViewStyleTechnicalChart symbol={activeSymbol} />
-
-            {/* Watchlist & Alerts Management */}
-            <MarketWatchlistAndAlerts onSelectSymbol={(sym) => setActiveSymbol(sym)} />
 
             {/* Governance Card */}
             <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-xs flex items-start gap-3.5">

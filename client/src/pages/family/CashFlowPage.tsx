@@ -90,6 +90,7 @@ export function CashFlowPage({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
+      {!embedded && (
         <PageHeader
           title="التدفق النقدي والسيولة"
           description="المقارنة هنا تعتمد على مبالغ المعاملات المعتمدة والقيم الأساسية في دفتر القيود. لن يظهر فعلي أو مخطط بلا بيانات مسجلة."
@@ -113,6 +114,7 @@ export function CashFlowPage({ embedded = false }: { embedded?: boolean }) {
             </div>
           }
         />
+      )}
 
         {/* Top Executive Asymmetric Metric Strip (With Semantic Tints) */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
@@ -198,7 +200,7 @@ export function CashFlowPage({ embedded = false }: { embedded?: boolean }) {
         </section>
 
         {/* Sub-Tabs Bar */}
-        <Tabs defaultValue="summary" className="space-y-6">
+        <Tabs defaultValue={embedded ? "envelope" : "summary"} className="space-y-6">
           <TabsList className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1 mb-6 h-auto w-full sm:w-auto justify-start">
             <TabsTrigger
               value="summary"

@@ -1,10 +1,10 @@
 // ======================================================================
 // FAMILY WEALTH INTELLIGENCE — Advanced Offline-First Service Worker
-// Version: 2.0.0
+// Version: 3.0.0 (Fresh Cache-Busting Network-First Release)
 // ======================================================================
 
-const STATIC_CACHE_NAME = "family-static-v2";
-const RUNTIME_CACHE_NAME = "family-runtime-v2";
+const STATIC_CACHE_NAME = "family-static-v3-fresh";
+const RUNTIME_CACHE_NAME = "family-runtime-v3-fresh";
 
 const APP_SHELL = [
   "/",
@@ -17,29 +17,33 @@ const APP_SHELL = [
   "/icon-512-maskable.png",
 ];
 
-// Install Event: Pre-cache App Shell
+// Install Event: Pre-cache App Shell & force activation immediately
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE_NAME).then((cache) => {
-      return cache.addAll(APP_SHELL);
-    }).then(() => self.skipWaiting())
+    caches
+      .open(STATIC_CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate Event: Clean up outdated caches
+// Activate Event: Wipe out all old versions immediately
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys
-          .filter((key) => key !== STATIC_CACHE_NAME && key !== RUNTIME_CACHE_NAME)
-          .map((key) => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== STATIC_CACHE_NAME && key !== RUNTIME_CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch Event: Smart routing & caching strategy
+// Fetch Event: Network-First for HTML, Scripts, Styles; Fallback to offline cache
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -53,7 +57,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 2. Navigation Requests (HTML Pages): Network-First with Offline App Shell Fallback
+  // 2. Navigation Requests (HTML Pages): Strictly Network-First
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -65,10 +69,9 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(async () => {
-          // Fallback to cached route or root app shell
           const cachedPage = await caches.match(request);
           if (cachedPage) return cachedPage;
-          const appShell = await caches.match("/index.html") || await caches.match("/");
+          const appShell = (await caches.match("/index.html")) || (await caches.match("/"));
           if (appShell) return appShell;
           return new Response(
             `<html lang="ar" dir="rtl"><body style="background:#09090b;color:#f4f4f5;font-family:sans-serif;padding:2rem;text-align:center;"><h2>المنصة دون اتصال حالياً</h2><p>تم حفظ بياناتك المحلية بأمان وسيعاد التحميل تلقائياً عند الاتصال.</p></body></html>`,
@@ -79,47 +82,61 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 3. Static Assets (Scripts, CSS, Fonts, Images): Cache-First / Stale-While-Revalidate
-  const isStaticAsset =
+  // 3. Scripts and CSS: Network-First (Ensures fresh builds are served instantly)
+  const isCodeAsset =
     url.pathname.startsWith("/assets/") ||
     url.pathname.endsWith(".js") ||
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".svg") ||
-    url.pathname.endsWith(".png") ||
-    url.pathname.endsWith(".woff2") ||
-    url.origin.includes("fonts.googleapis.com") ||
-    url.origin.includes("fonts.gstatic.com");
+    url.pathname.endsWith(".css");
 
-  if (isStaticAsset) {
+  if (isCodeAsset) {
     event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          // Revalidate in background
-          fetch(request)
-            .then((freshResponse) => {
-              if (freshResponse && freshResponse.ok) {
-                caches.open(RUNTIME_CACHE_NAME).then((cache) => cache.put(request, freshResponse));
-              }
-            })
-            .catch(() => {
-              // offline, ignore background update failure
-            });
-          return cachedResponse;
-        }
-
-        return fetch(request).then((networkResponse) => {
+      fetch(request)
+        .then((networkResponse) => {
           if (networkResponse && networkResponse.ok) {
             const copy = networkResponse.clone();
             caches.open(RUNTIME_CACHE_NAME).then((cache) => cache.put(request, copy));
           }
           return networkResponse;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // 4. Media & Fonts: Cache-First with Network Revalidation
+  const isMediaOrFont =
+    url.pathname.endsWith(".svg") ||
+    url.pathname.endsWith(".png") ||
+    url.pathname.endsWith(".webp") ||
+    url.pathname.endsWith(".woff2") ||
+    url.origin.includes("fonts.googleapis.com") ||
+    url.origin.includes("fonts.gstatic.com");
+
+  if (isMediaOrFont) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          fetch(request)
+            .then((fresh) => {
+              if (fresh && fresh.ok) {
+                caches.open(RUNTIME_CACHE_NAME).then((cache) => cache.put(request, fresh));
+              }
+            })
+            .catch(() => {});
+          return cachedResponse;
+        }
+        return fetch(request).then((net) => {
+          if (net && net.ok) {
+            caches.open(RUNTIME_CACHE_NAME).then((cache) => cache.put(request, net.clone()));
+          }
+          return net;
         });
       })
     );
     return;
   }
 
-  // 4. Default GET fallback: Network with cache fallback
+  // 5. Default GET fallback: Network-First
   event.respondWith(
     fetch(request)
       .then((response) => {
@@ -132,3 +149,4 @@ self.addEventListener("fetch", (event) => {
       .catch(() => caches.match(request))
   );
 });
+

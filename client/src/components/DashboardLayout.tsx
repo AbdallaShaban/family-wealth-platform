@@ -7,6 +7,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { usePrivacyMode } from "@/contexts/PrivacyModeContext";
 import { trpc } from "@/lib/trpc";
 import {
+  Activity,
   ArrowLeftRight,
   BarChart3,
   BookOpenCheck,
@@ -80,7 +81,7 @@ const roleArabicLabels: Record<MinimumRole, string> = {
 const navigationGroups: NavigationGroup[] = [
   {
     id: "overview",
-    label: "الرئيسية",
+    label: "الرئيسية والثروة",
     icon: LayoutDashboard,
     items: [
       { icon: LayoutDashboard, label: "نظرة عامة وصافي الثروة", path: "/", minimumRole: "viewer" },
@@ -89,29 +90,34 @@ const navigationGroups: NavigationGroup[] = [
   },
   {
     id: "banking",
-    label: "الحسابات والسيولة",
+    label: "البنوك والسيولة (Actual Budget)",
     icon: Landmark,
     items: [
-      { icon: Landmark, label: "الحسابات والبطاقات", path: "/banking", minimumRole: "viewer" },
+      { icon: Landmark, label: "الحسابات والشهادات المصرفية", path: "/banking", minimumRole: "viewer" },
+      { icon: WalletCards, label: "الميزانية الصفرية والتدفقات", path: "/banking?tab=liquidity", minimumRole: "viewer" },
+      { icon: CreditCard, label: "محاكي سداد الديون (Snowball)", path: "/banking?tab=debts", minimumRole: "viewer" },
       { icon: ArrowLeftRight, label: "سجل المعاملات والقيود", path: "/transactions", minimumRole: "viewer" },
     ],
   },
   {
     id: "investments",
-    label: "المحفظة والأصول",
+    label: "المحفظة والاستثمار (Performance Hub)",
     icon: TrendingUp,
     items: [
-      { icon: TrendingUp, label: "الأصول والمحفظة الاستثمارية", path: "/investments", minimumRole: "viewer" },
+      { icon: TrendingUp, label: "أصول المحفظة والمراكز", path: "/investments", minimumRole: "viewer" },
+      { icon: BarChart3, label: "أداء المحفظة ومكافئ السوق (KS-PME)", path: "/performance", minimumRole: "viewer" },
+      { icon: Coins, label: "استخبارات وتوقعات توزيعات الأرباح", path: "/investments?tab=dividends", minimumRole: "viewer" },
+      { icon: Activity, label: "الشموع الفنية وقوائم المراقبة", path: "/data-quality", minimumRole: "viewer" },
       { icon: Sparkles, label: "أسواق المال والتداول الكمي", path: "/quant", minimumRole: "viewer" },
     ],
   },
   {
     id: "governance",
-    label: "التقارير والخدمات",
+    label: "التقارير والحوكمة",
     icon: FileChartColumn,
     items: [
       { icon: FileChartColumn, label: "القوائم المالية والتقارير", path: "/reports", minimumRole: "viewer" },
-      { icon: ShieldAlert, label: "الحوكمة والزكاة والخزنة", path: "/governance", minimumRole: "viewer" },
+      { icon: ShieldAlert, label: "مركز الحوكمة والزكاة والخزنة", path: "/governance", minimumRole: "viewer" },
     ],
   },
 ];
@@ -119,12 +125,19 @@ const navigationGroups: NavigationGroup[] = [
 const routeLabels: Record<string, string> = {
   "/": "نظرة عامة وصافي الثروة",
   "/wealth-health": "صحة الثروة ودرع التضخم",
-  "/banking": "الحسابات والسيولة",
+  "/banking": "الحسابات المصرفية والشهادات",
+  "/banking?tab=accounts": "الحسابات المصرفية والمحافظ",
+  "/banking?tab=certificates": "الشهادات والودائع الادخارية",
+  "/banking?tab=liquidity": "الميزانية الصفرية والتدفقات",
+  "/banking?tab=debts": "محاكي سداد الديون والالتزامات",
   "/transactions": "سجل المعاملات والقيود",
   "/accounts": "الحسابات والبطاقات",
   "/certificates": "الشهادات والودائع الادخارية",
   "/debts": "الالتزامات والديون والبطاقات",
-  "/investments": "الأصول والمحفظة الاستثمارية",
+  "/investments": "أصول المحفظة والمراكز",
+  "/investments?tab=dividends": "استخبارات وتوقعات توزيعات الأرباح",
+  "/performance": "أداء المحفظة ومكافئ السوق (KS-PME)",
+  "/data-quality": "التحليل الفني والشموع وقوائم المراقبة",
   "/quant": "أسواق المال والتداول الكمي",
   "/reports": "القوائم المالية والتقارير",
   "/governance": "الحوكمة والزكاة والخزنة",
@@ -138,7 +151,7 @@ const routeLabels: Record<string, string> = {
 const routeToHubMap: Record<string, string> = {
   "/": "overview",
   "/wealth-health": "overview",
-  "/valuation": "overview",
+  "/valuation": "investments",
   "/banking": "banking",
   "/accounts": "banking",
   "/certificates": "banking",
@@ -151,6 +164,7 @@ const routeToHubMap: Record<string, string> = {
   "/imports": "banking",
   "/investments": "investments",
   "/performance": "investments",
+  "/data-quality": "investments",
   "/risk": "investments",
   "/assets-insurance": "investments",
   "/quant": "investments",
@@ -244,6 +258,23 @@ function FintechNav({
     }))
     .filter(group => group.items.length > 0);
 
+  function checkActive(itemPath: string, loc: string): boolean {
+    if (typeof window === "undefined") return loc === itemPath;
+    const currentSearch = window.location.search;
+    const currentFull = window.location.pathname + currentSearch;
+
+    if (itemPath.includes("?")) {
+      return currentFull === itemPath || currentFull.startsWith(itemPath + "&");
+    }
+
+    if (currentSearch && currentSearch !== "") {
+      if (loc === itemPath) return false;
+    }
+
+    if (itemPath === "/") return loc === "/";
+    return loc === itemPath || loc.startsWith(itemPath + "/");
+  }
+
   if (collapsed) {
     return (
       <TooltipProvider delayDuration={60}>
@@ -257,9 +288,7 @@ function FintechNav({
               {gIdx > 0 && <div className="w-6 h-px bg-border/60 my-1 shrink-0" />}
               {group.items.map(item => {
                 const Icon = item.icon;
-                const isCurrent =
-                  location === item.path ||
-                  (item.path !== "/" && (location === item.path || location.startsWith(item.path + "/")));
+                const isCurrent = checkActive(item.path, location);
                 return (
                   <Tooltip key={item.path}>
                     <TooltipTrigger asChild>
@@ -302,11 +331,7 @@ function FintechNav({
     >
       {visibleGroups.map(group => {
         const GroupIcon = group.icon;
-        const isGroupActive = group.items.some(
-          item =>
-            location === item.path ||
-            (item.path !== "/" && (location === item.path || location.startsWith(item.path + "/")))
-        );
+        const isGroupActive = group.items.some(item => checkActive(item.path, location));
         return (
           <div key={group.id} className="space-y-1.5">
             <div className="flex items-center gap-2 px-2.5 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
@@ -322,9 +347,7 @@ function FintechNav({
             <div className="space-y-1 pr-1">
               {group.items.map(item => {
                 const Icon = item.icon;
-                const isCurrent =
-                  location === item.path ||
-                  (item.path !== "/" && (location === item.path || location.startsWith(item.path + "/")));
+                const isCurrent = checkActive(item.path, location);
                 return (
                   <button
                     key={item.path}
@@ -625,6 +648,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     : "وصول محدود";
   const navigate = (path: string) => {
     setLocation(path);
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        window.dispatchEvent(new Event("popstate"));
+      }, 10);
+    }
     setMobileOpen(false);
   };
 

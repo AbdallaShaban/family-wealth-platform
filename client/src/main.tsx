@@ -8,10 +8,38 @@ import App from "./App";
 import { startLogin } from "./const";
 import "./index.css";
 
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  window.addEventListener("load", () => {
-    void navigator.serviceWorker.register("/service-worker.js").catch(error => console.warn("[PWA] service worker registration failed", error));
-  });
+const APP_CACHE_VERSION = "family-v3-fresh";
+
+if (typeof window !== "undefined") {
+  // Proactive Cache-Busting: purge legacy caches if version changed
+  try {
+    const cachedVersion = localStorage.getItem("fw_cache_version");
+    if (cachedVersion !== APP_CACHE_VERSION) {
+      if ("caches" in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((key) => {
+            if (!key.includes("v3-fresh")) {
+              caches.delete(key);
+            }
+          });
+        });
+      }
+      localStorage.setItem("fw_cache_version", APP_CACHE_VERSION);
+    }
+  } catch {
+    // LocalStorage or cache access error suppressed
+  }
+
+  if ("serviceWorker" in navigator && import.meta.env.PROD) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker
+        .register("/service-worker.js")
+        .then((reg) => {
+          reg.update().catch(() => {});
+        })
+        .catch((error) => console.warn("[PWA] service worker registration failed", error));
+    });
+  }
 }
 
 const analyticsEndpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT;

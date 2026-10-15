@@ -184,6 +184,7 @@ export function DebtsPage({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
+      {!embedded && (
         <PageHeader
           title="الديون والالتزامات"
           description="الرصيد المستحق معروض من الحساب الالتزامي المقيد، لا من حقل قابل للتعديل. يحسب النموذج جدول التكلفة من معدل الفائدة والقسط المدخلين، ولا يقارن بعوائد استثمارية مفترضة."
@@ -194,8 +195,9 @@ export function DebtsPage({ embedded = false }: { embedded?: boolean }) {
           badge={{ text: "إدارة الالتزامات", variant: "institutional" }}
           icon={CreditCard}
         />
+      )}
 
-        <Tabs defaultValue="credit_cards" className="w-full">
+      <Tabs defaultValue={embedded ? "simulator" : "credit_cards"} className="w-full">
           <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-6">
             <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
               <TabsTrigger value="credit_cards" className="rounded-lg text-xs font-bold gap-2 px-4 py-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-2xs">
