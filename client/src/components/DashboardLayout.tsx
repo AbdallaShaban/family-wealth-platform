@@ -81,34 +81,34 @@ const roleArabicLabels: Record<MinimumRole, string> = {
 const navigationGroups: NavigationGroup[] = [
   {
     id: "overview",
-    label: "الرئيسية والثروة",
+    label: "الرئيسية",
     icon: LayoutDashboard,
     items: [
-      { icon: LayoutDashboard, label: "نظرة عامة وصافي الثروة", path: "/", minimumRole: "viewer" },
-      { icon: ShieldCheck, label: "صحة الثروة ودرع التضخم", path: "/wealth-health", minimumRole: "viewer" },
+      { icon: LayoutDashboard, label: "نظرة عامة", path: "/", minimumRole: "viewer" },
+      { icon: ShieldCheck, label: "صحة الثروة", path: "/wealth-health", minimumRole: "viewer" },
     ],
   },
   {
     id: "banking",
-    label: "البنوك والسيولة (Actual Budget)",
+    label: "البنوك والميزانية",
     icon: Landmark,
     items: [
-      { icon: Landmark, label: "الحسابات والشهادات المصرفية", path: "/banking", minimumRole: "viewer" },
-      { icon: WalletCards, label: "الميزانية الصفرية والتدفقات", path: "/banking?tab=liquidity", minimumRole: "viewer" },
-      { icon: CreditCard, label: "محاكي سداد الديون (Snowball)", path: "/banking?tab=debts", minimumRole: "viewer" },
-      { icon: ArrowLeftRight, label: "سجل المعاملات والقيود", path: "/transactions", minimumRole: "viewer" },
+      { icon: Landmark, label: "الحسابات والشهادات", path: "/banking", minimumRole: "viewer" },
+      { icon: WalletCards, label: "الميزانية الصفرية", path: "/banking?tab=liquidity", minimumRole: "viewer" },
+      { icon: CreditCard, label: "محاكي الديون", path: "/banking?tab=debts", minimumRole: "viewer" },
+      { icon: ArrowLeftRight, label: "سجل المعاملات", path: "/transactions", minimumRole: "viewer" },
     ],
   },
   {
     id: "investments",
-    label: "المحفظة والاستثمار (Performance Hub)",
+    label: "المحفظة والأسواق",
     icon: TrendingUp,
     items: [
-      { icon: TrendingUp, label: "أصول المحفظة والمراكز", path: "/investments", minimumRole: "viewer" },
-      { icon: BarChart3, label: "أداء المحفظة ومكافئ السوق (KS-PME)", path: "/performance", minimumRole: "viewer" },
-      { icon: Coins, label: "استخبارات وتوقعات توزيعات الأرباح", path: "/investments?tab=dividends", minimumRole: "viewer" },
-      { icon: Activity, label: "الشموع الفنية وقوائم المراقبة", path: "/data-quality", minimumRole: "viewer" },
-      { icon: Sparkles, label: "أسواق المال والتداول الكمي", path: "/quant", minimumRole: "viewer" },
+      { icon: TrendingUp, label: "أصول المحفظة", path: "/investments", minimumRole: "viewer" },
+      { icon: BarChart3, label: "أداء المحفظة PME", path: "/performance", minimumRole: "viewer" },
+      { icon: Coins, label: "توزيعات الأرباح", path: "/investments?tab=dividends", minimumRole: "viewer" },
+      { icon: Activity, label: "الشموع والتنبيهات", path: "/data-quality", minimumRole: "viewer" },
+      { icon: Sparkles, label: "التداول الكمي", path: "/quant", minimumRole: "viewer" },
     ],
   },
   {
@@ -116,31 +116,31 @@ const navigationGroups: NavigationGroup[] = [
     label: "التقارير والحوكمة",
     icon: FileChartColumn,
     items: [
-      { icon: FileChartColumn, label: "القوائم المالية والتقارير", path: "/reports", minimumRole: "viewer" },
-      { icon: ShieldAlert, label: "مركز الحوكمة والزكاة والخزنة", path: "/governance", minimumRole: "viewer" },
+      { icon: FileChartColumn, label: "التقارير المالية", path: "/reports", minimumRole: "viewer" },
+      { icon: ShieldAlert, label: "الحوكمة والزكاة", path: "/governance", minimumRole: "viewer" },
     ],
   },
 ];
 
 const routeLabels: Record<string, string> = {
-  "/": "نظرة عامة وصافي الثروة",
-  "/wealth-health": "صحة الثروة ودرع التضخم",
-  "/banking": "الحسابات المصرفية والشهادات",
-  "/banking?tab=accounts": "الحسابات المصرفية والمحافظ",
-  "/banking?tab=certificates": "الشهادات والودائع الادخارية",
-  "/banking?tab=liquidity": "الميزانية الصفرية والتدفقات",
-  "/banking?tab=debts": "محاكي سداد الديون والالتزامات",
-  "/transactions": "سجل المعاملات والقيود",
-  "/accounts": "الحسابات والبطاقات",
-  "/certificates": "الشهادات والودائع الادخارية",
-  "/debts": "الالتزامات والديون والبطاقات",
-  "/investments": "أصول المحفظة والمراكز",
-  "/investments?tab=dividends": "استخبارات وتوقعات توزيعات الأرباح",
-  "/performance": "أداء المحفظة ومكافئ السوق (KS-PME)",
-  "/data-quality": "التحليل الفني والشموع وقوائم المراقبة",
-  "/quant": "أسواق المال والتداول الكمي",
-  "/reports": "القوائم المالية والتقارير",
-  "/governance": "الحوكمة والزكاة والخزنة",
+  "/": "نظرة عامة",
+  "/wealth-health": "صحة الثروة",
+  "/banking": "الحسابات والشهادات",
+  "/banking?tab=accounts": "الحسابات والشهادات",
+  "/banking?tab=certificates": "الحسابات والشهادات",
+  "/banking?tab=liquidity": "الميزانية الصفرية",
+  "/banking?tab=debts": "محاكي الديون",
+  "/transactions": "سجل المعاملات",
+  "/accounts": "الحسابات والشهادات",
+  "/certificates": "الحسابات والشهادات",
+  "/debts": "محاكي الديون",
+  "/investments": "أصول المحفظة",
+  "/investments?tab=dividends": "توزيعات الأرباح",
+  "/performance": "أداء المحفظة PME",
+  "/data-quality": "الشموع والتنبيهات",
+  "/quant": "التداول الكمي",
+  "/reports": "التقارير المالية",
+  "/governance": "الحوكمة والزكاة",
   "/stress-testing": "اختبارات الهبوط والضغط",
   "/vault": "الخزنة المشفرة والمستندات",
   "/audit": "سجل التدقيق المحاسبي",
@@ -275,17 +275,26 @@ function FintechNav({
     return loc === itemPath || loc.startsWith(itemPath + "/");
   }
 
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (groupId: string) => {
+    setCollapsedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
+  };
+
   if (collapsed) {
     return (
       <TooltipProvider delayDuration={60}>
         <nav
           ref={navRef}
-          className="fintech-v2-icon-nav flex-1 min-h-0 overflow-y-auto scrollbar-none py-3 px-1.5 space-y-3"
+          className="fintech-v2-icon-nav flex-1 min-h-0 overflow-y-auto scrollbar-none py-2 px-1.5 space-y-2.5"
           aria-label="التنقل المصغر"
         >
           {visibleGroups.map((group, gIdx) => (
-            <div key={group.id} className="fintech-v2-icon-group flex flex-col items-center gap-1.5 w-full">
-              {gIdx > 0 && <div className="w-6 h-px bg-border/60 my-1 shrink-0" />}
+            <div key={group.id} className="fintech-v2-icon-group flex flex-col items-center gap-1 w-full">
+              {gIdx > 0 && <div className="w-5 h-px bg-border/50 my-1 shrink-0" />}
               {group.items.map(item => {
                 const Icon = item.icon;
                 const isCurrent = checkActive(item.path, location);
@@ -293,7 +302,7 @@ function FintechNav({
                   <Tooltip key={item.path}>
                     <TooltipTrigger asChild>
                       <button
-                        className={`size-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
+                        className={`size-8.5 rounded-lg flex items-center justify-center transition-all cursor-pointer ${
                           isCurrent
                             ? "bg-primary/10 text-primary border border-primary/25 shadow-xs"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -307,11 +316,11 @@ function FintechNav({
                     </TooltipTrigger>
                     <TooltipContent
                       side="left"
-                      sideOffset={12}
-                      className="bg-popover border border-border text-popover-foreground shadow-2xl rounded-lg px-3 py-1.5 z-50 pointer-events-none"
+                      sideOffset={10}
+                      className="bg-popover border border-border text-popover-foreground shadow-2xl rounded-lg px-2.5 py-1 z-50 pointer-events-none"
                     >
                       <p className="font-semibold text-xs text-foreground">{item.label}</p>
-                      <p className="text-[10px] text-primary font-medium mt-0.5">{group.label}</p>
+                      <p className="text-[10px] text-primary font-medium">{group.label}</p>
                     </TooltipContent>
                   </Tooltip>
                 );
@@ -326,47 +335,51 @@ function FintechNav({
   return (
     <nav
       ref={navRef}
-      className="fintech-v2-nav flex-1 min-h-0 overflow-y-auto scrollbar-none px-3 py-3 space-y-4"
+      className="fintech-v2-nav flex-1 min-h-0 overflow-y-auto scrollbar-none px-2.5 py-2 space-y-2"
       aria-label="التنقل الرئيسي"
     >
       {visibleGroups.map(group => {
-        const GroupIcon = group.icon;
+        const isGroupCollapsed = collapsedGroups[group.id] === true;
         const isGroupActive = group.items.some(item => checkActive(item.path, location));
         return (
-          <div key={group.id} className="space-y-1.5">
-            <div className="flex items-center gap-2 px-2.5 py-1 text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
-              <span className={`p-1 rounded-md shrink-0 border transition-colors ${
-                isGroupActive
-                  ? "bg-primary/10 border-primary/25 text-primary"
-                  : "bg-muted/60 border-border text-muted-foreground"
-              }`}>
-                <GroupIcon className="size-3.5" />
-              </span>
-              <span>{group.label}</span>
-            </div>
-            <div className="space-y-1 pr-1">
-              {group.items.map(item => {
-                const Icon = item.icon;
-                const isCurrent = checkActive(item.path, location);
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => onNavigate(item.path)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer text-right ${
-                      isCurrent
-                        ? "bg-primary/10 text-primary font-bold border border-primary/25 shadow-xs"
-                        : "text-foreground/80 hover:text-foreground hover:bg-muted/80 border border-transparent"
-                    }`}
-                  >
-                    <Icon className={`size-4 shrink-0 ${isCurrent ? "text-primary" : "text-muted-foreground"}`} />
-                    <span className="truncate flex-1">{item.label}</span>
-                    {isCurrent && (
-                      <span className="size-1.5 rounded-full bg-primary shrink-0 shadow-[0_0_6px_var(--primary)]" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          <div key={group.id} className="space-y-0.5">
+            <button
+              type="button"
+              onClick={() => toggleGroup(group.id)}
+              className="w-full flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted-foreground/80 hover:text-foreground tracking-wide select-none cursor-pointer group transition-colors rounded-md"
+            >
+              <span className={isGroupActive ? "text-primary font-bold" : ""}>{group.label}</span>
+              <ChevronDown
+                className={`size-3 text-muted-foreground/50 group-hover:text-foreground transition-transform duration-200 ${
+                  isGroupCollapsed ? "-rotate-90" : ""
+                }`}
+              />
+            </button>
+            {!isGroupCollapsed && (
+              <div className="space-y-0.5">
+                {group.items.map(item => {
+                  const Icon = item.icon;
+                  const isCurrent = checkActive(item.path, location);
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => onNavigate(item.path)}
+                      className={`w-full flex items-center gap-2 px-2.5 h-8.5 rounded-lg text-xs transition-all cursor-pointer text-right ${
+                        isCurrent
+                          ? "bg-primary/10 text-primary font-bold border border-primary/25 shadow-xs"
+                          : "text-foreground/80 hover:text-foreground hover:bg-muted/70 border border-transparent font-medium"
+                      }`}
+                    >
+                      <Icon className={`size-3.5 shrink-0 ${isCurrent ? "text-primary stroke-[2.2]" : "text-muted-foreground"}`} />
+                      <span className="truncate flex-1">{item.label}</span>
+                      {isCurrent && (
+                        <span className="size-1.5 rounded-full bg-primary shrink-0 shadow-[0_0_6px_var(--primary)]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
@@ -439,6 +452,17 @@ function UserControls({
 
           <Tooltip>
             <TooltipTrigger asChild>
+              <div>
+                <PwaInstallButton className="size-8 rounded-lg flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 transition-all border border-emerald-500/20" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="bg-white border border-slate-200 text-slate-900 dark:bg-[#0B0F17] dark:border-white/10 dark:text-[#F8FAFC] text-xs px-2.5 py-1">
+              تثبيت التطبيق (PWA)
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
               <button
                 onClick={onLogout}
                 className="size-8 rounded-lg flex items-center justify-center text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:text-rose-300 dark:hover:bg-rose-950/40 transition-all"
@@ -457,11 +481,10 @@ function UserControls({
   }
 
   return (
-    <div className="fintech-v2-user-zone border-t border-border/60 pt-3 px-3 pb-3 space-y-2">
-      <PwaInstallSidebarBanner />
-      <div className="fintech-v2-utility-row">
+    <div className="fintech-v2-user-zone border-t border-border/60 pt-2 px-2.5 pb-2.5 space-y-2">
+      <div className="flex items-center gap-1.5">
         <button
-          className="w-full flex items-center justify-center gap-2 h-8 px-2.5 rounded-xl border border-border bg-card text-foreground hover:bg-muted text-xs font-semibold transition-all cursor-pointer"
+          className="flex-1 flex items-center justify-center gap-1.5 h-8 px-2 rounded-lg border border-border/80 bg-card/60 hover:bg-muted text-foreground text-[11px] font-medium transition-all cursor-pointer"
           onClick={toggleTheme}
           aria-label="تبديل الوضع اللوني"
           title="تبديل الوضع اللوني"
@@ -469,14 +492,15 @@ function UserControls({
           {theme === "dark" ? <Sun className="size-3.5 text-amber-400" /> : <Moon className="size-3.5 text-slate-700" />}
           <span>{theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}</span>
         </button>
+        <PwaInstallButton className="flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[11px] font-semibold transition-all cursor-pointer shrink-0" />
       </div>
 
       <div
         onClick={() => onNavigate?.("/governance?tab=members")}
-        className="fintech-v2-user-card flex items-center gap-2.5 p-2.5 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/70 transition-all cursor-pointer group"
+        className="fintech-v2-user-card flex items-center gap-2 p-2 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/70 transition-all cursor-pointer group"
         title="إدارة أفراد العائلة والصلاحيات ومساحات العمل"
       >
-        <span className="fintech-v2-avatar size-8.5 rounded-full flex items-center justify-center font-bold text-xs bg-primary/10 border border-primary/20 text-primary shrink-0 group-hover:scale-105 transition-transform">
+        <span className="fintech-v2-avatar size-8 rounded-full flex items-center justify-center font-bold text-xs bg-primary/10 border border-primary/20 text-primary shrink-0 group-hover:scale-105 transition-transform">
           {initial}
         </span>
         <div className="min-w-0 flex-1">
@@ -484,7 +508,7 @@ function UserControls({
             {user?.name || "مستخدم FAMILY"}
           </strong>
           <span className="block truncate text-[10px] text-muted-foreground font-mono font-medium">
-            {roleLabel} · إدارة الصلاحيات
+            {roleLabel} · الصلاحيات
           </span>
         </div>
         <button
@@ -492,11 +516,11 @@ function UserControls({
             e.stopPropagation();
             onLogout();
           }}
-          className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors shrink-0 cursor-pointer"
+          className="size-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors shrink-0 cursor-pointer"
           title="تسجيل الخروج"
           aria-label="تسجيل الخروج"
         >
-          <LogOut className="size-4" />
+          <LogOut className="size-3.5" />
         </button>
       </div>
     </div>
@@ -720,53 +744,56 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent
           side="right"
-          className="fintech-v2-mobile-sheet bg-[#F8FAFC] border-slate-200/90 dark:bg-[#0c0a09] dark:border-zinc-800"
+          className="fintech-v2-mobile-sheet bg-background border-border p-0 flex flex-col h-full overflow-hidden"
           dir="rtl"
         >
-          <div className="fintech-v2-mobile-body overflow-y-auto">
-            <div className="p-4 border-b border-slate-200/80 dark:border-white/[0.08]">
-              <FintechBrand collapsed={false} />
-            </div>
+          <div className="p-3.5 border-b border-border/60 shrink-0 flex items-center justify-between">
+            <FintechBrand collapsed={false} />
+          </div>
 
-            {/* Quick Tools & Mobile Actions Section */}
-            <div className="p-3 border-b border-slate-200/80 dark:border-zinc-800/80 space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400">
-                  أدوات وإجراءات سريعة
-                </span>
-                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                  QUICK TOOLS
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {/* Direct navigation at top of drawer for instant thumb access */}
+            <FintechNav
+              collapsed={false}
+              role={role}
+              location={location}
+              onNavigate={navigate}
+            />
+
+            {/* Compact Quick Tools Section underneath navigation */}
+            <div className="px-3 pt-3 pb-3 border-t border-border/50 mt-1 space-y-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block px-1">
+                إجراءات سريعة
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
                 <button
                   onClick={() => {
                     setMobileOpen(false);
                     setReceiptOcrOpen(true);
                   }}
-                  className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 text-xs font-bold transition-all text-right cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded-lg border border-border bg-card/60 hover:bg-muted text-foreground text-xs font-semibold transition-colors text-right cursor-pointer"
                 >
-                  <Receipt className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="truncate">مسح إيصال (OCR)</span>
+                  <Receipt className="size-3.5 text-emerald-500 shrink-0" />
+                  <span className="truncate">مسح إيصال</span>
                 </button>
                 <button
                   onClick={() => {
                     setMobileOpen(false);
                     setQuickEntryOpen(true);
                   }}
-                  className="flex items-center gap-2 p-2.5 rounded-xl border border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/20 text-blue-900 dark:text-blue-300 text-xs font-bold transition-all text-right cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded-lg border border-border bg-card/60 hover:bg-muted text-foreground text-xs font-semibold transition-colors text-right cursor-pointer"
                 >
-                  <PlusCircle className="size-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <PlusCircle className="size-3.5 text-blue-500 shrink-0" />
                   <span className="truncate">إدخال أوفلاين</span>
                 </button>
                 <ExecutivePdfModal
                   trigger={
                     <button
                       onClick={() => setMobileOpen(false)}
-                      className="w-full flex items-center gap-2 p-2.5 rounded-xl border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-300 text-xs font-bold transition-all text-right cursor-pointer"
+                      className="w-full flex items-center gap-2 p-2 rounded-lg border border-border bg-card/60 hover:bg-muted text-foreground text-xs font-semibold transition-colors text-right cursor-pointer"
                     >
-                      <FileText className="size-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                      <span className="truncate">تقرير PDF تنفيذي</span>
+                      <FileText className="size-3.5 text-amber-500 shrink-0" />
+                      <span className="truncate">تقرير PDF</span>
                     </button>
                   }
                 />
@@ -775,31 +802,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     setMobileOpen(false);
                     setSmartPasteOpen(true);
                   }}
-                  className="flex items-center gap-2 p-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 text-xs font-bold transition-all text-right cursor-pointer"
+                  className="flex items-center gap-2 p-2 rounded-lg border border-border bg-card/60 hover:bg-muted text-foreground text-xs font-semibold transition-colors text-right cursor-pointer"
                 >
-                  <Smartphone className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="truncate">لصق رسالة بنكية</span>
+                  <Smartphone className="size-3.5 text-emerald-500 shrink-0" />
+                  <span className="truncate">لصق بنكي</span>
                 </button>
               </div>
-
-              {/* Dual View Mode: Family vs Pro */}
-              <DualViewModeDrawerItem />
-
-              {/* PWA Direct Shortcut & Install Card */}
-              <PwaInstallDrawerItem
-                onOpenModal={() => {
-                  setMobileOpen(false);
-                  setPwaInstallOpen(true);
-                }}
-              />
             </div>
+          </div>
 
-            <FintechNav
-              collapsed={false}
-              role={role}
-              location={location}
-              onNavigate={navigate}
-            />
+          <div className="shrink-0 border-t border-border/60">
             <UserControls collapsed={false} role={role} onLogout={logout} onNavigate={navigate} />
           </div>
         </SheetContent>
