@@ -65,6 +65,10 @@ import {
   listRecentEvents,
   searchOmni,
 } from "./familyRead";
+import {
+  executeEgxMarketFeedSync,
+  getEgxFeedStatus,
+} from "./services/market/egxFeedService";
 import { getDb } from "./db";
 import { parsePositiveAmount } from "./ledgerMath";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
@@ -261,6 +265,11 @@ export const familyRouter = router({
   dashboard: protectedProcedure.query(async ({ ctx }) => getDashboardSummary(await familyContext(ctx.user))),
   marketOverview: protectedProcedure.query(async ({ ctx }) => getDashboardMarketOverview(await familyContext(ctx.user))),
   marketDataQuality: protectedProcedure.query(async ({ ctx }) => getMarketDataQuality(await familyContext(ctx.user))),
+  egxFeedStatus: protectedProcedure.query(async () => getEgxFeedStatus()),
+  syncEgxFeed: protectedProcedure.mutation(async ({ ctx }) => {
+    const family = await familyContext(ctx.user);
+    return executeEgxMarketFeedSync({ workspaceId: family.workspace.id, forced: true });
+  }),
   search: router({
     omni: protectedProcedure
       .input(z.object({ query: z.string().default("") }))

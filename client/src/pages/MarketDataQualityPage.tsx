@@ -1,7 +1,24 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import PageHeader from "@/components/PageHeader";
-import { CircleAlert, DatabaseZap, Gauge, Globe2, ShieldCheck, Clock3 } from "lucide-react";
+import {
+  CircleAlert,
+  DatabaseZap,
+  Gauge,
+  Globe2,
+  ShieldCheck,
+  Clock3,
+  RefreshCw,
+  Loader2,
+  CheckCircle2,
+  CalendarCheck,
+  Zap,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
 import { TradingViewStyleTechnicalChart } from "@/components/fintech/TradingViewStyleTechnicalChart";
@@ -24,8 +41,33 @@ const quoteStatusLabel: Record<string, string> = {
 
 export default function MarketDataQualityPage() {
   const [activeSymbol, setActiveSymbol] = useState("COMI");
+  const [showSyncDetails, setShowSyncDetails] = useState(false);
+  const utils = trpc.useUtils();
   const quality = trpc.family.marketDataQuality.useQuery();
+  const egxFeed = trpc.family.egxFeedStatus.useQuery();
   const data = quality.data;
+  const feedStatus = egxFeed.data;
+  const lastSync = feedStatus?.lastSync;
+
+  const syncMutation = trpc.family.syncEgxFeed.useMutation({
+    onSuccess: (result) => {
+      toast.success(
+        `تمت مزامنة بيانات البورصة المصرية والصناديق بنجاح (تم تحديث ${result.updatedCount} أصل)`
+      );
+      utils.family.egxFeedStatus.invalidate();
+      utils.family.marketDataQuality.invalidate();
+      utils.family.marketOverview.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message || "تعذر إتمام مزامنة بيانات السوق المصرية.");
+    },
+  });
+
+  const successRate = lastSync
+    ? lastSync.updatedCount + lastSync.failedCount > 0
+      ? Math.round((lastSync.updatedCount / (lastSync.updatedCount + lastSync.failedCount)) * 100)
+      : 100
+    : null;
 
   return (
     <DashboardLayout>
@@ -58,6 +100,169 @@ export default function MarketDataQualityPage() {
             <Gauge className="size-4" />
             جودة بيانات وتسعير السوق
           </Link>
+        </div>
+
+        {/* قسم مزامنة بيانات السوق اللحظية (EGX & Mutual Funds Feed Control Hub) */}
+        <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+          {/* Card Header */}
+          <div className="p-5 sm:p-6 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <div className="size-8 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400 flex items-center justify-center">
+                  <Zap className="size-4" />
+                </div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  مزامنة بيانات السوق والبورصة المصرية (EGX & Mutual Funds Feed)
+                </h2>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  المجدول الآلي نشط (3:30 م)
+                </span>
+                {feedStatus?.isTradingDay ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400">
+                    <CalendarCheck className="size-3" />
+                    يوم تداول رسمي
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                    عطلة نهاية الأسبوع للبورصة
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                جلب آلي لأسعار إغلاق الأسهم المقيدة ومؤشر EGX30 ووثائق صناديق الاستثمار الرئيسية (أزيموت، بنك مصر، البنك الأهلي) دون المساس بقيود دفتر الأستاذ.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => syncMutation.mutate()}
+                disabled={syncMutation.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-xs transition-all flex items-center gap-2"
+              >
+                {syncMutation.isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    جارٍ المزامنة والتحديث…
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="size-4" />
+                    مزامنة الأسعار الآن
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Sync Status 3-Metric Strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-slate-200/80 dark:divide-slate-800/80 bg-slate-50/50 dark:bg-[#0E1420]/50 border-b border-slate-200/80 dark:border-slate-800/80">
+            {/* Metric 1: تاريخ ووقت آخر تحديث */}
+            <div className="p-4 sm:p-5 flex flex-col justify-between">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                تاريخ ووقت آخر تحديث
+              </span>
+              <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">
+                {lastSync?.completedAt ? formatDateTime(lastSync.completedAt) : "لم تتم مزامنة بعد في الجلسة الحالية"}
+              </div>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                {lastSync?.durationMs ? `استغرقت العملية ${(lastSync.durationMs / 1000).toFixed(1)} ثانية` : "المجدول بانتظار 3:30 م"}
+              </span>
+            </div>
+
+            {/* Metric 2: عدد الأصول المحدثة */}
+            <div className="p-4 sm:p-5 flex flex-col justify-between">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                عدد الأصول المحدثة
+              </span>
+              <div className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">
+                {lastSync ? `${lastSync.updatedCount} أصل ووثيقة` : "0 أصل"}
+              </div>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                {lastSync ? `تخطي ${lastSync.skippedCount} أصل غير متداول` : "يشمل الأسهم وصناديق الاستثمار ومؤشر EGX30"}
+              </span>
+            </div>
+
+            {/* Metric 3: نسبة النجاح والموثوقية */}
+            <div className="p-4 sm:p-5 flex flex-col justify-between">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                نسبة النجاح والموثوقية
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">
+                  {successRate !== null ? `${successRate}%` : "100%"}
+                </span>
+                <span className="size-2 rounded-full bg-emerald-500" />
+              </div>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                {lastSync?.failedCount ? `فشل ${lastSync.failedCount} أصل (تم اللجوء لآخر سعر معروف)` : "مؤشرات الموثوقية مطابقة لدفتر الأستاذ"}
+              </span>
+            </div>
+          </div>
+
+          {/* Collapsible Details Row */}
+          {lastSync?.details && lastSync.details.length > 0 && (
+            <div className="p-4 bg-white dark:bg-[#0B0F17]">
+              <button
+                type="button"
+                onClick={() => setShowSyncDetails(!showSyncDetails)}
+                className="w-full flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Layers className="size-3.5 text-blue-500" />
+                  عرض تفاصيل الأصول المحدثة ومصادر التقييم ({lastSync.details.length} أصل)
+                </span>
+                {showSyncDetails ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              </button>
+
+              {showSyncDetails && (
+                <div className="mt-3 overflow-x-auto border border-slate-200/80 dark:border-slate-800 rounded-xl">
+                  <table className="w-full text-right text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800">
+                      <tr>
+                        <th className="p-2.5 font-bold">الأصل / المؤشر</th>
+                        <th className="p-2.5 font-bold">النوع</th>
+                        <th className="p-2.5 font-bold">سعر الإغلاق</th>
+                        <th className="p-2.5 font-bold">مصدر السعر</th>
+                        <th className="p-2.5 font-bold">الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60 font-mono">
+                      {lastSync.details.slice(0, 15).map((item, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                          <td className="p-2.5 font-bold text-slate-900 dark:text-white">
+                            {item.symbol} <span className="font-sans font-normal text-slate-400 text-[11px] mr-1">({item.name})</span>
+                          </td>
+                          <td className="p-2.5 font-sans text-slate-600 dark:text-slate-400">
+                            {item.assetType === "index" ? "مؤشر سوق" : item.assetType === "fund" ? "صندوق استثمار" : "سهم مصري"}
+                          </td>
+                          <td className="p-2.5 font-bold text-slate-900 dark:text-white">
+                            {item.price > 0 ? `${item.price.toLocaleString("ar-EG", { minimumFractionDigits: 2 })} ج.م` : "—"}
+                          </td>
+                          <td className="p-2.5 font-sans text-slate-500 dark:text-slate-400 text-[11px]">
+                            {item.source}
+                          </td>
+                          <td className="p-2.5 font-sans">
+                            {item.status === "updated" ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="size-3" /> تم التحديث
+                              </span>
+                            ) : item.status === "skipped" ? (
+                              <span className="text-[10px] text-slate-400">تم التخطي</span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-rose-500">فشل الجلب</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {quality.isLoading ? (

@@ -12,6 +12,7 @@ import { serveStatic } from "./vite";
 import { handleScheduledMarketRefresh } from "../marketRefreshHandler";
 import { handleCreateAccount, handleListAccounts } from "../accountsHandler";
 import { startMarketAutomationDaemon } from "../marketScheduler";
+import { initEgxFeedCronScheduler } from "../services/market/egxFeedService";
 import { sql } from "drizzle-orm";
 import { ensurePasswordHashColumn, getDb, startDbHeartbeat } from "../db";
 import { validateProductionJwtSecret } from "../auditorTokenService";
@@ -172,6 +173,7 @@ async function startServer() {
   server.listen(port, host, () => {
     console.log(`Server running on http://localhost:${port}/ (bound to ${host})`);
     startMarketAutomationDaemon();
+    initEgxFeedCronScheduler();
     startDbHeartbeat(45000);
   });
 }
