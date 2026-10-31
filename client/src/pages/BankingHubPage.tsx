@@ -65,10 +65,10 @@ export default function BankingHubPage() {
 
         {/* 4 Primary Sub-Hub Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1 mb-6 h-auto w-full justify-start">
+          <TabsList className="bg-white/90 dark:bg-[#111827] p-1.5 rounded-2xl border border-slate-200/90 dark:border-[#1E293B] shadow-xs flex flex-wrap gap-1.5 mb-6 h-auto w-full justify-start">
             <TabsTrigger
               value="accounts"
-              className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2"
+              className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2 cursor-pointer"
             >
               <Landmark className="size-4" />
               <span>الحسابات البنكية والمحافظ</span>
@@ -76,7 +76,7 @@ export default function BankingHubPage() {
 
             <TabsTrigger
               value="certificates"
-              className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2"
+              className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2 cursor-pointer"
             >
               <Coins className="size-4" />
               <span>الشهادات والودائع</span>
@@ -84,7 +84,7 @@ export default function BankingHubPage() {
 
             <TabsTrigger
               value="liquidity"
-              className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2"
+              className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2 cursor-pointer"
             >
               <WalletCards className="size-4" />
               <span>السيولة والتخطيط المالي</span>
@@ -92,7 +92,7 @@ export default function BankingHubPage() {
 
             <TabsTrigger
               value="debts"
-              className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2"
+              className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent flex items-center gap-2 cursor-pointer"
             >
               <CreditCard className="size-4" />
               <span>الالتزامات والديون</span>

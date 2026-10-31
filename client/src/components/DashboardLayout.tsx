@@ -223,16 +223,21 @@ function getActiveGatewayId(path: string): string {
 function FintechBrand({ collapsed }: { collapsed: boolean }) {
   return (
     <div className="fintech-v2-brand flex items-center gap-3 min-w-0">
-      <div className="relative flex items-center justify-center size-9 rounded-xl bg-primary/10 border border-primary/20 text-primary shadow-[0_0_15px_rgba(16,185,129,0.15)] shrink-0">
+      <div className="relative flex items-center justify-center size-9.5 rounded-xl bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-500/5 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.18)] shrink-0">
         <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400" />
       </div>
       {!collapsed && (
         <div className="min-w-0 flex flex-col justify-center">
-          <strong className="text-foreground font-extrabold text-[15px] tracking-wider leading-tight">
-            FAMILY
-          </strong>
-          <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px] tracking-widest leading-tight mt-0.5 font-bold">
-            WEALTH INTELLIGENCE
+          <div className="flex items-center gap-1.5">
+            <strong className="text-slate-900 dark:text-white font-black text-[15px] tracking-wider leading-tight">
+              FAMILY
+            </strong>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">
+              OFFICE
+            </span>
+          </div>
+          <span className="text-emerald-700 dark:text-emerald-400/90 font-mono text-[9.5px] tracking-[0.16em] leading-tight mt-0.5 font-bold uppercase">
+            SOVEREIGN TREASURY
           </span>
         </div>
       )}
@@ -336,22 +341,22 @@ function FintechNav({
   return (
     <nav
       ref={navRef}
-      className="fintech-v2-nav flex-1 min-h-0 overflow-y-auto scrollbar-none px-2.5 py-2 space-y-2"
+      className="fintech-v2-nav flex-1 min-h-0 overflow-y-auto scrollbar-none px-2.5 py-2.5 space-y-3"
       aria-label="التنقل الرئيسي"
     >
       {visibleGroups.map(group => {
         const isGroupCollapsed = collapsedGroups[group.id] === true;
         const isGroupActive = group.items.some(item => checkActive(item.path, location));
         return (
-          <div key={group.id} className="space-y-0.5">
+          <div key={group.id} className="space-y-1">
             <button
               type="button"
               onClick={() => toggleGroup(group.id)}
-              className="w-full flex items-center justify-between px-2 py-1 text-[11px] font-semibold text-muted-foreground/80 hover:text-foreground tracking-wide select-none cursor-pointer group transition-colors rounded-md"
+              className="w-full flex items-center justify-between px-2.5 py-1 text-[10.5px] font-bold uppercase text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 tracking-wider select-none cursor-pointer group transition-colors rounded-md"
             >
-              <span className={isGroupActive ? "text-primary font-bold" : ""}>{group.label}</span>
+              <span className={isGroupActive ? "text-emerald-600 dark:text-emerald-400 font-extrabold" : ""}>{group.label}</span>
               <ChevronDown
-                className={`size-3 text-muted-foreground/50 group-hover:text-foreground transition-transform duration-200 ${
+                className={`size-3 text-slate-400 dark:text-slate-500 group-hover:text-foreground transition-transform duration-200 ${
                   isGroupCollapsed ? "-rotate-90" : ""
                 }`}
               />
@@ -365,16 +370,16 @@ function FintechNav({
                     <button
                       key={item.path}
                       onClick={() => onNavigate(item.path)}
-                      className={`w-full flex items-center gap-2 px-2.5 h-8.5 rounded-lg text-xs transition-all cursor-pointer text-right ${
+                      className={`w-full flex items-center gap-2.5 px-2.5 h-9 rounded-xl text-xs transition-all cursor-pointer text-right ${
                         isCurrent
-                          ? "bg-primary/10 text-primary font-bold border border-primary/25 shadow-xs"
-                          : "text-foreground/80 hover:text-foreground hover:bg-muted/70 border border-transparent font-medium"
+                          ? "bg-gradient-to-l from-emerald-500/15 via-emerald-500/8 to-transparent text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/30 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.12)]"
+                          : "text-slate-600 dark:text-slate-300/85 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-[#111827] border border-transparent font-medium"
                       }`}
                     >
-                      <Icon className={`size-3.5 shrink-0 ${isCurrent ? "text-primary stroke-[2.2]" : "text-muted-foreground"}`} />
+                      <Icon className={`size-3.5 shrink-0 ${isCurrent ? "text-emerald-600 dark:text-emerald-400 stroke-[2.3]" : "text-slate-400 dark:text-slate-500"}`} />
                       <span className="truncate flex-1">{item.label}</span>
                       {isCurrent && (
-                        <span className="size-1.5 rounded-full bg-primary shrink-0 shadow-[0_0_6px_var(--primary)]" />
+                        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
                       )}
                     </button>
                   );
@@ -740,12 +745,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className={`fintech-app-shell ${isPrivate ? "privacy-mode" : ""}`} dir="rtl">
       <aside
         data-sidebar="true"
-        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""} bg-white border-l border-zinc-200 dark:bg-[#09090b] dark:border-zinc-800`}
+        className={`fintech-v2-sidebar ${collapsed ? "is-collapsed" : ""} bg-white border-l border-slate-200/90 dark:bg-[#080C14] dark:border-[#1E293B]`}
       >
-        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-3.5 py-3 border-b border-zinc-200 dark:border-zinc-800 shrink-0 min-h-[60px] bg-transparent">
+        <header className="fintech-v2-sidebar-header flex items-center justify-between gap-2 px-3.5 py-3 border-b border-slate-200/80 dark:border-[#1E293B] shrink-0 min-h-[62px] bg-transparent">
           <FintechBrand collapsed={collapsed} />
           <button
-            className="fintech-v2-collapse size-7 rounded-lg flex items-center justify-center border border-zinc-200 bg-zinc-50 text-zinc-700 hover:text-zinc-950 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800 transition-colors shrink-0"
+            className="fintech-v2-collapse size-7 rounded-lg flex items-center justify-center border border-slate-200/90 bg-slate-50 text-slate-700 hover:text-slate-950 hover:bg-slate-100 dark:border-[#1E293B] dark:bg-[#111827] dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#162032] transition-colors shrink-0 cursor-pointer"
             onClick={() => setCollapsed(value => !value)}
             aria-label={collapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
             title={collapsed ? "توسيع القائمة" : "طي القائمة"}
@@ -977,13 +982,13 @@ function TopbarControls({
       {/* 1. Quick Search / Omni Bar (Ctrl + K) */}
       <button
         onClick={onOpenOmni}
-        className="fintech-topbar-button flex items-center gap-2 px-2.5 sm:px-3 bg-muted/60 border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer rounded-xl h-9"
+        className="fintech-topbar-button flex items-center gap-2 px-2.5 sm:px-3.5 bg-slate-100/80 dark:bg-[#111827] border border-slate-200/90 dark:border-[#1E293B] hover:border-emerald-500/40 dark:hover:border-emerald-500/40 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer rounded-xl h-9 shadow-2xs"
         title="لوحة الأوامر والبحث الشامل (Ctrl + K)"
         aria-label="لوحة الأوامر والبحث الشامل"
       >
         <Search className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-        <span className="hidden sm:inline text-xs font-medium">بحث...</span>
-        <kbd className="hidden lg:inline-flex items-center text-[10px] font-mono bg-background border border-border/80 px-1.5 py-0.5 rounded text-muted-foreground mr-1">
+        <span className="hidden sm:inline text-xs font-semibold">بحث وأوامر...</span>
+        <kbd className="hidden lg:inline-flex items-center text-[10px] font-mono bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-[#1E293B] px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-400 mr-1">
           Ctrl+K
         </kbd>
       </button>
@@ -992,7 +997,7 @@ function TopbarControls({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="flex items-center gap-1.5 h-9 px-3 sm:px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 h-9 px-3 sm:px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-[0_2px_10px_rgba(16,185,129,0.25)] border border-emerald-500/40 transition-all cursor-pointer shrink-0"
             title="إجراءات سريعة"
             aria-label="إجراءات سريعة"
           >
@@ -1002,13 +1007,13 @@ function TopbarControls({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
-          className="w-56 p-1.5 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl z-50"
+          className="w-56 p-1.5 rounded-xl border border-slate-200 dark:border-[#1E293B] bg-white dark:bg-[#111827] text-popover-foreground shadow-xl z-50"
         >
           <DropdownMenuItem
             onClick={onOpenQuickEntry}
             className="flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-xs font-semibold hover:bg-muted"
           >
-            <div className="size-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <div className="size-7 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
               <PlusCircle className="size-4" />
             </div>
             <div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import PageHeader from "@/components/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileChartColumn, ShieldCheck, FileLock2, Scale, UsersRound, CheckCircle2, HardDriveDownload, Send, Coins } from "lucide-react";
 import { ReportsPage } from "./ReportsPage";
@@ -12,12 +13,12 @@ import { ShariaZakatHawlHub } from "@/components/governance/ShariaZakatHawlHub";
 import { TelegramAlertsSettingsCard } from "@/components/governance/TelegramAlertsSettingsCard";
 
 const TAB_TRIGGER_CLS =
-  "gap-1.5 py-2 px-4 rounded-xl text-xs font-medium transition-colors border border-transparent " +
+  "gap-1.5 py-2.5 px-4 rounded-xl text-xs font-semibold transition-all border border-transparent cursor-pointer " +
   "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white " +
-  "data-[state=active]:bg-white dark:data-[state=active]:bg-[#1A2234] " +
-  "data-[state=active]:text-slate-900 dark:data-[state=active]:text-white " +
-  "data-[state=active]:font-bold data-[state=active]:shadow-xs " +
-  "data-[state=active]:border-slate-200/60 dark:data-[state=active]:border-slate-700/60";
+  "data-[state=active]:bg-emerald-500/10 dark:data-[state=active]:bg-[#162032] " +
+  "data-[state=active]:text-emerald-800 dark:data-[state=active]:text-emerald-300 " +
+  "data-[state=active]:font-bold data-[state=active]:shadow-2xs " +
+  "data-[state=active]:border-emerald-500/30";
 
 const normalizeGovTab = (tab: string | null): string => {
   if (!tab) return "reports";
@@ -59,26 +60,21 @@ export default function GovernanceHubPage() {
   return (
     <DashboardLayout>
       <div dir="rtl" className="mx-auto max-w-7xl space-y-6 pb-16 px-1">
-        {/* Hub Header */}
-        <div className="flex flex-col gap-1 border-b border-slate-200/80 dark:border-slate-800 pb-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-600 dark:text-violet-400">
-              <Scale className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-                التقارير والحوكمة
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-0.5">
-                القوائم المالية المدققة · سجل التدقيق · الخزنة والمستندات · أفراد العائلة والصلاحيات · مركز الاعتمادات
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* Sovereign Hub Header */}
+        <PageHeader
+          title="التقارير المالية والحوكمة المؤسسية"
+          description="القوائم المالية المدققة · سجل التدقيق المحاسبي · الخزنة المشفرة · الزكاة الشرعية · الصلاحيات والنسخ الاحتياطي"
+          breadcrumbs={[
+            { label: "الرئيسية", href: "/" },
+            { label: "التقارير والحوكمة" },
+          ]}
+          badge={{ text: "حوكمة المكتب العائلي", variant: "institutional" }}
+          icon={Scale}
+        />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="bg-slate-100/90 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1 h-auto w-full justify-start">
+          <TabsList className="bg-white/90 dark:bg-[#111827] p-1.5 rounded-2xl border border-slate-200/90 dark:border-[#1E293B] shadow-xs flex flex-wrap gap-1.5 h-auto w-full justify-start">
             <TabsTrigger value="reports" className={TAB_TRIGGER_CLS}>
               <FileChartColumn className="w-3.5 h-3.5" />
               القوائم المالية والميزانية

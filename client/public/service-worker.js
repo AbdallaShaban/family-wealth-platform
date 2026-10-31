@@ -3,8 +3,8 @@
 // Version: 3.0.0 (Fresh Cache-Busting Network-First Release)
 // ======================================================================
 
-const STATIC_CACHE_NAME = "family-static-v3-fresh";
-const RUNTIME_CACHE_NAME = "family-runtime-v3-fresh";
+const STATIC_CACHE_NAME = "family-static-v4-sovereign";
+const RUNTIME_CACHE_NAME = "family-runtime-v4-sovereign";
 
 const APP_SHELL = [
   "/",

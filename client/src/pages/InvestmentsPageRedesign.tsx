@@ -343,65 +343,66 @@ export default function InvestmentsPageRedesign() {
         />
 
         {/* Executive Metric Strip */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+        <section className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 bg-white dark:bg-[#111827] border border-slate-200/90 dark:border-[#1E293B] rounded-2xl shadow-sm overflow-hidden mb-6">
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-l from-emerald-500/80 via-sky-500/40 to-amber-500/30" />
           {/* Cell 1: القيمة السوقية الإجمالية */}
-          <div className="lg:col-span-2 bg-slate-50/50 dark:bg-slate-900/30 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
+          <div className="lg:col-span-2 bg-gradient-to-br from-emerald-500/[0.05] via-transparent to-transparent dark:from-emerald-500/[0.08] p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-[#1E293B]">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
+              <span className="text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center gap-2">
                 القيمة السوقية الإجمالية
               </span>
-              <div className="size-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60 flex items-center justify-center">
+              <div className="size-8 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 dark:text-emerald-400 flex items-center justify-center">
                 <CircleDollarSign className="size-4" />
               </div>
             </div>
-            <div className="mt-1">
-              <strong className="text-slate-900 dark:text-white font-extrabold font-mono text-xl sm:text-2xl lg:text-3xl tabular-nums tracking-tight whitespace-nowrap block">
+            <div className="mt-1.5">
+              <strong className="text-slate-900 dark:text-white font-black font-mono text-xl sm:text-2xl lg:text-3xl tabular-nums tracking-tight whitespace-nowrap block">
                 <SensitiveValue>
                   {portfolio.isLoading ? "—" : formatMoney(totalMarketValue, baseCurrency, 2)}
                 </SensitiveValue>
               </strong>
             </div>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] mt-1 font-medium block">
               إجمالي تقييم الأصول والأسهم بالسعر الحالي
             </span>
           </div>
 
           {/* Cell 2: إجمالي الأصول النشطة */}
-          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-[#1E293B]">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
+              <span className="text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center gap-2">
                 إجمالي الأصول النشطة
               </span>
-              <div className="size-8 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800/60 flex items-center justify-center">
+              <div className="size-8 rounded-xl bg-sky-500/10 text-sky-600 border border-sky-500/25 dark:text-sky-400 flex items-center justify-center">
                 <BriefcaseBusiness className="size-4" />
               </div>
             </div>
-            <div className="mt-1">
+            <div className="mt-1.5">
               <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block">
                 {portfolio.isLoading ? "—" : holdings.length}
               </strong>
             </div>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] mt-1 font-medium block">
               المراكز المفتوحة داخل المحفظة
             </span>
           </div>
 
           {/* Cell 3: أصول مقيّمة بالسوق */}
-          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-slate-800/80">
+          <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b sm:border-b-0 lg:border-b-0 lg:border-l border-slate-200/80 dark:border-[#1E293B]">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
+              <span className="text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center gap-2">
                 أصول مقيّمة بالسوق
               </span>
-              <div className="size-8 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800/60 flex items-center justify-center">
+              <div className="size-8 rounded-xl bg-teal-500/10 text-teal-600 border border-teal-500/25 dark:text-teal-400 flex items-center justify-center">
                 <CheckCircle2 className="size-4" />
               </div>
             </div>
-            <div className="mt-1">
+            <div className="mt-1.5">
               <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block">
                 {portfolio.isLoading ? "—" : valuedHoldings.length}
               </strong>
             </div>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] mt-1 font-medium block">
               أصول محدثة بآخر سعر إغلاق
             </span>
           </div>
@@ -409,19 +410,19 @@ export default function InvestmentsPageRedesign() {
           {/* Cell 4: بانتظار التسعير */}
           <div className="lg:col-span-1 p-5 flex flex-col justify-between border-b-0 lg:border-l-0">
             <div className="flex items-center justify-between">
-              <span className="text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center gap-2">
+              <span className="text-slate-600 dark:text-slate-300 font-bold text-xs flex items-center gap-2">
                 بانتظار التسعير
               </span>
-              <div className="size-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800/60 flex items-center justify-center">
+              <div className="size-8 rounded-xl bg-amber-500/10 text-amber-600 border border-amber-500/25 dark:text-amber-400 flex items-center justify-center">
                 <Clock className="size-4" />
               </div>
             </div>
-            <div className="mt-1">
+            <div className="mt-1.5">
               <strong className="text-slate-900 dark:text-white font-bold font-mono text-xl sm:text-2xl tabular-nums block">
                 {portfolio.isLoading ? "—" : needsQuote.length}
               </strong>
             </div>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] mt-1 font-medium block">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] mt-1 font-medium block">
               أصول تحتاج تحديث سعر السوق
             </span>
           </div>
@@ -432,34 +433,34 @@ export default function InvestmentsPageRedesign() {
 
         {/* Sticky Bank-Grade Sub-Nav Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <div className="sticky top-0 z-20 backdrop-blur-md bg-white/90 dark:bg-[#09090b]/90 py-2 mb-2">
-            <TabsList className="bg-slate-100/95 dark:bg-[#0E1420] p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-wrap gap-1.5 h-auto w-full justify-start shadow-xs">
-              <TabsTrigger value="holdings" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none">
+          <div className="sticky top-0 z-20 backdrop-blur-md bg-[#F3F6FA]/90 dark:bg-[#0B0F17]/90 py-2 mb-2">
+            <TabsList className="bg-white/95 dark:bg-[#111827] p-1.5 rounded-2xl border border-slate-200/90 dark:border-[#1E293B] flex flex-wrap gap-1.5 h-auto w-full justify-start shadow-xs">
+              <TabsTrigger value="holdings" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none cursor-pointer">
                 الأصول والمراكز
               </TabsTrigger>
-              <TabsTrigger value="dividends" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-emerald-700 data-[state=active]:dark:text-emerald-400 data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-emerald-300 data-[state=active]:dark:border-emerald-700/60 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none flex items-center gap-1.5">
+              <TabsTrigger value="dividends" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none flex items-center gap-1.5 cursor-pointer">
                 <CircleDollarSign className="size-4 text-emerald-500" />
                 <span>استخبارات توزيعات الأرباح</span>
               </TabsTrigger>
-              <TabsTrigger value="instruments" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none">
+              <TabsTrigger value="instruments" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none cursor-pointer">
                 الأدوات الاستثمارية
               </TabsTrigger>
-              <TabsTrigger value="trades" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none">
+              <TabsTrigger value="trades" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none cursor-pointer">
                 تسجيل الصفقات
               </TabsTrigger>
-              <TabsTrigger value="realized" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none">
+              <TabsTrigger value="realized" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none cursor-pointer">
                 الأرباح المحققة
               </TabsTrigger>
-              <TabsTrigger value="lots" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none">
+              <TabsTrigger value="lots" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none cursor-pointer">
                 حزم FIFO
               </TabsTrigger>
-              <TabsTrigger value="allocation" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none">
+              <TabsTrigger value="allocation" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none cursor-pointer">
                 التوزيع والمخاطر
               </TabsTrigger>
-              <TabsTrigger value="performance" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none">
+              <TabsTrigger value="performance" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none cursor-pointer">
                 ملخص الأداء
               </TabsTrigger>
-              <TabsTrigger value="quant" className="data-[state=active]:bg-white data-[state=active]:dark:bg-[#1A2234] data-[state=active]:text-slate-900 data-[state=active]:dark:text-white data-[state=active]:font-bold data-[state=active]:shadow-xs data-[state=active]:border-slate-200/60 data-[state=active]:dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none flex items-center gap-1.5">
+              <TabsTrigger value="quant" className="data-[state=active]:bg-emerald-500/10 data-[state=active]:dark:bg-[#162032] data-[state=active]:text-emerald-800 data-[state=active]:dark:text-emerald-300 data-[state=active]:font-bold data-[state=active]:shadow-2xs data-[state=active]:border-emerald-500/30 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all border border-transparent shadow-none flex items-center gap-1.5 cursor-pointer">
                 <Cpu className="size-4 text-amber-500" />
                 <span>التحليل الكمي والتداول</span>
               </TabsTrigger>
@@ -469,7 +470,7 @@ export default function InvestmentsPageRedesign() {
           {/* TAB 1: Holdings */}
           <TabsContent value="holdings">
             {portfolio.isLoading ? (
-              <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-12 text-center shadow-xs">
+              <div className="bg-white dark:bg-[#111827] border border-slate-200/90 dark:border-[#1E293B] rounded-2xl p-12 text-center shadow-xs">
                 <p className="text-sm text-slate-500 dark:text-slate-400">جارٍ تحميل الأصول الاستثمارية…</p>
               </div>
             ) : portfolio.error ? (
@@ -477,7 +478,7 @@ export default function InvestmentsPageRedesign() {
                 {errorText(portfolio.error)}
               </div>
             ) : holdings.length ? (
-              <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl shadow-xs overflow-hidden">
+              <div className="bg-white dark:bg-[#111827] border border-slate-200/90 dark:border-[#1E293B] rounded-2xl shadow-sm overflow-hidden">
                 <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/80">
                   <h2 className="text-slate-900 dark:text-white font-bold text-base flex items-center gap-2">
                     <TrendingUp className="size-5 text-sky-600 dark:text-sky-400" />
