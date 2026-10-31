@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import Decimal from "decimal.js";
 import { getDb } from "./db";
-import { ensurePersonalFamilyContext } from "./familyAccess";
+import { assertRole, ensurePersonalFamilyContext } from "./familyAccess";
 import { protectedProcedure, router } from "./_core/trpc";
 import {
   accounts,
@@ -239,6 +239,7 @@ export const swingTradingRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
       const { workspace } = familyContext;
 
       // If user selected Option B (Official Funded Ledger Trade), record in double-entry ledger first
@@ -321,7 +322,9 @@ export const swingTradingRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw dbUnavailable();
-      const { workspace } = await ensurePersonalFamilyContext(ctx.user);
+      const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
+      const { workspace } = familyContext;
 
       const [trade] = await db
         .select()
@@ -616,7 +619,9 @@ export const swingTradingRouter = router({
   seedDemoData: protectedProcedure.mutation(async ({ ctx }) => {
     const db = await getDb();
     if (!db) throw dbUnavailable();
-    const { workspace } = await ensurePersonalFamilyContext(ctx.user);
+    const familyContext = await ensurePersonalFamilyContext(ctx.user);
+    assertRole(familyContext, "editor");
+    const { workspace } = familyContext;
 
     // 1. Ensure test instruments exist for the active workspace
     let [cib] = await db

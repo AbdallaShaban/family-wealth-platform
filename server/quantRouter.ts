@@ -10,7 +10,7 @@ import { z } from "zod";
 import { and, eq, desc, inArray } from "drizzle-orm";
 import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { ensurePersonalFamilyContext } from "./familyAccess";
+import { assertRole, ensurePersonalFamilyContext } from "./familyAccess";
 import { nextRecurringRunAt } from "./familyRecurring";
 import {
   listAccountSnapshots,
@@ -708,6 +708,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       let instId = 1;
       const inst = await db
@@ -764,6 +765,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       const now = Date.now();
       const accountCode = `CC_${now}_${Math.random().toString(36).substring(2, 6)}`;
@@ -840,6 +842,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       const patch: any = { updatedAt: Date.now() };
       if (input.name) patch.name = input.name;
@@ -872,6 +875,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       await db
         .update(debts)
@@ -914,6 +918,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       let accountId = input.accountId;
       if (accountId) {
@@ -997,6 +1002,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       const [existing] = await db
         .select()
@@ -1061,6 +1067,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       const [existing] = await db
         .select()
@@ -1102,6 +1109,7 @@ export const quantRouter = router({
       const db = await getDb();
       if (!db) throw dbUnavailable();
       const familyContext = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(familyContext, "editor");
 
       const [existing] = await db
         .select()
@@ -1177,7 +1185,7 @@ export const quantRouter = router({
           id: a.id,
           name: a.name,
           currency: a.currency,
-          currentBalance: Number(a.balance) || 0,
+          currentBalance: Number(a.baseValue ?? a.balance) || 0,
           accountType: a.accountType,
         })),
         certificates: certRows.map((c) => ({
@@ -1247,7 +1255,7 @@ export const quantRouter = router({
       // 2. Liquid accounts balances in base currency
       const accRows = await listAccountSnapshots(family);
       const liquidTotalEgp = accRows.reduce((sum, a) => {
-        const bal = Number(a.balance) || 0;
+        const bal = Number(a.baseValue ?? a.balance) || 0;
         return sum + Math.max(0, bal);
       }, 0);
 
@@ -1313,7 +1321,7 @@ export const quantRouter = router({
       // 1. Liquid Accounts
       const accRows = await listAccountSnapshots(family);
       const cashTotalEgp = accRows.reduce((sum, a) => {
-        return sum + Math.max(0, Number(a.balance) || 0);
+        return sum + Math.max(0, Number(a.baseValue ?? a.balance) || 0);
       }, 0);
 
       // 2. Bank Certificates

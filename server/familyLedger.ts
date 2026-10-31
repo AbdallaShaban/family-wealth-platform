@@ -114,8 +114,8 @@ export async function resolveBaseFxRate(tx: any, context: FamilyContext, currenc
           rate: rate.toFixed(10),
           asOf: now,
           source: "auto_live_yahoo",
+          rateStatus: "live",
           createdAt: now,
-          updatedAt: now,
         });
         return rate;
       }
@@ -142,8 +142,8 @@ export async function resolveBaseFxRate(tx: any, context: FamilyContext, currenc
         rate: rate.toFixed(10),
         asOf: now,
         source: "baseline_reference",
+        rateStatus: "manual",
         createdAt: now,
-        updatedAt: now,
       });
       return rate;
     }
@@ -478,13 +478,12 @@ export async function postCashEvent(args: {
   source?: "manual" | "imported" | "api" | "system_generated";
   externalRef?: string | null;
   afterPosted?: (tx: any, event: { id: number; status: "posted"; duplicate: boolean }, amount: Decimal) => Promise<void>;
+  tx?: any;
 }) {
-  const db = await getDb();
-  if (!db) throw unavailable();
   const amount = parsePositiveAmount(args.amount);
   const currency = normalizeCurrency(args.currency);
   const idempotencyKey = validateIdempotencyKey(args.idempotencyKey);
-  return db.transaction(async tx => {
+  const run = async (tx: any) => {
     const account = await lockAccount(tx, args.context.workspace.id, args.accountId);
     if (!isCashLike(account)) throw invalid("هذه العملية تتطلب حسابًا نقديًا أو مصرفيًا أو وساطة نشطًا.");
     if (account.currency !== currency) throw invalid("عملة العملية لا تطابق عملة الحساب.");
@@ -527,7 +526,11 @@ export async function postCashEvent(args: {
     });
     if (args.afterPosted && !event.duplicate) await args.afterPosted(tx, event, amount);
     return event;
-  });
+  };
+  if (args.tx) return run(args.tx);
+  const db = await getDb();
+  if (!db) throw unavailable();
+  return db.transaction(run);
 }
 
 export type ImportedCashBatchItem = {
@@ -1217,9 +1220,8 @@ export async function postTrade(args: {
   occurredAt: number;
   memo?: string | null;
   idempotencyKey: string;
+  tx?: any;
 }) {
-  const db = await getDb();
-  if (!db) throw unavailable();
   const quantity = parsePositiveAmount(args.quantity, "الكمية");
   const unitPrice = parsePositiveAmount(args.unitPrice, "سعر الوحدة");
   if (args.feeRuleId && args.feeAmount?.trim()) throw invalid("اختر قاعدة رسم أو أدخل مبلغًا يدويًا، وليس كليهما.");
@@ -1229,7 +1231,7 @@ export async function postTrade(args: {
   const manualFeeAmount = hasManualFeeAmount ? parseNonNegativeAmount(args.feeAmount!, "الرسوم") : new Decimal(0);
   const manualTaxAmount = hasManualTaxAmount ? parseNonNegativeAmount(args.taxAmount!, "الضرائب") : new Decimal(0);
   const idempotencyKey = validateIdempotencyKey(args.idempotencyKey);
-  return db.transaction(async tx => {
+  const run = async (tx: any) => {
     const account = await lockAccount(tx, args.context.workspace.id, args.accountId);
     if (!isCashLike(account)) throw invalid("الشراء والبيع يحتاجان حساب وساطة أو حسابًا نقديًا نشطًا.");
     const instrument = await lockAndLoadInstrument(tx, args.context.workspace.id, args.instrumentId);
@@ -1368,7 +1370,11 @@ export async function postTrade(args: {
       occurredAt: args.occurredAt,
     });
     return { ...event, realizedPnl: lotAccounting.realizedPnl.toFixed(8), matchedLots: lotAccounting.matches.length };
-  });
+  };
+  if (args.tx) return run(args.tx);
+  const db = await getDb();
+  if (!db) throw unavailable();
+  return db.transaction(run);
 }
 
 export async function recomputePositionFromLots(tx: any, workspaceId: number, accountId: number, instrumentId: number) {

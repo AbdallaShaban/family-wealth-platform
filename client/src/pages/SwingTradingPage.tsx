@@ -9,7 +9,7 @@ import {
   calculateRiskReward,
   calculateRecommendedPositionSize,
   calculateExitTimeline,
-} from "../../../server/swingTradingMath";
+} from "@shared/swingTradingMath";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,6 +113,7 @@ export default function SwingTradingPage() {
   const accountsQuery = trpc.family.accounts.list.useQuery();
   const portfolioQuery = trpc.family.portfolio.list.useQuery();
   const egyptMarketQuery = trpc.quant.getEgyptMarket.useQuery();
+  const dashboardQuery = trpc.family.dashboard.useQuery();
 
   // Mutations
   const utils = trpc.useUtils();
@@ -150,9 +151,9 @@ export default function SwingTradingPage() {
 
   const rawTrades = tradesQuery.data ?? [];
 
-  // Production Trades: Active real accounts and settled positions
+  // Show both user-created advisory/paper trades and funded real trades (only exclude auto-seeded demo entries)
   const trades = useMemo(() => {
-    return rawTrades.filter((t) => !t.isPaperTrading && !t.notes?.includes("ارتداد إيجابي"));
+    return rawTrades.filter((t) => !t.notes?.includes("ارتداد إيجابي"));
   }, [rawTrades]);
 
   const diagnostics = diagnosticsQuery.data;
@@ -261,8 +262,9 @@ export default function SwingTradingPage() {
     const rr = calculateRiskReward(entry || 100, sl, tp, formDirection);
     const timeline = calculateExitTimeline(Date.now(), days);
 
-    // Assume 100,000 baseline liquidity or diagnostics active capital
-    const liquidCapital = 100000;
+    // Use real workspace liquidity from dashboard query, falling back to 100,000 if 0/unloaded
+    const realLiquidity = Number(dashboardQuery.data?.liquidBalanceBase ?? 0);
+    const liquidCapital = realLiquidity > 0 ? realLiquidity : 100000;
     const posSize = entry && sl ? calculateRecommendedPositionSize(liquidCapital, entry, sl, 1.5) : null;
 
     return {
@@ -270,7 +272,7 @@ export default function SwingTradingPage() {
       timeline,
       posSize,
     };
-  }, [formEntryPrice, formStopLoss, formTakeProfit, formDirection, formHoldingDays]);
+  }, [formEntryPrice, formStopLoss, formTakeProfit, formDirection, formHoldingDays, dashboardQuery.data?.liquidBalanceBase]);
 
   // Dynamic labels, placeholders, and units based on selected assetCategory
   const assetInputConfig = useMemo(() => {
@@ -422,7 +424,7 @@ export default function SwingTradingPage() {
                 diagnosticsQuery.refetch();
                 candlesQuery.refetch();
               }}
-              className="border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800"
+              className="border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               <RefreshCw className="h-4 w-4 ml-1" />
               تحديث
@@ -443,9 +445,9 @@ export default function SwingTradingPage() {
             {diagnostics.behavioralTips.map((tip, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-200"
+                className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-900 dark:text-amber-200"
               >
-                <Lightbulb className="h-5 w-5 text-amber-400 shrink-0" />
+                <Lightbulb className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
                 <span>{tip}</span>
               </div>
             ))}
@@ -556,9 +558,9 @@ export default function SwingTradingPage() {
         </div>
 
         {/* Filter Bar Pills */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-y border-slate-800/80 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-y border-slate-200 dark:border-slate-800/80 py-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-slate-400 ml-1">الأصول:</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 ml-1">الأصول:</span>
             {[
               { id: "ALL", label: "الكل" },
               { id: "EGX_STOCK", label: "البورصة المصرية (EGX)" },
@@ -573,7 +575,7 @@ export default function SwingTradingPage() {
                 className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   selectedCategory === cat.id
                     ? "bg-amber-500 text-amber-950 font-bold shadow-md shadow-amber-500/20"
-                    : "bg-slate-900 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-800"
+                    : "bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800"
                 }`}
               >
                 {cat.label}
@@ -582,7 +584,7 @@ export default function SwingTradingPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-400 ml-1">الحالة:</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 ml-1">الحالة:</span>
             {[
               { id: "ALL", label: "الكل" },
               { id: "OPEN", label: "مفتوحة" },
@@ -593,8 +595,8 @@ export default function SwingTradingPage() {
                 onClick={() => setSelectedStatus(st.id as StatusFilter)}
                 className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
                   selectedStatus === st.id
-                    ? "bg-slate-800 text-white border border-slate-700 font-semibold"
-                    : "text-slate-400 hover:text-slate-200"
+                    ? "bg-slate-900 text-white dark:bg-slate-800 dark:text-white border border-slate-700 font-semibold"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 {st.label}
@@ -648,26 +650,26 @@ export default function SwingTradingPage() {
         )}
 
         {/* Active Positions & Watchlist Table */}
-        <div className="rounded-xl border border-slate-800 bg-[#0B0F17] overflow-hidden shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 px-5 py-3.5 bg-slate-900/90">
-            <h3 className="font-bold text-white text-sm flex items-center gap-2">
-              <Target className="h-4 w-4 text-amber-400" />
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F17] overflow-hidden shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 bg-slate-50 dark:bg-slate-900/90">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+              <Target className="h-4 w-4 text-amber-500 dark:text-amber-400" />
               قائمة صفقات السوينج النشطة والمكتملة ({trades.length})
             </h3>
-            <span className="text-xs text-slate-300 font-medium">
+            <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">
               انقر على أي صفقة لعرض الرسم البياني الفني ومستويات الدعم والمقاومة
             </span>
           </div>
 
           {trades.length === 0 ? (
             <div className="py-16 px-4 text-center">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-400 shadow-inner">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-amber-500 dark:text-amber-400 shadow-inner">
                 <Target className="h-7 w-7" />
               </div>
-              <p className="font-bold text-white text-base sm:text-lg">
+              <p className="font-bold text-slate-900 dark:text-white text-base sm:text-lg">
                 لا توجد صفقات سوينج مفتوحة حالياً - افتح صفقة جديدة لتتبعها
               </p>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-md mx-auto">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1.5 max-w-md mx-auto">
                 سجل صفقات الأسهم وصناديق الاستثمار والذهب، مع تتبع آلي للأهداف ووقف الخسارة ومواعيد التسوية.
               </p>
               <Button
@@ -680,30 +682,30 @@ export default function SwingTradingPage() {
           ) : (
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-slate-950 border-b border-slate-800">
-                  <TableRow className="border-b border-slate-800 hover:bg-transparent">
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                <TableHeader className="bg-slate-100/80 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+                  <TableRow className="border-b border-slate-200 dark:border-slate-800 hover:bg-transparent">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       الأداة المالية
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       الاتجاه والكمية
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       سعر الدخول
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       السعر الحالي
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       الربح / الخسارة
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       إدارة المخاطر (SL / TP)
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       الأفق الزمني و T+2
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-slate-200 py-3.5">
+                    <TableHead className="text-right text-xs font-bold text-slate-700 dark:text-slate-200 py-3.5">
                       الحالة والإجراء
                     </TableHead>
                   </TableRow>
@@ -719,25 +721,29 @@ export default function SwingTradingPage() {
                           setSelectedTradeId(trade.id);
                           chartSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                         }}
-                        className={`cursor-pointer border-b border-slate-800 transition-colors ${
+                        className={`cursor-pointer border-b border-slate-200 dark:border-slate-800 transition-colors ${
                           isSelected
                             ? "bg-amber-500/15 hover:bg-amber-500/20"
-                            : "hover:bg-slate-800/60"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
                         }`}
                       >
                         {/* Instrument & Symbol */}
                         <TableCell className="py-3.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-amber-400 text-sm">
+                            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-sm">
                               {trade.instrumentSymbol}
                             </span>
                             {trade.isPaperTrading ? (
-                              <Badge className="bg-slate-800 border border-slate-700 text-slate-200 text-[10px] font-semibold px-2 py-0.5">
-                                ورقي
+                              <Badge className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-semibold px-2 py-0.5">
+                                محاكاة استشارية
                               </Badge>
-                            ) : null}
+                            ) : (
+                              <Badge className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold px-2 py-0.5">
+                                تنفيذ فعلي
+                              </Badge>
+                            )}
                           </div>
-                          <div className="text-xs text-white font-medium truncate max-w-[170px] mt-0.5">
+                          <div className="text-xs text-slate-900 dark:text-white font-medium truncate max-w-[170px] mt-0.5">
                             {trade.instrumentName}
                           </div>
                         </TableCell>
@@ -746,39 +752,39 @@ export default function SwingTradingPage() {
                         <TableCell className="py-3.5">
                           <div className="flex items-center gap-1.5 text-xs font-bold">
                             {trade.direction === "LONG" ? (
-                              <span className="text-emerald-400 font-bold flex items-center">
+                              <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
                                 <ArrowUpRight className="h-4 w-4 ml-0.5" /> شراء (LONG)
                               </span>
                             ) : (
-                              <span className="text-rose-400 font-bold flex items-center">
+                              <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center">
                                 <ArrowDownRight className="h-4 w-4 ml-0.5" /> بيع (SHORT)
                               </span>
                             )}
                           </div>
-                          <div className="text-xs font-mono text-slate-200 font-medium mt-1">
+                          <div className="text-xs font-mono text-slate-700 dark:text-slate-200 font-medium mt-1">
                             {Number(trade.quantity).toLocaleString()} سهم / وحدة
                           </div>
                         </TableCell>
 
                         {/* Entry Price */}
                         <TableCell className="font-mono text-xs py-3.5">
-                          <div className="text-white font-bold">{formatMoney(trade.entryPrice, trade.instrumentCurrency)}</div>
-                          <div className="text-[11px] text-slate-300 font-medium mt-0.5">
+                          <div className="text-slate-900 dark:text-white font-bold">{formatMoney(trade.entryPrice, trade.instrumentCurrency)}</div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-300 font-medium mt-0.5">
                             {formatDate(trade.entryDate)}
                           </div>
                         </TableCell>
 
                         {/* Current Price */}
                         <TableCell className="font-mono text-xs py-3.5">
-                          <div className="flex items-center gap-1.5 text-white font-bold">
+                          <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-bold">
                             <span
                               className={`h-2 w-2 rounded-full ${
-                                trade.quoteStatus === "live" ? "bg-emerald-400" : "bg-slate-400"
+                                trade.quoteStatus === "live" ? "bg-emerald-500 dark:bg-emerald-400" : "bg-slate-400"
                               }`}
                             />
                             {formatMoney(trade.currentPrice, trade.instrumentCurrency)}
                           </div>
-                          <div className="text-[11px] text-slate-300 font-medium mt-0.5">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-300 font-medium mt-0.5">
                             {trade.quoteStatus === "live" ? "سعر مباشر" : "سعر الإغلاق"}
                           </div>
                         </TableCell>
@@ -787,7 +793,7 @@ export default function SwingTradingPage() {
                         <TableCell className="font-mono text-xs py-3.5">
                           <div
                             className={`font-bold text-sm flex items-center gap-1 ${
-                              isProfit ? "text-emerald-400" : "text-rose-400"
+                              isProfit ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                             }`}
                           >
                             {isProfit ? "+" : ""}
@@ -795,7 +801,7 @@ export default function SwingTradingPage() {
                           </div>
                           <div
                             className={`text-xs font-bold mt-0.5 ${
-                              isProfit ? "text-emerald-400" : "text-rose-400"
+                              isProfit ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                             }`}
                           >
                             {isProfit ? "+" : ""}
@@ -824,14 +830,14 @@ export default function SwingTradingPage() {
                             return (
                               <div className="space-y-1">
                                 <div className="space-y-0.5">
-                                  <div className="text-rose-400 font-semibold text-xs">
+                                  <div className="text-rose-600 dark:text-rose-400 font-semibold text-xs">
                                     وقف: {trade.stopLossPrice ? Number(trade.stopLossPrice).toFixed(2) : "غير محدد"}
                                   </div>
-                                  <div className="text-emerald-400 font-semibold text-xs">
+                                  <div className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs">
                                     هدف: {trade.takeProfitPrice ? Number(trade.takeProfitPrice).toFixed(2) : "غير محدد"}
                                   </div>
                                   {trade.riskRewardRatio && (
-                                    <div className="text-[11px] text-slate-300 font-medium">
+                                    <div className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
                                       R:R: 1:{Number(trade.riskRewardRatio).toFixed(1)}
                                     </div>
                                   )}
@@ -839,7 +845,7 @@ export default function SwingTradingPage() {
 
                                 {isNearTp && (
                                   <div className="mt-1">
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/50 animate-pulse font-sans">
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-500/50 animate-pulse font-sans">
                                       <span>🎯</span>
                                       <span>اقترب من الهدف (باقي {tpRemaining}%)</span>
                                     </span>
@@ -848,7 +854,7 @@ export default function SwingTradingPage() {
 
                                 {isNearSl && (
                                   <div className="mt-1">
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-500/50 animate-pulse font-sans">
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300 border border-rose-500/50 animate-pulse font-sans">
                                       <span>⚠️</span>
                                       <span>اقترب من وقف الخسارة (باقي {slRemaining}%)</span>
                                     </span>
@@ -861,10 +867,10 @@ export default function SwingTradingPage() {
 
                         {/* Holding Timeline */}
                         <TableCell className="text-xs font-mono py-3.5">
-                          <div className="text-white font-medium">
+                          <div className="text-slate-900 dark:text-white font-medium">
                             {trade.elapsedTradingDays} من {trade.targetHoldingDays} أيام
                           </div>
-                          <div className="text-[11px] text-slate-300 font-medium mt-0.5">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-300 font-medium mt-0.5">
                             تسوية: {formatDate(trade.settlementDate)}
                           </div>
                         </TableCell>
@@ -873,19 +879,19 @@ export default function SwingTradingPage() {
                         <TableCell className="py-3.5">
                           <div className="flex items-center gap-2">
                             {trade.status === "OPEN" ? (
-                              <Badge className="bg-blue-500/20 text-blue-300 border border-blue-500/40 text-xs font-bold px-2 py-0.5">
+                              <Badge className="bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/40 text-xs font-bold px-2 py-0.5">
                                 مفتوحة
                               </Badge>
                             ) : trade.status === "TARGET_HIT" ? (
-                              <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold px-2 py-0.5">
+                              <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 text-xs font-bold px-2 py-0.5">
                                 تم الهدف
                               </Badge>
                             ) : trade.status === "STOPPED_OUT" ? (
-                              <Badge className="bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold px-2 py-0.5">
+                              <Badge className="bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40 text-xs font-bold px-2 py-0.5">
                                 وقف الخسارة
                               </Badge>
                             ) : (
-                              <Badge className="bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold px-2 py-0.5">
+                              <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold px-2 py-0.5">
                                 {trade.status}
                               </Badge>
                             )}
@@ -898,7 +904,7 @@ export default function SwingTradingPage() {
                                   e.stopPropagation();
                                   handleOpenCloseModal(trade);
                                 }}
-                                className="h-7 border-slate-700 bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs px-2.5"
+                                className="h-7 border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-medium text-xs px-2.5"
                               >
                                 إغلاق الصفقة
                               </Button>
@@ -916,29 +922,29 @@ export default function SwingTradingPage() {
 
         {/* Strategy Attribution & Behavioral Section */}
         {diagnostics?.strategyAttribution && diagnostics.strategyAttribution.length > 0 && (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
-            <h3 className="font-bold text-white text-sm flex items-center gap-2 mb-3">
-              <Layers className="h-4 w-4 text-purple-400" />
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F17] p-5">
+            <h3 className="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2 mb-3">
+              <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
               توزيع الأداء حسب الاستراتيجية (Strategy Attribution)
             </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {diagnostics.strategyAttribution.map((strat) => (
                 <div
                   key={strat.strategy}
-                  className="rounded-lg border border-slate-800 bg-slate-950/60 p-3"
+                  className="rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/60 p-3"
                 >
-                  <div className="text-xs font-semibold text-slate-300">{strat.strategy}</div>
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">{strat.strategy}</div>
                   <div className="mt-2 flex items-baseline justify-between">
-                    <span className="text-xs text-slate-400">نسبة النجاح:</span>
-                    <span className="font-mono text-sm font-bold text-emerald-400">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">نسبة النجاح:</span>
+                    <span className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
                       {strat.winRate}%
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline justify-between">
-                    <span className="text-xs text-slate-400">إجمالي الأرباح:</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">إجمالي الأرباح:</span>
                     <span
                       className={`font-mono text-xs font-bold ${
-                        strat.totalPnl >= 0 ? "text-emerald-400" : "text-rose-400"
+                        strat.totalPnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                       }`}
                     >
                       {formatMoney(strat.totalPnl, "EGP")}
@@ -953,13 +959,13 @@ export default function SwingTradingPage() {
 
         {/* Modal: New Swing Trade Entry with Advisory Co-Pilot */}
         <Dialog open={isNewTradeOpen} onOpenChange={setIsNewTradeOpen}>
-          <DialogContent className="max-w-2xl bg-slate-950 border-slate-800 text-slate-100" dir="rtl">
+          <DialogContent className="max-w-2xl bg-white dark:bg-[#0B0F17] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-lg font-bold text-white flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-amber-400" />
+              <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                 تسجيل صفقة سوينج جديدة (Trade Entry)
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400">
+              <DialogDescription className="text-xs text-slate-600 dark:text-slate-400">
                 المستشار المالي الذكي: يقدم نصائح واقتراحات فورية لحجم الصفقة وإدارة المخاطر. الزر متاح
                 دائماً للحفظ دون قيود إلزامية.
               </DialogDescription>
@@ -1351,13 +1357,13 @@ export default function SwingTradingPage() {
 
         {/* Modal: Close Swing Trade */}
         <Dialog open={isCloseModalOpen} onOpenChange={setIsCloseModalOpen}>
-          <DialogContent className="max-w-md bg-slate-950 border-slate-800 text-slate-100" dir="rtl">
+          <DialogContent className="max-w-md bg-white dark:bg-[#0B0F17] border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+              <DialogTitle className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                 تسجيل إغلاق صفقة سوينج
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-400">
+              <DialogDescription className="text-xs text-slate-600 dark:text-slate-400">
                 أدخل سعر التنفيذ الفعلي لتحديث مؤشرات الأداء ومعدل النجاح.
               </DialogDescription>
             </DialogHeader>

@@ -17,22 +17,24 @@ export function AuditPage({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <div dir="rtl" className="mx-auto max-w-6xl space-y-6">
-        <PageHeader
-          title="سجل التدقيق الرقابي"
-          description="أثر التغييرات والعمليات المالية والرقابية الموثقة زمنياً ضمن مساحتك المالية."
-          breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والإدارة", href: "/operations" },
-            { label: "سجل التدقيق الرقابي" },
-          ]}
-          badge={
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
-              <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>سجل رقابي غير قابل للتعديل (Append-Only)</span>
-            </div>
-          }
-          icon={ShieldCheck}
-        />
+        {!embedded && (
+          <PageHeader
+            title="سجل التدقيق الرقابي"
+            description="أثر التغييرات والعمليات المالية والرقابية الموثقة زمنياً ضمن مساحتك المالية."
+            breadcrumbs={[
+              { label: "الرئيسية", href: "/" },
+              { label: "الحوكمة والإدارة", href: "/operations" },
+              { label: "سجل التدقيق الرقابي" },
+            ]}
+            badge={
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
+                <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>سجل رقابي غير قابل للتعديل (Append-Only)</span>
+              </div>
+            }
+            icon={ShieldCheck}
+          />
+        )}
 
         {audit.isLoading ? (
           <PageLoading />

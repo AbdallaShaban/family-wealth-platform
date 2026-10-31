@@ -306,6 +306,9 @@ export const consolidationRouter = router({
       if (!membership) {
         throw new TRPCError({ code: "FORBIDDEN", message: "ليس لديك صلاحية على مساحة العمل هذه." });
       }
+      if (membership.role === "viewer") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "لا تملك الصلاحية المطلوبة لهذه العملية." });
+      }
 
       const now = Date.now();
       const fromCurr = input.fromCurrency.toUpperCase();

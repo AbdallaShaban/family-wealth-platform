@@ -84,8 +84,8 @@ export default function OperationsCenter() {
   });
 
   const baseCurrency = dashboard.data?.workspace?.baseCurrency || "EGP";
-  const rawLiquid = Number(dashboard.data?.liquidBalanceBase || 163750);
-  const rawInvestments = Number(dashboard.data?.investmentValueBase || 12500);
+  const rawLiquid = Number(dashboard.data?.liquidBalanceBase ?? 0);
+  const rawInvestments = Number(dashboard.data?.investmentValueBase ?? 0);
   const grossZakatPool = rawLiquid + rawInvestments;
   const deduction = Math.abs(Number(zakatForm.deductibleLiabilities || 0));
   const netZakatPool = Math.max(0, grossZakatPool - deduction);

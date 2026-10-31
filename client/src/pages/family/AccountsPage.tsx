@@ -274,7 +274,7 @@ export default function AccountsPage({ embedded = false }: { embedded?: boolean 
                 </strong>
               </div>
               <span className="text-muted-foreground text-[11px] font-medium block">
-                من إجمالي حد ائتماني {formatMoney(totalCreditLimit, baseCurrency, 0)}
+                من إجمالي حد ائتماني <SensitiveValue>{formatMoney(totalCreditLimit, baseCurrency, 0)}</SensitiveValue>
               </span>
             </div>
           </section>
@@ -295,7 +295,7 @@ export default function AccountsPage({ embedded = false }: { embedded?: boolean 
                     </Badge>
                   </div>
                   <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                    المجموع: {formatMoney(totalBankBalance, baseCurrency, 2)}
+                    المجموع: <SensitiveValue>{formatMoney(totalBankBalance, baseCurrency, 2)}</SensitiveValue>
                   </span>
                 </div>
 
@@ -334,7 +334,7 @@ export default function AccountsPage({ embedded = false }: { embedded?: boolean 
                           </div>
                           {acc.currency !== baseCurrency && acc.baseValue !== null && (
                             <span className="text-xs font-mono text-muted-foreground mt-1 block">
-                              ≈ {formatMoney(acc.baseValue, baseCurrency, 2)}
+                              ≈ <SensitiveValue>{formatMoney(acc.baseValue, baseCurrency, 2)}</SensitiveValue>
                             </span>
                           )}
                         </div>
@@ -371,7 +371,7 @@ export default function AccountsPage({ embedded = false }: { embedded?: boolean 
                     </Badge>
                   </div>
                   <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                    المجموع: {formatMoney(totalCashBalance, baseCurrency, 2)}
+                    المجموع: <SensitiveValue>{formatMoney(totalCashBalance, baseCurrency, 2)}</SensitiveValue>
                   </span>
                 </div>
 
@@ -497,7 +497,7 @@ export default function AccountsPage({ embedded = false }: { embedded?: boolean 
                                   الحد المتاح للشراء الفوري
                                 </span>
                                 <span className="text-xs font-mono text-muted-foreground tabular-nums">
-                                  من إجمالي {formatMoney(limitNum, baseCurrency, 0)}
+                                  من إجمالي <SensitiveValue>{formatMoney(limitNum, baseCurrency, 0)}</SensitiveValue>
                                 </span>
                               </div>
                               <div className="text-2xl font-black font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
@@ -533,7 +533,7 @@ export default function AccountsPage({ embedded = false }: { embedded?: boolean 
 
                           <div className="flex items-center justify-between pt-3 border-t border-border/60">
                             <span className="text-xs font-mono text-muted-foreground">
-                              المستحق: <strong className="text-rose-600 dark:text-rose-400 font-bold tabular-nums">{formatMoney(balNum, baseCurrency, 2)}</strong>
+                              المستحق: <strong className="text-rose-600 dark:text-rose-400 font-bold tabular-nums"><SensitiveValue>{formatMoney(balNum, baseCurrency, 2)}</SensitiveValue></strong>
                             </span>
 
                             <Button
@@ -637,14 +637,14 @@ export default function AccountsPage({ embedded = false }: { embedded?: boolean 
                               className="text-foreground font-bold font-mono text-sm sm:text-base tabular-nums block"
                               dir="ltr"
                             >
-                              {money(account.balance, account.currency)}
+                              <SensitiveValue>{money(account.balance, account.currency)}</SensitiveValue>
                             </span>
                           </td>
                           <td className="py-3.5 px-4">
                             {account.baseValue !== null ? (
                               <div className="flex items-center gap-1.5" dir="ltr">
                                 <span className="text-foreground font-bold font-mono text-sm sm:text-base tabular-nums">
-                                  {money(account.baseValue, baseCurrency)}
+                                  <SensitiveValue>{money(account.baseValue, baseCurrency)}</SensitiveValue>
                                 </span>
                                 {account.currency !== baseCurrency && (
                                   <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border">

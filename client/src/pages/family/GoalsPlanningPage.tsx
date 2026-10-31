@@ -343,23 +343,23 @@ export default function GoalsPlanningPage() {
                 <InlineError message={textError(retirementProjection.error)} />
               ) : retirementProjection.data ? (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-slate-50 p-4">
+                  <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 dark:text-slate-300 p-4">
                     <p className="text-xs text-slate-500">سنوات حتى التقاعد</p>
                     <p className="mt-1 text-xl font-semibold">
                       {retirementProjection.data.projection.financialIndependenceTarget && parseFloat(retirementProjection.data.projection.financialIndependenceTarget) > 0 && retirementProjection.data.projection.yearsToRetirement !== null ? `${retirementProjection.data.projection.yearsToRetirement} سنة` : "غير محدد"}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-slate-50 p-4">
+                  <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 dark:text-slate-300 p-4">
                     <p className="text-xs text-slate-500">أصول متوقعة عند التقاعد</p>
                     <p className="mt-1 text-xl font-semibold">{money(retirementProjection.data.projection.projectedAssetsAtRetirement, retirementProjection.data.plan.currency)}</p>
                   </div>
-                  <div className="rounded-xl bg-slate-50 p-4">
+                  <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 dark:text-slate-300 p-4">
                     <p className="text-xs text-slate-500">هدف الاستقلال المالي</p>
                     <p className="mt-1 text-xl font-semibold">{money(retirementProjection.data.projection.financialIndependenceTarget, retirementProjection.data.plan.currency)}</p>
                   </div>
-                  <div className="rounded-xl bg-amber-50 p-4">
-                    <p className="text-xs text-amber-800">فجوة الاستقلال المالي</p>
-                    <p className="mt-1 text-xl font-semibold text-amber-900">{money(retirementProjection.data.projection.gapToFinancialIndependence, retirementProjection.data.plan.currency)}</p>
+                  <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 dark:border dark:border-amber-800/50 p-4">
+                    <p className="text-xs text-amber-800 dark:text-amber-300">فجوة الاستقلال المالي</p>
+                    <p className="mt-1 text-xl font-semibold text-amber-900 dark:text-amber-200">{money(retirementProjection.data.projection.gapToFinancialIndependence, retirementProjection.data.plan.currency)}</p>
                   </div>
                   <p className="text-xs leading-6 text-slate-500 sm:col-span-2">الافتراضات: عائد سنوي {retirementProjection.data.projection.nominalAnnualReturn}%، تضخم سنوي {retirementProjection.data.projection.annualInflation}%، ومعدل سحب {retirementProjection.data.projection.safeWithdrawalRate}%. لا تعبر هذه النتيجة عن احتمال نجاح أو توصية استثمار.</p>
                 </div>

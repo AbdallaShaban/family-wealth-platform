@@ -64,22 +64,24 @@ export default function ApprovalsPage({ embedded = false }: { embedded?: boolean
 
   const content = (
     <main className="mx-auto max-w-7xl space-y-6" dir="rtl">
-        <PageHeader
-          title="الموافقات وقرارات الاعتماد"
-          description="إدارة ومراجعة العمليات المجمدة المشروطة باعتماد مزدوج قبل النفاذ المالي."
-          breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والإدارة", href: "/approvals" },
-            { label: "الموافقات وقرارات الاعتماد" },
-          ]}
-          badge={
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
-              <CheckCheck className="size-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>حوكمة الاعتماد المزدوج (Four-Eyes Principle)</span>
-            </div>
-          }
-          icon={LockKeyhole}
-        />
+        {!embedded && (
+          <PageHeader
+            title="الموافقات وقرارات الاعتماد"
+            description="إدارة ومراجعة العمليات المجمدة المشروطة باعتماد مزدوج قبل النفاذ المالي."
+            breadcrumbs={[
+              { label: "الرئيسية", href: "/" },
+              { label: "الحوكمة والإدارة", href: "/approvals" },
+              { label: "الموافقات وقرارات الاعتماد" },
+            ]}
+            badge={
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
+                <CheckCheck className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>حوكمة الاعتماد المزدوج (Four-Eyes Principle)</span>
+              </div>
+            }
+            icon={LockKeyhole}
+          />
+        )}
 
         {/* Main grid: Requests + Details */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">

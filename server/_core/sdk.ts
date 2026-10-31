@@ -174,24 +174,13 @@ class SDKServer {
         }
       } catch (err: any) {
         console.warn(
-          `[Auth] DB lookup for session user timed out or failed (${err?.message || err}). Falling back to active session.`
+          `[Auth] DB lookup for session user timed out or failed (${err?.message || err}). Checking session cache.`
         );
-        if (cached) {
-          user = cached.user;
+        const fallbackCached = userCacheByOpenId.get(sessionUserId);
+        if (fallbackCached) {
+          user = fallbackCached.user;
         } else {
-          // Cryptographically verified JWT session fallback to prevent transient disconnect logout
-          user = {
-            id: 1,
-            openId: session.openId,
-            name: session.name || "Family Member",
-            email: null,
-            loginMethod: "local",
-            role: "admin",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            lastSignedIn: new Date(),
-          } as AuthenticatedUser;
-          userCacheByOpenId.set(sessionUserId, { user, cachedAt: Date.now() });
+          throw ForbiddenError("Authentication service temporarily unavailable");
         }
       }
     }

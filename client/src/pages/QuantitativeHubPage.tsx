@@ -513,7 +513,7 @@ export default function QuantitativeHubPage({ embedded = false }: { embedded?: b
 
         {/* Main Tabs Hub */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 h-auto gap-1">
+          <TabsList className="grid grid-cols-2 md:grid-cols-6 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 h-auto gap-1">
             <TabsTrigger value="signals" className="gap-2 py-2.5 data-[state=active]:bg-amber-500 data-[state=active]:text-amber-950 font-bold text-muted-foreground">
               <Zap className="w-4 h-4" />
               الإشارات الكمية

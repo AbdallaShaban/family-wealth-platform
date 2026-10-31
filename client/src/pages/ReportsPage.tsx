@@ -24,13 +24,53 @@ import {
 
 import { ExecutivePdfModal } from "@/components/reports/ExecutivePdfModal";
 
+const ARABIC_MONTH_NAMES = [
+  "يناير",
+  "فبراير",
+  "مارس",
+  "أبريل",
+  "مايو",
+  "يونيو",
+  "يوليو",
+  "أغسطس",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
+];
+
+function buildDynamicPeriodOptions(now = new Date()) {
+  const options: Array<{ value: string; label: string }> = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const key = `${y}-${String(m).padStart(2, "0")}`;
+    const monthName = ARABIC_MONTH_NAMES[m - 1] || key;
+    options.push({ value: key, label: `${monthName} ${y} (${key})` });
+  }
+  const cy = now.getFullYear();
+  options.push(
+    { value: `${cy}-Q4`, label: `الربع الرابع ${cy} (${cy}-Q4)` },
+    { value: `${cy}-Q3`, label: `الربع الثالث ${cy} (${cy}-Q3)` },
+    { value: `${cy}-Q2`, label: `الربع الثاني ${cy} (${cy}-Q2)` },
+    { value: `${cy}-Q1`, label: `الربع الأول ${cy} (${cy}-Q1)` },
+    { value: `${cy}-FY`, label: `السنة المالية ${cy} (${cy}-FY)` },
+  );
+  return options;
+}
+
 export function ReportsPage({ embedded = false }: { embedded?: boolean }) {
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const currentMonthKey = todayIso.slice(0, 7);
+  const periodOptions = React.useMemo(() => buildDynamicPeriodOptions(), []);
+
   // Date modes: "period_key" | "point_in_time" | "period"
   const [dateMode, setDateMode] = useState<"period_key" | "point_in_time" | "period">("period_key");
-  const [periodKey, setPeriodKey] = useState<string>("2026-08");
-  const [asOfDate, setAsOfDate] = useState<string>("2026-08-31");
-  const [startDate, setStartDate] = useState<string>("2026-08-01");
-  const [endDate, setEndDate] = useState<string>("2026-08-31");
+  const [periodKey, setPeriodKey] = useState<string>(currentMonthKey);
+  const [asOfDate, setAsOfDate] = useState<string>(todayIso);
+  const [startDate, setStartDate] = useState<string>(`${currentMonthKey}-01`);
+  const [endDate, setEndDate] = useState<string>(todayIso);
   const [compareWithPrior, setCompareWithPrior] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("balance_sheet");
 
@@ -84,50 +124,52 @@ export function ReportsPage({ embedded = false }: { embedded?: boolean }) {
 
   const content = (
     <div dir="rtl" className="mx-auto max-w-7xl space-y-6 pb-12">
-        <PageHeader
-          title="كشوف الحساب والتقارير"
-          description="قوائم مالية متوافقة مع القيد المزدوج، وجسر تحليلي لصافي الثروة الاقتصادي، ومطابقة تدفقات نقدية مدققة."
-          breadcrumbs={[
-            { label: "الحوكمة والإدارة", href: "/reports" },
-            { label: "كشوف الحساب والتقارير" },
-          ]}
-          badge="محاسبة مدققة"
-          icon={FileChartColumn}
-          actions={
-            <div className="flex flex-wrap items-center gap-2 no-print">
-              <ExecutivePdfModal defaultPeriodKey={periodKey} />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExport("csv")}
-                disabled={exportMutation.isPending || reportsQuery.isLoading}
-                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200/90 dark:bg-[#0B0F17] dark:hover:bg-slate-800/60 dark:text-slate-200 dark:border-slate-800 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer h-auto"
-              >
-                <Download className="size-4 text-emerald-600 dark:text-emerald-400" />
-                <span>تصدير CSV</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExport("json")}
-                disabled={exportMutation.isPending || reportsQuery.isLoading}
-                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200/90 dark:bg-[#0B0F17] dark:hover:bg-slate-800/60 dark:text-slate-200 dark:border-slate-800 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer h-auto"
-              >
-                <Download className="size-4 text-sky-600 dark:text-sky-400" />
-                <span>تصدير JSON</span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.print()}
-                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200/90 dark:bg-[#0B0F17] dark:hover:bg-slate-800/60 dark:text-slate-200 dark:border-slate-800 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer h-auto"
-              >
-                <Printer className="size-4 text-slate-600 dark:text-slate-400" />
-                <span>طباعة / PDF</span>
-              </Button>
-            </div>
-          }
-        />
+        {!embedded && (
+          <PageHeader
+            title="كشوف الحساب والتقارير"
+            description="قوائم مالية متوافقة مع القيد المزدوج، وجسر تحليلي لصافي الثروة الاقتصادي، ومطابقة تدفقات نقدية مدققة."
+            breadcrumbs={[
+              { label: "الحوكمة والإدارة", href: "/reports" },
+              { label: "كشوف الحساب والتقارير" },
+            ]}
+            badge="محاسبة مدققة"
+            icon={FileChartColumn}
+            actions={
+              <div className="flex flex-wrap items-center gap-2 no-print">
+                <ExecutivePdfModal defaultPeriodKey={periodKey} />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExport("csv")}
+                  disabled={exportMutation.isPending || reportsQuery.isLoading}
+                  className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200/90 dark:bg-[#0B0F17] dark:hover:bg-slate-800/60 dark:text-slate-200 dark:border-slate-800 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer h-auto"
+                >
+                  <Download className="size-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>تصدير CSV</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExport("json")}
+                  disabled={exportMutation.isPending || reportsQuery.isLoading}
+                  className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200/90 dark:bg-[#0B0F17] dark:hover:bg-slate-800/60 dark:text-slate-200 dark:border-slate-800 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer h-auto"
+                >
+                  <Download className="size-4 text-sky-600 dark:text-sky-400" />
+                  <span>تصدير JSON</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.print()}
+                  className="bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs px-3.5 py-2 rounded-xl border border-slate-200/90 dark:bg-[#0B0F17] dark:hover:bg-slate-800/60 dark:text-slate-200 dark:border-slate-800 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer h-auto"
+                >
+                  <Printer className="size-4 text-slate-600 dark:text-slate-400" />
+                  <span>طباعة / PDF</span>
+                </Button>
+              </div>
+            }
+          />
+        )}
 
         {/* Date Contract & Period Control Bar */}
         <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-4 shadow-xs mb-6 flex flex-wrap items-center justify-between gap-3 no-print">
@@ -159,12 +201,11 @@ export function ReportsPage({ embedded = false }: { embedded?: boolean }) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white dark:bg-[#0E1420] border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 rounded-xl shadow-lg text-xs">
-                      <SelectItem value="2026-08">أغسطس 2026 (2026-08)</SelectItem>
-                      <SelectItem value="2026-07">يوليو 2026 (2026-07)</SelectItem>
-                      <SelectItem value="2026-Q3">الربع الثالث 2026 (2026-Q3)</SelectItem>
-                      <SelectItem value="2026-Q2">الربع الثاني 2026 (2026-Q2)</SelectItem>
-                      <SelectItem value="2026-Q1">الربع الأول 2026 (2026-Q1)</SelectItem>
-                      <SelectItem value="2026-FY">السنة المالية 2026 (2026-FY)</SelectItem>
+                      {periodOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

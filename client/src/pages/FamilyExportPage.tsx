@@ -133,21 +133,23 @@ export default function FamilyExportPage({ embedded = false }: { embedded?: bool
 
   const content = (
     <main className="mx-auto max-w-5xl space-y-6" dir="rtl">
-        <PageHeader
-          title="مركز الاستعادة والنسخ الاحتياطي المؤسسي"
-          description="إدارة شاملة لاستمرارية العمليات المالية والتعافي من الكوارث (Disaster Recovery) تشمل حزم التداول لكافة الجداول مع بصمة SHA-256."
-          breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والإدارة", href: "/export" },
-            { label: "النسخ الاحتياطي والتعافي" },
-          ]}
-          badge={
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
-              <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>تغطية متكاملة (SHA-256 Verified Manifest)</span>
-            </div>
-          }
-        />
+        {!embedded && (
+          <PageHeader
+            title="مركز الاستعادة والنسخ الاحتياطي المؤسسي"
+            description="إدارة شاملة لاستمرارية العمليات المالية والتعافي من الكوارث (Disaster Recovery) تشمل حزم التداول لكافة الجداول مع بصمة SHA-256."
+            breadcrumbs={[
+              { label: "الرئيسية", href: "/" },
+              { label: "الحوكمة والإدارة", href: "/export" },
+              { label: "النسخ الاحتياطي والتعافي" },
+            ]}
+            badge={
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
+                <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>تغطية متكاملة (SHA-256 Verified Manifest)</span>
+              </div>
+            }
+          />
+        )}
 
         {/* ── Section 1: Full System Disaster Recovery Snapshot ── */}
         <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs mb-6">

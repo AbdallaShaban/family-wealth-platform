@@ -214,10 +214,15 @@ export async function withDbRetry<T>(
         err?.message?.includes("ECONNRESET");
 
       if (isDisconnect && attempt < maxRetries) {
+        const isPoolUnusable =
+          err?.code === "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR" ||
+          Boolean((_pool as any)?._closed);
         console.warn(
-          `[Database] Connection issue during query (${err?.code || err?.message}). Resetting pool and retrying (${attempt}/${maxRetries})...`
+          `[Database] Connection issue during query (${err?.code || err?.message}). ${isPoolUnusable ? "Resetting pool and retrying" : "Retrying without closing pool"} (${attempt}/${maxRetries})...`
         );
-        await resetDb();
+        if (isPoolUnusable) {
+          await resetDb();
+        }
         await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
         continue;
       }

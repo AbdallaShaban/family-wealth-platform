@@ -60,17 +60,19 @@ export function EmergencyFundPage({ embedded = false }: { embedded?: boolean }) 
 
   const content = (
     <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
-        <PageHeader
-          title="صندوق الطوارئ"
-          description="تُقاس التغطية بالسيولة المقيمة مقابل متوسط المصروفات الأساسية المسجلة خلال فترة النظر، مضافًا إليه الحد الأدنى للديون. لا تفترض المنصة دخلًا أو عائدًا لم يُسجل."
-          breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الالتزامات والحماية", href: "/emergency-fund" },
-            { label: "صندوق الطوارئ" },
-          ]}
-          badge={{ text: "مرونة مالية", variant: "institutional" }}
-          icon={Umbrella}
-        />
+        {!embedded && (
+          <PageHeader
+            title="صندوق الطوارئ"
+            description="تُقاس التغطية بالسيولة المقيمة مقابل متوسط المصروفات الأساسية المسجلة خلال فترة النظر، مضافًا إليه الحد الأدنى للديون. لا تفترض المنصة دخلًا أو عائدًا لم يُسجل."
+            breadcrumbs={[
+              { label: "الرئيسية", href: "/" },
+              { label: "الالتزامات والحماية", href: "/emergency-fund" },
+              { label: "صندوق الطوارئ" },
+            ]}
+            badge={{ text: "مرونة مالية", variant: "institutional" }}
+            icon={Umbrella}
+          />
+        )}
 
         {summary.isLoading ? (
           <PageLoading />

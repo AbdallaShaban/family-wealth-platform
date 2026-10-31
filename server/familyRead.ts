@@ -52,11 +52,18 @@ export async function listAccountSnapshots(context: FamilyContext) {
 export async function getDashboardSummary(context: FamilyContext) {
   const cacheKey = `dashboard:summary:${context.workspace.id}:${context.profile.id}`;
   return getCachedReadModel(cacheKey, async () => {
-    const [accountSnapshots, recentEvents, portfolio] = await Promise.all([
+    const [accountSnapshots, recentEvents, portfolio, fxMap] = await Promise.all([
       listAccountSnapshots(context),
       listRecentEvents(context, 12),
       listPortfolioPositions(context),
+      currentBaseRates(context),
     ]);
+    const toBaseAmount = (amount: Decimal, currency: string | null | undefined) => {
+      const curr = currency || context.workspace.baseCurrency;
+      if (curr === context.workspace.baseCurrency) return amount;
+      const rateRow = fxMap.get(curr);
+      return rateRow ? amount.mul(new Decimal(rateRow.rate)) : amount;
+    };
     const valuedBalance = accountSnapshots.reduce((total, account) => total.plus(account.baseValue ?? "0"), new Decimal(0));
     const liquidBalance = accountSnapshots.filter(account => ["cash", "bank", "brokerage", "wallet"].includes(account.accountType)).reduce((total, account) => total.plus(account.baseValue ?? "0"), new Decimal(0));
     const liabilities = accountSnapshots.filter(account => ["credit", "loan"].includes(account.accountType)).reduce((total, account) => total.plus(new Decimal(account.baseValue ?? "0").abs()), new Decimal(0));
@@ -71,10 +78,16 @@ export async function getDashboardSummary(context: FamilyContext) {
     if (db) {
       try {
         const certRows = await db
-          .select({ principalAmount: bankCertificates.principalAmount })
+          .select({
+            principalAmount: bankCertificates.principalAmount,
+            currency: bankCertificates.currency,
+          })
           .from(bankCertificates)
           .where(and(eq(bankCertificates.workspaceId, context.workspace.id), eq(bankCertificates.status, "active")));
-        bankCertificatesTotal = certRows.reduce((sum, c) => sum.plus(new Decimal(c.principalAmount)), new Decimal(0));
+        bankCertificatesTotal = certRows.reduce(
+          (sum, c) => sum.plus(toBaseAmount(new Decimal(c.principalAmount), c.currency)),
+          new Decimal(0)
+        );
       } catch {
         // Table may be empty or unmigrated in isolated mocks
       }
@@ -88,12 +101,17 @@ export async function getDashboardSummary(context: FamilyContext) {
     // Unsettled Cash calculation (Strict EGX T+2 trading-day settlement window, skipping Friday/Saturday)
     const now = Date.now();
     const unsettledSells = recentEvents.filter(
-      (e) => e.eventType === "sell" && !isEgxTradeSettled(e.occurredAt, now)
+      (e) => e.eventType === "sell" && e.status === "posted" && !isEgxTradeSettled(e.occurredAt, now)
     );
-    const unsettledCash = unsettledSells.reduce(
-      (sum, e) => sum.plus(new Decimal(e.grossAmount ?? 0)),
-      new Decimal(0)
-    );
+    const unsettledCash = unsettledSells.reduce((sum, e) => {
+      const netProceeds = Decimal.max(
+        0,
+        new Decimal(e.grossAmount ?? 0)
+          .minus(e.feeAmount ?? 0)
+          .minus(e.taxAmount ?? 0)
+      );
+      return sum.plus(toBaseAmount(netProceeds, e.currency));
+    }, new Decimal(0));
     const freeLiquidity = Decimal.max(0, liquidBalance.minus(unsettledCash));
 
     // Prior Period Comparison for Net Worth Delta

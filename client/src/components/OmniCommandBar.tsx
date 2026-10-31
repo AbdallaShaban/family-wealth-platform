@@ -483,7 +483,8 @@ export function OmniCommandBar({
       setIsExportingPdf(true);
       toast.info("جارٍ إنشاء التقرير التنفيذي المالي الفاخر بصيغة PDF...", { duration: 3000 });
 
-      const result = await exportPdfMutation.mutateAsync({ periodKey: "2026-08" });
+      const currentPeriodKey = new Date().toISOString().slice(0, 7);
+      const result = await exportPdfMutation.mutateAsync({ periodKey: currentPeriodKey });
 
       // Decode base64 and initiate browser download
       const byteCharacters = atob(result.base64);
@@ -517,6 +518,10 @@ export function OmniCommandBar({
   const handleNavigate = useCallback(
     (path: string) => {
       setLocation(path);
+      if (typeof window !== "undefined" && path.includes("?")) {
+        window.history.pushState({}, "", path);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      }
       onOpenChange(false);
     },
     [setLocation, onOpenChange]

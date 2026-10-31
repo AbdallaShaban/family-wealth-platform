@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
-import { timingSafeEqual } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { TRPCError } from "@trpc/server";
+import { and, eq, lt } from "drizzle-orm";
+import { getDb } from "./db";
+import { userRegistrationInvites } from "../drizzle/schema";
 
 export const BCRYPT_SALT_ROUNDS = 12;
 
@@ -59,12 +62,23 @@ export async function comparePassword(password: string, hash: string | null | un
   }
 }
 
+const INVITE_CODE_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+function generateRandomAlphanumeric(length: number): string {
+  const bytes = randomBytes(length);
+  let segment = "";
+  for (let i = 0; i < length; i++) {
+    segment += INVITE_CODE_ALPHABET[bytes[i] % INVITE_CODE_ALPHABET.length];
+  }
+  return segment;
+}
+
 /**
  * Generates a clean, readable single-use invite code string (e.g. INV-A1B2-C3D4)
  */
 export function generateInviteCodeString(): string {
-  const segment1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-  const segment2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+  const segment1 = generateRandomAlphanumeric(4);
+  const segment2 = generateRandomAlphanumeric(4);
   return `INV-${segment1}-${segment2}`;
 }
 
@@ -87,10 +101,6 @@ export async function verifyAndConsumeInviteCode(
 
   // 2. Check Database Single-Use Invite Code
   try {
-    const { getDb } = await import("./db");
-    const { userRegistrationInvites } = await import("../drizzle/schema");
-    const { eq } = await import("drizzle-orm");
-
     const db = await getDb();
     if (!db) {
       return { valid: false, reason: "رمز دعوة العائلة غير صحيح." };
@@ -119,11 +129,11 @@ export async function verifyAndConsumeInviteCode(
       return { valid: false, reason: "تم استخدام رمز الدعوة هذا من قبل (صالح للاستخدام مرة واحدة فقط)." };
     }
 
-    // If userId provided, mark as consumed
+    // If userId provided, mark as consumed atomically
     if (userId) {
       const nextCount = invite.usedCount + 1;
       const isNowUsed = nextCount >= invite.maxUses;
-      await db
+      const updateResult = await db
         .update(userRegistrationInvites)
         .set({
           usedCount: nextCount,
@@ -131,7 +141,18 @@ export async function verifyAndConsumeInviteCode(
           status: isNowUsed ? "used" : "active",
           usedAt: now,
         })
-        .where(eq(userRegistrationInvites.id, invite.id));
+        .where(
+          and(
+            eq(userRegistrationInvites.id, invite.id),
+            lt(userRegistrationInvites.usedCount, userRegistrationInvites.maxUses)
+          )
+        );
+      const affectedRows = Number(
+        (updateResult as any)?.[0]?.affectedRows ?? (updateResult as any)?.rowsAffected ?? 1
+      );
+      if (affectedRows === 0) {
+        return { valid: false, reason: "تم استخدام رمز الدعوة هذا من قبل (صالح للاستخدام مرة واحدة فقط)." };
+      }
     }
 
     return { valid: true };

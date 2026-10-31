@@ -160,7 +160,7 @@ export async function getExecutiveReportData(
   ]);
 
   // Liquid cash total
-  const liquidCashEgp = accountRows.reduce((sum: number, acc: any) => sum + Math.max(0, Number(acc.balance) || 0), 0);
+  const liquidCashEgp = accountRows.reduce((sum: number, acc: any) => sum + Math.max(0, Number(acc.baseValue ?? acc.balance) || 0), 0);
 
   // Categorize portfolio
   let goldPortfolioEgp = 0;

@@ -613,29 +613,32 @@ export const familyRouter = router({
           });
         }
 
-        // 1. Reverse original event synchronously (restores lots, inverts GL entries)
-        await reverseFinancialEvent({
-          context: family,
-          actorUserId: ctx.user.id,
-          eventId: input.id,
-          reason: `تعديل واستبدال الصفقة #${input.id}`,
-        });
-
-        // 2. Post replacement trade with updated parameters
+        // 1 & 2. Reverse original event and post replacement trade atomically in a single DB transaction
         const resolvedOccurredAt = parseTradeTimestamp({ date: input.date, occurredAt: input.occurredAt ?? origEvent.occurredAt });
-        const newEvent = await postTrade({
-          context: family,
-          actorUserId: ctx.user.id,
-          side: origEvent.eventType as "buy" | "sell",
-          accountId: targetAccountId,
-          instrumentId: origEvent.instrumentId,
-          quantity: input.quantity,
-          unitPrice: input.unitPrice,
-          feeAmount: input.feeAmount,
-          taxAmount: input.taxAmount,
-          occurredAt: resolvedOccurredAt,
-          memo: input.memo !== undefined ? input.memo : origEvent.memo,
-          idempotencyKey: `mod-${input.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        const newEvent = await db.transaction(async tx => {
+          await reverseFinancialEvent({
+            context: family,
+            actorUserId: ctx.user.id,
+            eventId: input.id,
+            reason: `تعديل واستبدال الصفقة #${input.id}`,
+            tx,
+          });
+
+          return postTrade({
+            context: family,
+            actorUserId: ctx.user.id,
+            side: origEvent.eventType as "buy" | "sell",
+            accountId: targetAccountId,
+            instrumentId: origEvent.instrumentId!,
+            quantity: input.quantity,
+            unitPrice: input.unitPrice,
+            feeAmount: input.feeAmount,
+            taxAmount: input.taxAmount,
+            occurredAt: resolvedOccurredAt,
+            memo: input.memo !== undefined ? input.memo : origEvent.memo,
+            idempotencyKey: `mod-${input.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            tx,
+          });
         });
 
         return { success: true, originalId: input.id, newEvent };

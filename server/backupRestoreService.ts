@@ -9,6 +9,7 @@ import {
   approvalPolicies,
   approvalRequests,
   auditEvents,
+  bankCertificates,
   bankStatementImports,
   bankStatementRows,
   budgets,
@@ -16,6 +17,7 @@ import {
   budgetTemplates,
   cashFlowCategories,
   corporateActions,
+  creditCardInstallments,
   debtPayments,
   debts,
   emergencyFundPlans,
@@ -48,6 +50,7 @@ import {
   riskProfiles,
   specialAssets,
   specialAssetValuations,
+  swingTrades,
   valuationProvenance,
   valuationSnapshots,
   vaultDocuments,
@@ -58,7 +61,7 @@ import {
 } from "../drizzle/schema";
 
 /**
- * Authoritative ordered list of all exactly 51 workspace-owned tables.
+ * Authoritative ordered list of all 54 workspace-owned tables.
  * Level 0 down to Level 4 reflects foreign-key dependency order for insertion.
  * Deletion order is exactly the reverse.
  */
@@ -77,7 +80,6 @@ export const WORKSPACE_TABLE_DEFINITIONS = [
   { name: "market_email_preferences", table: marketEmailPreferences },
   { name: "research_notes", table: researchNotes },
   { name: "fee_tax_rules", table: feeTaxRules },
-  { name: "special_assets", table: specialAssets },
   { name: "budget_templates", table: budgetTemplates },
   { name: "planning_scenarios", table: planningScenarios },
   { name: "fx_rates", table: fxRates },
@@ -85,9 +87,12 @@ export const WORKSPACE_TABLE_DEFINITIONS = [
 
   // Level 1: Reference Level 0
   { name: "accounts", table: accounts },
+  { name: "special_assets", table: specialAssets },
+  { name: "bank_certificates", table: bankCertificates },
   { name: "price_quotes", table: priceQuotes },
   { name: "insurance_policies", table: insurancePolicies },
   { name: "debts", table: debts },
+  { name: "credit_card_installments", table: creditCardInstallments },
   { name: "emergency_fund_plans", table: emergencyFundPlans },
   { name: "financial_goals", table: financialGoals },
   { name: "retirement_plans", table: retirementPlans },
@@ -100,6 +105,7 @@ export const WORKSPACE_TABLE_DEFINITIONS = [
   { name: "valuation_snapshots", table: valuationSnapshots },
   { name: "official_valuation_snapshots", table: officialValuationSnapshots },
   { name: "financial_events", table: financialEvents },
+  { name: "swing_trades", table: swingTrades },
   { name: "special_asset_valuations", table: specialAssetValuations },
   { name: "debt_payments", table: debtPayments },
   { name: "insurance_premium_payments", table: insurancePremiumPayments },
@@ -348,14 +354,18 @@ export async function restoreFullWorkspaceBackup(args: {
       risk_profiles: new Map(),
       budget_templates: new Map(),
       planning_scenarios: new Map(),
+      fx_rates: new Map(),
       special_assets: new Map(),
+      bank_certificates: new Map(),
       insurance_policies: new Map(),
       debts: new Map(),
+      credit_card_installments: new Map(),
       emergency_fund_plans: new Map(),
       price_quotes: new Map(),
       valuation_provenance: new Map(),
       valuation_snapshots: new Map(),
       financial_events: new Map(),
+      swing_trades: new Map(),
       journal_entries: new Map(),
       investment_lots: new Map(),
       approval_requests: new Map(),
@@ -365,7 +375,7 @@ export async function restoreFullWorkspaceBackup(args: {
     const restoredCounts: Record<string, number> = {};
     let totalRestoredRows = 0;
 
-    // 4. Insert each of the 51 tables in forward dependency order
+    // 4. Insert each of the 54 tables in forward dependency order
     for (const { name, table } of WORKSPACE_TABLE_DEFINITIONS) {
       const rows = args.backup.payload[name] || [];
       restoredCounts[name] = 0;
@@ -383,6 +393,23 @@ export async function restoreFullWorkspaceBackup(args: {
           if (row.ownerProfileId && idMaps.financial_profiles.has(row.ownerProfileId as number)) {
             row.ownerProfileId = idMaps.financial_profiles.get(row.ownerProfileId as number);
           }
+        } else if (name === "special_assets") {
+          if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
+            row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
+          }
+          if (row.assetAccountId && idMaps.accounts.has(row.assetAccountId as number)) {
+            row.assetAccountId = idMaps.accounts.get(row.assetAccountId as number)!;
+          }
+        } else if (name === "bank_certificates") {
+          if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
+            row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
+          }
+          if (row.accountId && idMaps.accounts.has(row.accountId as number)) {
+            row.accountId = idMaps.accounts.get(row.accountId as number)!;
+          }
+          if (row.linkedPayoutAccountId && idMaps.accounts.has(row.linkedPayoutAccountId as number)) {
+            row.linkedPayoutAccountId = idMaps.accounts.get(row.linkedPayoutAccountId as number)!;
+          }
         } else if (name === "financial_events") {
           if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
             row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
@@ -399,9 +426,31 @@ export async function restoreFullWorkspaceBackup(args: {
           if (row.categoryId && idMaps.cash_flow_categories.has(row.categoryId as number)) {
             row.categoryId = idMaps.cash_flow_categories.get(row.categoryId as number);
           }
+        } else if (name === "swing_trades") {
+          if (row.instrumentId && idMaps.instruments.has(row.instrumentId as number)) {
+            row.instrumentId = idMaps.instruments.get(row.instrumentId as number)!;
+          }
+          if (row.cashAccountId && idMaps.accounts.has(row.cashAccountId as number)) {
+            row.cashAccountId = idMaps.accounts.get(row.cashAccountId as number)!;
+          }
+          if (row.fundingAccountId && idMaps.accounts.has(row.fundingAccountId as number)) {
+            row.fundingAccountId = idMaps.accounts.get(row.fundingAccountId as number)!;
+          }
+          if (row.entryEventId && idMaps.financial_events.has(row.entryEventId as number)) {
+            row.entryEventId = idMaps.financial_events.get(row.entryEventId as number)!;
+          }
+          if (row.exitEventId && idMaps.financial_events.has(row.exitEventId as number)) {
+            row.exitEventId = idMaps.financial_events.get(row.exitEventId as number)!;
+          }
         } else if (name === "journal_entries") {
+          if (row.eventId && idMaps.financial_events.has(row.eventId as number)) {
+            row.eventId = idMaps.financial_events.get(row.eventId as number);
+          }
           if (row.financialEventId && idMaps.financial_events.has(row.financialEventId as number)) {
             row.financialEventId = idMaps.financial_events.get(row.financialEventId as number);
+          }
+          if (row.reversalOfEntryId && idMaps.journal_entries.has(row.reversalOfEntryId as number)) {
+            row.reversalOfEntryId = idMaps.journal_entries.get(row.reversalOfEntryId as number);
           }
         } else if (name === "journal_lines") {
           if (row.entryId && idMaps.journal_entries.has(row.entryId as number)) {
@@ -452,15 +501,35 @@ export async function restoreFullWorkspaceBackup(args: {
           if (row.instrumentId && idMaps.instruments.has(row.instrumentId as number)) {
             row.instrumentId = idMaps.instruments.get(row.instrumentId as number);
           }
+          if (row.subjectType === "instrument" && row.subjectId && idMaps.instruments.has(row.subjectId as number)) {
+            row.subjectId = idMaps.instruments.get(row.subjectId as number);
+          } else if (row.subjectType === "account" && row.subjectId && idMaps.accounts.has(row.subjectId as number)) {
+            row.subjectId = idMaps.accounts.get(row.subjectId as number);
+          } else if (row.subjectType === "special_asset" && row.subjectId && idMaps.special_assets.has(row.subjectId as number)) {
+            row.subjectId = idMaps.special_assets.get(row.subjectId as number);
+          }
           if (row.provenanceId && idMaps.valuation_provenance.has(row.provenanceId as number)) {
             row.provenanceId = idMaps.valuation_provenance.get(row.provenanceId as number);
           }
           if (row.quoteId && idMaps.price_quotes.has(row.quoteId as number)) {
             row.quoteId = idMaps.price_quotes.get(row.quoteId as number);
           }
+          if (row.fxRateId && idMaps.fx_rates.has(row.fxRateId as number)) {
+            row.fxRateId = idMaps.fx_rates.get(row.fxRateId as number);
+          }
         } else if (name === "debts") {
           if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
             row.profileId = idMaps.financial_profiles.get(row.profileId as number)!;
+          }
+          if (row.liabilityAccountId && idMaps.accounts.has(row.liabilityAccountId as number)) {
+            row.liabilityAccountId = idMaps.accounts.get(row.liabilityAccountId as number)!;
+          }
+          if (row.cashFlowCategoryId && idMaps.cash_flow_categories.has(row.cashFlowCategoryId as number)) {
+            row.cashFlowCategoryId = idMaps.cash_flow_categories.get(row.cashFlowCategoryId as number)!;
+          }
+        } else if (name === "credit_card_installments") {
+          if (row.debtId && idMaps.debts.has(row.debtId as number)) {
+            row.debtId = idMaps.debts.get(row.debtId as number)!;
           }
         } else if (name === "debt_payments") {
           if (row.debtId && idMaps.debts.has(row.debtId as number)) {
@@ -468,6 +537,9 @@ export async function restoreFullWorkspaceBackup(args: {
           }
           if (row.financialEventId && idMaps.financial_events.has(row.financialEventId as number)) {
             row.financialEventId = idMaps.financial_events.get(row.financialEventId as number)!;
+          }
+          if (row.cashAccountId && idMaps.accounts.has(row.cashAccountId as number)) {
+            row.cashAccountId = idMaps.accounts.get(row.cashAccountId as number)!;
           }
         } else if (name === "insurance_policies") {
           if (row.profileId && idMaps.financial_profiles.has(row.profileId as number)) {
@@ -529,11 +601,17 @@ export async function restoreFullWorkspaceBackup(args: {
           if (row.sourceLotId && idMaps.investment_lots.has(row.sourceLotId as number)) {
             row.sourceLotId = idMaps.investment_lots.get(row.sourceLotId as number)!;
           }
+          if (row.destinationLotId && idMaps.investment_lots.has(row.destinationLotId as number)) {
+            row.destinationLotId = idMaps.investment_lots.get(row.destinationLotId as number)!;
+          }
           if (row.targetLotId && idMaps.investment_lots.has(row.targetLotId as number)) {
             row.targetLotId = idMaps.investment_lots.get(row.targetLotId as number)!;
           }
           if (row.transferEventId && idMaps.financial_events.has(row.transferEventId as number)) {
             row.transferEventId = idMaps.financial_events.get(row.transferEventId as number)!;
+          }
+          if (row.eventId && idMaps.financial_events.has(row.eventId as number)) {
+            row.eventId = idMaps.financial_events.get(row.eventId as number)!;
           }
         } else if (name === "special_asset_valuations") {
           if (row.assetId && idMaps.special_assets.has(row.assetId as number)) {

@@ -52,19 +52,19 @@ async function runDisasterRecoveryDrill() {
   console.log("         FAMILY PLATFORM — PRODUCTION DISASTER RECOVERY DRILL");
   console.log("================================================================================");
   console.log(`Timestamp: ${new Date().toISOString()}`);
-  console.log(`Total Workspace Tables in Architecture: ${WORKSPACE_TABLE_DEFINITIONS.length} (Expected: 51)`);
+  console.log(`Total Workspace Tables in Architecture: ${WORKSPACE_TABLE_DEFINITIONS.length} (Expected: 54)`);
   console.log("--------------------------------------------------------------------------------\n");
 
   const drillStart = Date.now();
 
   // -------------------------------------------------------------------------
-  // STEP 1: Verify Table Architecture Definition Count (51 Workspace Tables)
+  // STEP 1: Verify Table Architecture Definition Count (54 Workspace Tables)
   // -------------------------------------------------------------------------
   let stepStart = Date.now();
-  if (WORKSPACE_TABLE_DEFINITIONS.length !== 51) {
-    recordResult("Table Count Audit", "FAIL", `Found ${WORKSPACE_TABLE_DEFINITIONS.length} tables, expected 51`, stepStart);
+  if (WORKSPACE_TABLE_DEFINITIONS.length !== 54) {
+    recordResult("Table Count Audit", "FAIL", `Found ${WORKSPACE_TABLE_DEFINITIONS.length} tables, expected 54`, stepStart);
   } else {
-    recordResult("Table Count Audit", "PASS", `Exactly 51 workspace-owned tables registered in topological order`, stepStart);
+    recordResult("Table Count Audit", "PASS", `Exactly 54 workspace-owned tables registered in topological order`, stepStart);
   }
 
   // -------------------------------------------------------------------------
@@ -258,7 +258,7 @@ async function runDisasterRecoveryDrill() {
       name: "FAMILY Principal Wealth Office",
       baseCurrency: "USD",
       exportedAt: Date.now(),
-      tableCount: 51,
+      tableCount: 54,
     },
     manifest: {
       tables: manifestTables,
@@ -268,7 +268,7 @@ async function runDisasterRecoveryDrill() {
     payload: rawPayload,
   };
 
-  recordResult("Payload Synthesis", "PASS", `Synthesized envelope with ${totalSyntheticRows} rows across all 51 tables`, stepStart);
+  recordResult("Payload Synthesis", "PASS", `Synthesized envelope with ${totalSyntheticRows} rows across all 54 tables`, stepStart);
 
   // -------------------------------------------------------------------------
   // STEP 3: Validate Backup Envelope & Cryptographic Checksum
@@ -278,7 +278,7 @@ async function runDisasterRecoveryDrill() {
   if (!validation.valid) {
     recordResult("Cryptographic Validation", "FAIL", `Backup envelope invalid: ${validation.errors.join(", ")}`, stepStart);
   } else {
-    recordResult("Cryptographic Validation", "PASS", `Format, version, 51 tables, and SHA-256 (${payloadSha256.substring(0, 12)}...) verified`, stepStart);
+    recordResult("Cryptographic Validation", "PASS", `Format, version, 54 tables, and SHA-256 (${payloadSha256.substring(0, 12)}...) verified`, stepStart);
   }
 
   // -------------------------------------------------------------------------
@@ -349,8 +349,8 @@ async function runDisasterRecoveryDrill() {
   });
 
   const restoredTableCount = Object.keys(cloneResult.tableCounts).length;
-  if (!cloneResult.workspaceId || restoredTableCount !== 51) {
-    recordResult("Clone Restore Execution", "FAIL", `Restored tables: ${restoredTableCount}/51`, stepStart);
+  if (!cloneResult.workspaceId || restoredTableCount !== 54) {
+    recordResult("Clone Restore Execution", "FAIL", `Restored tables: ${restoredTableCount}/54`, stepStart);
   } else {
     recordResult("Clone Restore Execution", "PASS", `Successfully cloned workspace #${cloneResult.workspaceId} (${cloneResult.totalRestoredRows} rows across ${restoredTableCount} tables)`, stepStart);
   }
@@ -499,8 +499,8 @@ async function runDisasterRecoveryDrill() {
   });
 
   const overwriteTableCount = Object.keys(overwriteResult.tableCounts).length;
-  if (overwriteResult.workspaceId !== restoredWorkspaceId || overwriteTableCount !== 51) {
-    recordResult("Overwrite Restore Execution", "FAIL", `Overwrite failed: restored tables ${overwriteTableCount}/51`, stepStart);
+  if (overwriteResult.workspaceId !== restoredWorkspaceId || overwriteTableCount !== 54) {
+    recordResult("Overwrite Restore Execution", "FAIL", `Overwrite failed: restored tables ${overwriteTableCount}/54`, stepStart);
   } else {
     recordResult("Overwrite Restore Execution", "PASS", `Successfully executed destructive overwrite in reverse-FK order without orphaned records (${overwriteTableCount} tables verified)`, stepStart);
   }

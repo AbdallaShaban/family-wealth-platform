@@ -1,8 +1,8 @@
-import { createHash, createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { getDb } from "./db";
-import { auditEvents, workspaces } from "../drizzle/schema";
+import { auditEvents, memberships, users, workspaces } from "../drizzle/schema";
 
 export type AuditorScope = "reports" | "reconciliation" | "zakat" | "financial_statements" | "lot_accounting";
 
@@ -94,7 +94,9 @@ export async function parseAndVerifyToken(token: string): Promise<{
     return { valid: false, error: err.message || "فشل التحقق من توقيع الرمز." };
   }
 
-  if (providedSig !== expectedSig) {
+  const providedBuf = Buffer.from(providedSig, "utf8");
+  const expectedBuf = Buffer.from(expectedSig, "utf8");
+  if (providedBuf.length !== expectedBuf.length || !timingSafeEqual(providedBuf, expectedBuf)) {
     return { valid: false, error: "توقيع الرمز غير صالح أو تم التلاعب به." };
   }
 
@@ -306,26 +308,79 @@ export async function listAuditorTokens(workspaceId: number) {
   return issuedList;
 }
 
+export const verifyAuditorToken = parseAndVerifyToken;
+
 export async function recordAuditorAccessEvent(args: {
   workspaceId: number;
   tokenId: string;
   targetAuditor: string;
   accessedRoute: string;
+  actorUserId?: number;
 }) {
   const db = await getDb();
   if (!db) return;
   const now = Date.now();
+
+  let resolvedActorUserId: number | null =
+    args.actorUserId && args.actorUserId > 0 ? args.actorUserId : null;
+
+  if (!resolvedActorUserId) {
+    try {
+      const [ws] = await db
+        .select({
+          personalOwnerUserId: workspaces.personalOwnerUserId,
+          createdByUserId: workspaces.createdByUserId,
+        })
+        .from(workspaces)
+        .where(eq(workspaces.id, args.workspaceId))
+        .limit(1);
+      resolvedActorUserId = ws?.personalOwnerUserId ?? ws?.createdByUserId ?? null;
+    } catch {}
+  }
+
+  if (!resolvedActorUserId) {
+    try {
+      const [ownerMember] = await db
+        .select({ userId: memberships.userId })
+        .from(memberships)
+        .where(and(eq(memberships.workspaceId, args.workspaceId), eq(memberships.role, "owner")))
+        .limit(1);
+      resolvedActorUserId = ownerMember?.userId ?? null;
+    } catch {}
+  }
+
+  if (!resolvedActorUserId) {
+    try {
+      const [fallbackUser] = await db
+        .select({ id: users.id })
+        .from(users)
+        .orderBy(users.id)
+        .limit(1);
+      resolvedActorUserId = fallbackUser?.id ?? 1;
+    } catch {
+      resolvedActorUserId = 1;
+    }
+  }
+
+  if (!resolvedActorUserId || resolvedActorUserId <= 0) return;
+
+  const metadataJson = {
+    actorType: "external_auditor",
+    targetAuditor: args.targetAuditor,
+    accessedRoute: args.accessedRoute,
+    accessedAt: now,
+  };
+
   await db.insert(auditEvents).values({
     workspaceId: args.workspaceId,
-    actorUserId: 0,
+    actorUserId: resolvedActorUserId,
     action: "auditor_portal.accessed",
     targetType: "auditor_token",
     targetId: args.tokenId,
     beforeState: null,
     afterState: {
-      targetAuditor: args.targetAuditor,
-      accessedRoute: args.accessedRoute,
-      accessedAt: now,
+      ...metadataJson,
+      metadataJson,
     },
     requestId: crypto.randomUUID(),
     occurredAt: now,

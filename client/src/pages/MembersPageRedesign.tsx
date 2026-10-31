@@ -128,27 +128,29 @@ export default function MembersPageRedesign({ embedded = false }: { embedded?: b
 
   const content = (
     <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
-        <PageHeader
-          title="الأعضاء ومساحات العمل (Workspaces & Members)"
-          description="العضوية والصلاحية تُفرضان من الخادم. يُقبل البريد المدعو عند تسجيل صاحبه الدخول، ولا تمنح الدعوة الوصول قبل ذلك."
-          breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والإدارة", href: "/members" },
-            { label: "الأعضاء ومساحات العمل" },
-          ]}
-          badge={{ text: "إدارة الوصول والصلاحيات", variant: "institutional" }}
-          icon={UsersRound}
-          actions={
-            user?.role === "admin" ? (
-              <Link
-                href="/admin/users"
-                className="inline-flex h-9 items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs"
-              >
-                إدارة مستخدمي المنصة
-              </Link>
-            ) : undefined
-          }
-        />
+        {!embedded && (
+          <PageHeader
+            title="الأعضاء ومساحات العمل (Workspaces & Members)"
+            description="العضوية والصلاحية تُفرضان من الخادم. يُقبل البريد المدعو عند تسجيل صاحبه الدخول، ولا تمنح الدعوة الوصول قبل ذلك."
+            breadcrumbs={[
+              { label: "الرئيسية", href: "/" },
+              { label: "الحوكمة والإدارة", href: "/members" },
+              { label: "الأعضاء ومساحات العمل" },
+            ]}
+            badge={{ text: "إدارة الوصول والصلاحيات", variant: "institutional" }}
+            icon={UsersRound}
+            actions={
+              user?.role === "admin" ? (
+                <Link
+                  href="/admin/users"
+                  className="inline-flex h-9 items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs"
+                >
+                  إدارة مستخدمي المنصة
+                </Link>
+              ) : undefined
+            }
+          />
+        )}
 
         <section className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
           <div className="bg-white dark:bg-[#0B0F17] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-xs">

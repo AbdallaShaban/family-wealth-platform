@@ -18,6 +18,7 @@ import {
   Coins,
   CreditCard,
   Download,
+  Eye,
   EyeOff,
   FileChartColumn,
   FileLock2,
@@ -621,7 +622,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [smartPasteOpen, setSmartPasteOpen] = useState(false);
   const [receiptOcrOpen, setReceiptOcrOpen] = useState(false);
   const [pwaInstallOpen, setPwaInstallOpen] = useState(false);
-  const { isPrivate } = usePrivacyMode();
+  const { isPrivate, togglePrivacy } = usePrivacyMode();
+  const [searchStr, setSearchStr] = useState(() => (typeof window !== "undefined" ? window.location.search : ""));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncSearch = () => setSearchStr(window.location.search);
+    syncSearch();
+    window.addEventListener("popstate", syncSearch);
+    return () => window.removeEventListener("popstate", syncSearch);
+  }, [location]);
 
   // Global Interactive Command Palette (Ctrl + K / Cmd + K) and Clipboard Paste (Ctrl + V for images)
   useEffect(() => {
@@ -657,7 +667,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
   const role = (workspace.data?.membership.role ?? "viewer") as MinimumRole;
   const normalizedLocation = location.startsWith("/family/") ? location.replace("/family", "") : location;
-  const routeItem = allItems.find(item => item.path === location || item.path === normalizedLocation);
+  const fullLocation = searchStr ? `${location}${searchStr}` : location;
+  const fullNormalizedLocation = searchStr ? `${normalizedLocation}${searchStr}` : normalizedLocation;
+  const routeItem =
+    allItems.find(item => item.path === fullLocation || item.path === fullNormalizedLocation) ??
+    allItems.find(item => item.path === location || item.path === normalizedLocation);
   const currentGroup = navigationGroups.find(group =>
     group.items.some(
       item =>
@@ -668,13 +682,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
   const canAccessCurrentRoute = !routeItem || roleRank[role] >= roleRank[routeItem.minimumRole];
   const currentLabel = canAccessCurrentRoute
-    ? (routeItem?.label ?? routeLabels[location] ?? routeLabels[normalizedLocation] ?? (location === "/" ? "نظرة عامة وصافي الثروة" : "نظرة تفصيلية"))
+    ? (routeLabels[fullLocation] ?? routeLabels[fullNormalizedLocation] ?? routeItem?.label ?? routeLabels[location] ?? routeLabels[normalizedLocation] ?? (location === "/" ? "نظرة عامة وصافي الثروة" : "نظرة تفصيلية"))
     : "وصول محدود";
   const navigate = (path: string) => {
     setLocation(path);
+    if (typeof window !== "undefined" && path.includes("?")) {
+      window.history.pushState({}, "", path);
+      setSearchStr(window.location.search);
+    } else if (typeof window !== "undefined") {
+      setSearchStr("");
+    }
     if (typeof window !== "undefined") {
       setTimeout(() => {
-        window.dispatchEvent(new Event("popstate"));
+        setSearchStr(window.location.search);
+        window.dispatchEvent(new PopStateEvent("popstate"));
       }, 10);
     }
     setMobileOpen(false);
@@ -848,6 +869,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onNavigate={navigate}
               user={user}
               onLogout={logout}
+              isPrivate={isPrivate}
+              onTogglePrivacy={togglePrivacy}
+              onOpenPwaInstall={() => setPwaInstallOpen(true)}
+              onOpenQuickConfirm={() => setQuickConfirmOpen(true)}
               role={role}
             />
           </div>
@@ -912,6 +937,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function TopbarControls({
   onOpenOmni,
+  isPrivate,
+  onTogglePrivacy,
+  onOpenPwaInstall,
+  onOpenQuickConfirm,
   onOpenSmartPaste,
   onOpenReceiptOcr,
   onOpenQuickEntry,
@@ -928,6 +957,10 @@ function TopbarControls({
   user?: any;
   onLogout?: () => void;
   role?: MinimumRole;
+  isPrivate?: boolean;
+  onTogglePrivacy?: () => void;
+  onOpenPwaInstall?: () => void;
+  onOpenQuickConfirm?: () => void;
 }) {
   const { theme, toggleTheme } = useTheme();
   const initial = user?.name?.trim().charAt(0).toUpperCase() || "F";
@@ -935,6 +968,12 @@ function TopbarControls({
 
   return (
     <div className="flex items-center gap-2">
+      {/* 0. Offline Status & Dual View Mode Toggle */}
+      <OfflineStatusBadge />
+      <div className="hidden md:block">
+        <DualViewModeToggle />
+      </div>
+
       {/* 1. Quick Search / Omni Bar (Ctrl + K) */}
       <button
         onClick={onOpenOmni}
@@ -1022,7 +1061,21 @@ function TopbarControls({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* 3. Theme Toggle (Sun / Moon) */}
+      {/* 3. Privacy Mode Toggle (Eye / EyeOff) */}
+      <button
+        onClick={onTogglePrivacy}
+        className={`fintech-topbar-button size-9 rounded-xl border transition-all cursor-pointer flex items-center justify-center shrink-0 ${
+          isPrivate
+            ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+            : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted"
+        }`}
+        aria-label={isPrivate ? "إظهار الأرقام المالية" : "إخفاء الأرقام المالية (وضع الخصوصية)"}
+        title={isPrivate ? "إظهار الأرقام المالية" : "إخفاء الأرقام المالية (وضع الخصوصية)"}
+      >
+        {isPrivate ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+      </button>
+
+      {/* 4. Theme Toggle (Sun / Moon) */}
       <button
         onClick={toggleTheme}
         className="fintech-topbar-button size-9 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer flex items-center justify-center shrink-0"
@@ -1055,6 +1108,20 @@ function TopbarControls({
             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">{roleLabel}</p>
             <p className="text-[10px] text-muted-foreground truncate">{user?.email || "جلسة آمنة"}</p>
           </div>
+          <DropdownMenuItem
+            onClick={() => onOpenPwaInstall?.()}
+            className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-medium hover:bg-muted"
+          >
+            <Smartphone className="size-3.5 text-muted-foreground" />
+            <span>تثبيت تطبيق الهاتف (PWA)</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => onOpenQuickConfirm?.()}
+            className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-medium hover:bg-muted"
+          >
+            <PlusCircle className="size-3.5 text-muted-foreground" />
+            <span>نموذج قيد مالي معتمد</span>
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => onNavigate?.("/governance?tab=members")}
             className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-xs font-medium hover:bg-muted"

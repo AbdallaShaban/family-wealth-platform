@@ -96,22 +96,24 @@ export default function VaultPage({ embedded = false }: { embedded?: boolean }) 
 
   const content = (
     <main className="mx-auto max-w-6xl space-y-6" dir="rtl">
-        <PageHeader
-          title="خزنة الوثائق والمستندات"
-          description="أرشفة وتخزين آمن للوثائق والعقود القانونية المشفرة مع توثيق سجلات الوصول والتحميل رقابياً."
-          breadcrumbs={[
-            { label: "الرئيسية", href: "/" },
-            { label: "الحوكمة والإدارة", href: "/vault" },
-            { label: "خزنة الوثائق والمستندات" },
-          ]}
-          badge={
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
-              <Lock className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>تشفير صفري متقدم (AES-256 Vault)</span>
-            </div>
-          }
-          icon={FileLock2}
-        />
+        {!embedded && (
+          <PageHeader
+            title="خزنة الوثائق والمستندات"
+            description="أرشفة وتخزين آمن للوثائق والعقود القانونية المشفرة مع توثيق سجلات الوصول والتحميل رقابياً."
+            breadcrumbs={[
+              { label: "الرئيسية", href: "/" },
+              { label: "الحوكمة والإدارة", href: "/vault" },
+              { label: "خزنة الوثائق والمستندات" },
+            ]}
+            badge={
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 font-medium text-xs shadow-2xs">
+                <Lock className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>تشفير صفري متقدم (AES-256 Vault)</span>
+              </div>
+            }
+            icon={FileLock2}
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 

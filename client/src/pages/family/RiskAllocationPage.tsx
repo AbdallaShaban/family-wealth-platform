@@ -105,16 +105,18 @@ export default function RiskAllocationPage({ embedded = false }: { embedded?: bo
 
   const content = (
     <div dir="rtl" className="mx-auto max-w-7xl space-y-6">
-        <PageHeader
-          title="ملف المخاطر والتخصيص"
-          description="التوزيع الفعلي يجمع السيولة والحيازات ذات الأسعار وسعر الصرف الموثقين فقط. «راجع الانحراف» تنبيه تحليلي لمراجعة الهدف، ولا ينفذ صفقة أو يقدم توصية شراء وبيع."
-          icon={Target}
-          breadcrumbs={[
-            { label: "الاستثمار والتداول", href: "/investments" },
-            { label: "ملف المخاطر والتخصيص" },
-          ]}
-          badge="تخصيص الأصول"
-        />
+        {!embedded && (
+          <PageHeader
+            title="ملف المخاطر والتخصيص"
+            description="التوزيع الفعلي يجمع السيولة والحيازات ذات الأسعار وسعر الصرف الموثقين فقط. «راجع الانحراف» تنبيه تحليلي لمراجعة الهدف، ولا ينفذ صفقة أو يقدم توصية شراء وبيع."
+            icon={Target}
+            breadcrumbs={[
+              { label: "الاستثمار والتداول", href: "/investments" },
+              { label: "ملف المخاطر والتخصيص" },
+            ]}
+            badge="تخصيص الأصول"
+          />
+        )}
         {summary.isLoading ? (
           <PageLoading />
         ) : summary.error ? (
@@ -207,7 +209,7 @@ export default function RiskAllocationPage({ embedded = false }: { embedded?: bo
                 <form onSubmit={saveAllocation} className="space-y-4">
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[620px] text-right text-sm">
-                      <thead className="bg-slate-50 text-xs text-slate-500">
+                      <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-900/60 dark:text-slate-300">
                         <tr>
                           <th className="p-3">فئة الأصول</th>
                           <th className="p-3">هدف %</th>

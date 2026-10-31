@@ -8,9 +8,9 @@ import {
 } from "./backupRestoreService";
 
 describe("Disaster Recovery — Full Workspace Backup & Validation", () => {
-  it("covers exactly 51 workspace-owned tables in dependency order", () => {
-    expect(WORKSPACE_TABLE_DEFINITIONS.length).toBe(51);
-    expect(WORKSPACE_TABLE_NAMES.length).toBe(51);
+  it("covers all 54 workspace-owned tables in dependency order", () => {
+    expect(WORKSPACE_TABLE_DEFINITIONS.length).toBe(54);
+    expect(WORKSPACE_TABLE_NAMES.length).toBe(54);
 
     // Verify key tables are present
     expect(WORKSPACE_TABLE_NAMES).toContain("accounts");
@@ -27,6 +27,22 @@ describe("Disaster Recovery — Full Workspace Backup & Validation", () => {
     expect(WORKSPACE_TABLE_NAMES).not.toContain("platform_audit_events");
     expect(WORKSPACE_TABLE_NAMES).not.toContain("platform_admin_invitations");
     expect(WORKSPACE_TABLE_NAMES).not.toContain("workspaces");
+  });
+
+  it("includes swing_trades, bank_certificates, and credit_card_installments in topological dependency order", () => {
+    expect(WORKSPACE_TABLE_NAMES).toContain("swing_trades");
+    expect(WORKSPACE_TABLE_NAMES).toContain("bank_certificates");
+    expect(WORKSPACE_TABLE_NAMES).toContain("credit_card_installments");
+
+    expect(WORKSPACE_TABLE_NAMES.indexOf("bank_certificates")).toBeGreaterThan(
+      WORKSPACE_TABLE_NAMES.indexOf("accounts")
+    );
+    expect(WORKSPACE_TABLE_NAMES.indexOf("credit_card_installments")).toBeGreaterThan(
+      WORKSPACE_TABLE_NAMES.indexOf("debts")
+    );
+    expect(WORKSPACE_TABLE_NAMES.indexOf("swing_trades")).toBeGreaterThan(
+      WORKSPACE_TABLE_NAMES.indexOf("financial_events")
+    );
   });
 
   it("computes deterministic SHA-256 manifest hash", () => {
@@ -77,7 +93,7 @@ describe("Disaster Recovery — Full Workspace Backup & Validation", () => {
         name: "مساحة العائلة",
         baseCurrency: "EGP",
         exportedAt: 1700000000000,
-        tableCount: 51,
+        tableCount: 54,
       },
       manifest: {
         tables: {},

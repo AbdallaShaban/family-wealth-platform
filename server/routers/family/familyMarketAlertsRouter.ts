@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, eq, desc } from "drizzle-orm";
 import { router, protectedProcedure } from "../../_core/trpc";
-import { ensurePersonalFamilyContext } from "../../familyAccess";
+import { assertRole, ensurePersonalFamilyContext } from "../../familyAccess";
 import { getDb } from "../../db";
 import { instruments, priceQuotes, marketCandles } from "../../../drizzle/schema";
 import {
@@ -184,6 +184,7 @@ export const familyMarketAlertsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const family = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(family, "editor");
       return addWorkspaceAlertRule(family.workspace.id, family.profile.id, input);
     }),
 
@@ -191,12 +192,14 @@ export const familyMarketAlertsRouter = router({
     .input(z.object({ ruleId: z.string().trim().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const family = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(family, "editor");
       const success = deleteWorkspaceAlertRule(family.workspace.id, input.ruleId);
       return { success };
     }),
 
   evaluateAlerts: protectedProcedure.mutation(async ({ ctx }) => {
     const family = await ensurePersonalFamilyContext(ctx.user);
+    assertRole(family, "editor");
     const db = await getDb();
     if (!db) throw notAvailable();
 

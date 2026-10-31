@@ -29,6 +29,7 @@ import { ReconciliationModal } from "./modals/ReconciliationModal";
 import { DebtPaymentModal } from "./modals/DebtPaymentModal";
 import { QuickOfflineTransactionModal } from "./pwa/QuickOfflineTransactionModal";
 import { SmartReceiptPasteModal } from "./transactions/SmartReceiptPasteModal";
+import SensitiveValue from "./SensitiveValue";
 
 function formatEGP(val: number | string | null | undefined): string {
   const num = Number(val) || 0;
@@ -88,10 +89,10 @@ export default function FintechDashboard() {
   const live = summary.data;
 
   // Real Database Numbers with strict precision
-  const netWorth = Number(live?.netWorthBase ?? 284336.1);
-  const liquidAssets = Number(live?.liquidBalanceBase ?? 1767.78);
-  const investedAssets = Number(live?.investmentValueBase ?? 306568.32);
-  const totalDebts = Number(live?.liabilityBalanceBase ?? 24000.0);
+  const netWorth = Number(live?.netWorthBase ?? 0);
+  const liquidAssets = Number(live?.liquidBalanceBase ?? 0);
+  const investedAssets = Number(live?.investmentValueBase ?? 0);
+  const totalDebts = Number(live?.liabilityBalanceBase ?? 0);
   const currency = live?.workspace?.baseCurrency || "EGP";
   const workspaceName = live?.workspace?.name || "FAMILY";
 
@@ -122,21 +123,19 @@ export default function FintechDashboard() {
           p.symbol?.toLowerCase().includes("azg")
       )
       .reduce((sum: number, p: any) => sum + Number(p.baseMarketValue || 0), 0);
-    const goldVal = goldFromPortfolio > 0 ? goldFromPortfolio : Math.round(investedAssets * 0.45);
+    const goldVal = goldFromPortfolio;
 
     // 2. Bank Accounts
-    const bankVal =
-      accountsList
-        .filter((a: any) => a.accountType === "bank")
-        .reduce((sum: number, a: any) => sum + Number(a.baseValue ?? a.balance ?? 0), 0) ||
-      Math.round(liquidAssets * 0.78);
+    const bankFromAccounts = accountsList
+      .filter((a: any) => a.accountType === "bank")
+      .reduce((sum: number, a: any) => sum + Number(a.baseValue ?? a.balance ?? 0), 0);
+    const bankVal = bankFromAccounts;
 
     // 3. E-Wallets & Cash
-    const walletVal =
-      accountsList
-        .filter((a: any) => ["wallet", "cash"].includes(a.accountType))
-        .reduce((sum: number, a: any) => sum + Number(a.baseValue ?? a.balance ?? 0), 0) ||
-      Math.max(0, Math.round(liquidAssets - bankVal));
+    const walletFromAccounts = accountsList
+      .filter((a: any) => ["wallet", "cash"].includes(a.accountType))
+      .reduce((sum: number, a: any) => sum + Number(a.baseValue ?? a.balance ?? 0), 0);
+    const walletVal = walletFromAccounts > 0 ? walletFromAccounts : Math.max(0, liquidAssets - bankVal);
 
     // 4. Stocks & Securities
     const stocksVal = Math.max(0, investedAssets - goldVal);
@@ -214,48 +213,7 @@ export default function FintechDashboard() {
   // Recent 5 transactions mapping
   const recentEvents = (live?.recentEvents && live.recentEvents.length > 0
     ? live.recentEvents.slice(0, 5)
-    : [
-        {
-          id: 1,
-          eventType: "buy",
-          notes: "شراء استثمار - صندوق أزيموت للذهب",
-          grossAmount: "51.76",
-          currency: "EGP",
-          occurredAt: Date.now() - 3600000,
-        },
-        {
-          id: 2,
-          eventType: "buy",
-          notes: "شراء أسهم البنك التجاري الدولي CIB",
-          grossAmount: "310.56",
-          currency: "EGP",
-          occurredAt: Date.now() - 7200000,
-        },
-        {
-          id: 3,
-          eventType: "expense",
-          notes: "تجديد اشتراك الإنترنت المنزلي",
-          grossAmount: "376.20",
-          currency: "EGP",
-          occurredAt: Date.now() - 14400000,
-        },
-        {
-          id: 4,
-          eventType: "deposit",
-          notes: "تحويل بنكي وارد - استحقاق أرباح",
-          grossAmount: "250.00",
-          currency: "EGP",
-          occurredAt: Date.now() - 28800000,
-        },
-        {
-          id: 5,
-          eventType: "debt_payment",
-          notes: "سداد مديونية بطاقة ائتمان تيتانيوم",
-          grossAmount: "250.00",
-          currency: "EGP",
-          occurredAt: Date.now() - 43200000,
-        },
-      ]
+    : []
   ).map((e: any) => {
     const isOut = ["expense", "buy", "withdrawal", "debt_payment"].includes(e.eventType);
     const isTransfer = e.eventType === "transfer";
@@ -321,7 +279,7 @@ export default function FintechDashboard() {
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
-                مرحباً بك، {user?.name || "Abdalla"}
+                مرحباً بك، {user?.name || "العضو الرئيسي"}
               </h1>
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30">
                 <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -381,12 +339,14 @@ export default function FintechDashboard() {
               </div>
             </div>
             <div className="text-3xl sm:text-4xl font-black text-foreground font-mono tracking-tight tabular-nums">
-              {formatEGP(netWorth)}
+              <SensitiveValue>{formatEGP(netWorth)}</SensitiveValue>
             </div>
-            <div className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              <TrendingUp className="size-3.5" />
-              <span>+38.5% نمو تراكمي آمن للمدخرات</span>
-            </div>
+            {netWorth > 0 && (
+              <div className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="size-3.5" />
+                <span>صافي أصول إيجابي موثق بالدفتر</span>
+              </div>
+            )}
             <p className="mt-1 text-[11px] text-muted-foreground font-medium">
               إجمالي الأصول والاستثمارات مخصوماً منها كافة الالتزامات
             </p>
@@ -403,7 +363,7 @@ export default function FintechDashboard() {
               </div>
             </div>
             <div className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight tabular-nums">
-              {formatEGP(liquidAssets)}
+              <SensitiveValue>{formatEGP(liquidAssets)}</SensitiveValue>
             </div>
             <div className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
               <CheckCircle2 className="size-3.5 text-emerald-500" />
@@ -425,7 +385,7 @@ export default function FintechDashboard() {
               </div>
             </div>
             <div className="text-3xl sm:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono tracking-tight tabular-nums">
-              {formatEGP(totalDebts)}
+              <SensitiveValue>{formatEGP(totalDebts)}</SensitiveValue>
             </div>
             <div className="mt-2.5 flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300">
               <Calendar className="size-3.5 text-rose-500" />
@@ -491,7 +451,7 @@ export default function FintechDashboard() {
 
                     <div className="mt-3">
                       <div className="text-base font-black font-mono tabular-nums text-foreground">
-                        {formatEGP(item.value)}
+                        <SensitiveValue>{formatEGP(item.value)}</SensitiveValue>
                       </div>
                       {/* Visual progress bar */}
                       <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-2">
@@ -597,8 +557,10 @@ export default function FintechDashboard() {
                                 : "text-emerald-600 dark:text-emerald-400"
                             }`}
                           >
-                            {tx.isOutflow ? "- " : tx.isTransfer ? "" : "+ "}
-                            {formatEGP(amountNum)}
+                            <SensitiveValue>
+                              {tx.isOutflow ? "- " : tx.isTransfer ? "" : "+ "}
+                              {formatEGP(amountNum)}
+                            </SensitiveValue>
                           </span>
                         </div>
                       </div>

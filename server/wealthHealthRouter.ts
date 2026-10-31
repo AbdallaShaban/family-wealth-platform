@@ -434,8 +434,8 @@ export async function loadWealthHealthAggregations(
 
   if (investableAssets.lte(0) && economicNetWorth.gt(0)) {
     investableAssets = economicNetWorth;
-  } else if (investableAssets.lte(0)) {
-    investableAssets = new Decimal("131250.00");
+  } else if (investableAssets.lt(0)) {
+    investableAssets = new Decimal(0);
   }
 
   // 5. Insurance Policies
@@ -747,11 +747,11 @@ export const wealthHealthRouter = router({
       // Determine annual spending based on mode
       let annualSpending: Decimal;
       if (input.spendingMode === "essential_ttm") {
-        annualSpending = data.ttmEssentialExpenses.gt(0) ? data.ttmEssentialExpenses : new Decimal("84000.00");
+        annualSpending = data.ttmEssentialExpenses.gt(0) ? data.ttmEssentialExpenses : new Decimal(0);
       } else if (input.spendingMode === "custom") {
         annualSpending = toDec(input.customSpending!);
       } else {
-        annualSpending = data.operatingExpenses.gt(0) ? data.operatingExpenses : new Decimal("120000.00");
+        annualSpending = data.operatingExpenses.gt(0) ? data.operatingExpenses : new Decimal(0);
       }
 
       // Authoritative monthly FI contribution C = (I_op - E_op - P_debt) / 12
@@ -774,7 +774,7 @@ export const wealthHealthRouter = router({
       // Compute 3 standard scenarios
       const standardScenarios = generateStandardFireScenarios({
         investableAssets: data.investableAssets,
-        ttmActualLivingExpenses: data.operatingExpenses.gt(0) ? data.operatingExpenses : new Decimal("120000.00"),
+        ttmActualLivingExpenses: data.operatingExpenses.gt(0) ? data.operatingExpenses : new Decimal(0),
         ttmEssentialLivingExpenses: data.ttmEssentialExpenses,
         monthlyContribution,
         asOfDate: new Date(asOf),

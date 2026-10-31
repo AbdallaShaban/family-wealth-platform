@@ -180,10 +180,16 @@ async function runAudit() {
       screenshot: "banking-tab-debts.png",
     },
     {
-      route: "/investments?tab=holdings",
+      route: "/investments?tab=overview",
       expectedSnippet: "الأصول",
       label: "Investments: Live Holdings",
       screenshot: "investments-tab-holdings.png",
+    },
+    {
+      route: "/investments?tab=dividends",
+      expectedSnippet: "توزيعات",
+      label: "Investments: Dividends",
+      screenshot: "investments-tab-dividends.png",
     },
     {
       route: "/investments?tab=performance",
@@ -198,6 +204,18 @@ async function runAudit() {
       screenshot: "investments-tab-allocation.png",
     },
     {
+      route: "/investments?tab=valuation",
+      expectedSnippet: "التسعير",
+      label: "Investments: Valuation & Pricing",
+      screenshot: "investments-tab-valuation.png",
+    },
+    {
+      route: "/investments?tab=quality",
+      expectedSnippet: "جودة",
+      label: "Investments: Data Quality",
+      screenshot: "investments-tab-quality.png",
+    },
+    {
       route: "/quant?tab=signals",
       expectedSnippet: "الإشارات",
       label: "Quant: Signals & Screener",
@@ -210,10 +228,16 @@ async function runAudit() {
       screenshot: "quant-tab-stress-testing.png",
     },
     {
-      route: "/governance?tab=statements",
-      expectedSnippet: "القوائم",
-      label: "Governance: Financial Statements",
-      screenshot: "governance-tab-statements.png",
+      route: "/governance?tab=zakat",
+      expectedSnippet: "الزكاة",
+      label: "Governance: Zakat & Reports",
+      screenshot: "governance-tab-zakat.png",
+    },
+    {
+      route: "/governance?tab=alerts",
+      expectedSnippet: "التنبيهات",
+      label: "Governance: Alerts & Approvals",
+      screenshot: "governance-tab-alerts.png",
     },
     {
       route: "/governance?tab=audit",

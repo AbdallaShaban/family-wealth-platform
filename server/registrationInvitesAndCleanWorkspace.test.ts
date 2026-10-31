@@ -1,4 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("./db", () => ({
+  getDb: vi.fn().mockResolvedValue(null),
+}));
+
 import { generateInviteCodeString, verifyAndConsumeInviteCode } from "./localAuth";
 
 describe("Registration Invites & Clean Workspace Initialization", () => {

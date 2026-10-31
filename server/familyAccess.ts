@@ -35,6 +35,41 @@ export async function ensurePersonalFamilyContext(user: User): Promise<FamilyCon
   const db = await getDb();
   if (!db) throw dbUnavailable();
 
+  // Fast-path: if activeWorkspaceId is already set, resolve workspace, active membership, and financial profile directly without opening a write transaction
+  if (user.activeWorkspaceId) {
+    const [workspace] = await db
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, user.activeWorkspaceId))
+      .limit(1);
+    if (workspace) {
+      const [membership] = await db
+        .select()
+        .from(memberships)
+        .where(
+          and(
+            eq(memberships.workspaceId, workspace.id),
+            eq(memberships.userId, user.id),
+            eq(memberships.status, "active")
+          )
+        )
+        .limit(1);
+      const [profile] = await db
+        .select()
+        .from(financialProfiles)
+        .where(
+          and(
+            eq(financialProfiles.workspaceId, workspace.id),
+            eq(financialProfiles.userId, user.id)
+          )
+        )
+        .limit(1);
+      if (membership && profile) {
+        return { workspace, membership, profile };
+      }
+    }
+  }
+
   const now = Date.now();
   await db.transaction(async tx => {
     let [workspace] = await tx

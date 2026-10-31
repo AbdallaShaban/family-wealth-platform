@@ -289,49 +289,51 @@ export default function StressTestingPage({ embedded = false }: { embedded?: boo
   const content = (
     <div className="space-y-6 pb-12" dir="rtl">
         {/* Header Section */}
-        <PageHeader
-          title="محرك اختبارات الضغط والصلابة المالية ومحاكاة الأزمات"
-          description="محاكاة احتمالية متعددة الأصول واختبارات ضغط ماكرو بارامترية (GBM / Cholesky / Mulberry32)"
-          icon={ShieldAlert}
-          breadcrumbs={[
-            { label: "الحوكمة والتحليل", href: "/wealth-health" },
-            { label: "اختبارات الضغط والمخاطر" },
-          ]}
-          badge="modelVersion: mc-v1.0.0"
-          actions={
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="font-mono text-[11px] gap-1 bg-background/50">
-                <Lock className="size-3 text-emerald-600" />
-                <span>Accounting Read-Only</span>
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void utils.stressTesting.getPortfolioStressProfile.invalidate();
-                  void utils.stressTesting.runMacroSimulation.invalidate();
-                  void utils.stressTesting.runMonteCarlo.invalidate();
-                  void utils.stressTesting.getLiquidityRunway.invalidate();
-                  toast.info("تم تحديث بيانات المحفظة واختبارات الضغط");
-                }}
-                disabled={profileQuery.isFetching}
-                className="gap-2"
-              >
-                <RefreshCw className={`size-3.5 ${profileQuery.isFetching ? "animate-spin" : ""}`} />
-                <span>تحديث البيانات</span>
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setIsSaveModalOpen(true)}
-                className="gap-2"
-              >
-                <Save className="size-3.5" />
-                <span>حفظ السيناريو</span>
-              </Button>
-            </div>
-          }
-        />
+        {!embedded && (
+          <PageHeader
+            title="محرك اختبارات الضغط والصلابة المالية ومحاكاة الأزمات"
+            description="محاكاة احتمالية متعددة الأصول واختبارات ضغط ماكرو بارامترية (GBM / Cholesky / Mulberry32)"
+            icon={ShieldAlert}
+            breadcrumbs={[
+              { label: "الحوكمة والتحليل", href: "/wealth-health" },
+              { label: "اختبارات الضغط والمخاطر" },
+            ]}
+            badge="modelVersion: mc-v1.0.0"
+            actions={
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="font-mono text-[11px] gap-1 bg-background/50">
+                  <Lock className="size-3 text-emerald-600" />
+                  <span>Accounting Read-Only</span>
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void utils.stressTesting.getPortfolioStressProfile.invalidate();
+                    void utils.stressTesting.runMacroSimulation.invalidate();
+                    void utils.stressTesting.runMonteCarlo.invalidate();
+                    void utils.stressTesting.getLiquidityRunway.invalidate();
+                    toast.info("تم تحديث بيانات المحفظة واختبارات الضغط");
+                  }}
+                  disabled={profileQuery.isFetching}
+                  className="gap-2"
+                >
+                  <RefreshCw className={`size-3.5 ${profileQuery.isFetching ? "animate-spin" : ""}`} />
+                  <span>تحديث البيانات</span>
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setIsSaveModalOpen(true)}
+                  className="gap-2"
+                >
+                  <Save className="size-3.5" />
+                  <span>حفظ السيناريو</span>
+                </Button>
+              </div>
+            }
+          />
+        )}
 
         {/* Global Epistemic Warning Banner & Disclosure Badge */}
         <Card className="border-amber-500/30 bg-amber-500/5">

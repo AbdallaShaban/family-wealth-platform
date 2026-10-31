@@ -4,7 +4,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import Decimal from "decimal.js";
 import { getDb } from "./db";
-import { ensurePersonalFamilyContext } from "./familyAccess";
+import { assertRole, ensurePersonalFamilyContext } from "./familyAccess";
 import { protectedProcedure, router } from "./_core/trpc";
 import {
   accounts,
@@ -254,13 +254,13 @@ async function loadStressedPortfolio(
     }
   }
 
-  // Adjust cash balance: prioritize verified ledger bank accounts, then official snapshot, then default 163,750.00
+  // Adjust cash balance: prioritize verified ledger bank accounts, then official snapshot, else 0
   if (ledgerCashSum.gt(0)) {
     cashTotal = ledgerCashSum;
   } else if (baselineLiquid.gt(0)) {
     cashTotal = baselineLiquid;
   } else {
-    cashTotal = new Decimal("163750.00"); // Verified liquid cash default for family wealth portfolio
+    cashTotal = new Decimal(0);
   }
 
   // Ensure liquidAssets Tier 1 has the cash item
@@ -284,8 +284,11 @@ async function loadStressedPortfolio(
     .plus(otherAssetsTotal);
 
   if (totalComputed.lte(0)) {
-    totalComputed = baselineNetWorth.gt(0) ? baselineNetWorth : new Decimal("176250.00");
+    totalComputed = baselineNetWorth.gt(0) ? baselineNetWorth : new Decimal(0);
   }
+
+  const safeWeight = (val: Decimal) =>
+    totalComputed.gt(0) ? val.div(totalComputed).toFixed(4) : "0.0000";
 
   // Build allocations
   const allocs = [
@@ -293,7 +296,7 @@ async function loadStressedPortfolio(
       assetClass: "cash" as AssetClassCategory,
       nameAr: "النقد والودائع البنكية",
       valueBase: cashTotal.toFixed(4),
-      weight: cashTotal.div(totalComputed).toFixed(4),
+      weight: safeWeight(cashTotal),
       quoteCount: 0,
       confidence: "HIGH" as DataConfidence,
     },
@@ -301,7 +304,7 @@ async function loadStressedPortfolio(
       assetClass: "equity" as AssetClassCategory,
       nameAr: "الأسهم العامة المدرجة",
       valueBase: equityTotal.toFixed(4),
-      weight: equityTotal.div(totalComputed).toFixed(4),
+      weight: safeWeight(equityTotal),
       quoteCount: posRows.length * 10,
       confidence: (equityTotal.gt(0) ? "MEDIUM" : "HIGH") as DataConfidence,
     },
@@ -309,7 +312,7 @@ async function loadStressedPortfolio(
       assetClass: "fixed_income" as AssetClassCategory,
       nameAr: "الصكوك وأدوات الدخل الثابت",
       valueBase: fixedIncomeTotal.toFixed(4),
-      weight: fixedIncomeTotal.div(totalComputed).toFixed(4),
+      weight: safeWeight(fixedIncomeTotal),
       quoteCount: 5,
       confidence: (fixedIncomeTotal.gt(0) ? "MEDIUM" : "HIGH") as DataConfidence,
     },
@@ -317,7 +320,7 @@ async function loadStressedPortfolio(
       assetClass: "real_estate" as AssetClassCategory,
       nameAr: "العقارات والأراضي",
       valueBase: realEstateTotal.toFixed(4),
-      weight: realEstateTotal.div(totalComputed).toFixed(4),
+      weight: safeWeight(realEstateTotal),
       quoteCount: saRows.filter(s => s.assetType === "real_estate").length,
       confidence: (realEstateTotal.gt(0) ? "MEDIUM" : "HIGH") as DataConfidence,
     },
@@ -325,7 +328,7 @@ async function loadStressedPortfolio(
       assetClass: "gold_alternatives" as AssetClassCategory,
       nameAr: "الذهب والمعادن الثمينة",
       valueBase: goldTotal.toFixed(4),
-      weight: goldTotal.div(totalComputed).toFixed(4),
+      weight: safeWeight(goldTotal),
       quoteCount: 50,
       confidence: (goldTotal.gt(0) ? "HIGH" : "HIGH") as DataConfidence,
     },
@@ -359,10 +362,24 @@ async function loadStressedPortfolio(
   }
   const annualInsurance = monthlyInsurance.times(12);
 
-  // 6. Baseline Essential Expenses
-  // Set monthly living expenses to 10,000.00 EGP/month (annual: 120,000.00 EGP) linked to verified operational budget
-  const monthlyLiving = new Decimal("10000.00");
-  const annualLiving = monthlyLiving.times(12);
+  // 6. Baseline Essential Expenses from actual posted TTM expense events (0 when none exist)
+  const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+  const expenseEvents = await db
+    .select({ grossAmount: financialEvents.grossAmount })
+    .from(financialEvents)
+    .where(
+      and(
+        eq(financialEvents.workspaceId, workspaceId),
+        eq(financialEvents.eventType, "expense"),
+        eq(financialEvents.status, "posted"),
+        sql`${financialEvents.occurredAt} >= ${oneYearAgo}`
+      )
+    );
+  const annualLiving = expenseEvents.reduce(
+    (sum, e) => sum.plus(new Decimal(e.grossAmount || "0")),
+    new Decimal(0)
+  );
+  const monthlyLiving = annualLiving.div(12);
 
   const portfolio: StressedPortfolioInput = {
     baseCurrency,
@@ -640,6 +657,7 @@ export const stressTestingRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const context = await ensurePersonalFamilyContext(ctx.user);
+      assertRole(context, "editor");
       const workspaceId = context.workspace.id;
       const db = await getDb();
       if (!db) throw notAvailable();
